@@ -1,13 +1,13 @@
 use i_float::fix_vec::FixVec;
-use i_shape::fix_edge::FixEdge;
+use i_shape::{fix_edge::{FixEdge, EdgeCross}, triangle::Triangle};
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]
 pub (crate) struct ShapeEdge {
     pub (crate) a: FixVec,
     pub (crate) b: FixVec,
-    a_bit_pack: i64,
-    b_bit_pack: i64,
+    pub (super) a_bit_pack: i64,
+    pub (super) b_bit_pack: i64,
     pub (super) count: ShapeCount,
     max_y: i64,
     min_y: i64,
@@ -25,14 +25,14 @@ impl ShapeEdge {
         min_y: 0,
     };
 
-    pub fn edge(&self) -> FixEdge {
+    pub (super) fn edge(&self) -> FixEdge {
         FixEdge {
             e0: self.a,
             e1: self.b,
         }
     }
 
-    pub fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
+    pub (super) fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
         let a_bit_pack = a.bit_pack();
         let b_bit_pack = b.bit_pack();
         let (a, b, a_bit_pack, b_bit_pack) = if a_bit_pack <= b_bit_pack {
@@ -53,7 +53,7 @@ impl ShapeEdge {
         }
     }
 
-    pub fn from_parent(parent: ShapeEdge, count: ShapeCount) -> Self {
+    pub (super) fn from_parent(parent: ShapeEdge, count: ShapeCount) -> Self {
         Self {
             a: parent.a,
             b: parent.b,
@@ -65,11 +65,11 @@ impl ShapeEdge {
         }
     }
 
-    pub fn merge(&self, other: ShapeEdge) -> ShapeEdge {
+    pub (super) fn merge(&self, other: ShapeEdge) -> ShapeEdge {
         ShapeEdge::new(self.a, self.b, self.count.add(other.count))
     }
 
-    pub fn is_less(&self, other: ShapeEdge) -> bool {
+    pub (super) fn is_less(&self, other: ShapeEdge) -> bool {
         let a0 = self.a_bit_pack;
         let a1 = other.a_bit_pack;
         if a0 != a1 {
@@ -81,7 +81,7 @@ impl ShapeEdge {
         }
     }
 
-    pub fn is_less_or_equal(&self, other: ShapeEdge) -> bool {
+    pub (super) fn is_less_or_equal(&self, other: ShapeEdge) -> bool {
         let a0 = self.a_bit_pack;
         let a1 = other.a_bit_pack;
         if a0 != a1 {
@@ -93,11 +93,25 @@ impl ShapeEdge {
         }
     }
 
-    pub fn is_equal(&self, other: ShapeEdge) -> bool {
+    pub (super) fn is_equal(&self, other: ShapeEdge) -> bool {
         let a0 = self.a_bit_pack;
         let a1 = other.a_bit_pack;
         let b0 = self.b_bit_pack;
         let b1 = other.b_bit_pack;
         a0 == a1 && b0 == b1
     }
+
+    pub (super) fn cross(&self, edge: ShapeEdge) -> EdgeCross {
+        if edge.min_y <= self.max_y && edge.max_y >= self.min_y {
+            self.edge().cross(edge.edge())
+        } else {
+            EdgeCross::NOT_CROSS
+        }
+    }
+
+    pub (super) fn is_not_same_line(&self, point: FixVec) -> bool {
+        Triangle::is_not_line(self.a, self.b, point)
+        
+    }
+
 }
