@@ -26,7 +26,7 @@ impl EdgeLinkedList {
         for i in 0..edges.len() - 1 {
             nodes[i] = EdgeNode {
                 next: i + 1,
-                prev: i - 1,
+                prev: i.wrapping_sub(1), //if i == 0 { EMPTY_INDEX } else { i - 1 },
                 edge: edges[i],
             };
         }

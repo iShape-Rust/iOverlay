@@ -10,6 +10,14 @@ mod tests {
     use super::*;
     
     #[test]
+    fn test_sub() {
+        let i: usize = 0;
+        let j = i.wrapping_sub(1);
+
+        assert_eq!(j, std::usize::MAX );
+    }
+
+    #[test]
     fn test_self_intersect_0() {
         let mut overlay = Overlay::new(1);
         
