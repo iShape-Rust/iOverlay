@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use i_float::fix_vec::FixVec;
 use i_shape::{fix_edge::{FixEdge, EdgeCross}, triangle::Triangle};
 use crate::split::shape_count::ShapeCount;
@@ -15,7 +17,7 @@ pub (crate) struct ShapeEdge {
 
 impl ShapeEdge {
 
-    pub (super) const ZERO: ShapeEdge = ShapeEdge {
+    pub (crate) const ZERO: ShapeEdge = ShapeEdge {
         a: FixVec::ZERO,
         b: FixVec::ZERO,
         count: ShapeCount { subj: 0, clip: 0 },
@@ -32,7 +34,7 @@ impl ShapeEdge {
         }
     }
 
-    pub (super) fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
+    pub (crate) fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
         let a_bit_pack = a.bit_pack();
         let b_bit_pack = b.bit_pack();
         let (a, b, a_bit_pack, b_bit_pack) = if a_bit_pack <= b_bit_pack {
@@ -65,11 +67,11 @@ impl ShapeEdge {
         }
     }
 
-    pub (super) fn merge(&self, other: ShapeEdge) -> ShapeEdge {
+    pub (crate) fn merge(&self, other: ShapeEdge) -> ShapeEdge {
         ShapeEdge::new(self.a, self.b, self.count.add(other.count))
     }
 
-    pub (super) fn is_less(&self, other: ShapeEdge) -> bool {
+    pub (crate) fn is_less(&self, other: ShapeEdge) -> bool {
         let a0 = self.a_bit_pack;
         let a1 = other.a_bit_pack;
         if a0 != a1 {
@@ -93,7 +95,7 @@ impl ShapeEdge {
         }
     }
 
-    pub (super) fn is_equal(&self, other: ShapeEdge) -> bool {
+    pub (crate) fn is_equal(&self, other: ShapeEdge) -> bool {
         let a0 = self.a_bit_pack;
         let a1 = other.a_bit_pack;
         let b0 = self.b_bit_pack;
@@ -111,7 +113,26 @@ impl ShapeEdge {
 
     pub (super) fn is_not_same_line(&self, point: FixVec) -> bool {
         Triangle::is_not_line(self.a, self.b, point)
-        
+    }
+
+    pub (crate) fn is_even(&self) -> bool {
+        self.count.is_even()
+    }
+
+    pub (crate) fn is_odd_clip(&self) -> bool {
+        self.count.clip % 2 == 1
+    }
+
+    pub (crate) fn is_odd_subj(&self) -> bool {
+        self.count.subj % 2 == 1
+    }
+
+    pub (crate) fn order(&self, other: &Self) -> Ordering {
+        if self.is_less(*other) {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
     }
 
 }

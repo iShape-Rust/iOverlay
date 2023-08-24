@@ -1,5 +1,4 @@
-use i_overlay::bool::fill::FillRule;
-
+use i_overlay::bool::fill_rule::FillRule;
 
 #[cfg(test)]
 mod tests {
