@@ -104,7 +104,7 @@ impl OverlayGraph {
                 let is_fill_top = fill_rule.is_fill_top(link.fill);
                 let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
                 next = self.find_nearest_link_to(a, b, next, is_cw, visited);
-                if next != EMPTY_INDEX {
+                if next == EMPTY_INDEX {
                     break;
                 }
             }
