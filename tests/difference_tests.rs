@@ -35,7 +35,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].count(), 1);
+        assert_eq!(shapes[0].paths_count(), 1);
 
         let path = [
             FixVec::new_i64(-10240, -10240),
@@ -84,8 +84,8 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 2);
-        assert_eq!(shapes[0].count(), 1);
-        assert_eq!(shapes[1].count(), 1);
+        assert_eq!(shapes[0].paths_count(), 1);
+        assert_eq!(shapes[1].paths_count(), 1);
 
         let path0 = [
             FixVec::new_i64(-20480, -16384),
@@ -150,7 +150,7 @@ mod tests {
 
         assert_eq!(shapes.len(), 1);
 
-        assert_eq!(shapes[0].count(), 2);
+        assert_eq!(shapes[0].paths_count(), 2);
 
         let path0 = [
             FixVec::new_i64(-30720, -30720),
@@ -213,7 +213,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].count(), 2);
+        assert_eq!(shapes[0].paths_count(), 2);
 
         let path0 = [
             FixVec::new_i64(-20480, -20480),

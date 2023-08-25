@@ -12,7 +12,7 @@ pub trait SelfIntersection {
 impl SelfIntersection for FixShape {
     
     fn resolve_self_intersection(&self) -> Vec<FixShape> {
-        let mut overlay = Overlay::new(self.count());
+        let mut overlay = Overlay::new(self.paths_count());
         let paths = self.paths().clone();
 
         overlay.add_paths(paths, ShapeType::SUBJECT);
