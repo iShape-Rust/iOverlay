@@ -128,10 +128,24 @@ impl ShapeEdge {
     }
 
     pub (crate) fn order(&self, other: &Self) -> Ordering {
-        if self.is_less(*other) {
-            Ordering::Less
+        let a0 = self.a_bit_pack;
+        let a1 = other.a_bit_pack;
+        if a0 != a1 {
+            if a0 < a1 {
+                return Ordering::Less
+            } else {
+                return Ordering::Greater
+            }
         } else {
-            Ordering::Greater
+            let b0 = self.b_bit_pack;
+            let b1 = other.b_bit_pack;
+            if b0 == b1 {
+                return Ordering::Equal
+            } else if b0 < b1 {
+                return Ordering::Less
+            } else {
+                return Ordering::Greater
+            }
         }
     }
 
