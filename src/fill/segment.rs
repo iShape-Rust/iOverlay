@@ -14,6 +14,8 @@ impl SegmentFill {
     pub const CLIP_BOTH: Self = Self(Self::CLIP_TOP.0 | Self::CLIP_BOTTOM.0);
     pub const BOTH_TOP: Self = Self(Self::SUBJECT_TOP.0 | Self::CLIP_TOP.0);
     pub const BOTH_BOTTOM: Self = Self(Self::SUBJECT_BOTTOM.0 | Self::CLIP_BOTTOM.0);
+
+    pub fn value(&self) -> u8 { self.0 }
 }
 
 impl std::ops::BitOr for SegmentFill {

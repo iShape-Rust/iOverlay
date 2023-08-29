@@ -12,6 +12,7 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
+
     pub (super) fn new(segments: Vec<Segment>) -> Self {
         let n = segments.len();
         let mut links = vec![OverlayLink::new(IndexPoint::ZERO, IndexPoint::ZERO, SegmentFill::NONE); n];
@@ -129,6 +130,10 @@ impl OverlayGraph {
         }
 
         min_index
+    }
+
+    pub fn links(&self) -> &Vec<OverlayLink> {
+        &self.links
     }
 
 }

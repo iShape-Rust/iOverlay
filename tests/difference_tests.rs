@@ -237,4 +237,51 @@ mod tests {
 
         assert_eq!(shapes[0].paths()[1].as_slice(), path1.as_ref());
     }
+
+    #[test]
+    fn test_4() {
+        let mut overlay = Overlay::new(1);
+        
+        let subj = [
+            FixVec::new_number(-10, -10),
+            FixVec::new_number(-10,  10),
+            FixVec::new_number( 10,  10),
+            FixVec::new_number( 10, -10)
+        ];
+
+        let clip = [
+            FixVec::new_number(-5, -5),
+            FixVec::new_number(-5,  5),
+            FixVec::new_number( 5,  5),
+            FixVec::new_number( 5, -5)
+        ];
+
+
+        overlay.add_path(subj.to_vec(), ShapeType::SUBJECT);
+        overlay.add_path(clip.to_vec(), ShapeType::CLIP);
+        let graph = overlay.build_graph();
+
+        let shapes = graph.extract_shapes(FillRule::Difference);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].paths_count(), 2);
+
+        let path0 = [
+            FixVec::new_number(-10, -10),
+            FixVec::new_number(-10,  10),
+            FixVec::new_number( 10,  10),
+            FixVec::new_number( 10, -10)
+        ];
+
+        let path1 = [
+            FixVec::new_number(-5, -5),
+            FixVec::new_number(-5,  5),
+            FixVec::new_number( 5,  5),
+            FixVec::new_number( 5, -5)
+        ];
+
+
+        assert_eq!(shapes[0].contour().as_slice(), path0.as_ref());
+        assert_eq!(shapes[0].path_at_index(1).as_slice(), path1.as_ref());
+    }
 }
