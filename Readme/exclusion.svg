@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="2048"
+   height="1024"
+   viewBox="0 0 2048 1024"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486, 2022-12-01)"
+   sodipodi:docname="exclusion.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showgrid="false"
+     inkscape:zoom="0.52453204"
+     inkscape:cx="1049.5069"
+     inkscape:cy="295.50149"
+     inkscape:window-width="1658"
+     inkscape:window-height="1224"
+     inkscape:window-x="267"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect9627"
+       style="fill:#ff7065;fill-opacity:0.74902;fill-rule:evenodd;stroke:#ff594c;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-dashoffset:3;stroke-opacity:1;paint-order:markers fill stroke"
+       d="M 192,256 V 768 H 832 V 256 Z M 320,384 H 704 V 640 H 320 Z"
+       sodipodi:nodetypes="cccccccccc" />
+    <path
+       style="fill:#33abff;fill-opacity:0.74902;stroke:#0a99ff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 448,896 V 128 h 128 v 768 z"
+       id="path9654"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       id="path13252"
+       style="fill:#904dff;fill-opacity:0.7019608;fill-rule:evenodd;stroke:#7b2cff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-dashoffset:3;stroke-opacity:1;paint-order:markers fill stroke"
+       d="M 1472 128 L 1472 256 L 1600 256 L 1600 128 L 1472 128 z M 1600 256 L 1600 384 L 1728 384 L 1728 640 L 1600 640 L 1600 768 L 1856 768 L 1856 256 L 1600 256 z M 1600 768 L 1472 768 L 1472 896 L 1600 896 L 1600 768 z M 1472 768 L 1472 640 L 1344 640 L 1344 384 L 1472 384 L 1472 256 L 1216 256 L 1216 768 L 1472 768 z M 1472 384 L 1472 640 L 1600 640 L 1600 384 L 1472 384 z " />
+  </g>
+</svg>
