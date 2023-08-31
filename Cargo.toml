@@ -5,7 +5,7 @@ authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2021"
 description = "The iOverlay is a poly-bool library that supports main operations such as union, intersection, difference, xor, and self-intersection by the even-odd rule. This algorithm is based on Vatti clipping ideas but is an original implementation."
 license = "MIT"
-repository = "https://github.com/iShape-Rust/i_overlay"
+repository = "https://github.com/iShape-Rust/iOverlay"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
