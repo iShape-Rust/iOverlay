@@ -7,7 +7,7 @@ The i_overlay is a poly-bool library that supports main operations such as union
 
 ## [Demo](https://ishape-rust.github.io/iShape-js/demo/stars_demo.html)
 Try out i_overlay with an interactive demo. The demo covers operations like union, intersection, and difference.
-[Demo](https://ishape-rust.github.io/i_shape_js/demo/stars_demo.html)
+[Demo](https://ishape-rust.github.io/iShape-js/demo/stars_demo.html)
 
 
 ## Features
