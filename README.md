@@ -1,4 +1,4 @@
-# i_overlay
+# iOverlay
 
 <p align="center">
 <img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/balloons.svg" width="250"/>
