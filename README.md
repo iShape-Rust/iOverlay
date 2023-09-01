@@ -40,27 +40,27 @@ Add the following imports:
 ```
 
 ### Union
-<p align="center">
-<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/union.svg" width="400"/>
+<p align="left">
+<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/union.svg" width="250"/>
 </p>
 
 ### Difference
-<p align="center">
-<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/difference.svg" width="400"/>
+<p align="left">
+<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/difference.svg" width="250"/>
 </p>
 
 ### Intersection
-<p align="center">
-<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/intersection.svg" width="400"/>
+<p align="left">
+<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/intersection.svg" width="250"/>
 </p>
 
 ### Exclusion (xor)
-<p align="center">
-<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/exclusion.svg" width="400"/>
+<p align="left">
+<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/exclusion.svg" width="250"/>
 </p>
 
 ### Self-intersection
-<p align="center">
-<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/self-intersecting.svg" width="400"/>
+<p align="left">
+<img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/self-intersecting.svg" width="250"/>
 </p>
 
