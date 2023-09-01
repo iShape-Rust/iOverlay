@@ -32,12 +32,62 @@ Utilizing the library within the recommended range ensures optimal accuracy in c
 
 
 
-## Basic Usage
+## Getting Started
 
-Add the following imports:
-```rust
-
+Add the following to your Cargo.toml:
 ```
+[dependencies]
+i_float = "^0.1.0"
+i_shape = "^0.1.0"
+i_overlay = "^0.2.0"
+```
+
+### Example
+
+Here is a simple example that demonstrates how to use the iOverlay library for polygon union operations.
+```rust
+use i_float::fix_vec::FixVec;
+use i_overlay::{layout::overlay::Overlay, fill::shape_type::ShapeType, bool::fill_rule::FillRule};
+
+fn main() {
+    let mut overlay = Overlay::new(1);
+        
+    let subj = [
+        FixVec::new_number(-10, -10),
+        FixVec::new_number(-10,  10),
+        FixVec::new_number( 10,  10),
+        FixVec::new_number( 10, -10)
+    ];
+
+    let clip = [
+        FixVec::new_number(-5, -5),
+        FixVec::new_number(-5, 15),
+        FixVec::new_number(15, 15),
+        FixVec::new_number(15, -5)
+    ];
+
+    overlay.add_path(subj.to_vec(), ShapeType::SUBJECT);
+    overlay.add_path(clip.to_vec(), ShapeType::CLIP);
+
+    let graph = overlay.build_graph();
+
+    let shapes = graph.extract_shapes(FillRule::Union);
+
+    println!("shapes count: {}", shapes.len());
+
+    if shapes.len() > 0 {
+        let contour = shapes[0].contour();
+        println!("shape 0 contour: ");
+        for p in contour {
+            let x = p.x.float();
+            let y = p.x.float();
+            println!("({}, {})", x, y);
+        }
+    }
+}
+```
+
+
 
 ### Union
 <p align="left">
