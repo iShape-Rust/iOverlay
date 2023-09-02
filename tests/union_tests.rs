@@ -245,4 +245,42 @@ mod tests {
 
         assert_eq!(shapes[0].holes()[0].as_slice(), path1.as_ref());
     }
+
+    #[test]
+    fn test_4() {
+        let mut overlay = Overlay::new(1);
+        
+        let subj = [
+            FixVec::new_number(-10, -10),
+            FixVec::new_number(-10,  10),
+            FixVec::new_number( 20,  10),
+            FixVec::new_number( 20, -10)
+        ];
+
+        let clip = [
+            FixVec::new_number(-10, 0),
+            FixVec::new_number(-10, -20),
+            FixVec::new_number(10, -20),
+            FixVec::new_number(10, 0)
+        ];
+
+        overlay.add_path(subj.to_vec(), ShapeType::SUBJECT);
+        overlay.add_path(clip.to_vec(), ShapeType::CLIP);
+        let graph = overlay.build_graph();
+
+        let shapes = graph.extract_shapes(FillRule::Union);
+
+        assert_eq!(shapes.len(), 1);
+
+        let path = [
+            FixVec::new_number(-10, -20),
+            FixVec::new_number(-10, 10),
+            FixVec::new_number(20, 10),
+            FixVec::new_number(20, -10),
+            FixVec::new_number(10, -10),
+            FixVec::new_number(10, -20)
+        ];
+
+        assert_eq!(shapes[0].contour().as_slice(), path.as_ref());
+    }
 }

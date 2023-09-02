@@ -206,8 +206,8 @@ impl SplitEdges for Vec<ShapeEdge> {
                             let this_lt = ShapeEdge::new(this_edge.a, x_this, this_edge.count);
                             let this_rt = ShapeEdge::new(x_this, this_edge.b, this_edge.count);
                             
-                            let scan_lt = ShapeEdge::new(scan_edge.a, x_scan, this_edge.count);
-                            let scan_rt = ShapeEdge::new(x_scan, scan_edge.b, this_edge.count);
+                            let scan_lt = ShapeEdge::new(scan_edge.a, x_scan, scan_edge.count);
+                            let scan_rt = ShapeEdge::new(x_scan, scan_edge.b, scan_edge.count);
                             
                             let new_scan_left = list.add_and_merge(s_index, scan_lt);
                             list.add_and_merge(s_index, scan_rt);
