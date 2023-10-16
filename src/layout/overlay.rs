@@ -1,5 +1,5 @@
 use i_shape::fix_path::{FixPath, FixPathExtension};
-use crate::fill::fill_segments::FillSegments; 
+use crate::fill::fill_segments::FillSegments;
 use crate::split::split_edges::SplitEdges; 
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{shape_type::ShapeType, segment::{Segment, SegmentFill}}};
@@ -21,6 +21,18 @@ impl Overlay {
         let mut overlay = Self::new(64);
         overlay.add_paths(subject_paths, ShapeType::SUBJECT);
         overlay.add_paths(clip_paths, ShapeType::CLIP);
+        overlay
+    }
+
+    pub fn from_subject_paths(subject_paths: Vec<FixPath>) -> Self {
+        let mut overlay = Self::new(subject_paths.len() + 1);
+        overlay.add_paths(subject_paths, ShapeType::SUBJECT);
+        overlay
+    }
+
+    pub fn from_subject_path(subject_path: FixPath) -> Self {
+        let mut overlay = Self::new(2);
+        overlay.add_path(subject_path, ShapeType::SUBJECT);
         overlay
     }
 
