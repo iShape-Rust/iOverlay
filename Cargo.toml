@@ -11,4 +11,4 @@ repository = "https://github.com/iShape-Rust/iOverlay"
 
 [dependencies]
 i_float = "^0.1.0"
-i_shape = "^0.1.0"
+i_shape = "^0.1.1"
