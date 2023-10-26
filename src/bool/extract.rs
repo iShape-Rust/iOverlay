@@ -137,7 +137,7 @@ impl OverlayGraph {
         }
     
         let boundary = if !path.is_empty() {
-            FixBnd::from_poitns(&path)
+            FixBnd::from_points(&path)
         } else {
             FixBnd::ZERO
         };
