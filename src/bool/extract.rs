@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use i_float::fix_float::FixFloat;
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_shape::fix_bnd::FixBnd;
@@ -49,9 +50,12 @@ impl OverlayGraph {
         if holes.is_empty() {
             return shapes;
         }
-        
-        // Find for each hole its shape
-        for hole in holes {
+
+        // find for each hole its shape
+        let mut hole_counter: HashMap<usize, usize> = HashMap::with_capacity(holes.len());
+        let mut hole_shape = vec![0; holes.len()];
+
+        for (index, hole) in holes.iter().enumerate() {
             let mut min_dist = i64::MAX;
             let mut best_shape_index = EMPTY_INDEX;
 
@@ -69,13 +73,23 @@ impl OverlayGraph {
                     }
                 }
             }
-            
-            if best_shape_index != EMPTY_INDEX {
-                let best_shape = &mut shapes[best_shape_index];
-                best_shape.add_hole(hole.path);
-            }
+
+            hole_shape[index] = best_shape_index;
+            *hole_counter.entry(best_shape_index).or_insert(0) += 1;
         }
-        
+
+        for (shape_index, hole_count) in hole_counter.into_iter() {
+            let mut shape = &mut shapes[shape_index];
+                let paths = shape.mut_paths();
+                paths.reserve_exact(hole_count);
+            }
+
+        for (index, hole) in holes.into_iter().enumerate() {
+            let shape_index = hole_shape[index];
+            let mut shape = &mut shapes[shape_index];
+            shape.add_hole(hole.path);
+        }
+
         shapes
     }
 
@@ -204,10 +218,11 @@ impl OverlayGraph {
     }
     
     fn get_vertical_intersection(p0: FixVec, p1: FixVec, p: FixVec) -> i64 {
-        let k = (p0.y.value() - p1.y.value()) / (p0.x.value() - p1.x.value());
-        let b = p0.y.value() - k * p0.x.value();
-        
-        k * p.x.value() + b
+        let y01 = (p0.y - p1.y).value();
+        let x01 = (p0.x - p1.x).value();
+        let xx0 = (p.x - p0.x).value();
+
+        (y01 * xx0) / x01 + p0.y.value()
     }
 
 }

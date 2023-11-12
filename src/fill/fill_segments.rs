@@ -10,7 +10,8 @@ pub(crate) trait FillSegments {
 impl FillSegments for Vec<Segment> {
 
     fn fill(&mut self) {
-        let mut scan_list: Vec<Segment> = Vec::with_capacity(16);
+        let capacity = 2 * (self.len() as f64).sqrt() as usize;
+        let mut scan_list: Vec<Segment> = Vec::with_capacity(capacity);
         let n = self.len();
         let mut i = 0;
 
@@ -31,8 +32,7 @@ impl FillSegments for Vec<Segment> {
                 }
             }
 
-            let mut k = i0;
-            while k < i {
+            for k in i0..i {
                 let mut segm = self[k];
                 let mut j = 0;
                 let mut count = ShapeCount::new(0, 0);
@@ -40,9 +40,9 @@ impl FillSegments for Vec<Segment> {
                     let scan = scan_list[j];
 
                     if scan.b.x <= x {
-                        scan_list.remove(j);
+                        scan_list.swap_remove(j);
                     } else {
-                        if scan.a == segm.a {
+                        if scan.a.x == segm.a.x && scan.a.y == segm.a.y  {
                             // have a common point "a"
                             if Triangle::is_clockwise(scan.a, segm.b, scan.b) {
                                 count = count.increment(scan.shape);
@@ -74,7 +74,6 @@ impl FillSegments for Vec<Segment> {
                 segm.fill = subj_fill | clip_fill;
 
                 self[k] = segm;
-                k += 1;
             }
         }
     }
