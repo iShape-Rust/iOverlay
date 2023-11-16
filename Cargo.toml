@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2021"
 description = "The iOverlay is a poly-bool library that supports main operations such as union, intersection, difference, xor, and self-intersection by the even-odd rule. This algorithm is based on Vatti clipping ideas but is an original implementation."
@@ -10,7 +10,8 @@ repository = "https://github.com/iShape-Rust/iOverlay"
 
 [dependencies]
 i_float = { version = "^0.2.0" }
-i_shape = { path = "../iShape" }
+i_shape = { version = "^0.3.0" }
+
 
 [dev-dependencies]
 serde = { version = "*", features = ["derive"] }

@@ -35,7 +35,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].paths_count(), 1);
+        assert_eq!(shapes[0].paths.len(), 1);
 
         let path = [
             FixVec::new_i64(-10240, -10240),
@@ -84,8 +84,8 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 2);
-        assert_eq!(shapes[0].paths_count(), 1);
-        assert_eq!(shapes[1].paths_count(), 1);
+        assert_eq!(shapes[0].paths.len(), 1);
+        assert_eq!(shapes[1].paths.len(), 1);
 
         let path0 = [
             FixVec::new_i64(-20480, -16384),
@@ -150,7 +150,7 @@ mod tests {
 
         assert_eq!(shapes.len(), 1);
 
-        assert_eq!(shapes[0].paths_count(), 2);
+        assert_eq!(shapes[0].paths.len(), 2);
 
         let path0 = [
             FixVec::new_i64(-30720, -30720),
@@ -168,7 +168,7 @@ mod tests {
             FixVec::new_i64(20480, -20480)
         ];
 
-        assert_eq!(shapes[0].paths()[1].as_slice(), path1.as_ref());
+        assert_eq!(shapes[0].paths[1].as_slice(), path1.as_ref());
 
     }
 
@@ -213,7 +213,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].paths_count(), 2);
+        assert_eq!(shapes[0].paths.len(), 2);
 
         let path0 = [
             FixVec::new_i64(-20480, -20480),
@@ -235,7 +235,7 @@ mod tests {
             FixVec::new_i64(10240, -10240)
         ];
 
-        assert_eq!(shapes[0].paths()[1].as_slice(), path1.as_ref());
+        assert_eq!(shapes[0].paths[1].as_slice(), path1.as_ref());
     }
 
     #[test]
@@ -264,7 +264,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Difference);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].paths_count(), 2);
+        assert_eq!(shapes[0].paths.len(), 2);
 
         let path0 = [
             FixVec::new_number(-10, -10),
@@ -282,6 +282,6 @@ mod tests {
 
 
         assert_eq!(shapes[0].contour().as_slice(), path0.as_ref());
-        assert_eq!(shapes[0].path_at_index(1).as_slice(), path1.as_ref());
+        assert_eq!(shapes[0].paths[1].as_slice(), path1.as_ref());
     }
 }

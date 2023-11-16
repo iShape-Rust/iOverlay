@@ -32,48 +32,48 @@ impl FillSegments for Vec<Segment> {
                 }
             }
 
-            for k in i0..i {
-                let mut segm = self[k];
-                let mut j = 0;
-                let mut count = ShapeCount::new(0, 0);
-                while j < scan_list.len() {
-                    let scan = scan_list[j];
+            unsafe {
+                for k in i0..i {
+                    let segm = self.get_unchecked_mut(k);
+                    let mut j = 0;
+                    let mut count = ShapeCount::new(0, 0);
+                    while j < scan_list.len() {
+                        let scan = scan_list.get_unchecked(j);
 
-                    if scan.b.x <= x {
-                        scan_list.swap_remove(j);
-                    } else {
-                        if scan.a.x == segm.a.x && scan.a.y == segm.a.y  {
-                            // have a common point "a"
-                            if Triangle::is_clockwise(scan.a, segm.b, scan.b) {
+                        if scan.b.x <= x {
+                            scan_list.swap_remove(j);
+                        } else {
+                            if scan.a.x == segm.a.x && scan.a.y == segm.a.y {
+                                // have a common point "a"
+                                if Triangle::is_clockwise(scan.a, segm.b, scan.b) {
+                                    count = count.increment(scan.shape);
+                                }
+                            } else if scan.b.x > segm.a.x && Triangle::is_clockwise(scan.a, segm.a, scan.b) {
                                 count = count.increment(scan.shape);
                             }
-                        } else if scan.b.x > segm.a.x && Triangle::is_clockwise(scan.a, segm.a, scan.b) {
-                            count = count.increment(scan.shape);
+
+                            j += 1;
                         }
-
-                        j += 1;
                     }
+
+                    let subj_fill: SegmentFill;
+                    let out_subj = count.subj % 2 == 0;
+                    if segm.shape.0 & ShapeType::SUBJECT.0 != 0 {
+                        subj_fill = if out_subj { SegmentFill::SUBJECT_TOP } else { SegmentFill::SUBJECT_BOTTOM };
+                    } else {
+                        subj_fill = if out_subj { SegmentFill::NONE } else { SegmentFill::SUBJECT_TOP | SegmentFill::SUBJECT_BOTTOM };
+                    }
+
+                    let clip_fill: SegmentFill;
+                    let out_clip = count.clip % 2 == 0;
+                    if segm.shape & ShapeType::CLIP != ShapeType::NONE {
+                        clip_fill = if out_clip { SegmentFill::CLIP_TOP } else { SegmentFill::CLIP_BOTTOM };
+                    } else {
+                        clip_fill = if out_clip { SegmentFill::NONE } else { SegmentFill::CLIP_TOP | SegmentFill::CLIP_BOTTOM };
+                    }
+
+                    segm.fill = subj_fill | clip_fill;
                 }
-
-                let subj_fill: SegmentFill;
-                let out_subj = count.subj % 2 == 0;
-                if segm.shape.0 & ShapeType::SUBJECT.0 != 0 {
-                    subj_fill = if out_subj { SegmentFill::SUBJECT_TOP } else { SegmentFill::SUBJECT_BOTTOM };
-                } else {
-                    subj_fill = if out_subj { SegmentFill::NONE } else { SegmentFill::SUBJECT_TOP | SegmentFill::SUBJECT_BOTTOM };
-                }
-
-                let clip_fill: SegmentFill;
-                let out_clip = count.clip % 2 == 0;
-                if segm.shape & ShapeType::CLIP != ShapeType::NONE {
-                    clip_fill = if out_clip { SegmentFill::CLIP_TOP } else { SegmentFill::CLIP_BOTTOM };
-                } else {
-                    clip_fill = if out_clip { SegmentFill::NONE } else { SegmentFill::CLIP_TOP | SegmentFill::CLIP_BOTTOM };
-                }
-
-                segm.fill = subj_fill | clip_fill;
-
-                self[k] = segm;
             }
         }
     }

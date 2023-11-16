@@ -13,8 +13,8 @@ pub trait SelfIntersection {
 impl SelfIntersection for FixShape {
     
     fn resolve_self_intersection(&self) -> Vec<FixShape> {
-        let mut overlay = Overlay::new(self.paths_count());
-        let paths = self.paths().clone();
+        let mut overlay = Overlay::new(self.paths.len());
+        let paths = self.paths.clone();
 
         overlay.add_paths(paths, ShapeType::SUBJECT);
         let graph = overlay.build_graph();

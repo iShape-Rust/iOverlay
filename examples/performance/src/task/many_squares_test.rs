@@ -17,7 +17,7 @@ pub struct ManySquaresTest;
 
 impl ManySquaresTest {
     pub fn run() {
-        let n: usize = 300;
+        let n: usize = 100;
 
         let subj_paths = Self::many_squares(
             FixVec::ZERO,

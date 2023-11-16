@@ -83,18 +83,6 @@ impl ShapeEdge {
         }
     }
 
-    pub (super) fn is_less_or_equal(&self, other: ShapeEdge) -> bool {
-        let a0 = self.a_bit_pack;
-        let a1 = other.a_bit_pack;
-        if a0 != a1 {
-            a0 < a1
-        } else {
-            let b0 = self.b_bit_pack;
-            let b1 = other.b_bit_pack;
-            b0 <= b1
-        }
-    }
-
     pub (crate) fn is_equal(&self, other: ShapeEdge) -> bool {
         let a0 = self.a_bit_pack;
         let a1 = other.a_bit_pack;

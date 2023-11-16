@@ -35,7 +35,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Intersect);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].paths_count(), 1);
+        assert_eq!(shapes[0].paths.len(), 1);
 
         let path = [
             FixVec::new_i64(-5120, -5120),
@@ -82,8 +82,8 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Intersect);
 
         assert_eq!(shapes.len(), 2);
-        assert_eq!(shapes[0].paths_count(), 1);
-        assert_eq!(shapes[1].paths_count(), 1);
+        assert_eq!(shapes[0].paths.len(), 1);
+        assert_eq!(shapes[1].paths.len(), 1);
 
         let path0 = [
             FixVec::new_i64(-4096, -16384),
@@ -182,7 +182,7 @@ mod tests {
         let shapes = graph.extract_shapes(FillRule::Intersect);
 
         assert_eq!(shapes.len(), 1);
-        assert_eq!(shapes[0].paths_count(), 1);
+        assert_eq!(shapes[0].paths.len(), 1);
 
         let path0 = [
             FixVec::new_i64(-5120, 0),

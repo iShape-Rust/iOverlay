@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 i_overlay = { path = "../../../iOverlay" }
-i_shape = { path = "../../../iShape" }
+i_shape = { version = "^0.3.0" }
 i_float = { version = "^0.2.0" }
 chrono = "^0.4"
 

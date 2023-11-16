@@ -10,9 +10,15 @@ pub (super) struct EdgeNode {
     pub (super) edge: ShapeEdge
 }
 
+impl EdgeNode {
+    pub (super) fn is_removed(&self) -> bool {
+        self.next == EMPTY_INDEX && self.prev == EMPTY_INDEX
+    }
+}
+
 pub (super) struct EdgeLinkedList {
     free: Vec<usize>,
-    nodes: Vec<EdgeNode>,
+    pub (super) nodes: Vec<EdgeNode>,
     first: usize,
 }
 
@@ -56,19 +62,6 @@ impl EdgeLinkedList {
         self.nodes[index]
     }
 
-    pub (super) fn edge(&self, index: usize) -> ShapeEdge {
-        self.nodes[index].edge
-    }
-
-    // pub (super) fn next_node(&self, index: usize) -> EdgeNode {
-    //     let next_index = self.nodes[index].next;
-    //     if next_index != EMPTY_INDEX {
-    //         self.nodes[next_index]
-    //     } else {
-    //         EMPTY_NODE
-    //     }
-    // }
-    
     pub (super) fn remove(&mut self, index: usize) {
         let node = self.nodes[index];
         

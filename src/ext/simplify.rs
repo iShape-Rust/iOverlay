@@ -22,7 +22,7 @@ impl Simplify for FixPath {
 impl Simplify for FixShape {
 
     fn simplify(&self) -> Vec<FixShape> {
-        let paths = self.paths().clone();
+        let paths = self.paths.clone();
         let mut overlay = Overlay::from_subject_paths(paths);
         let graph = overlay.build_graph();
         graph.extract_shapes(FillRule::Subject)

@@ -24,7 +24,7 @@ mod tests {
 
         let shape = &shapes[0];
 
-        assert_eq!(shape.paths().len(), 2);
+        assert_eq!(shape.paths.len(), 2);
 
         let contour = [
             FixVec::new_number(-10, -10),
@@ -64,7 +64,7 @@ mod tests {
 
         let shape = &shapes[0];
 
-        assert_eq!(shape.paths().len(), 2);
+        assert_eq!(shape.paths.len(), 2);
 
         let contour = [
             FixVec::new_number(-10, -10),
@@ -107,8 +107,8 @@ mod tests {
         let shape0 = &shapes[0];
         let shape1 = &shapes[1];
 
-        assert_eq!(shape0.paths().len(), 1);
-        assert_eq!(shape1.paths().len(), 1);
+        assert_eq!(shape0.paths.len(), 1);
+        assert_eq!(shape1.paths.len(), 1);
 
         let contour0 = [
             FixVec::new_number(-15, -5),

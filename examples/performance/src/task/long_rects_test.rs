@@ -18,7 +18,7 @@ pub struct LongRectsTest;
 
 impl LongRectsTest {
     pub fn run() {
-        let n: usize = 500;
+        let n: usize = 300;
 
         let subj_paths = Self::long_rects(
             FixVec::ZERO,
