@@ -23,6 +23,9 @@ pub struct LineSpace<Id: Copy> {
 }
 
 impl<Id: Copy> LineSpace<Id> {
+
+    pub fn scale(&self) -> usize { self.scale }
+
     pub fn new(n: usize, range: LineRange) -> Self {
         let x_min = range.min;
         let x_max = range.max;
