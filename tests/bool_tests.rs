@@ -1,4 +1,4 @@
-use i_overlay::bool::fill_rule::FillRule;
+use i_overlay::bool::overlay_rule::OverlayRule;
 
 #[cfg(test)]
 mod tests {
@@ -6,8 +6,8 @@ mod tests {
     
     #[test]
     fn test_fill_rule() {
-        let rule = FillRule::Subject;
+        let rule = OverlayRule::Subject;
         
-        assert_eq!(rule, FillRule::Subject);
+        assert_eq!(rule, OverlayRule::Subject);
     }
 }

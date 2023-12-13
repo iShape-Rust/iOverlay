@@ -1,1 +1,1 @@
-pub (crate) const EMPTY_INDEX: usize = std::usize::MAX;
+pub (crate) const EMPTY_INDEX: usize = usize::MAX;

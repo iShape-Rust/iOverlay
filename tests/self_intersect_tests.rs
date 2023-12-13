@@ -1,4 +1,4 @@
-use i_overlay::bool::fill_rule::FillRule;
+use i_overlay::bool::overlay_rule::OverlayRule;
 use i_overlay::layout::overlay::Overlay;
 
 
@@ -32,7 +32,7 @@ mod tests {
         overlay.add_path(path.to_vec(), ShapeType::SUBJECT);
         let graph = overlay.build_graph();
 
-        let shapes = graph.extract_shapes(FillRule::Subject);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].contour().as_slice(), path.as_ref());
@@ -54,7 +54,7 @@ mod tests {
         overlay.add_path(path.to_vec(), ShapeType::SUBJECT);
         let graph = overlay.build_graph();
 
-        let shapes = graph.extract_shapes(FillRule::Subject);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 2);
 

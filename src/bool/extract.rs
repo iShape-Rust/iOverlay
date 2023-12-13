@@ -9,7 +9,7 @@ use crate::fill::segment::SegmentFill;
 use crate::index::EMPTY_INDEX;
 use crate::layout::overlay_graph::OverlayGraph;
 
-use super::fill_rule::FillRule;
+use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
 
 struct Contour {
@@ -23,16 +23,16 @@ struct Contour {
 }
 
 impl OverlayGraph {
-    pub fn extract_shapes(&self, fill_rule: FillRule) -> Vec<FixShape> {
-        self.extract_shapes_min_area(fill_rule, FixFloat::new_i64(16))
+    pub fn extract_shapes(&self, fill_rule: OverlayRule) -> Vec<FixShape> {
+        self.extract_shapes_min_area(fill_rule, FixFloat::new_i64(0))
     }
 
-    pub fn extract_shapes_min_area(&self, fill_rule: FillRule, min_area: FixFloat) -> Vec<FixShape> {
+    pub fn extract_shapes_min_area(&self, fill_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
         let mut visited = self.links.filter(fill_rule);
 
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
-        let mut shape_bnds = Vec::new();
+        let mut shape_bounds = Vec::new();
 
         for i in 0..self.links.len() {
             if !visited[i] {
@@ -43,7 +43,7 @@ impl OverlayGraph {
                         holes.push(contour);
                     } else {
                         shapes.push(FixShape::new_with_contour_and_holes(contour.path, vec![]));
-                        shape_bnds.push(contour.boundary);
+                        shape_bounds.push(contour.boundary);
                     }
                 }
             }
@@ -63,7 +63,7 @@ impl OverlayGraph {
 
             for shape_index in 0..shapes.len() {
                 let shape = &shapes[shape_index];
-                let shape_bnd = &shape_bnds[shape_index];
+                let shape_bnd = &shape_bounds[shape_index];
 
                 if shape_bnd.is_inside(hole.boundary) {
                     let shape_contour = shape.contour();
@@ -94,7 +94,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_contour(&self, fill_rule: FillRule, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> Contour {
+    fn get_contour(&self, fill_rule: OverlayRule, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> Contour {
         let mut path = FixPath::new();
         let mut next = index;
 
@@ -203,7 +203,7 @@ impl OverlayGraph {
                 };
 
                 if ab.0.x <= p.x && p.x <= ab.1.x {
-                    let y = Self::get_vertical_intersection(ab.0, ab.1, p);
+                    let y = Self::get_vertical_intersection(ab.0, ab.1, p.x);
 
                     if p.y.value() > y && y > nearest_y {
                         nearest_y = y;
@@ -217,25 +217,25 @@ impl OverlayGraph {
         p.y.value() - nearest_y
     }
 
-    fn get_vertical_intersection(p0: FixVec, p1: FixVec, p: FixVec) -> i64 {
+    fn get_vertical_intersection(p0: FixVec, p1: FixVec, x: FixFloat) -> i64 {
         let y01 = (p0.y - p1.y).value();
         let x01 = (p0.x - p1.x).value();
-        let xx0 = (p.x - p0.x).value();
+        let xx0 = (x - p0.x).value();
 
         (y01 * xx0) / x01 + p0.y.value()
     }
 }
 
 
-impl FillRule {
+impl OverlayRule {
     fn is_fill_top(&self, fill: SegmentFill) -> bool {
         match self {
-            FillRule::Subject => fill & SegmentFill::SUBJECT_TOP == SegmentFill::SUBJECT_TOP,
-            FillRule::Clip => fill & SegmentFill::CLIP_TOP == SegmentFill::CLIP_TOP,
-            FillRule::Intersect => fill & SegmentFill::BOTH_TOP == SegmentFill::BOTH_TOP,
-            FillRule::Union => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::NONE,
-            FillRule::Difference => fill & SegmentFill::BOTH_TOP == SegmentFill::SUBJECT_TOP,
-            FillRule::Xor => {
+            OverlayRule::Subject => fill & SegmentFill::SUBJECT_TOP == SegmentFill::SUBJECT_TOP,
+            OverlayRule::Clip => fill & SegmentFill::CLIP_TOP == SegmentFill::CLIP_TOP,
+            OverlayRule::Intersect => fill & SegmentFill::BOTH_TOP == SegmentFill::BOTH_TOP,
+            OverlayRule::Union => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::NONE,
+            OverlayRule::Difference => fill & SegmentFill::BOTH_TOP == SegmentFill::SUBJECT_TOP,
+            OverlayRule::Xor => {
                 let is_subject = fill & SegmentFill::BOTH_TOP == SegmentFill::SUBJECT_TOP;
                 let is_clip = fill & SegmentFill::BOTH_TOP == SegmentFill::CLIP_TOP;
                 is_subject || is_clip
@@ -245,12 +245,12 @@ impl FillRule {
 
     fn is_fill_bottom(&self, fill: SegmentFill) -> bool {
         match self {
-            FillRule::Subject => fill & SegmentFill::SUBJECT_BOTTOM == SegmentFill::SUBJECT_BOTTOM,
-            FillRule::Clip => fill & SegmentFill::CLIP_BOTTOM == SegmentFill::CLIP_BOTTOM,
-            FillRule::Intersect => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::BOTH_BOTTOM,
-            FillRule::Union => fill & SegmentFill::BOTH_TOP == SegmentFill::NONE,
-            FillRule::Difference => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::SUBJECT_BOTTOM,
-            FillRule::Xor => {
+            OverlayRule::Subject => fill & SegmentFill::SUBJECT_BOTTOM == SegmentFill::SUBJECT_BOTTOM,
+            OverlayRule::Clip => fill & SegmentFill::CLIP_BOTTOM == SegmentFill::CLIP_BOTTOM,
+            OverlayRule::Intersect => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::BOTH_BOTTOM,
+            OverlayRule::Union => fill & SegmentFill::BOTH_TOP == SegmentFill::NONE,
+            OverlayRule::Difference => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::SUBJECT_BOTTOM,
+            OverlayRule::Xor => {
                 let is_subject = fill & SegmentFill::BOTH_BOTTOM == SegmentFill::SUBJECT_BOTTOM;
                 let is_clip = fill & SegmentFill::BOTH_BOTTOM == SegmentFill::CLIP_BOTTOM;
                 is_subject || is_clip

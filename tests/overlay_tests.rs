@@ -2,7 +2,7 @@ mod data;
 
 #[cfg(test)]
 mod tests {
-    use i_overlay::bool::fill_rule::FillRule;
+    use i_overlay::bool::overlay_rule::OverlayRule;
     use i_overlay::fill::shape_type::ShapeType;
     use i_overlay::layout::overlay::Overlay;
     use crate::data::overlay::Test;
@@ -16,12 +16,12 @@ mod tests {
 
         let graph = overlay.build_graph();
 
-        let clip = graph.extract_shapes(FillRule::Clip);
-        let subject = graph.extract_shapes(FillRule::Subject);
-        let difference = graph.extract_shapes(FillRule::Difference);
-        let intersect = graph.extract_shapes(FillRule::Intersect);
-        let union = graph.extract_shapes(FillRule::Union);
-        let xor = graph.extract_shapes(FillRule::Xor);
+        let clip = graph.extract_shapes(OverlayRule::Clip);
+        let subject = graph.extract_shapes(OverlayRule::Subject);
+        let difference = graph.extract_shapes(OverlayRule::Difference);
+        let intersect = graph.extract_shapes(OverlayRule::Intersect);
+        let union = graph.extract_shapes(OverlayRule::Union);
+        let xor = graph.extract_shapes(OverlayRule::Xor);
 
         assert_eq!(test.clip, clip);
         assert_eq!(test.subject, subject);

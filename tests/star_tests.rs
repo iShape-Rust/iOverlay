@@ -1,4 +1,4 @@
-use i_overlay::bool::fill_rule::FillRule;
+use i_overlay::bool::overlay_rule::OverlayRule;
 use i_overlay::layout::overlay::Overlay;
 
 
@@ -31,7 +31,7 @@ mod tests {
             overlay.add_path(clip.to_vec(), ShapeType::CLIP);
     
             let graph = overlay.build_graph();
-            let shapes = graph.extract_shapes(FillRule::Union);
+            let shapes = graph.extract_shapes(OverlayRule::Union);
 
             assert_eq!(shapes.len() != 0, true);
 
@@ -52,7 +52,7 @@ mod tests {
         overlay.add_path(clip.to_vec(), ShapeType::CLIP);
 
         let graph = overlay.build_graph();
-        let shapes = graph.extract_shapes(FillRule::Union);
+        let shapes = graph.extract_shapes(OverlayRule::Union);
 
         assert_eq!(shapes.len() != 0, true);
     }
