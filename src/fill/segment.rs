@@ -1,5 +1,6 @@
 use i_float::fix_vec::FixVec;
-use crate::fill::shape_type::ShapeType;
+use crate::split::shape_count::ShapeCount;
+use crate::split::shape_edge::ShapeEdge;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct SegmentFill(pub(crate) u8);
@@ -37,15 +38,21 @@ impl std::ops::BitAnd for SegmentFill {
 #[derive(Debug, Clone, Copy)]
 pub struct Segment {
     // start < end
-    pub(crate) a: FixVec,          // start
-    pub(crate) b: FixVec,          // end
-    pub(crate) shape: ShapeType,
-    pub(crate) fill: SegmentFill
+    pub(crate) a: FixVec,
+    // start
+    pub(crate) b: FixVec,
+    // end
+    pub(crate) count: ShapeCount,
+    pub(crate) fill: SegmentFill,
 }
 
 impl Segment {
-
-    pub(crate) fn new(a: FixVec, b: FixVec, shape: ShapeType, fill: SegmentFill) -> Self {
-        Self { a, b, shape, fill }
+    pub(crate) fn new(edge: &ShapeEdge) -> Self {
+        Self {
+            a: edge.a,
+            b: edge.b,
+            count: edge.count,
+            fill: SegmentFill::NONE,
+        }
     }
 }

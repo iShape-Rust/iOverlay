@@ -8,7 +8,7 @@ use crate::split::shape_count::ShapeCount;
 pub (crate) struct ShapeEdge {
     pub (crate) a: FixVec,
     pub (crate) b: FixVec,
-    pub (super) count: ShapeCount,
+    pub (crate) count: ShapeCount,
 }
 
 impl ShapeEdge {
@@ -34,11 +34,11 @@ impl ShapeEdge {
         }
     }
 
-    pub (super) fn from_parent(parent: ShapeEdge, count: ShapeCount) -> Self {
+    pub (super) fn from_parent(parent: &ShapeEdge, count: ShapeCount) -> Self {
         Self { a: parent.a, b: parent.b, count }
     }
 
-    pub (crate) fn is_less(&self, other: ShapeEdge) -> bool {
+    pub (crate) fn is_less(&self, other: &ShapeEdge) -> bool {
         let a0 = self.a.bit_pack();
         let a1 = other.a.bit_pack();
         if a0 != a1 {
@@ -48,7 +48,7 @@ impl ShapeEdge {
         }
     }
 
-    pub (crate) fn is_equal(&self, other: ShapeEdge) -> bool {
+    pub (crate) fn is_equal(&self, other: &ShapeEdge) -> bool {
         self.a == other.a && self.b == other.b
     }
 

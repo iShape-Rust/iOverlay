@@ -1,5 +1,3 @@
-use crate::fill::shape_type::ShapeType;
-
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ShapeCount {
     pub(crate) subj: i32,
