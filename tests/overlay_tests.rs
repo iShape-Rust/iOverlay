@@ -2,19 +2,19 @@ mod data;
 
 #[cfg(test)]
 mod tests {
+    use i_overlay::bool::fill_rule::FillRule;
     use i_overlay::bool::overlay_rule::OverlayRule;
-    use i_overlay::fill::shape_type::ShapeType;
-    use i_overlay::layout::overlay::Overlay;
+    use i_overlay::layout::overlay::{Overlay, ShapeType};
     use crate::data::overlay::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
 
         let mut overlay = Overlay::new(8);
-        overlay.add_paths(test.subj_paths, ShapeType::SUBJECT);
-        overlay.add_paths(test.clip_paths, ShapeType::CLIP);
+        overlay.add_paths(&test.subj_paths, ShapeType::Subject);
+        overlay.add_paths(&test.clip_paths, ShapeType::Clip);
 
-        let graph = overlay.build_graph();
+        let graph = overlay.build_graph(FillRule::EvenOdd);
 
         let clip = graph.extract_shapes(OverlayRule::Clip);
         let subject = graph.extract_shapes(OverlayRule::Subject);

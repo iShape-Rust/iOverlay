@@ -11,21 +11,21 @@ pub(super) struct FillScanList {
 
 impl FillScanList {
     pub(super) fn new(segments: &Vec<Segment>) -> Self {
-        let mut ymin: i64 = i64::MAX;
-        let mut ymax: i64 = i64::MIN;
+        let mut y_min: i64 = i64::MAX;
+        let mut y_max: i64 = i64::MIN;
         for segment in segments.iter() {
             if segment.a.y > segment.b.y {
-                ymin = ymin.min(segment.b.y.value());
-                ymax = ymax.max(segment.a.y.value());
+                y_min = y_min.min(segment.b.y.value());
+                y_max = y_max.max(segment.a.y.value());
             } else {
-                ymin = ymin.min(segment.a.y.value());
-                ymax = ymax.max(segment.b.y.value());
+                y_min = y_min.min(segment.a.y.value());
+                y_max = y_max.max(segment.b.y.value());
             }
         }
 
         let max_level = ((segments.len() as f64).sqrt() as usize).log_two();
-        let space = LineSpace::new(max_level, LineRange { min: ymin as i32, max: ymax as i32 });
-        let bottom = ymin as i32;
+        let space = LineSpace::new(max_level, LineRange { min: y_min as i32, max: y_max as i32 });
+        let bottom = y_min as i32;
         let delta = 1 << space.scale();
         Self { space, bottom, delta }
     }
@@ -62,9 +62,5 @@ impl FillScanList {
         } else {
             self.space.remove(&indices[0]);
         }
-    }
-
-    pub(super) fn clear(&mut self) {
-        self.space.clear()
     }
 }

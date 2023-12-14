@@ -50,9 +50,11 @@ impl SplitLinkedList {
 
         let mut nodes = Vec::with_capacity(capacity);
 
-        for (index, edge) in edges.iter().enumerate() {
+        let mut index: usize = 0;
+        for edge in edges.iter() {
             let node = SplitLinkedListNode { version: 1, next: index + 1, prev: index.wrapping_sub(1), edge: edge.clone() };
             nodes.push(node);
+            index += 1;
         }
 
         nodes[edges.len() - 1].next = EMPTY_INDEX;
@@ -71,10 +73,6 @@ impl SplitLinkedList {
 
     pub(super) fn first(&self) -> usize {
         self.first
-    }
-
-    pub(super) fn node(&self, index: usize) -> SplitLinkedListNode {
-        self.nodes[index]
     }
 
     pub(super) fn remove(&mut self, index: usize) {
@@ -112,9 +110,9 @@ impl SplitLinkedList {
             let first_edge = self.nodes[self.first].edge;
             if first_edge.is_equal(edge) {
                 self.first
-            } else if edge.isLess(first_edge) {
+            } else if edge.is_less(&first_edge) {
                 let old_first = self.first;
-                self.first = self.anyFree();
+                self.first = self.any_free();
                 self.nodes[old_first].prev = self.first;
                 self.nodes[self.first].next = old_first;
                 self.first
@@ -122,7 +120,7 @@ impl SplitLinkedList {
                 self.find_forward(self.first, edge)
             }
         } else {
-            self.first = self.anyFree();
+            self.first = self.any_free();
             self.first
         }
     }
@@ -143,7 +141,7 @@ impl SplitLinkedList {
                 self.nodes[next_index].prev = new_index;
 
                 return new_index;
-            } else if prev_edge.isEqual(edge) {
+            } else if prev_edge.is_equal(edge) {
                 return node_prev;
             }
 
@@ -167,7 +165,7 @@ impl SplitLinkedList {
         while prev_next != EMPTY_INDEX {
             let next_index = prev_next;
             let next_edge = self.nodes[next_index].edge;
-            if edge.isLess(next_edge) {
+            if edge.is_less(&next_edge) {
                 // insert new
                 let new_index = self.any_free();
 
@@ -197,7 +195,7 @@ impl SplitLinkedList {
     pub(super) fn find(&mut self, anchor_index: usize, edge: &ShapeEdge) -> usize {
         let anchor = &self.nodes[anchor_index];
         if anchor.is_removed() {
-            return self.findFromStart(edge);
+            return self.find_from_start(edge);
         }
 
         if edge.is_equal(&anchor.edge) {

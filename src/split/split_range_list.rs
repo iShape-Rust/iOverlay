@@ -32,14 +32,12 @@ impl SplitRangeList {
     }
 
     fn first_by_index(&self, index: usize) -> VersionedIndex {
-        let mut i = index;
-        while i < self.lists.len() {
+        for i in index..self.lists.len() {
             let first_index = self.lists[i].first();
             if first_index != EMPTY_INDEX {
                 let node = self.lists[i].nodes[first_index];
                 return VersionedIndex { version: node.version, index: DualIndex { major: i, minor: first_index } };
             }
-            i += 1
         }
 
         VersionedIndex::EMPTY
@@ -50,7 +48,7 @@ impl SplitRangeList {
         if node.next != EMPTY_INDEX {
             let version = self.lists[index.major].nodes[node.next].version;
             return VersionedIndex { version, index: DualIndex { major: index.major, minor: node.next } };
-        } else if index.major < self.lists.len() {
+        } else if (index.major) < self.lists.len() {
             self.first_by_index(index.major + 1)
         } else {
             VersionedIndex::EMPTY
@@ -68,31 +66,30 @@ impl SplitRangeList {
     }
 
     pub(super) fn update_edge(&mut self, index: DualIndex, edge: ShapeEdge) -> usize {
-        self.lists[index.major].update(index.minor, edge)
+        self.lists[index.major].update_edge(index.minor, edge)
     }
 
     pub(super) fn update_count(&mut self, index: DualIndex, count: ShapeCount) -> usize {
-        self.lists[index.major].update(index.minor, count)
+        self.lists[index.major].update_count(index.minor, count)
     }
 
     pub(super) fn add_and_merge(&mut self, anchor_index: DualIndex, new_edge: ShapeEdge) -> VersionedIndex {
         let index = self.find_index(anchor_index, &new_edge);
         let edge = self.edge(index);
-        let version: usize;
-        if edge.is_equal(&new_edge) {
-            version = self.update(index, edge.count.add(new_edge.count));
+        let version = if edge.is_equal(&new_edge) {
+            self.update_count(index, edge.count.add(new_edge.count))
         } else {
-            version = self.update(index, new_edge)
-        }
+            self.update_edge(index, new_edge)
+        };
 
         VersionedIndex { version, index }
     }
 
-    pub(super) fn find_index(&self, anchor_index: DualIndex, edge: &ShapeEdge) -> DualIndex {
+    pub(super) fn find_index(&mut self, anchor_index: DualIndex, edge: &ShapeEdge) -> DualIndex {
         let a = edge.a.bit_pack();
         let base: usize;
         let node: usize;
-        if self.ranges[anchor_index.major] < a && a <= self.ranges[anchor_index.major + 1] {
+        if self.ranges[anchor_index.major] < a && a <= self.ranges[(anchor_index.major) + 1] {
             base = anchor_index.major;
             node = self.lists[base].find(anchor_index.minor, edge);
         } else {
@@ -109,7 +106,7 @@ impl SplitRangeList {
         let n = (edges.len() - 1) / Self::RANGE_LENGTH + 1;
         let length = edges.len() / n;
 
-        let mut ranges = Vec::witch_capacity(n + 1);
+        let mut ranges = Vec::with_capacity(n + 1);
         ranges.push(i64::MIN);
 
         let mut lists = Vec::with_capacity(n);

@@ -16,7 +16,7 @@ pub struct LineContainer<Id: Copy> {
 pub struct LineSpace<Id: Copy> {
     scale: usize,
     max_level: usize,
-    offset: i32,
+    offset: isize,
     heap: Vec<Vec<LineSegment<Id>>>,
     heap_buffer: Vec<usize>,
     search_buffer: Vec<LineContainer<Id>>
@@ -27,15 +27,15 @@ impl<Id: Copy> LineSpace<Id> {
     pub fn scale(&self) -> usize { self.scale }
 
     pub fn new(n: usize, range: LineRange) -> Self {
-        let x_min = range.min;
-        let x_max = range.max;
+        let x_min = range.min as isize;
+        let x_max = range.max as isize;
         let dif = (x_max - x_min) as usize;
 
         let dif_log = dif.log_two();
         let max_level: usize;
         let scale: usize;
         if dif >= 8 {
-            max_level = usize::min(10, usize::min(n, dif_log));
+            max_level = 10.min(n.min(dif_log));
             scale = dif_log - max_level;
         } else {
             max_level = 1;
@@ -70,13 +70,18 @@ impl<Id: Copy> LineSpace<Id> {
 
     fn heap_index(&self, range: LineRange) -> usize {
         // scale to heap coordinate system
-        let mut imin = (range.min + self.offset) as usize;
-        let mut imax = (range.max + self.offset) as usize;
+        let mut imin = (range.min as isize + self.offset) as usize;
+        let mut imax = (range.max as isize + self.offset) as usize;
 
         let dif = (imax - imin) >> (self.scale - 1);
         let dif_log = dif.log_two();
 
-        let level = usize::max(0, self.max_level - dif_log);
+        let level = if dif_log < self.max_level {
+            self.max_level - dif_log
+        } else {
+            0
+        };
+
         let s = self.scale + dif_log;
 
         imin = imin >> s;
@@ -91,18 +96,18 @@ impl<Id: Copy> LineSpace<Id> {
     fn fill_heap_buffer(&mut self, range: LineRange) {
         self.heap_buffer.clear();
 
-        let x0 = (range.min + self.offset) as usize;
-        let x1 = (range.max + self.offset) as usize;
+        let x0 = (range.min as isize + self.offset) as usize;
+        let x1 = (range.max as isize + self.offset) as usize;
 
         let mut x_left = x0 >> self.scale;
         let mut x_right = x1 >> self.scale;
 
-        for n in 1..self.max_level {
+        for n in 1..=self.max_level {
 
             let level = self.max_level - n;
             let index_offset = Self::space_count(level);
 
-            for x in x_left..x_right {
+            for x in x_left..=x_right {
                 let index = index_offset + x;
                 if !self.heap[index].is_empty() {
                     self.heap_buffer.push(index);
@@ -114,7 +119,7 @@ impl<Id: Copy> LineSpace<Id> {
         }
 
         let mut s = self.scale - 1;
-        for n in 1..self.max_level {
+        for n in 1..=self.max_level {
             let level = self.max_level - n;
             let mut x_max = (level + 2).power_of_two() - 1;
             let mut x_left = x0 >> s;
@@ -127,17 +132,23 @@ impl<Id: Copy> LineSpace<Id> {
             }
 
             x_max = (level + 1).power_of_two() - 2;
-            x_left = 0.max(x_left - 1) >> 1;
-            x_right = 0.max(x_right - 1) >> 1;
+
+            if x_left > 0 {
+                x_left = (x_left - 1) >> 1
+            }
+
+            if x_right > 0 {
+                x_right = (x_right - 1) >> 1
+            }
 
             let index_offset = Self::middle_space_count(level);
 
             x_left = x_left.min(x_max);
             x_right = x_right.min(x_max);
 
-            for x in x_left..x_right {
+            for x in x_left..=x_right {
                 let index = index_offset + x;
-                if !self.heap[index].is_empty() {
+                if !self.heap[index as usize].is_empty() {
                     self.heap_buffer.push(index)
                 }
             }
@@ -157,7 +168,7 @@ impl<Id: Copy> LineSpace<Id> {
                 if range.is_overlap(segments[segment_index].range) {
                     let index = DualIndex { major: heap_index, minor: segment_index };
                     let id = segments[segment_index].id;
-                    let container = LineContainer { id , index };
+                    let container = LineContainer { id, index };
                     self.search_buffer.push(container);
                 }
             }
@@ -208,6 +219,6 @@ impl IntExtensions for usize {
         }
         let n = self.leading_zeros();
 
-        (u32::BITS - n) as usize
+        (usize::BITS - n) as usize
     }
 }

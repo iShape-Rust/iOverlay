@@ -10,7 +10,7 @@ use crate::split::split_scan_list::SplitScanList;
 use crate::split::version_index::VersionedIndex;
 
 pub(crate) trait SplitEdges {
-    fn split(&mut self);
+    fn split(&self) -> Vec<Segment>;
 }
 
 impl SplitEdges for Vec<ShapeEdge> {
@@ -30,18 +30,19 @@ impl SplitEdges for Vec<ShapeEdge> {
             scan_list.clear();
             need_to_fix = false;
 
-            let mut  e_index = list.first();
+            let mut e_index = list.first();
 
             while e_index.is_not_nil() {
-                let this_edge = list.edge(e_index.index);
+                let this_ref = list.edge(e_index.index);
 
-                if this_edge.count.is_empty() {
+                if this_ref.count.is_empty() {
                     e_index = list.remove_and_next(e_index.index);
 
                     continue;
                 }
 
-                let candidates = scan_list.all_in_range(this_edge.vertical_range());
+                let this_range = this_ref.vertical_range();
+                let candidates = scan_list.all_in_range(this_range);
 
                 ids_to_remove.clear();
 
@@ -56,7 +57,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                             continue;
                         }
                         Some(scan_edge) => {
-                            if scan_edge.b.bitPack() <= this_edge.a.bitPack() {
+                            if scan_edge.b.bit_pack() <= this_ref.a.bit_pack() {
                                 ids_to_remove.push(item.index);
                                 continue;
                             } else {
@@ -65,7 +66,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                         }
                     };
 
-                    let cross = match this_edge.edge().cross(scan_edge.edge()) {
+                    let cross = match this_ref.edge().cross(scan_edge.edge()) {
                         None => {
                             continue;
                         }
@@ -75,6 +76,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                     let v_index = item.id;
 
                     is_cross = true;
+                    let this_edge = this_ref.clone();
 
                     match cross.nature {
                         EdgeCrossType::Pure => {
@@ -277,7 +279,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                         scan_list.insert(scan_segment);
                     }
                 } else {
-                    scan_list.insert(LineSegment { id: e_index, range: this_edge.vertical_range() });
+                    scan_list.insert(LineSegment { id: e_index, range: this_range });
                     e_index = list.next(e_index.index);
                 }
 

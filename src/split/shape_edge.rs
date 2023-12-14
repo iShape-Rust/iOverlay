@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use i_float::fix_vec::FixVec;
-use i_shape::{fix_edge::{FixEdge, EdgeCross}, triangle::Triangle};
+use i_shape::fix_edge::FixEdge;
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]
@@ -30,12 +30,8 @@ impl ShapeEdge {
         if a.bit_pack() <= b.bit_pack() {
             Self { a, b, count }
         } else {
-            Self { b, a, count }
+            Self { a: b, b: a, count }
         }
-    }
-
-    pub (super) fn from_parent(parent: &ShapeEdge, count: ShapeCount) -> Self {
-        Self { a: parent.a, b: parent.b, count }
     }
 
     pub (crate) fn is_less(&self, other: &ShapeEdge) -> bool {
@@ -61,16 +57,10 @@ impl ShapeEdge {
             } else {
                 Ordering::Greater
             }
+        } else if self.b.bit_pack() < other.b.bit_pack() {
+            Ordering::Less
         } else {
-            let b0 = self.b.bit_pack();
-            let b1 = other.b.bit_pack();
-            if b0 == b1 {
-                Ordering::Equal
-            } else if b0 < b1 {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
+            Ordering::Greater
         }
     }
 }
