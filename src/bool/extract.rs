@@ -53,42 +53,59 @@ impl OverlayGraph {
             return shapes;
         }
 
-        // find for each hole its shape
-        let mut hole_counter: HashMap<usize, usize> = HashMap::with_capacity(holes.len());
-        let mut hole_shape = vec![0; holes.len()];
+        if shapes.len() == 1 {
+            shapes[0].paths.reserve_exact(holes.len());
+            for hole in holes {
+                shapes[0].add_hole(hole.path)
+            }
+        } else {
+            let mut shape_candidates = Vec::new();
 
-        for (index, hole) in holes.iter().enumerate() {
-            let mut min_dist = i64::MAX;
-            let mut best_shape_index = EMPTY_INDEX;
+            // find for each hole its shape
+            let mut hole_counter: HashMap<usize, usize> = HashMap::with_capacity(holes.len());
+            let mut hole_shape = vec![0; holes.len()];
 
-            for shape_index in 0..shapes.len() {
-                let shape = &shapes[shape_index];
-                let shape_bnd = &shape_bounds[shape_index];
+            for (index, hole) in holes.iter().enumerate() {
 
-                if shape_bnd.is_inside(hole.boundary) {
-                    let shape_contour = shape.contour();
-                    let dist = Self::get_bottom_vertical_distance(shape_contour, hole.start);
-
-                    if min_dist > dist {
-                        min_dist = dist;
-                        best_shape_index = shape_index;
+                shape_candidates.clear();
+                for shape_index in 0..shapes.len() {
+                    let shape_bnd = &shape_bounds[shape_index];
+                    if shape_bnd.is_inside(hole.boundary) {
+                        shape_candidates.push(shape_index);
                     }
                 }
+
+                assert!(!shape_candidates.is_empty());
+
+                let mut best_shape_index = EMPTY_INDEX;
+
+                if shape_candidates.len() <= 1 {
+                    best_shape_index = shape_candidates[0];
+                } else {
+                    let mut min_dist = i64::MAX;
+                    for &shape_index in shape_candidates.iter() {
+                        let dist = Self::get_bottom_vertical_distance(shapes[shape_index].contour(), hole.start);
+                        if min_dist > dist {
+                            min_dist = dist;
+                            best_shape_index = shape_index;
+                        }
+                    }
+                }
+
+                hole_shape[index] = best_shape_index;
+                *hole_counter.entry(best_shape_index).or_insert(0) += 1;
             }
 
-            hole_shape[index] = best_shape_index;
-            *hole_counter.entry(best_shape_index).or_insert(0) += 1;
-        }
+            for (shape_index, hole_count) in hole_counter.into_iter() {
+                let shape = &mut shapes[shape_index];
+                shape.paths.reserve_exact(hole_count);
+            }
 
-        for (shape_index, hole_count) in hole_counter.into_iter() {
-            let shape = &mut shapes[shape_index];
-            shape.paths.reserve_exact(hole_count);
-        }
-
-        for (index, hole) in holes.into_iter().enumerate() {
-            let shape_index = hole_shape[index];
-            let shape = &mut shapes[shape_index];
-            shape.add_hole(hole.path);
+            for (index, hole) in holes.into_iter().enumerate() {
+                let shape_index = hole_shape[index];
+                let shape = &mut shapes[shape_index];
+                shape.add_hole(hole.path);
+            }
         }
 
         shapes
