@@ -11,7 +11,7 @@ impl DualIndex {
 
     pub fn order_asc_major_des_minor(&self, other: &Self) -> Ordering {
         if self.major == other.major {
-            if self.major < other.major {
+            if self.minor > other.minor {
                 Ordering::Less
             } else {
                 Ordering::Greater
@@ -19,7 +19,7 @@ impl DualIndex {
         } else {
             if self.minor == other.minor {
                 Ordering::Equal
-            } else if self.minor > other.minor {
+            } else if self.major < other.major {
                 Ordering::Less
             } else {
                 Ordering::Greater

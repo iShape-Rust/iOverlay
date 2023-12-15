@@ -265,7 +265,6 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             break 'scan_loop;
                         }
-                        _ => {}
                     }
                 }
 

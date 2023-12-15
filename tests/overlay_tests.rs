@@ -465,4 +465,29 @@ mod tests {
     fn test_86() {
         execute(86);
     }
+
+    #[test]
+    fn test_87() {
+        execute(87);
+    }
+
+    #[test]
+    fn test_88() {
+        execute(88);
+    }
+
+    #[test]
+    fn test_89() {
+        execute(89);
+    }
+
+    #[test]
+    fn test_90() {
+        execute(90);
+    }
+
+    #[test]
+    fn test_91() {
+        execute(91);
+    }
 }

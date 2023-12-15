@@ -45,8 +45,10 @@ impl FillSegments for Vec<Segment> {
                 i += 1
             }
 
-            // sort all by a.y
-            x_buf.sort_by(|a, b| a.order_asc(b));
+            if x_buf.len() > 1 {
+                // sort all by a.y
+                x_buf.sort_by(|a, b| a.order_asc(b));
+            }
 
             // find nearest segment from scan list for all new segments
 

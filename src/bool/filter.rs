@@ -119,15 +119,15 @@ fn filter_xor(links: &Vec<OverlayLink>) -> Vec<bool> {
 
         // Skip edge if clip and subject share it
 
-        let top_only_subject = fill & SegmentFill::BOTH_TOP == SegmentFill::SUBJECT_TOP;
-        let bot_only_subject = fill & SegmentFill::BOTH_BOTTOM == SegmentFill::SUBJECT_BOTTOM;
-        let top_only_clip = fill & SegmentFill::BOTH_TOP == SegmentFill::CLIP_TOP;
-        let bot_only_clip = fill & SegmentFill::BOTH_BOTTOM == SegmentFill::CLIP_BOTTOM;
         let subject_inner = fill == SegmentFill::SUBJECT_BOTH;
         let clip_inner = fill == SegmentFill::CLIP_BOTH;
         let both_inner = fill == SegmentFill::ALL;
+        let only_top = fill == SegmentFill::BOTH_TOP;
+        let only_bottom = fill == SegmentFill::BOTH_BOTTOM;
+        let diagonal_0 = fill == SegmentFill::CLIP_TOP | SegmentFill::SUBJECT_BOTTOM;
+        let diagonal_1 = fill == SegmentFill::CLIP_BOTTOM | SegmentFill::SUBJECT_TOP;
 
-        skip[i] = !(top_only_subject || bot_only_subject || top_only_clip || bot_only_clip) || subject_inner || clip_inner || both_inner;
+        skip[i] = subject_inner || clip_inner || both_inner || only_top || only_bottom || diagonal_0 || diagonal_1;
     }
 
     skip
