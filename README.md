@@ -3,7 +3,7 @@
 <p align="center">
 <img src="https://github.com/iShape-Rust/iOverlay/blob/main/Readme/balloons.svg" width="250"/>
 </p>
-The i_overlay is a poly-bool library that supports main operations such as union, intersection, difference, xor, and self-intersection by the even-odd rule. This algorithm is based on Vatti clipping ideas but is an original implementation.
+The i_overlay is a poly-bool library that supports main operations such as union, intersection, difference, xor, and self-intersection by the even-odd or non-zero rule. This algorithm is based on Vatti clipping ideas but is an original implementation.
 
 ## [Demo](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 Try out iOverlay with an interactive demo. The demo covers operations like union, intersection, difference and exclusion
