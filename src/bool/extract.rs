@@ -162,7 +162,7 @@ impl OverlayGraph {
 
         let is_cavity = fill_rule.is_fill_bottom(left_link.fill);
 
-        Self::validate(&mut path, min_area);
+        Self::validate(&mut path, min_area, is_cavity);
 
         for idx in new_visited {
             visited[idx] = true;
@@ -187,7 +187,7 @@ impl OverlayGraph {
         (a && b) || !(a || b)
     }
 
-    fn validate(path: &mut FixPath, min_area: FixFloat) {
+    fn validate(path: &mut FixPath, min_area: FixFloat, is_cavity: bool) {
         path.remove_degenerates();
 
         if path.len() < 3 {
@@ -195,11 +195,13 @@ impl OverlayGraph {
             return;
         }
 
-        let area = path.area();
+        let uns_area = path.unsafe_area();
+        let abs_area = uns_area.abs() >> (FixFloat::FRACTION_BITS + 1);
 
-        if area.abs() < min_area.value() {
+        if abs_area < min_area.value() {
             path.clear();
-        } else if area < 0 {
+        } else if is_cavity && uns_area > 0 || !is_cavity && uns_area < 0 {
+            // for holes must be negative and for contour must be positive
             path.reverse();
         }
     }

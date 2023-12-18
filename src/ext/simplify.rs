@@ -19,7 +19,18 @@ impl Simplify for FixPath {
         let graph = overlay.build_graph(fill_rule);
         graph.extract_shapes(OverlayRule::Subject)
     }
+}
 
+impl Simplify for [FixPath] {
+
+    fn simplify(&self, fill_rule: FillRule) -> Vec<FixShape> {
+        let mut overlay = Overlay::new(self.len());
+
+        overlay.add_paths(self, ShapeType::Subject);
+
+        let graph = overlay.build_graph(fill_rule);
+        graph.extract_shapes(OverlayRule::Subject)
+    }
 }
 
 impl Simplify for FixShape {
@@ -27,6 +38,19 @@ impl Simplify for FixShape {
     fn simplify(&self, fill_rule: FillRule) -> Vec<FixShape> {
         let mut overlay = Overlay::new(self.paths[0].len());
         overlay.add_shape(self, ShapeType::Subject);
+        let graph = overlay.build_graph(fill_rule);
+        graph.extract_shapes(OverlayRule::Subject)
+    }
+
+}
+
+impl Simplify for [FixShape] {
+
+    fn simplify(&self, fill_rule: FillRule) -> Vec<FixShape> {
+        let mut overlay = Overlay::new(self.len());
+        for shape in self.iter() {
+            overlay.add_shape(shape, ShapeType::Subject);
+        }
         let graph = overlay.build_graph(fill_rule);
         graph.extract_shapes(OverlayRule::Subject)
     }

@@ -26,7 +26,7 @@ impl Overlay {
         }
     }
 
-    pub fn from_paths(subject_paths: &Vec<FixPath>, clip_paths: &Vec<FixPath>) -> Self {
+    pub fn from_paths(subject_paths: &[FixPath], clip_paths: &[FixPath]) -> Self {
         let mut overlay = Self::new(64);
         overlay.add_paths(subject_paths, ShapeType::Subject);
         overlay.add_paths(clip_paths, ShapeType::Clip);
@@ -37,14 +37,14 @@ impl Overlay {
         self.add_paths(&shape.paths, shape_type);
     }
 
-    pub fn add_paths(&mut self, paths: &Vec<FixPath>, shape_type: ShapeType) {
+    pub fn add_paths(&mut self, paths: &[FixPath], shape_type: ShapeType) {
         for path in paths.iter() {
             self.add_path(path, shape_type);
         }
     }
 
     pub fn add_path(&mut self, path: &FixPath, shape_type: ShapeType) {
-        let mut path_edges = path.removed_degenerates().edges(shape_type);
+        let mut path_edges = path.to_vec().removed_degenerates().edges(shape_type);
         self.edges.append(&mut path_edges);
     }
 
