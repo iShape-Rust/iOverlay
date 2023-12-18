@@ -37,9 +37,9 @@ Utilizing the library within the recommended range ensures optimal accuracy in c
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_float = "^0.1.0"
-i_shape = "^0.1.0"
-i_overlay = "^0.2.0"
+i_float
+i_shape
+i_overlay
 ```
 
 ### Example
