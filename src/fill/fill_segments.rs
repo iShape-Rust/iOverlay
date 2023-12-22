@@ -105,7 +105,7 @@ impl FillSegments for Vec<Segment> {
                                             best_index = seg_index;
                                         }
                                     } else if cy == y {
-                                        if self[best_index].under_point(FixVec::new_i64(x, cy as i64)) {
+                                        if self[seg_index].under_point(FixVec::new_i64(x, cy as i64)) {
                                             best_index = seg_index;
                                             best_y = cy;
                                         }
