@@ -306,9 +306,9 @@ impl ShapeEdge {
 
     fn create_and_validate(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
         if a.bit_pack() <= b.bit_pack() {
-            Self::ordered(a, b, count)
+            Self { a, b, count }
         } else {
-            Self::ordered(b, a, count.invert())
+            Self { a: b, b: a, count: count.invert() }
         }
     }
 
