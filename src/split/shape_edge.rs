@@ -34,6 +34,10 @@ impl ShapeEdge {
         }
     }
 
+    pub (crate) fn ordered(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
+        Self { a: b, b: a, count }
+    }
+
     pub (crate) fn is_less(&self, other: &ShapeEdge) -> bool {
         let a0 = self.a.bit_pack();
         let a1 = other.a.bit_pack();

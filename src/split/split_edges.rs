@@ -5,6 +5,7 @@ use crate::fill::segment::Segment;
 use crate::split::shape_edge::ShapeEdge;
 use crate::space::line_range::LineRange;
 use crate::space::line_space::LineSegment;
+use crate::split::shape_count::ShapeCount;
 use crate::split::split_range_list::SplitRangeList;
 use crate::split::split_scan_list::SplitScanList;
 use crate::split::version_index::VersionedIndex;
@@ -86,13 +87,13 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             // divide both segments
 
-                            let this_lt = ShapeEdge::new(this_edge.a, x, this_edge.count);
-                            let this_rt = ShapeEdge::new(x, this_edge.b, this_edge.count);
+                            let this_lt = ShapeEdge::create_and_validate(this_edge.a, x, this_edge.count);
+                            let this_rt = ShapeEdge::create_and_validate(x, this_edge.b, this_edge.count);
 
                             assert!(this_lt.is_less(&this_rt));
 
-                            let scan_lt = ShapeEdge::new(scan_edge.a, x, scan_edge.count);
-                            let scan_rt = ShapeEdge::new(x, scan_edge.b, scan_edge.count);
+                            let scan_lt = ShapeEdge::create_and_validate(scan_edge.a, x, scan_edge.count);
+                            let scan_rt = ShapeEdge::create_and_validate(x, scan_edge.b, scan_edge.count);
 
                             assert!(scan_lt.is_less(&scan_rt));
 
@@ -125,8 +126,8 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             // divide this edge
 
-                            let this_lt = ShapeEdge::new(this_edge.a, x, this_edge.count);
-                            let this_rt = ShapeEdge::new(x, this_edge.b, this_edge.count);
+                            let this_lt = ShapeEdge::create_and_validate(this_edge.a, x, this_edge.count);
+                            let this_rt = ShapeEdge::create_and_validate(x, this_edge.b, this_edge.count);
 
                             assert!(this_lt.is_less(&this_rt));
 
@@ -174,8 +175,8 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             // divide scan edge
 
-                            let scan_lt = ShapeEdge::new(scan_edge.a, x, scan_edge.count);
-                            let scan_rt = ShapeEdge::new(x, scan_edge.b, scan_edge.count);
+                            let scan_lt = ShapeEdge::create_and_validate(scan_edge.a, x, scan_edge.count);
+                            let scan_rt = ShapeEdge::create_and_validate(x, scan_edge.b, scan_edge.count);
 
                             assert!(scan_lt.is_less(&scan_rt));
 
@@ -302,4 +303,13 @@ impl ShapeEdge {
             LineRange { min: self.a.y.value() as i32, max: self.b.y.value() as i32 }
         }
     }
+
+    fn create_and_validate(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
+        if a.bit_pack() <= b.bit_pack() {
+            Self::ordered(a, b, count)
+        } else {
+            Self::ordered(b, a, count.invert())
+        }
+    }
+
 }

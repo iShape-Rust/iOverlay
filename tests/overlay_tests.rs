@@ -490,4 +490,24 @@ mod tests {
     fn test_91() {
         execute(91);
     }
+
+    #[test]
+    fn test_92() {
+        execute(92);
+    }
+
+    #[test]
+    fn test_93() {
+        execute(93);
+    }
+
+    #[test]
+    fn test_94() {
+        execute(94);
+    }
+
+    #[test]
+    fn test_95() {
+        execute(95);
+    }
 }

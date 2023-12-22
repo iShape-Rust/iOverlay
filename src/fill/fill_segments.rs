@@ -72,10 +72,11 @@ impl FillSegments for Vec<Segment> {
 
                 // find nearest scan segment for y
                 let mut iterator = scan_list.iterator_to_bottom(y);
-                let mut best_y = i32::MAX;
+                let mut best_y = i32::MIN;
                 let mut best_index = usize::MAX;
+                let mut range_bottom = iterator.min;
 
-                while best_index == usize::MAX && iterator.min != i32::MIN {
+                while best_y < range_bottom && iterator.min != i32::MIN {
                     let candidates = scan_list.all_in_range(iterator);
                     r_buf.clear();
 
@@ -102,6 +103,10 @@ impl FillSegments for Vec<Segment> {
                                     if best_y == cy {
                                         if self[best_index].under(self[seg_index], FixVec::new_i64(x, cy as i64)) {
                                             best_index = seg_index;
+                                        }
+                                    } else if cy == y {
+                                        if self[best_index].under_point(FixVec::new_i64(x, cy as i64)) {
+                                            best_index = seg_index;
                                             best_y = cy;
                                         }
                                     } else if best_y < cy {
@@ -117,9 +122,8 @@ impl FillSegments for Vec<Segment> {
                         scan_list.remove(&mut r_buf);
                     }
 
-                    if best_index == usize::MAX {
-                        iterator = scan_list.next(iterator);
-                    }
+                    range_bottom = iterator.min;
+                    iterator = scan_list.next(iterator);
                 }
 
                 let mut sum_count: ShapeCount;
@@ -174,6 +178,10 @@ impl Segment {
             // probably this case impossible
             Triangle::is_clockwise(cross, other.b, self.b)
         }
+    }
+
+    fn under_point(&self, p: FixVec) -> bool {
+        !Triangle::is_clockwise(self.a, self.b, p)
     }
 
     fn add_and_fill(&mut self, sum_count: ShapeCount, fill_rule: FillRule) -> ShapeCount {

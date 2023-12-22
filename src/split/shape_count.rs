@@ -17,4 +17,8 @@ impl ShapeCount {
 
         ShapeCount { subj, clip }
     }
+
+    pub(crate) fn invert(self) -> ShapeCount {
+        ShapeCount { subj: -self.subj, clip: -self.clip }
+    }
 }

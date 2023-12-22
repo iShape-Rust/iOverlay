@@ -60,4 +60,5 @@ impl Segment {
             fill: SegmentFill::NONE,
         }
     }
+
 }
