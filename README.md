@@ -1,8 +1,8 @@
 # iOverlay
 
 <p align="center">
-          
-<img src="https://raw.githubusercontent.com/iShape-Rust/iOverlay/blob/main/Readme/balloons.svg" width="250"/>
+
+<img src="Readme/balloons.svg" width="250"/>
 </p>
 
 The iOverlay is a fast poly-bool library supporting main operations like union, intersection, difference, and XOR, governed by either the even-odd or non-zero rule. This algorithm is based on Vatti clipping ideas but is an original implementation.
@@ -93,26 +93,26 @@ fn main() {
 
 ### Union
 <p align="left">
-<img src="https://raw.githubusercontent.com/iShape-Rus/iOverlay/blob/main/Readme/union.svg" width="250"/>
+<img src="Readme/union.svg" width="250"/>
 </p>
 
 ### Difference
 <p align="left">
-<img src="https://raw.githubusercontent.com/iShape-Rust/iOverlay/blob/main/Readme/difference.svg" width="250"/>
+<img src="Readme/difference.svg" width="250"/>
 </p>
 
 ### Intersection
 <p align="left">
-<img src="https://raw.githubusercontent.com/iShape-Rust/iOverlay/blob/main/Readme/intersection.svg" width="250"/>
+<img src="Readme/intersection.svg" width="250"/>
 </p>
 
 ### Exclusion (xor)
 <p align="left">
-<img src="https://raw.githubusercontent.com/iShape-Rust/iOverlay/blob/main/Readme/exclusion.svg" width="250"/>
+<img src="Readme/exclusion.svg" width="250"/>
 </p>
 
 ### Self-intersection
 <p align="left">
-<img src="https://raw.githubusercontent.com/iShape-Rust/iOverlay/blob/main/Readme/self-intersecting.svg" width="250"/>
+<img src="Readme/self-intersecting.svg" width="250"/>
 </p>
 
