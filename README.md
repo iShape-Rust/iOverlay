@@ -89,30 +89,16 @@ fn main() {
 }
 ```
 
+# Overlay Rules
 
+## Union, A or B
+![Union](Readme/union.svg)
 
-### Union
-<p align="left">
-<img src="Readme/union.svg" width="250"/>
-</p>
+## Intersection, A and B
+![Intersection](Readme/intersection.svg)
 
-### Difference
-<p align="left">
-<img src="Readme/difference.svg" width="250"/>
-</p>
+## Difference, B - A
+![Difference](Readme/difference.svg)
 
-### Intersection
-<p align="left">
-<img src="Readme/intersection.svg" width="250"/>
-</p>
-
-### Exclusion (xor)
-<p align="left">
-<img src="Readme/exclusion.svg" width="250"/>
-</p>
-
-### Self-intersection
-<p align="left">
-<img src="Readme/self-intersecting.svg" width="250"/>
-</p>
-
+## Exclusion, A xor B
+![Exclusion](Readme/exclusion.svg)
