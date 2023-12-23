@@ -23,17 +23,6 @@ Try out iOverlay with an interactive demo. The demo covers operations like union
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Fill Rules**: even-odd and non-zero.
 
-
-
-## Working Range and Precision
-The i_overlay library operates within the following ranges and precision levels:
-
-Extended Range: From -1,000,000 to 1,000,000 with a precision of 0.001.
-Recommended Range: From -100,000 to 100,000 with a precision of 0.01 for more accurate results.
-Utilizing the library within the recommended range ensures optimal accuracy in computations and is advised for most use cases.
-
-
-
 ## Getting Started
 
 Add the following to your Cargo.toml:
@@ -44,49 +33,39 @@ i_shape
 i_overlay
 ```
 
-### Example
+### Hello world
 
-Here is a simple example that demonstrates how to use the iOverlay library for polygon union operations.
+Let's union two squares
 ```rust
-use i_float::fix_vec::FixVec;
-use i_overlay::{layout::overlay::Overlay, fill::shape_type::ShapeType, bool::fill_rule::FillRule};
+let mut overlay = Overlay::new(2);
 
-fn main() {
-    let mut overlay = Overlay::new(1);
-        
-    let subj = [
-        FixVec::new_number(-10, -10),
-        FixVec::new_number(-10,  10),
-        FixVec::new_number( 10,  10),
-        FixVec::new_number( 10, -10)
-    ];
+let left_bottom_square = FixShape::new_with_contour([
+    FixVec::new_f64(-10.0, -10.0),
+    FixVec::new_f64(-10.0, 10.0),
+    FixVec::new_f64(10.0, 10.0),
+    FixVec::new_f64(10.0, -10.0)
+].to_vec());
 
-    let clip = [
-        FixVec::new_number(-5, -5),
-        FixVec::new_number(-5, 15),
-        FixVec::new_number(15, 15),
-        FixVec::new_number(15, -5)
-    ];
+let right_top_square = FixShape::new_with_contour([
+    FixVec::new_f64(-5.0, -5.0),
+    FixVec::new_f64(-5.0, 15.0),
+    FixVec::new_f64(15.0, 15.0),
+    FixVec::new_f64(15.0, -5.0)
+].to_vec());
 
-    overlay.add_path(subj.to_vec(), ShapeType::SUBJECT);
-    overlay.add_path(clip.to_vec(), ShapeType::CLIP);
+// add new geometry
+overlay.add_shape(&left_bottom_square, ShapeType::Subject);
+overlay.add_shape(&right_top_square, ShapeType::Clip);
 
-    let graph = overlay.build_graph();
+// resolve shapes geometry
+let graph = overlay.build_graph(FillRule::EvenOdd);
 
-    let shapes = graph.extract_shapes(FillRule::Union);
+// apply union operation and get result (in our case it will be only one element)
+let shapes = graph.extract_shapes(OverlayRule::Union);
 
-    println!("shapes count: {}", shapes.len());
+// do something with new shapes...
 
-    if shapes.len() > 0 {
-        let contour = shapes[0].contour();
-        println!("shape 0 contour: ");
-        for p in contour {
-            let x = p.x.float();
-            let y = p.x.float();
-            println!("({}, {})", x, y);
-        }
-    }
-}
+print!("shapes: {:?}", shapes)
 ```
 
 # Overlay Rules
