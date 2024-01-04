@@ -1,4 +1,4 @@
-use crate::dual_index::DualIndex;
+use crate::space::dual_index::DualIndex;
 use crate::index::EMPTY_INDEX;
 
 #[derive(Copy, Clone)]

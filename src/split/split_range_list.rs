@@ -1,4 +1,4 @@
-use crate::dual_index::DualIndex;
+use crate::space::dual_index::DualIndex;
 use crate::fill::segment::Segment;
 use crate::index::EMPTY_INDEX;
 use crate::split::shape_count::ShapeCount;

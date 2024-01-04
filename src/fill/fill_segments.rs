@@ -6,7 +6,8 @@ use crate::fill::fill_scan_list::FillScanList;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, SegmentFill};
 use crate::space::line_range::LineRange;
-use crate::space::line_space::LineSegment;
+use crate::space::line_segment::LineSegment;
+
 
 struct Handler {
     i: usize,
@@ -30,6 +31,7 @@ impl FillSegments for Vec<Segment> {
         let mut x_buf = Vec::new();
         let mut e_buf = Vec::new();
         let mut r_buf = Vec::new();
+        let mut candidates = Vec::new();
 
         let n = self.len();
         let mut i = 0;
@@ -77,10 +79,11 @@ impl FillSegments for Vec<Segment> {
                 let mut range_bottom = iterator.min;
 
                 while best_y < range_bottom && iterator.min != i32::MIN {
-                    let candidates = scan_list.all_in_range(iterator);
+                    candidates.clear();
+                    scan_list.space.all_in_range(iterator, &mut candidates);
                     r_buf.clear();
 
-                    for candidate in candidates {
+                    for candidate in candidates.iter() {
                         let seg_index = candidate.id;
 
                         if self[seg_index].b.x.value() <= x {
@@ -119,7 +122,7 @@ impl FillSegments for Vec<Segment> {
                     }
 
                     if !r_buf.is_empty() {
-                        scan_list.remove(&mut r_buf);
+                        scan_list.space.remove_indices(&mut r_buf);
                     }
 
                     range_bottom = iterator.min;
@@ -140,7 +143,7 @@ impl FillSegments for Vec<Segment> {
                     } else {
                         sum_count = self[se.i].add_and_fill(sum_count, fill_rule);
                         counts[se.i] = sum_count;
-                        scan_list.insert(LineSegment { id: se.i, range: self[se.i].vertical_range() });
+                        scan_list.space.insert(LineSegment { id: se.i, range: self[se.i].vertical_range() });
                     }
                 }
             }

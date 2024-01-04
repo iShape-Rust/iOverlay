@@ -7,7 +7,24 @@ mod tests {
 
     #[test]
     fn test_0() {
+        let paths =
+            [
+                [
+                    FixVec::new_i64(10614, 4421),
+                    FixVec::new_i64(10609, 4421),
+                    FixVec::new_i64(10609, 4415),
+                    FixVec::new_i64(10614, 4415)
+                ].to_vec()
+            ].to_vec();
 
+        let simplified = paths.simplify(FillRule::NonZero);
+
+        assert_eq!(simplified.len(), 1);
+        assert_eq!(simplified[0].paths.len(), 1);
+    }
+
+    #[test]
+    fn test_1() {
         let paths =
             [
                 square(FixVec::new_f64(-10.0, -10.0)),
@@ -20,7 +37,6 @@ mod tests {
                 square(FixVec::new_f64( 10.0,  10.0))
             ].to_vec();
 
-
         let simplified = paths.simplify(FillRule::NonZero);
 
         assert_eq!(simplified.len(), 1);
@@ -28,8 +44,7 @@ mod tests {
     }
 
     #[test]
-    fn test_1() {
-
+    fn test_2() {
         let shapes =
             [
                 square_shape(FixVec::new_f64(-10.0, -10.0)),
@@ -41,7 +56,6 @@ mod tests {
                 square_shape(FixVec::new_f64(10.0,  0.0)),
                 square_shape(FixVec::new_f64( 10.0,  10.0))
             ].to_vec();
-
 
         let simplified = shapes.simplify(FillRule::NonZero);
 

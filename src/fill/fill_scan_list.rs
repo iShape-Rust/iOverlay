@@ -1,10 +1,9 @@
-use crate::dual_index::DualIndex;
 use crate::fill::segment::Segment;
 use crate::space::line_range::LineRange;
-use crate::space::line_space::{IntExtensions, LineContainer, LineSegment, LineSpace};
+use crate::space::line_space::{IntExtensions, LineSpace};
 
-pub(super) struct FillScanList {
-    space: LineSpace<usize>,
+pub(crate) struct FillScanList {
+    pub(crate) space: LineSpace<usize>,
     bottom: i32,
     delta: i32,
 }
@@ -26,7 +25,7 @@ impl FillScanList {
         let max_level = ((segments.len() as f64).sqrt() as usize).log_two();
         let space = LineSpace::new(max_level, LineRange { min: y_min as i32, max: y_max as i32 });
         let bottom = y_min as i32;
-        let delta = 1 << space.scale();
+        let delta = 1 << space.indexer.scale;
         Self { space, bottom, delta }
     }
 
@@ -42,25 +41,6 @@ impl FillScanList {
             return LineRange { min: min_y, max: range.min };
         } else {
             LineRange { min: i32::MIN, max: i32::MAX }
-        }
-    }
-
-    pub(super) fn all_in_range(&mut self, range: LineRange) -> &Vec<LineContainer<usize>> {
-        self.space.all_in_range(range)
-    }
-
-    pub(super) fn insert(&mut self, segment: LineSegment<usize>) {
-        self.space.insert(segment);
-    }
-
-    pub(super) fn remove(&mut self, indices: &mut Vec<DualIndex>) {
-        if indices.len() > 1 {
-            indices.sort_by(|a, b| a.order_asc_major_des_minor(b));
-            for index in indices {
-                self.space.remove(index);
-            }
-        } else {
-            self.space.remove(&indices[0]);
         }
     }
 }
