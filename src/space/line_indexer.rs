@@ -5,8 +5,8 @@ use crate::space::line_space::IntExtensions;
 pub struct LineIndexer {
     pub scale: usize,
     pub size: usize,
-    range: LineRange,
-    max_level: usize,
+    pub range: LineRange,
+    pub max_level: usize,
     offset: i32
 }
 

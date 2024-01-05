@@ -8,4 +8,10 @@ impl LineRange {
     pub fn is_overlap(self, other: LineRange) -> bool {
         self.min <= other.max && self.max >= other.min
     }
+
+    pub fn clamp(&self, range: LineRange) -> LineRange {
+        let min = self.min.max(range.min);
+        let max = self.max.min(range.max);
+        Self { min, max }
+    }
 }
