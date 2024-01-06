@@ -40,7 +40,7 @@ impl<Id: Copy> LineSpace<Id> {
     }
 
     pub fn ids_in_range(&mut self, range: LineRange, ids: &mut Vec<Id>) {
-        self.indexer.fill(range, &mut self.buffer);
+        self.indexer.fill_unsafe(range, &mut self.buffer);
 
         for &heap_index in self.buffer.iter() {
             let segments = &self.heaps[heap_index];
@@ -55,7 +55,7 @@ impl<Id: Copy> LineSpace<Id> {
     }
 
     pub fn all_in_range(&mut self, range: LineRange, containers: &mut Vec<LineContainer<Id>>) {
-        self.indexer.fill(range, &mut self.buffer);
+        self.indexer.fill_unsafe(range, &mut self.buffer);
 
         for &heap_index in self.buffer.iter() {
             let segments = &self.heaps[heap_index];

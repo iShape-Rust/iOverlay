@@ -10,8 +10,8 @@ impl LineRange {
     }
 
     pub fn clamp(&self, range: LineRange) -> LineRange {
-        let min = self.min.max(range.min);
-        let max = self.max.min(range.max);
+        let min = self.min.clamp(range.min, range.max);
+        let max = self.max.clamp(range.min, range.max);
         Self { min, max }
     }
 }

@@ -21,14 +21,13 @@ impl LineIndexer {
         let d_log = dif.log_two();
 
         let max_level = if dif <= 2 {
-            2
+            0
         } else {
             10.min(level.min(d_log - 1))
         };
 
         let offset = -range.min;
         let scale = d_log - max_level;
-        assert!(scale > 0);
 
         let size = Self::space_count(max_level);
 
@@ -36,6 +35,9 @@ impl LineIndexer {
     }
 
     pub fn unsafe_index(&self, range: LineRange) -> usize {
+        if self.max_level < 1 {
+            return 0;
+        }
         assert!(range.min >= self.range.min);
         assert!(range.max <= self.range.max);
 
@@ -73,6 +75,16 @@ impl LineIndexer {
     }
 
     pub fn fill(&self, range: LineRange, buffer: &mut Vec<usize>) {
+        let clamp = range.clamp(self.range);
+        self.fill_unsafe(clamp, buffer);
+    }
+
+    pub fn fill_unsafe(&self, range: LineRange, buffer: &mut Vec<usize>) {
+        if self.max_level < 1 {
+            buffer.push(0);
+            return;
+        }
+
         let x0 = (range.min + self.offset) as usize;
         let x1 = (range.max + self.offset) as usize;
 
@@ -86,6 +98,7 @@ impl LineIndexer {
 
             for x in x_left..=x_right {
                 let index = index_offset + x;
+                assert!(index > 0);
                 buffer.push(index);
             }
 
@@ -123,6 +136,7 @@ impl LineIndexer {
 
             for x in x_left..=x_right {
                 let index = index_offset + x;
+                assert!(index > 0);
                 buffer.push(index);
             }
         }
@@ -147,7 +161,7 @@ impl LineIndexer {
     // Test purpose only, must be same logic as in iterateAllInRange
     pub fn heap_indices(&self, range: LineRange) -> Vec<usize> {
         let mut result = Vec::new();
-        self.fill(range, &mut result);
+        self.fill_unsafe(range, &mut result);
         result
     }
 }
