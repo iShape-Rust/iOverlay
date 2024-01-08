@@ -10,10 +10,10 @@ mod tests {
         let paths =
             [
                 [
-                    FixVec::new_i64(10614, 4421),
-                    FixVec::new_i64(10609, 4421),
-                    FixVec::new_i64(10609, 4415),
-                    FixVec::new_i64(10614, 4415)
+                    FixVec::new(10614, 4421),
+                    FixVec::new(10609, 4421),
+                    FixVec::new(10609, 4415),
+                    FixVec::new(10614, 4415)
                 ].to_vec()
             ].to_vec();
 

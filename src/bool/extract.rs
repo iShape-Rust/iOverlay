@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use i_float::fix_float::FixFloat;
+use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_shape::fix_bnd::FixBnd;
 use i_float::fix_vec::FixVec;
@@ -24,7 +24,7 @@ struct Contour {
 
 impl OverlayGraph {
     pub fn extract_shapes(&self, fill_rule: OverlayRule) -> Vec<FixShape> {
-        self.extract_shapes_min_area(fill_rule, FixFloat::new_i64(0))
+        self.extract_shapes_min_area(fill_rule, 0)
     }
 
     pub fn extract_shapes_min_area(&self, fill_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
@@ -196,9 +196,9 @@ impl OverlayGraph {
         }
 
         let uns_area = path.unsafe_area();
-        let abs_area = uns_area.abs() >> (FixFloat::FRACTION_BITS + 1);
+        let abs_area = uns_area.abs() >> (FIX_FRACTION_BITS + 1);
 
-        if abs_area < min_area.value() {
+        if abs_area < min_area {
             path.clear();
         } else if is_cavity && uns_area > 0 || !is_cavity && uns_area < 0 {
             // for holes must be negative and for contour must be positive
@@ -224,7 +224,7 @@ impl OverlayGraph {
                 if ab.0.x <= p.x && p.x <= ab.1.x {
                     let y = Self::get_vertical_intersection(ab.0, ab.1, p.x);
 
-                    if p.y.value() > y && y > nearest_y {
+                    if p.y > y && y > nearest_y {
                         nearest_y = y;
                     }
                 }
@@ -233,15 +233,15 @@ impl OverlayGraph {
             p0 = *pi;
         }
 
-        p.y.value() - nearest_y
+        p.y - nearest_y
     }
 
     fn get_vertical_intersection(p0: FixVec, p1: FixVec, x: FixFloat) -> i64 {
-        let y01 = (p0.y - p1.y).value();
-        let x01 = (p0.x - p1.x).value();
-        let xx0 = (x - p0.x).value();
+        let y01 = p0.y - p1.y;
+        let x01 = p0.x - p1.x;
+        let xx0 = x - p0.x;
 
-        (y01 * xx0) / x01 + p0.y.value()
+        (y01 * xx0) / x01 + p0.y
     }
 }
 

@@ -9,11 +9,11 @@ impl LineSpace<VersionedIndex> {
         let mut y_max = i64::MIN;
         for edge in edges.iter() {
             if edge.a.y > edge.b.y {
-                y_min = y_min.min(edge.b.y.value());
-                y_max = y_max.max(edge.a.y.value());
+                y_min = y_min.min(edge.b.y);
+                y_max = y_max.max(edge.a.y);
             } else {
-                y_min = y_min.min(edge.a.y.value());
-                y_max = y_max.max(edge.b.y.value());
+                y_min = y_min.min(edge.a.y);
+                y_max = y_max.max(edge.b.y);
             }
         }
 

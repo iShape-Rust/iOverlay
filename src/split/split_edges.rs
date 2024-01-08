@@ -297,9 +297,9 @@ impl ShapeEdge {
 
     fn vertical_range(&self) -> LineRange {
         if self.a.y > self.b.y {
-            LineRange { min: self.b.y.value() as i32, max: self.a.y.value() as i32 }
+            LineRange { min: self.b.y as i32, max: self.a.y as i32 }
         } else {
-            LineRange { min: self.a.y.value() as i32, max: self.b.y.value() as i32 }
+            LineRange { min: self.a.y as i32, max: self.b.y as i32 }
         }
     }
 

@@ -37,13 +37,13 @@ impl FillSegments for Vec<Segment> {
         let mut i = 0;
 
         while i < n {
-            let x = self[i].a.x.value();
+            let x = self[i].a.x;
             x_buf.clear();
 
             // find all new segments with same a.x
 
-            while i < n && self[i].a.x.value() == x {
-                x_buf.push(Handler { i, y: self[i].a.y.value() as i32 });
+            while i < n && self[i].a.x == x {
+                x_buf.push(Handler { i, y: self[i].a.y as i32 });
                 i += 1
             }
 
@@ -69,7 +69,7 @@ impl FillSegments for Vec<Segment> {
 
                 if e_buf.len() > 1 {
                     // sort by angle in counter clock-wise direction
-                    e_buf.sort_by(|a, b| a.order(b, FixVec::new_i64(x, y as i64)));
+                    e_buf.sort_by(|a, b| a.order(b, FixVec::new(x, y as i64)));
                 }
 
                 // find nearest scan segment for y
@@ -86,7 +86,7 @@ impl FillSegments for Vec<Segment> {
                     for candidate in candidates.iter() {
                         let seg_index = candidate.id;
 
-                        if self[seg_index].b.x.value() <= x {
+                        if self[seg_index].b.x <= x {
                             r_buf.push(candidate.index)
                         } else {
                             let cy = self[seg_index].vertical_intersection(x) as i32;
@@ -94,7 +94,7 @@ impl FillSegments for Vec<Segment> {
                             if cy <= y {
                                 if best_index == usize::MAX {
                                     if cy == y {
-                                        if Triangle::is_clockwise(FixVec::new_i64(x, cy as i64), self[seg_index].b, self[seg_index].a) {
+                                        if Triangle::is_clockwise(FixVec::new(x, cy as i64), self[seg_index].b, self[seg_index].a) {
                                             best_index = seg_index;
                                             best_y = cy;
                                         }
@@ -104,11 +104,11 @@ impl FillSegments for Vec<Segment> {
                                     }
                                 } else {
                                     if best_y == cy {
-                                        if self[best_index].under(self[seg_index], FixVec::new_i64(x, cy as i64)) {
+                                        if self[best_index].under(self[seg_index], FixVec::new(x, cy as i64)) {
                                             best_index = seg_index;
                                         }
                                     } else if cy == y {
-                                        if self[seg_index].under_point(FixVec::new_i64(x, cy as i64)) {
+                                        if self[seg_index].under_point(FixVec::new(x, cy as i64)) {
                                             best_index = seg_index;
                                             best_y = cy;
                                         }
@@ -158,18 +158,18 @@ impl Segment {
 
     fn vertical_range(&self) -> LineRange {
         if self.a.y > self.b.y {
-            LineRange { min: self.b.y.value() as i32, max: self.a.y.value() as i32 }
+            LineRange { min: self.b.y as i32, max: self.a.y as i32 }
         } else {
-            LineRange { min: self.a.y.value() as i32, max: self.b.y.value() as i32 }
+            LineRange { min: self.a.y as i32, max: self.b.y as i32 }
         }
     }
 
     fn vertical_intersection(&self, x: i64) -> i64 {
-        let y01 = (self.a.y - self.b.y).value();
-        let x01 = (self.a.x - self.b.x).value();
-        let xx0 = x - self.a.x.value();
+        let y01 = self.a.y - self.b.y;
+        let x01 = self.a.x - self.b.x;
+        let xx0 = x - self.a.x;
 
-        (y01 * xx0) / x01 + self.a.y.value()
+        (y01 * xx0) / x01 + self.a.y
     }
 
     fn under(&self, other: Segment, cross: FixVec) -> bool {

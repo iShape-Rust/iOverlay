@@ -14,11 +14,11 @@ impl FillScanList {
         let mut y_max: i64 = i64::MIN;
         for segment in segments.iter() {
             if segment.a.y > segment.b.y {
-                y_min = y_min.min(segment.b.y.value());
-                y_max = y_max.max(segment.a.y.value());
+                y_min = y_min.min(segment.b.y);
+                y_max = y_max.max(segment.a.y);
             } else {
-                y_min = y_min.min(segment.a.y.value());
-                y_max = y_max.max(segment.b.y.value());
+                y_min = y_min.min(segment.a.y);
+                y_max = y_max.max(segment.b.y);
             }
         }
 
