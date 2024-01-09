@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 
 use i_float::fix_vec::FixVec;
-use i_shape::fix_edge::FixEdge;
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]
@@ -18,13 +17,6 @@ impl ShapeEdge {
         b: FixVec::ZERO,
         count: ShapeCount { subj: 0, clip: 0 }
     };
-
-    pub (super) fn edge(&self) -> FixEdge {
-        FixEdge {
-            e0: self.a,
-            e1: self.b,
-        }
-    }
 
     pub (crate) fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
         if a.bit_pack() <= b.bit_pack() {

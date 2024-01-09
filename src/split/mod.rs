@@ -5,3 +5,4 @@ pub(super) mod split_edges;
 mod version_index;
 mod split_scan_list;
 mod split_range_list;
+mod shape_edge_cross;

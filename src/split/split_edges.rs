@@ -1,5 +1,4 @@
 use i_float::fix_vec::FixVec;
-use i_shape::fix_edge::EdgeCrossType;
 use i_shape::triangle::Triangle;
 use crate::fill::segment::Segment;
 use crate::split::shape_edge::ShapeEdge;
@@ -7,6 +6,7 @@ use crate::space::line_range::LineRange;
 use crate::space::line_segment::LineSegment;
 use crate::space::line_space::LineSpace;
 use crate::split::shape_count::ShapeCount;
+use crate::split::shape_edge_cross::EdgeCrossType;
 use crate::split::split_range_list::SplitRangeList;
 use crate::split::version_index::VersionedIndex;
 
@@ -68,7 +68,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                         }
                     };
 
-                    let cross = match this_ref.edge().cross(scan_edge.edge()) {
+                    let cross = match this_ref.cross(&scan_edge) {
                         None => {
                             continue;
                         }
