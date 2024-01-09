@@ -42,7 +42,7 @@ impl OverlayGraph {
                     if contour.is_cavity {
                         holes.push(contour);
                     } else {
-                        shapes.push(FixShape::new_with_contour_and_holes(contour.path, vec![]));
+                        shapes.push(FixShape { paths: [contour.path].to_vec() });
                         shape_bounds.push(contour.boundary);
                     }
                 }
@@ -66,7 +66,6 @@ impl OverlayGraph {
             let mut hole_shape = vec![0; holes.len()];
 
             for (index, hole) in holes.iter().enumerate() {
-
                 shape_candidates.clear();
                 for shape_index in 0..shapes.len() {
                     let shape_bnd = &shape_bounds[shape_index];
@@ -195,12 +194,12 @@ impl OverlayGraph {
             return;
         }
 
-        let uns_area = path.unsafe_area();
-        let abs_area = uns_area.abs() >> (FIX_FRACTION_BITS + 1);
+        let area = path.area();
+        let fix_abs_area = area.abs() >> (FIX_FRACTION_BITS + 1);
 
-        if abs_area < min_area {
+        if fix_abs_area < min_area {
             path.clear();
-        } else if is_cavity && uns_area > 0 || !is_cavity && uns_area < 0 {
+        } else if is_cavity && area > 0 || !is_cavity && area < 0 {
             // for holes must be negative and for contour must be positive
             path.reverse();
         }

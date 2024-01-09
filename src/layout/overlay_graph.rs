@@ -6,37 +6,36 @@ use crate::{fill::segment::{Segment, SegmentFill}, index::EMPTY_INDEX};
 use super::{overlay_node::OverlayNode, overlay_link::OverlayLink};
 
 pub struct OverlayGraph {
-    pub (crate) nodes: Vec<OverlayNode>,
+    pub(crate) nodes: Vec<OverlayNode>,
     indices: Vec<usize>,
-    pub (crate) links: Vec<OverlayLink>,
+    pub(crate) links: Vec<OverlayLink>,
 }
 
 impl OverlayGraph {
-
-    pub (super) fn new(segments: Vec<Segment>) -> Self {
+    pub(super) fn new(segments: Vec<Segment>) -> Self {
         let n = segments.len();
         let mut links = vec![OverlayLink::new(IndexPoint::ZERO, IndexPoint::ZERO, SegmentFill::NONE); n];
-        
+
         let mut v_store = std::collections::HashMap::new();
         v_store.reserve(2 * n);
-        
+
         for i in 0..n {
             let s = &segments[i];
             let ai = v_store.place(s.a);
             let bi = v_store.place(s.b);
-            
+
             links[i] = OverlayLink::new(
                 IndexPoint::new(ai, s.a),
                 IndexPoint::new(bi, s.b),
-                s.fill
+                s.fill,
             );
         }
-        
+
         let m = v_store.len();
         let mut n_count = vec![0; m];
         for i in 0..n {
             let l = &links[i];
-            
+
             n_count[l.a.index] += 1;
             n_count[l.b.index] += 1;
         }
@@ -55,7 +54,7 @@ impl OverlayGraph {
 
         for i in 0..m {
             let nc = n_count[i];
-            
+
             if nc != 2 {
                 nodes[i] = OverlayNode::new(offset, 0, nc);
                 offset += nc;
@@ -63,14 +62,14 @@ impl OverlayGraph {
                 nodes[i] = OverlayNode::new(EMPTY_INDEX, EMPTY_INDEX, nc);
             }
         }
-        
+
         for i in 0..n {
             let link = links[i];
-            
+
             let mut node_a = nodes[link.a.index];
             node_a.add(i, &mut indices);
             nodes[link.a.index] = node_a;
-            
+
             let mut node_b = nodes[link.b.index];
             node_b.add(i, &mut indices);
             nodes[link.b.index] = node_b;
@@ -91,7 +90,7 @@ impl OverlayGraph {
         in_clockwise: bool,
         visited: &[bool],
     ) -> usize {
-        let node = self .nodes[center.index];
+        let node = self.nodes[center.index];
 
         // Find any not visited vector
         let mut i = node.data0;
@@ -102,13 +101,13 @@ impl OverlayGraph {
             let j = self.indices[i];
             if !visited[j] && ignore != j {
                 min_index = j;
-                break
+                break;
             }
             i += 1;
         }
 
         if min_index == EMPTY_INDEX {
-            return EMPTY_INDEX
+            return EMPTY_INDEX;
         }
 
         let mut min_vec = self.links[min_index].other(center).point - center.point;
@@ -120,7 +119,7 @@ impl OverlayGraph {
             let j = self.indices[i];
             if !visited[j] && ignore != j {
                 let vj = self.links[j].other(center).point - center.point;
-                
+
                 if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
                     min_vec = vj;
                     min_index = j;
@@ -135,7 +134,6 @@ impl OverlayGraph {
     pub fn links(&self) -> &Vec<OverlayLink> {
         &self.links
     }
-
 }
 
 // Implementing a private trait to use the place method
@@ -154,40 +152,37 @@ impl PlaceFixVec for std::collections::HashMap<FixVec, usize> {
             }
         }
     }
-
 }
 
 trait CloseInRotation {
-    fn is_closer_in_rotation_to(& self, a: FixVec, b: FixVec) -> bool;
+    fn is_closer_in_rotation_to(&self, a: FixVec, b: FixVec) -> bool;
 }
 
 impl CloseInRotation for FixVec {
-
     // v, a, b vectors are multidirectional
-    fn is_closer_in_rotation_to(& self, a: FixVec, b: FixVec) -> bool {
-        let cross_a = self.unsafe_cross_product(a);
-        let cross_b = self.unsafe_cross_product(b);
+    fn is_closer_in_rotation_to(&self, a: FixVec, b: FixVec) -> bool {
+        let cross_a = self.cross_product(a);
+        let cross_b = self.cross_product(b);
 
         if cross_a == 0 || cross_b == 0 {
             // vectors are collinear
-            if cross_a == 0 {
+            return if cross_a == 0 {
                 // a is opposite to self, so based on cross_b
-                return cross_b > 0
+                cross_b > 0
             } else {
                 // b is opposite to self, so based on cross_a
-                return cross_a < 0
-            }
+                cross_a < 0
+            };
         }
 
         let same_side = (cross_a > 0 && cross_b > 0) || (cross_a < 0 && cross_b < 0);
 
         if !same_side {
-            return cross_a < 0
+            return cross_a < 0;
         }
 
-        let cross_ab = a.unsafe_cross_product(b);
+        let cross_ab = a.cross_product(b);
 
         cross_ab < 0
     }
-
-} 
+}
