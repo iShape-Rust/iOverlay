@@ -4,9 +4,9 @@ use i_float::fix_vec::FixVec;
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]
-pub (crate) struct ShapeEdge {
-    pub (crate) a: FixVec,
-    pub (crate) b: FixVec,
+pub struct ShapeEdge {
+    pub a: FixVec,
+    pub b: FixVec,
     pub (crate) count: ShapeCount,
 }
 
@@ -18,7 +18,7 @@ impl ShapeEdge {
         count: ShapeCount { subj: 0, clip: 0 }
     };
 
-    pub (crate) fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
+    pub fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
         if a.bit_pack() <= b.bit_pack() {
             Self { a, b, count }
         } else {

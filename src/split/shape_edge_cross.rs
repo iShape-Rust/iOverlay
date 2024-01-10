@@ -3,14 +3,14 @@ use i_shape::triangle::Triangle;
 use crate::split::shape_edge::ShapeEdge;
 
 #[derive(Debug, Clone, Copy)]
-pub(super) struct EdgeCross {
-    pub(super) nature: EdgeCrossType,
-    pub(super) point: FixVec,
-    pub(super) second: FixVec,
+pub struct EdgeCross {
+    pub nature: EdgeCrossType,
+    pub point: FixVec,
+    pub second: FixVec,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(super) enum EdgeCrossType {
+pub enum EdgeCrossType {
     Pure,
     OverlayA,
     OverlayB,
@@ -20,7 +20,7 @@ pub(super) enum EdgeCrossType {
 }
 
 impl ShapeEdge {
-    pub(super) fn cross(&self, other: &ShapeEdge) -> Option<EdgeCross> {
+    pub fn cross(&self, other: &ShapeEdge) -> Option<EdgeCross> {
         let a0 = self.a;
         let a1 = self.b;
 
@@ -193,14 +193,14 @@ impl ShapeEdge {
         FixVec::new(x, y)
     }
 
-    fn is_box_contain_point(&self, p: FixVec) -> bool {
+    pub fn is_box_contain_point(&self, p: FixVec) -> bool {
         let x = self.a.x <= p.x && p.x <= self.b.x || self.b.x <= p.x && p.x <= self.a.x;
         let y = self.a.y <= p.y && p.y <= self.b.y || self.b.y <= p.y && p.y <= self.a.y;
 
         x && y
     }
 
-    fn is_box_contain_edge(&self, edge: &ShapeEdge) -> bool {
+    pub fn is_box_contain_edge(&self, edge: &ShapeEdge) -> bool {
         let x_contain = self.a.x <= edge.a.x && edge.b.x <= self.b.x;
         if !x_contain {
             return false;
