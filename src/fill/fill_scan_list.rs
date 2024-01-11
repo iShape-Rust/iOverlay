@@ -1,30 +1,16 @@
-use crate::fill::segment::Segment;
 use crate::space::line_range::LineRange;
-use crate::space::line_space::{IntExtensions, LineSpace};
+use crate::space::scan_space::ScanSpace;
 
-pub(crate) struct FillScanList {
-    pub(crate) space: LineSpace<usize>,
+pub(super) struct FillScanList {
+    pub(super) space: ScanSpace<usize>,
     bottom: i32,
     delta: i32,
 }
 
 impl FillScanList {
-    pub(super) fn new(segments: &Vec<Segment>) -> Self {
-        let mut y_min: i64 = i64::MAX;
-        let mut y_max: i64 = i64::MIN;
-        for segment in segments.iter() {
-            if segment.a.y > segment.b.y {
-                y_min = y_min.min(segment.b.y);
-                y_max = y_max.max(segment.a.y);
-            } else {
-                y_min = y_min.min(segment.a.y);
-                y_max = y_max.max(segment.b.y);
-            }
-        }
-
-        let max_level = ((segments.len() as f64).sqrt() as usize).log_two();
-        let space = LineSpace::new(max_level, LineRange { min: y_min as i32, max: y_max as i32 });
-        let bottom = y_min as i32;
+    pub(super) fn new(line: LineRange, count: usize) -> Self {
+        let space = ScanSpace::new(line, count);
+        let bottom = line.min;
         let delta = 1 << space.indexer.scale;
         Self { space, bottom, delta }
     }

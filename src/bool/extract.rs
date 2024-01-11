@@ -5,7 +5,7 @@ use i_shape::fix_bnd::FixBnd;
 use i_float::fix_vec::FixVec;
 use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
-use crate::fill::segment::SegmentFill;
+use crate::fill::segment::{BOTH_BOTTOM, BOTH_TOP, CLIP_BOTTOM, CLIP_TOP, NONE, SegmentFill, SUBJECT_BOTTOM, SUBJECT_TOP};
 use crate::index::EMPTY_INDEX;
 use crate::layout::overlay_graph::OverlayGraph;
 
@@ -248,14 +248,14 @@ impl OverlayGraph {
 impl OverlayRule {
     fn is_fill_top(&self, fill: SegmentFill) -> bool {
         match self {
-            OverlayRule::Subject => fill & SegmentFill::SUBJECT_TOP == SegmentFill::SUBJECT_TOP,
-            OverlayRule::Clip => fill & SegmentFill::CLIP_TOP == SegmentFill::CLIP_TOP,
-            OverlayRule::Intersect => fill & SegmentFill::BOTH_TOP == SegmentFill::BOTH_TOP,
-            OverlayRule::Union => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::NONE,
-            OverlayRule::Difference => fill & SegmentFill::BOTH_TOP == SegmentFill::SUBJECT_TOP,
+            OverlayRule::Subject => fill & SUBJECT_TOP == SUBJECT_TOP,
+            OverlayRule::Clip => fill & CLIP_TOP == CLIP_TOP,
+            OverlayRule::Intersect => fill & BOTH_TOP == BOTH_TOP,
+            OverlayRule::Union => fill & BOTH_BOTTOM == NONE,
+            OverlayRule::Difference => fill & BOTH_TOP == SUBJECT_TOP,
             OverlayRule::Xor => {
-                let is_subject = fill & SegmentFill::BOTH_TOP == SegmentFill::SUBJECT_TOP;
-                let is_clip = fill & SegmentFill::BOTH_TOP == SegmentFill::CLIP_TOP;
+                let is_subject = fill & BOTH_TOP == SUBJECT_TOP;
+                let is_clip = fill & BOTH_TOP == CLIP_TOP;
                 is_subject || is_clip
             }
         }
@@ -263,14 +263,14 @@ impl OverlayRule {
 
     fn is_fill_bottom(&self, fill: SegmentFill) -> bool {
         match self {
-            OverlayRule::Subject => fill & SegmentFill::SUBJECT_BOTTOM == SegmentFill::SUBJECT_BOTTOM,
-            OverlayRule::Clip => fill & SegmentFill::CLIP_BOTTOM == SegmentFill::CLIP_BOTTOM,
-            OverlayRule::Intersect => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::BOTH_BOTTOM,
-            OverlayRule::Union => fill & SegmentFill::BOTH_TOP == SegmentFill::NONE,
-            OverlayRule::Difference => fill & SegmentFill::BOTH_BOTTOM == SegmentFill::SUBJECT_BOTTOM,
+            OverlayRule::Subject => fill & SUBJECT_BOTTOM == SUBJECT_BOTTOM,
+            OverlayRule::Clip => fill & CLIP_BOTTOM == CLIP_BOTTOM,
+            OverlayRule::Intersect => fill & BOTH_BOTTOM == BOTH_BOTTOM,
+            OverlayRule::Union => fill & BOTH_TOP == NONE,
+            OverlayRule::Difference => fill & BOTH_BOTTOM == SUBJECT_BOTTOM,
             OverlayRule::Xor => {
-                let is_subject = fill & SegmentFill::BOTH_BOTTOM == SegmentFill::SUBJECT_BOTTOM;
-                let is_clip = fill & SegmentFill::BOTH_BOTTOM == SegmentFill::CLIP_BOTTOM;
+                let is_subject = fill & BOTH_BOTTOM == SUBJECT_BOTTOM;
+                let is_clip = fill & BOTH_BOTTOM == CLIP_BOTTOM;
                 is_subject || is_clip
             }
         }

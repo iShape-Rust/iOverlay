@@ -1,7 +1,8 @@
 use i_float::fix_vec::FixVec;
 use i_shape::index_point::IndexPoint;
 
-use crate::{fill::segment::{Segment, SegmentFill}, index::EMPTY_INDEX};
+use crate::{fill::segment::Segment, index::EMPTY_INDEX};
+use crate::fill::segment::NONE;
 
 use super::{overlay_node::OverlayNode, overlay_link::OverlayLink};
 
@@ -14,7 +15,7 @@ pub struct OverlayGraph {
 impl OverlayGraph {
     pub(super) fn new(segments: Vec<Segment>) -> Self {
         let n = segments.len();
-        let mut links = vec![OverlayLink::new(IndexPoint::ZERO, IndexPoint::ZERO, SegmentFill::NONE); n];
+        let mut links = vec![OverlayLink::new(IndexPoint::ZERO, IndexPoint::ZERO, NONE); n];
 
         let mut v_store = std::collections::HashMap::new();
         v_store.reserve(2 * n);

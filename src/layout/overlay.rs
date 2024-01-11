@@ -6,6 +6,7 @@ use crate::split::split_edges::SplitEdges;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
+use crate::space::line_range::LineRange;
 
 use super::overlay_graph::OverlayGraph;
 
@@ -16,12 +17,16 @@ pub enum ShapeType {
 }
 
 pub struct Overlay {
+    y_min: i32,
+    y_max: i32,
     edges: Vec<ShapeEdge>,
 }
 
 impl Overlay {
     pub fn new(capacity: usize) -> Self {
         Self {
+            y_min: i32::MAX,
+            y_max: i32::MIN,
             edges: Vec::with_capacity(capacity),
         }
     }
@@ -44,8 +49,11 @@ impl Overlay {
     }
 
     pub fn add_path(&mut self, path: &FixPath, shape_type: ShapeType) {
-        let mut path_edges = path.to_vec().removed_degenerates().edges(shape_type);
-        self.edges.append(&mut path_edges);
+        if let Some(mut result) = path.to_vec().removed_degenerates().edges(shape_type) {
+            self.y_min = self.y_min.min(result.y_min);
+            self.y_max = self.y_max.max(result.y_max);
+            self.edges.append(&mut result.edges);
+        }
     }
 
     pub fn build_segments(&self, fill_rule: FillRule) -> Vec<Segment> {
@@ -58,7 +66,7 @@ impl Overlay {
 
         let mut buffer = Vec::with_capacity(sorted_list.len());
 
-        let mut prev = ShapeEdge{
+        let mut prev = ShapeEdge {
             a: FixVec::ZERO,
             b: FixVec::ZERO,
             count: ShapeCount::new(0, 0),
@@ -79,9 +87,11 @@ impl Overlay {
             buffer.push(prev);
         }
 
-        let mut segments = buffer.split();
+        let range = LineRange { min: self.y_min, max: self.y_max };
 
-        segments.fill(fill_rule);
+        let mut segments = buffer.split(range);
+
+        segments.fill(fill_rule, range);
 
         return segments;
     }
@@ -91,15 +101,21 @@ impl Overlay {
     }
 }
 
+struct EdgeResult {
+    edges: Vec<ShapeEdge>,
+    y_min: i32,
+    y_max: i32,
+}
+
 trait CreateEdges {
-    fn edges(&self, shape_type: ShapeType) -> Vec<ShapeEdge>;
+    fn edges(&self, shape_type: ShapeType) -> Option<EdgeResult>;
 }
 
 impl CreateEdges for FixPath {
-    fn edges(&self, shape_type: ShapeType) -> Vec<ShapeEdge> {
+    fn edges(&self, shape_type: ShapeType) -> Option<EdgeResult> {
         let n = self.len();
         if n < 3 {
-            return Vec::new();
+            return None;
         }
 
         let mut edges = vec![ShapeEdge::ZERO; n];
@@ -107,8 +123,13 @@ impl CreateEdges for FixPath {
         let i0 = n - 1;
         let mut p0 = self[i0];
 
+        let mut y_min = p0.y;
+        let mut y_max = p0.y;
+
         for i in 0..n {
             let p1 = self[i];
+            y_min = y_min.min(p1.y);
+            y_max = y_max.max(p1.y);
 
             let value = if p0.bit_pack() <= p1.bit_pack() { 1 } else { -1 };
             match shape_type {
@@ -123,6 +144,10 @@ impl CreateEdges for FixPath {
             p0 = p1
         }
 
-        return edges;
+        return Some(EdgeResult {
+            edges,
+            y_min: y_min as i32,
+            y_max: y_max as i32,
+        });
     }
 }

@@ -17,7 +17,6 @@ impl LineIndexer {
         let x_max = range.max;
         let dif = (x_max - x_min) as usize;
 
-
         let d_log = dif.log_two();
 
         let max_level = if dif <= 2 {

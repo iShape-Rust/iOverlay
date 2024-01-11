@@ -4,10 +4,9 @@ use i_shape::triangle::Triangle;
 use crate::bool::fill_rule::FillRule;
 use crate::fill::fill_scan_list::FillScanList;
 use crate::split::shape_count::ShapeCount;
-use crate::fill::segment::{Segment, SegmentFill};
+use crate::fill::segment::{Segment, SegmentFill, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJECT_BOTTOM, SUBJECT_TOP};
 use crate::space::line_range::LineRange;
-use crate::space::line_segment::LineSegment;
-
+use crate::space::scan_space::ScanSegment;
 
 struct Handler {
     i: usize,
@@ -20,17 +19,15 @@ struct SegEnd {
 }
 
 pub(crate) trait FillSegments {
-    fn fill(&mut self, fill_rule: FillRule);
+    fn fill(&mut self, fill_rule: FillRule, range: LineRange);
 }
 
 impl FillSegments for Vec<Segment> {
-    fn fill(&mut self, fill_rule: FillRule) {
-        let mut scan_list = FillScanList::new(self);
-
+    fn fill(&mut self, fill_rule: FillRule, range: LineRange) {
+        let mut scan_list = FillScanList::new(range, self.len());
         let mut counts = vec![ShapeCount { subj: 0, clip: 0 }; self.len()];
         let mut x_buf = Vec::new();
         let mut e_buf = Vec::new();
-        let mut r_buf = Vec::new();
         let mut candidates = Vec::new();
 
         let n = self.len();
@@ -79,22 +76,15 @@ impl FillSegments for Vec<Segment> {
                 let mut range_bottom = iterator.min;
 
                 while best_y < range_bottom && iterator.min != i32::MIN {
-                    candidates.clear();
-                    scan_list.space.all_in_range(iterator, &mut candidates);
-                    r_buf.clear();
-
-                    for candidate in candidates.iter() {
-                        let seg_index = candidate.id;
-
-                        if self[seg_index].b.x <= x {
-                            r_buf.push(candidate.index)
-                        } else {
-                            let cy = self[seg_index].vertical_intersection(x) as i32;
-
+                    scan_list.space.ids_in_range(iterator, x, &mut candidates);
+                    if !candidates.is_empty() {
+                        for &seg_index in candidates.iter() {
+                            let seg = &self[seg_index];
+                            let cy = seg.vertical_intersection(x) as i32;
                             if cy <= y {
                                 if best_index == usize::MAX {
                                     if cy == y {
-                                        if Triangle::is_clockwise(FixVec::new(x, cy as i64), self[seg_index].b, self[seg_index].a) {
+                                        if Triangle::is_clockwise(FixVec::new(x, cy as i64), seg.b, seg.a) {
                                             best_index = seg_index;
                                             best_y = cy;
                                         }
@@ -104,11 +94,11 @@ impl FillSegments for Vec<Segment> {
                                     }
                                 } else {
                                     if best_y == cy {
-                                        if self[best_index].under(self[seg_index], FixVec::new(x, cy as i64)) {
+                                        if self[best_index].under(seg, FixVec::new(x, cy as i64)) {
                                             best_index = seg_index;
                                         }
                                     } else if cy == y {
-                                        if self[seg_index].under_point(FixVec::new(x, cy as i64)) {
+                                        if seg.under_point(FixVec::new(x, cy as i64)) {
                                             best_index = seg_index;
                                             best_y = cy;
                                         }
@@ -119,10 +109,7 @@ impl FillSegments for Vec<Segment> {
                                 }
                             }
                         }
-                    }
-
-                    if !r_buf.is_empty() {
-                        scan_list.space.remove_indices(&mut r_buf);
+                        candidates.clear();
                     }
 
                     range_bottom = iterator.min;
@@ -143,7 +130,8 @@ impl FillSegments for Vec<Segment> {
                     } else {
                         sum_count = self[se.i].add_and_fill(sum_count, fill_rule);
                         counts[se.i] = sum_count;
-                        scan_list.space.insert(LineSegment { id: se.i, range: self[se.i].vertical_range() });
+                        let seg = self[se.i];
+                        scan_list.space.insert(ScanSegment { id: se.i, range: seg.vertical_range(), stop: seg.b.x });
                     }
                 }
             }
@@ -172,7 +160,7 @@ impl Segment {
         (y01 * xx0) / x01 + self.a.y
     }
 
-    fn under(&self, other: Segment, cross: FixVec) -> bool {
+    fn under(&self, other: &Segment, cross: FixVec) -> bool {
         if self.a == other.a {
             Triangle::is_clockwise(self.a, other.b, self.b)
         } else if self.b == other.b {
@@ -203,25 +191,25 @@ impl Segment {
                 let c_top = 1 & new_count.clip;
                 let c_bottom = 1 & sum_count.clip;
 
-                subj_top = if s_top == 1 { SegmentFill::SUBJECT_TOP } else { SegmentFill::NONE };
-                subj_bottom = if s_bottom == 1 { SegmentFill::SUBJECT_BOTTOM } else { SegmentFill::NONE };
-                clip_top = if c_top == 1 { SegmentFill::CLIP_TOP } else { SegmentFill::NONE };
-                clip_bottom = if c_bottom == 1 { SegmentFill::CLIP_BOTTOM } else { SegmentFill::NONE };
+                subj_top = if s_top == 1 { SUBJECT_TOP } else { NONE };
+                subj_bottom = if s_bottom == 1 { SUBJECT_BOTTOM } else { NONE };
+                clip_top = if c_top == 1 { CLIP_TOP } else { NONE };
+                clip_bottom = if c_bottom == 1 { CLIP_BOTTOM } else { NONE };
             }
             FillRule::NonZero => {
                 if self.count.subj == 0 {
-                    subj_top = if sum_count.subj != 0 { SegmentFill::SUBJECT_TOP } else { SegmentFill::NONE };
-                    subj_bottom = if sum_count.subj != 0 { SegmentFill::SUBJECT_BOTTOM } else { SegmentFill::NONE };
+                    subj_top = if sum_count.subj != 0 { SUBJECT_TOP } else { NONE };
+                    subj_bottom = if sum_count.subj != 0 { SUBJECT_BOTTOM } else { NONE };
                 } else {
-                    subj_top = if new_count.subj != 0 { SegmentFill::SUBJECT_TOP } else { SegmentFill::NONE };
-                    subj_bottom = if sum_count.subj != 0 { SegmentFill::SUBJECT_BOTTOM } else { SegmentFill::NONE };
+                    subj_top = if new_count.subj != 0 { SUBJECT_TOP } else { NONE };
+                    subj_bottom = if sum_count.subj != 0 { SUBJECT_BOTTOM } else { NONE };
                 }
                 if self.count.clip == 0 {
-                    clip_top = if sum_count.clip != 0 { SegmentFill::CLIP_TOP } else { SegmentFill::NONE };
-                    clip_bottom = if sum_count.clip != 0 { SegmentFill::CLIP_BOTTOM } else { SegmentFill::NONE };
+                    clip_top = if sum_count.clip != 0 { CLIP_TOP } else { NONE };
+                    clip_bottom = if sum_count.clip != 0 { CLIP_BOTTOM } else { NONE };
                 } else {
-                    clip_top = if new_count.clip != 0 { SegmentFill::CLIP_TOP } else { SegmentFill::NONE };
-                    clip_bottom = if sum_count.clip != 0 { SegmentFill::CLIP_BOTTOM } else { SegmentFill::NONE };
+                    clip_top = if new_count.clip != 0 { CLIP_TOP } else { NONE };
+                    clip_bottom = if sum_count.clip != 0 { CLIP_BOTTOM } else { NONE };
                 }
             }
         }
