@@ -3,12 +3,10 @@ use i_shape::triangle::Triangle;
 use crate::fill::segment::Segment;
 use crate::split::shape_edge::ShapeEdge;
 use crate::space::line_range::LineRange;
-use crate::space::line_segment::LineSegment;
-use crate::space::line_space::LineSpace;
 use crate::split::shape_count::ShapeCount;
 use crate::split::shape_edge_cross::EdgeCrossType;
+use crate::split::split_scan_list::{SplitList, SplitSegment};
 use crate::split::split_range_list::SplitRangeList;
-use crate::split::version_index::VersionedIndex;
 
 pub(crate) trait SplitEdges {
     fn split(&self) -> Vec<Segment>;
@@ -20,12 +18,12 @@ impl SplitEdges for Vec<ShapeEdge> {
 
         let mut list = SplitRangeList::new(self);
 
-        let mut scan_list = LineSpace::with_edges(self);
+        let mut scan_list = SplitList::new(self);
 
         let mut need_to_fix = true;
 
-        let mut ids_to_remove = Vec::new();
         let mut candidates = Vec::new();
+        let mut remove_indices = Vec::new();
 
         while need_to_fix {
             scan_list.clear();
@@ -38,33 +36,26 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                 if this_ref.count.is_empty() {
                     e_index = list.remove_and_next(e_index.index);
-
                     continue;
                 }
 
                 let this_range = this_ref.vertical_range();
+                let this_stop = this_ref.b.bit_pack();
                 candidates.clear();
-                scan_list.all_in_range(this_range, &mut candidates);
+                scan_list.candidates_in_range(this_range, this_ref.a.bit_pack(), &mut candidates);
 
-                ids_to_remove.clear();
-
-                let mut new_scan_segment: Option<LineSegment<VersionedIndex>> = None;
+                let mut new_scan_segment: Option<SplitSegment> = None;
                 let mut is_cross = false;
 
                 'scan_loop:
                 for item in candidates.iter() {
                     let scan_edge = match list.validate_edge(item.id) {
                         None => {
-                            ids_to_remove.push(item.index);
+                            remove_indices.push(item.index);
                             continue;
                         }
                         Some(scan_edge) => {
-                            if scan_edge.b.bit_pack() <= this_ref.a.bit_pack() {
-                                ids_to_remove.push(item.index);
-                                continue;
-                            } else {
-                                scan_edge
-                            }
+                            scan_edge
                         }
                     };
 
@@ -113,9 +104,10 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             e_index = new_this_left;
 
-                            new_scan_segment = Some(LineSegment {
+                            new_scan_segment = Some(SplitSegment {
                                 id: new_scan_left,
                                 range: scan_lt.vertical_range(),
+                                stop: scan_lt.b.bit_pack(),
                             });
 
                             break 'scan_loop;
@@ -192,9 +184,10 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             // do not update e_index
 
-                            new_scan_segment = Some(LineSegment {
+                            new_scan_segment = Some(SplitSegment {
                                 id: new_scan_left,
                                 range: scan_lt.vertical_range(),
+                                stop: scan_lt.b.bit_pack(),
                             });
 
                             break 'scan_loop;
@@ -220,9 +213,10 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             // do not update e_index
 
-                            new_scan_segment = Some(LineSegment {
+                            new_scan_segment = Some(SplitSegment {
                                 id: new_scan0,
                                 range: scan0.vertical_range(),
+                                stop: scan0.b.bit_pack(),
                             });
 
                             break 'scan_loop;
@@ -260,9 +254,10 @@ impl SplitEdges for Vec<ShapeEdge> {
 
                             e_index = new_this_left;
 
-                            new_scan_segment = Some(LineSegment {
+                            new_scan_segment = Some(SplitSegment {
                                 id: new_scan_left,
                                 range: scan_lt.vertical_range(),
+                                stop: scan_lt.b.bit_pack(),
                             });
 
                             break 'scan_loop;
@@ -270,17 +265,18 @@ impl SplitEdges for Vec<ShapeEdge> {
                     }
                 }
 
-                if !ids_to_remove.is_empty() {
-                    scan_list.remove_indices(&mut ids_to_remove);
-                    ids_to_remove.clear();
-                }
+                scan_list.remove_indices(&mut remove_indices);
 
                 if is_cross {
                     if let Some(scan_segment) = new_scan_segment {
                         scan_list.insert(scan_segment);
                     }
                 } else {
-                    scan_list.insert(LineSegment { id: e_index, range: this_range });
+                    scan_list.insert(SplitSegment {
+                        id: e_index,
+                        range: this_range,
+                        stop: this_stop,
+                    });
                     e_index = list.next(e_index.index);
                 }
             } // while
