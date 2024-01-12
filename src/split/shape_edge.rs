@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use i_float::bit_pack::BitPackVec;
 
 use i_float::fix_vec::FixVec;
 use crate::split::shape_count::ShapeCount;

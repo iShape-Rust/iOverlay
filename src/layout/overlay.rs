@@ -1,3 +1,4 @@
+use i_float::bit_pack::BitPackVec;
 use i_float::fix_vec::FixVec;
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_shape::fix_shape::FixShape;

@@ -1,3 +1,4 @@
+use i_float::bit_pack::BitPackVec;
 use crate::space::dual_index::DualIndex;
 use crate::fill::segment::Segment;
 use crate::index::EMPTY_INDEX;
@@ -7,7 +8,7 @@ use crate::split::split_linked_list::SplitLinkedList;
 use crate::split::version_index::VersionedIndex;
 
 pub(super) struct SplitRangeList {
-    ranges: Vec<i64>,
+    ranges: Vec<u64>,
     lists: Vec<SplitLinkedList>,
 }
 
@@ -107,7 +108,7 @@ impl SplitRangeList {
         let length = edges.len() / n;
 
         let mut ranges = Vec::with_capacity(n + 1);
-        ranges.push(i64::MIN);
+        ranges.push(u64::MIN);
 
         let mut lists = Vec::with_capacity(n);
 
@@ -127,7 +128,7 @@ impl SplitRangeList {
             if i + min_length >= edges.len() {
                 let slice = &edges[i0..edges.len()];
                 lists.push(SplitLinkedList::new(slice));
-                ranges.push(i64::MAX);
+                ranges.push(u64::MAX);
                 break;
             } else {
                 let slice = &edges[i0..i];
@@ -158,11 +159,11 @@ impl SplitRangeList {
 }
 
 trait FindIndex {
-    fn find_index(&self, target: i64) -> usize;
+    fn find_index(&self, target: u64) -> usize;
 }
 
-impl FindIndex for [i64] {
-    fn find_index(&self, target: i64) -> usize {
+impl FindIndex for [u64] {
+    fn find_index(&self, target: u64) -> usize {
         let mut left = 0;
         let mut right = self.len();
 

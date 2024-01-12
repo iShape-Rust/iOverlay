@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use i_float::bit_pack::BitPackVec;
 use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_shape::fix_bnd::FixBnd;
@@ -127,9 +128,9 @@ impl OverlayGraph {
         loop {
             new_visited.push(next);
             path.push(a.point);
-            let node = self.nodes[b.index];
+            let node = &self.nodes[b.index];
 
-            if node.count == 2 {
+            if node.indices.len() == 2 {
                 next = node.other(next);
             } else {
                 let is_fill_top = fill_rule.is_fill_top(link.fill);

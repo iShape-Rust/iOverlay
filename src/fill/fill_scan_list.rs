@@ -2,15 +2,15 @@ use crate::space::line_range::LineRange;
 use crate::space::scan_space::ScanSpace;
 
 pub(super) struct FillScanList {
-    pub(super) space: ScanSpace<usize>,
+    pub(super) space: ScanSpace<usize, i64>,
     bottom: i32,
     delta: i32,
 }
 
 impl FillScanList {
-    pub(super) fn new(line: LineRange, count: usize) -> Self {
-        let space = ScanSpace::new(line, count);
-        let bottom = line.min;
+    pub(super) fn new(range: LineRange, count: usize) -> Self {
+        let space = ScanSpace::new(range, count);
+        let bottom = range.min;
         let delta = 1 << space.indexer.scale;
         Self { space, bottom, delta }
     }

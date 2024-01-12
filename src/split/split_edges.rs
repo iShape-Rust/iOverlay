@@ -1,3 +1,4 @@
+use i_float::bit_pack::BitPackVec;
 use i_float::fix_vec::FixVec;
 use i_shape::triangle::Triangle;
 use crate::fill::segment::Segment;
@@ -24,7 +25,7 @@ impl SplitEdges for Vec<ShapeEdge> {
         let mut need_to_fix = true;
 
         let mut candidates = Vec::new();
-        let mut remove_indices = Vec::new();
+        let mut indices_to_remove = Vec::new();
 
         while need_to_fix {
             need_to_fix = false;
@@ -45,26 +46,22 @@ impl SplitEdges for Vec<ShapeEdge> {
                 scan_list.items_in_range(this_range, this_ref.a.bit_pack(), &mut candidates);
 
                 let mut is_cross = false;
-                let mut new_scan_segment: Option<ScanSegment<VersionedIndex>> = None;
+                let mut new_scan_segment: Option<ScanSegment<VersionedIndex, u64>> = None;
 
                 if !candidates.is_empty() {
                     'scan_loop:
                     for item in candidates.iter() {
-                        let scan_edge = match list.validate_edge(item.id) {
-                            None => {
-                                remove_indices.push(item.index);
-                                continue;
-                            }
-                            Some(scan_edge) => {
-                                scan_edge
-                            }
+                        let scan_edge = if let Some(edge) = list.validate_edge(item.id) {
+                            edge
+                        } else {
+                            indices_to_remove.push(item.index);
+                            continue;
                         };
 
-                        let cross = match this_ref.cross(&scan_edge) {
-                            None => {
-                                continue;
-                            }
-                            Some(cross) => { cross }
+                        let cross = if let Some(cross) = this_ref.cross(&scan_edge) {
+                            cross
+                        } else {
+                            continue;
                         };
 
                         let v_index = item.id;
@@ -267,7 +264,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                     }
 
                     candidates.clear();
-                    scan_list.remove_indices(&mut remove_indices);
+                    scan_list.remove_indices(&mut indices_to_remove);
                 }
 
                 if is_cross {
