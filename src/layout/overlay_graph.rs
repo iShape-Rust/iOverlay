@@ -19,6 +19,7 @@ pub struct OverlayGraph {
 
 impl OverlayGraph {
 
+    // for js version
     pub fn links(&self) -> &Vec<OverlayLink> {
         &self.links
     }
