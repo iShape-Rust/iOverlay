@@ -18,6 +18,11 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
+
+    pub fn links(&self) -> &Vec<OverlayLink> {
+        &self.links
+    }
+
     pub(super) fn new(segments: Vec<Segment>) -> Self {
         let n = segments.len();
 
