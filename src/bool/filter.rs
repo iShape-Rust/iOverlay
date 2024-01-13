@@ -8,8 +8,8 @@ pub(super) trait Filter {
 
 impl Filter for Vec<OverlayLink> {
 
-    fn filter(&self, fill_rule: OverlayRule) -> Vec<bool> {
-        match fill_rule {
+    fn filter(&self, overlay_rule: OverlayRule) -> Vec<bool> {
+        match overlay_rule {
             OverlayRule::Subject => filter_subject(self),
             OverlayRule::Clip => filter_clip(self),
             OverlayRule::Intersect => filter_intersect(self),

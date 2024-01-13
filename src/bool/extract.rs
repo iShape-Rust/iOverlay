@@ -24,12 +24,12 @@ struct Contour {
 }
 
 impl OverlayGraph {
-    pub fn extract_shapes(&self, fill_rule: OverlayRule) -> Vec<FixShape> {
-        self.extract_shapes_min_area(fill_rule, 0)
+    pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<FixShape> {
+        self.extract_shapes_min_area(overlay_rule, 0)
     }
 
-    pub fn extract_shapes_min_area(&self, fill_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
-        let mut visited = self.links.filter(fill_rule);
+    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
+        let mut visited = self.links.filter(overlay_rule);
 
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
@@ -37,7 +37,7 @@ impl OverlayGraph {
 
         for i in 0..self.links.len() {
             if !visited[i] {
-                let contour = self.get_contour(fill_rule, min_area, i, &mut visited);
+                let contour = self.get_contour(overlay_rule, min_area, i, &mut visited);
 
                 if !contour.path.is_empty() {
                     if contour.is_cavity {
@@ -111,7 +111,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_contour(&self, fill_rule: OverlayRule, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> Contour {
+    fn get_contour(&self, overlay_rule: OverlayRule, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> Contour {
         let mut path = FixPath::new();
         let mut next = index;
 
@@ -133,7 +133,7 @@ impl OverlayGraph {
             if node.indices.len() == 2 {
                 next = node.other(next);
             } else {
-                let is_fill_top = fill_rule.is_fill_top(link.fill);
+                let is_fill_top = overlay_rule.is_fill_top(link.fill);
                 let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
                 next = self.find_nearest_link_to(a, b, next, is_cw, visited);
                 if next == EMPTY_INDEX {
@@ -160,7 +160,7 @@ impl OverlayGraph {
             }
         }
 
-        let is_cavity = fill_rule.is_fill_bottom(left_link.fill);
+        let is_cavity = overlay_rule.is_fill_bottom(left_link.fill);
 
         Self::validate(&mut path, min_area, is_cavity);
 
