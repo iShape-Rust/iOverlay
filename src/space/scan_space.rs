@@ -111,7 +111,11 @@ impl<Id: Copy, Unit: Ord + Copy> ScanSpace<Id, Unit> {
                     let index = indices.get_unchecked(i);
                     let segments = self.heaps.get_unchecked_mut(index.major);
                     while i < indices.len() && index.major == indices.get_unchecked(i).major {
-                        segments.swap_remove(index.minor);
+                        if index.minor + 1 < segments.len() {
+                            segments.swap_remove(index.minor);
+                        } else {
+                            segments.pop();
+                        }
                         i += 1;
                     }
                 }

@@ -510,4 +510,9 @@ mod tests {
     fn test_95() {
         execute(95);
     }
+
+    #[test]
+    fn test_96() {
+        execute(96);
+    }
 }
