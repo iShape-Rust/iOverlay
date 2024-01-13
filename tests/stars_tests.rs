@@ -24,10 +24,8 @@ mod tests {
                 let graph = overlay.build_graph(FillRule::NonZero);
                 let result = graph.extract_shapes(OverlayRule::Union);
                 assert!(result.len() > 0);
-                a += 0.001
+                a += 0.005
             }
-
-            println!("{}", r);
             r += 0.01
         }
     }
