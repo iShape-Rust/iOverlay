@@ -9,13 +9,12 @@ mod tests {
 
     #[test]
     fn test_0() {
+        let clip = create_star(1.0, 2.0, 7, 0.0);
         let mut r = 0.9;
-
         while r < 1.2 {
             let mut a = 0.0;
-            while a < PI {
+            while a < 2.0 * PI {
                 let subj = create_star(1.0, r, 7, a);
-                let clip = create_star(1.0, 2.0, 7, 0.0);
 
                 let mut overlay = Overlay::new(2);
                 overlay.add_shape(&subj, ShapeType::Subject);
@@ -27,6 +26,113 @@ mod tests {
                 a += 0.005
             }
             r += 0.01
+        }
+    }
+
+    #[test]
+    fn test_1() {
+        let mut a = 0.0;
+        let clip = create_star(200.0, 30.0, 7, 0.0);
+        while a < 4.0 * PI {
+            let subj = create_star(200.0, 30.0, 7, a);
+
+            let mut overlay = Overlay::new(2);
+            overlay.add_shape(&subj, ShapeType::Subject);
+            overlay.add_shape(&clip, ShapeType::Clip);
+
+            let graph = overlay.build_graph(FillRule::NonZero);
+            let result = graph.extract_shapes(OverlayRule::Xor);
+            assert!(result.len() > 1 || result.len() == 0);
+            a += 0.001
+        }
+    }
+
+    #[test]
+    fn test_2() {
+        let mut a = 0.0;
+        let clip = create_star(202.5, 33.75, 24, 0.0);
+        while a < 2.0 * PI {
+            let subj = create_star(202.5, 33.75, 24, a);
+
+            let mut overlay = Overlay::new(2);
+            overlay.add_shape(&subj, ShapeType::Subject);
+            overlay.add_shape(&clip, ShapeType::Clip);
+
+            let graph = overlay.build_graph(FillRule::NonZero);
+            let result = graph.extract_shapes(OverlayRule::Xor);
+            assert!(result.len() > 1 || result.len() == 0);
+            a += 0.001
+        }
+    }
+
+    #[test]
+    fn test_3() {
+        let mut a = 0.0;
+        let clip = create_star(100.0, 10.0, 17, 0.0);
+        while a < 4.0 * PI {
+            let subj = create_star(100.0, 10.0, 17, a);
+
+            let mut overlay = Overlay::new(2);
+            overlay.add_shape(&subj, ShapeType::Subject);
+            overlay.add_shape(&clip, ShapeType::Clip);
+
+            let graph = overlay.build_graph(FillRule::EvenOdd);
+            let result = graph.extract_shapes(OverlayRule::Xor);
+            assert!(result.len() > 1 || result.len() == 0);
+            a += 0.001
+        }
+    }
+
+    #[test]
+    fn test_4() {
+        let mut a = -0.000_001;
+        let clip = create_star(202.5, 33.75, 24, 0.0);
+        while a < 0.000_001 {
+            let subj = create_star(202.5, 33.75, 24, a);
+
+            let mut overlay = Overlay::new(2);
+            overlay.add_shape(&subj, ShapeType::Subject);
+            overlay.add_shape(&clip, ShapeType::Clip);
+
+            let graph = overlay.build_graph(FillRule::NonZero);
+            let result = graph.extract_shapes(OverlayRule::Xor);
+            assert!(result.len() > 1 || result.len() == 0);
+            a += 0.000_000_01
+        }
+    }
+
+    #[test]
+    fn test_5() {
+        let a = -9.9999999999999995E-7;
+        let clip = create_star(202.5, 33.75, 24, 0.0);
+        let subj = create_star(202.5, 33.75, 24, a);
+
+        println!("subj {:?}", subj);
+
+        let mut overlay = Overlay::new(2);
+        overlay.add_shape(&subj, ShapeType::Subject);
+        overlay.add_shape(&clip, ShapeType::Clip);
+
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let result = graph.extract_shapes(OverlayRule::Xor);
+        assert!(result.len() > 1 || result.len() == 0);
+    }
+
+    #[test]
+    fn test_6() {
+        let mut a = -0.000_001;
+        let clip = create_star(100.0, 50.0, 24, 0.0);
+        while a < 0.000_001 {
+            let subj = create_star(100.0, 50.0, 24, a);
+
+            let mut overlay = Overlay::new(2);
+            overlay.add_shape(&subj, ShapeType::Subject);
+            overlay.add_shape(&clip, ShapeType::Clip);
+
+            let graph = overlay.build_graph(FillRule::NonZero);
+            let result = graph.extract_shapes(OverlayRule::Xor);
+            assert!(result.len() > 1 || result.len() == 0);
+            a += 0.000_000_1
         }
     }
 
@@ -53,5 +159,4 @@ mod tests {
 
         FixShape::new_with_contour(points)
     }
-
 }

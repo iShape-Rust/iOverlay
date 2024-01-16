@@ -80,8 +80,10 @@ impl FillSegments for Vec<Segment> {
                     if !candidates.is_empty() {
                         for &seg_index in candidates.iter() {
                             let seg = &self[seg_index];
-                            let cy = seg.vertical_intersection(x) as i32;
-                            if cy <= y {
+
+                            if Triangle::is_clockwise(seg.a, FixVec::new(x, y as i64), seg.b) {
+                                let cy = seg.vertical_intersection(x) as i32;
+
                                 if best_index == usize::MAX {
                                     if cy == y {
                                         if Triangle::is_clockwise(FixVec::new(x, cy as i64), seg.b, seg.a) {
@@ -94,7 +96,7 @@ impl FillSegments for Vec<Segment> {
                                     }
                                 } else {
                                     if best_y == cy {
-                                        if self[best_index].under(seg, FixVec::new(x, cy as i64)) {
+                                        if self[best_index].under(seg) {
                                             best_index = seg_index;
                                         }
                                     } else if cy == y {
@@ -160,14 +162,15 @@ impl Segment {
         (y01 * xx0) / x01 + self.a.y
     }
 
-    fn under(&self, other: &Segment, cross: FixVec) -> bool {
+    fn under(&self, other: &Segment) -> bool {
         if self.a == other.a {
             Triangle::is_clockwise(self.a, other.b, self.b)
         } else if self.b == other.b {
             Triangle::is_clockwise(self.b, self.a, other.a)
+        } else if self.a.x < other.a.x {
+            Triangle::is_clockwise(self.a, other.a, self.b)
         } else {
-            // probably this case impossible
-            Triangle::is_clockwise(cross, other.b, self.b)
+            Triangle::is_clockwise(other.a, other.b, self.a)
         }
     }
 

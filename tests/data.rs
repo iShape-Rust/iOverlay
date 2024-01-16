@@ -2,10 +2,15 @@ pub mod overlay {
     use std::path::PathBuf;
     use i_shape::fix_path::FixPath;
     use i_shape::fix_shape::FixShape;
-    use serde::Deserialize;
+    use serde::{Deserialize, Deserializer};
+    use i_overlay::bool::fill_rule::FillRule;
 
     #[derive(Debug, Deserialize)]
     pub struct Test {
+
+        #[serde(rename = "fillRule")]
+        #[serde(default, deserialize_with = "deserialize_fill_rule")]
+        pub fill_rule: Option<FillRule>,
         #[serde(rename = "subjPaths")]
         pub subj_paths: Vec<FixPath>,
         #[serde(rename = "clipPaths")]
@@ -15,7 +20,19 @@ pub mod overlay {
         pub difference: Vec<FixShape>,
         pub intersect: Vec<FixShape>,
         pub union: Vec<FixShape>,
-        pub xor: Vec<FixShape>
+        pub xor: Vec<FixShape>,
+    }
+
+    fn deserialize_fill_rule<'de, D>(deserializer: D) -> Result<Option<FillRule>, D::Error>
+        where D: Deserializer<'de>
+    {
+        let val = Option::<i32>::deserialize(deserializer)?;
+        match val {
+            Some(0) => Ok(Some(FillRule::EvenOdd)),
+            Some(1) => Ok(Some(FillRule::NonZero)),
+            None => Ok(None), // This covers the case where the field is missing
+            _ => Err(serde::de::Error::custom("Invalid value for FillRule")),
+        }
     }
 
     impl Test {
@@ -27,7 +44,7 @@ pub mod overlay {
             let data = match std::fs::read_to_string(path_buf.as_path()) {
                 Ok(data) => {
                     data
-                },
+                }
                 Err(e) => {
                     panic!("{:?}", e);
                 }

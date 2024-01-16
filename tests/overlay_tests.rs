@@ -14,7 +14,7 @@ mod tests {
         overlay.add_paths(&test.subj_paths, ShapeType::Subject);
         overlay.add_paths(&test.clip_paths, ShapeType::Clip);
 
-        let graph = overlay.build_graph(FillRule::EvenOdd);
+        let graph = overlay.build_graph(test.fill_rule.unwrap_or(FillRule::EvenOdd));
 
         let clip = graph.extract_shapes(OverlayRule::Clip);
         let subject = graph.extract_shapes(OverlayRule::Subject);
@@ -514,5 +514,30 @@ mod tests {
     #[test]
     fn test_96() {
         execute(96);
+    }
+
+    #[test]
+    fn test_97() {
+        execute(97);
+    }
+
+    #[test]
+    fn test_98() {
+        execute(98);
+    }
+
+    #[test]
+    fn test_99() {
+        execute(99);
+    }
+
+    #[test]
+    fn test_100() {
+        execute(100);
+    }
+
+    #[test]
+    fn test_101() {
+        execute(101);
     }
 }

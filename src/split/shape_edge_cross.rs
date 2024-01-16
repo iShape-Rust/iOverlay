@@ -91,22 +91,34 @@ impl ShapeEdge {
         let p = Self::cross_point(a0, a1, b0, b1);
 
         // still can be common ends cause rounding
-        let end_a = a0 == p || a1 == p;
-        let end_b = b0 == p || b1 == p;
+        // snap to a nearest end with radius 1, (1^2 + 1^2 == 2)
 
-        let edge_type;
+        let ra0 = a0.sqr_distance(p);
+        let ra1 = a1.sqr_distance(p);
 
-        if !end_a && !end_b {
-            edge_type = EdgeCrossType::Pure;
-        } else if end_a {
-            edge_type = EdgeCrossType::EndA;
-        } else if end_b {
-            edge_type = EdgeCrossType::EndB;
+        let rb0 = b0.sqr_distance(p);
+        let rb1 = b1.sqr_distance(p);
+
+        if ra0 <= 2 || ra1 <= 2 || rb0 <= 2 || rb1 <= 2 {
+            let ra = ra0.min(ra1);
+            let rb = rb0.min(rb1);
+
+            if ra <= rb {
+                if ra0 < ra1 {
+                    Some(EdgeCross { nature: EdgeCrossType::EndA, point: a0, second: FixVec::ZERO })
+                } else {
+                    Some(EdgeCross { nature: EdgeCrossType::EndA, point: a1, second: FixVec::ZERO })
+                }
+            } else {
+                if rb0 < rb1 {
+                    Some(EdgeCross { nature: EdgeCrossType::EndB, point: b0, second: FixVec::ZERO })
+                } else {
+                    Some(EdgeCross { nature: EdgeCrossType::EndB, point: b1, second: FixVec::ZERO })
+                }
+            }
         } else {
-            panic!("Impossible");
+            Some(EdgeCross { nature: EdgeCrossType::Pure, point: p, second: FixVec::ZERO })
         }
-
-        return Some(EdgeCross { nature: edge_type, point: p, second: FixVec::ZERO });
     }
 
     fn cross_point(a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> FixVec {
