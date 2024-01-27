@@ -1,26 +1,25 @@
-use std::collections::HashMap;
+use std::cmp::Ordering;
 use i_float::bit_pack::BitPackVec;
 use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
 use i_shape::fix_path::{FixPath, FixPathExtension};
-use i_shape::fix_bnd::FixBnd;
 use i_float::fix_vec::FixVec;
+use i_float::point::Point;
 use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
-use crate::fill::segment::{BOTH_BOTTOM, BOTH_TOP, CLIP_BOTTOM, CLIP_TOP, NONE, SegmentFill, SUBJECT_BOTTOM, SUBJECT_TOP};
+use crate::bool::floor::{Floor, Floors};
+use crate::bool::id_point::IdPoint;
+use crate::geom::x_scan_list::XScanList;
 use crate::index::EMPTY_INDEX;
 use crate::layout::overlay_graph::OverlayGraph;
+use crate::space::line_range::LineRange;
+use crate::space::scan_space::ScanSegment;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
 
 struct Contour {
+    is_hole: bool,
     path: FixPath,
-    // Array of points in clockwise order
-    boundary: FixBnd,
-    // Smallest bounding box of the path
-    start: FixVec,
-    // Leftmost point in the path
-    is_cavity: bool,      // True if path is an internal cavity (hole), false if external (hull)
 }
 
 impl OverlayGraph {
@@ -33,80 +32,22 @@ impl OverlayGraph {
 
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
-        let mut shape_bounds = Vec::new();
 
         for i in 0..self.links.len() {
             if !visited[i] {
                 let contour = self.get_contour(overlay_rule, min_area, i, &mut visited);
 
                 if !contour.path.is_empty() {
-                    if contour.is_cavity {
-                        holes.push(contour);
+                    if contour.is_hole {
+                        holes.push(contour.path);
                     } else {
                         shapes.push(FixShape { paths: [contour.path].to_vec() });
-                        shape_bounds.push(contour.boundary);
                     }
                 }
             }
         }
 
-        if holes.is_empty() {
-            return shapes;
-        }
-
-        if shapes.len() == 1 {
-            shapes[0].paths.reserve_exact(holes.len());
-            for hole in holes {
-                shapes[0].add_hole(hole.path)
-            }
-        } else {
-            let mut shape_candidates = Vec::new();
-
-            // find for each hole its shape
-            let mut hole_counter: HashMap<usize, usize> = HashMap::with_capacity(holes.len());
-            let mut hole_shape = vec![0; holes.len()];
-
-            for (index, hole) in holes.iter().enumerate() {
-                shape_candidates.clear();
-                for shape_index in 0..shapes.len() {
-                    let shape_bnd = &shape_bounds[shape_index];
-                    if shape_bnd.is_inside(hole.boundary) {
-                        shape_candidates.push(shape_index);
-                    }
-                }
-
-                assert!(!shape_candidates.is_empty());
-
-                let mut best_shape_index = EMPTY_INDEX;
-
-                if shape_candidates.len() <= 1 {
-                    best_shape_index = shape_candidates[0];
-                } else {
-                    let mut min_dist = i64::MAX;
-                    for &shape_index in shape_candidates.iter() {
-                        let dist = Self::get_bottom_vertical_distance(shapes[shape_index].contour(), hole.start);
-                        if min_dist > dist {
-                            min_dist = dist;
-                            best_shape_index = shape_index;
-                        }
-                    }
-                }
-
-                hole_shape[index] = best_shape_index;
-                *hole_counter.entry(best_shape_index).or_insert(0) += 1;
-            }
-
-            for (shape_index, hole_count) in hole_counter.into_iter() {
-                let shape = &mut shapes[shape_index];
-                shape.paths.reserve_exact(hole_count);
-            }
-
-            for (index, hole) in holes.into_iter().enumerate() {
-                let shape_index = hole_shape[index];
-                let shape = &mut shapes[shape_index];
-                shape.add_hole(hole.path);
-            }
-        }
+        shapes.join(holes);
 
         shapes
     }
@@ -160,21 +101,15 @@ impl OverlayGraph {
             }
         }
 
-        let is_cavity = overlay_rule.is_fill_bottom(left_link.fill);
+        let is_hole = overlay_rule.is_fill_bottom(left_link.fill);
 
-        Self::validate(&mut path, min_area, is_cavity);
+        Self::validate(&mut path, min_area, is_hole);
 
         for idx in new_visited {
             visited[idx] = true;
         }
 
-        let boundary = if !path.is_empty() {
-            FixBnd::from_points(&path)
-        } else {
-            FixBnd::ZERO
-        };
-
-        Contour { path, boundary, start: left_link.a.point, is_cavity }
+        Contour { path, is_hole }
     }
 
     fn is_clockwise(a: FixVec, b: FixVec, is_top_inside: bool) -> bool {
@@ -187,7 +122,7 @@ impl OverlayGraph {
         (a && b) || !(a || b)
     }
 
-    fn validate(path: &mut FixPath, min_area: FixFloat, is_cavity: bool) {
+    fn validate(path: &mut FixPath, min_area: FixFloat, is_hole: bool) {
         path.remove_degenerates();
 
         if path.len() < 3 {
@@ -200,80 +135,142 @@ impl OverlayGraph {
 
         if fix_abs_area < min_area {
             path.clear();
-        } else if is_cavity && area > 0 || !is_cavity && area < 0 {
+        } else if is_hole && area > 0 || !is_hole && area < 0 {
             // for holes must be negative and for contour must be positive
             path.reverse();
         }
     }
+}
 
-    // points of holes can not have any common points with hull
-    fn get_bottom_vertical_distance(path: &FixPath, p: FixVec) -> i64 {
-        let mut p0 = path[path.len() - 1];
-        let mut nearest_y = i64::MIN;
+trait JoinHoles {
+    fn join(&mut self, holes: Vec<FixPath>);
+    fn scan_join(&mut self, holes: Vec<FixPath>);
+}
 
-        for pi in path {
-            // any bottom and non vertical
-
-            if p0.x != pi.x {
-                let ab: (FixVec, FixVec) = if p0.x < pi.x {
-                    (p0, *pi)
-                } else {
-                    (*pi, p0)
-                };
-
-                if ab.0.x <= p.x && p.x <= ab.1.x {
-                    let y = Self::get_vertical_intersection(ab.0, ab.1, p.x);
-
-                    if p.y > y && y > nearest_y {
-                        nearest_y = y;
-                    }
-                }
-            }
-
-            p0 = *pi;
+impl JoinHoles for Vec<FixShape> {
+    fn join(&mut self, holes: Vec<FixPath>) {
+        if self.is_empty() || holes.is_empty() {
+            return;
         }
 
-        p.y - nearest_y
+        if self.len() == 1 {
+            self[0].paths.reserve_exact(holes.len());
+            let mut hole_paths = holes;
+            self[0].paths.append(&mut hole_paths);
+        } else {
+            self.scan_join(holes);
+        }
     }
 
-    fn get_vertical_intersection(p0: FixVec, p1: FixVec, x: FixFloat) -> i64 {
-        let y01 = p0.y - p1.y;
-        let x01 = p0.x - p1.x;
-        let xx0 = x - p0.x;
+    fn scan_join(&mut self, holes: Vec<FixPath>) {
+        let mut i_points: Vec<IdPoint> = holes.iter().enumerate()
+            .map(|(index, hole)| IdPoint::new(index, Point::new_fix_vec(hole[0])))
+            .collect();
+        i_points.sort_by(|a, b| a.point.order_by_x(&b.point));
 
-        (y01 * xx0) / x01 + p0.y
+        let x_min = i_points[0].point.x;
+        let x_max = i_points[i_points.len() - 1].point.x;
+        let mut y_min = i32::MAX;
+        let mut y_max = i32::MIN;
+
+        let mut floors = Vec::new();
+        for i in 0..self.len() {
+            let mut hole_floors = self[i].contour().floors(i, x_min, x_max, &mut y_min, &mut y_max);
+            floors.append(&mut hole_floors);
+        }
+
+        floors.sort_by(|a, b| a.seg.a.order_by_x(&b.seg.a));
+
+        let mut scan_list = XScanList::new(LineRange { min: y_min, max: y_max }, floors.len());
+
+        let mut hole_shape = vec![0; holes.len()];
+        let mut hole_counter = vec![0; self.len()];
+
+        let mut candidates = Vec::new();
+
+        let mut i = 0;
+        let mut j = 0;
+
+        while i < i_points.len() {
+            let x = i_points[i].point.x;
+
+            while j < floors.len() && floors[j].seg.a.x < x {
+                let floor = floors[j];
+                if floor.seg.b.x > x {
+                    scan_list.space.insert(ScanSegment { id: j, range: floor.seg.y_range(), stop: floor.seg.b.x })
+                }
+                j += 1;
+            }
+
+            while i < i_points.len() && i_points[i].point.x == x {
+                let p = i_points[i].point;
+
+                // find nearest scan segment for y
+                let mut iterator = scan_list.iterator_to_bottom(p.y);
+                let mut best_floor: Option<Floor> = None;
+
+                while iterator.min != i32::MIN {
+                    scan_list.space.ids_in_range(iterator, x, &mut candidates);
+                    if !candidates.is_empty() {
+                        for &floor_index in candidates.iter() {
+                            let floor = floors[floor_index];
+                            if floor.seg.is_under_point(p) {
+                                if let Some(best_seg) = best_floor {
+                                    if best_seg.seg.is_under_segment(floor.seg) {
+                                        best_floor = Some(floor);
+                                    }
+                                } else {
+                                    best_floor = Some(floor);
+                                }
+                            }
+                        }
+                        candidates.clear();
+                    }
+
+                    if let Some(best_seg) = best_floor {
+                        if best_seg.seg.is_above_point(Point::new(x, iterator.min)) {
+                            break;
+                        }
+                    }
+
+                    iterator = scan_list.next(iterator);
+                }
+
+                assert!(!best_floor.is_none());
+                let shape_index = best_floor.map_or(0, |f| f.id);
+                let hole_index = i_points[i].id;
+
+                hole_shape[hole_index] = shape_index;
+                hole_counter[shape_index] += 1;
+
+                i += 1
+            }
+        }
+
+        for shape_index in 0..hole_counter.len() {
+            let capacity = hole_counter[shape_index];
+            self[shape_index].paths.reserve_exact(capacity);
+        }
+
+        let mut hole_index = 0;
+        for hole in holes.into_iter() {
+            let shape_index = hole_shape[hole_index];
+            self[shape_index].paths.push(hole);
+            hole_index += 1;
+        }
     }
 }
 
+trait XOrder {
+    fn order_by_x(&self, other: &Self) -> Ordering;
+}
 
-impl OverlayRule {
-    fn is_fill_top(&self, fill: SegmentFill) -> bool {
-        match self {
-            OverlayRule::Subject => fill & SUBJECT_TOP == SUBJECT_TOP,
-            OverlayRule::Clip => fill & CLIP_TOP == CLIP_TOP,
-            OverlayRule::Intersect => fill & BOTH_TOP == BOTH_TOP,
-            OverlayRule::Union => fill & BOTH_BOTTOM == NONE,
-            OverlayRule::Difference => fill & BOTH_TOP == SUBJECT_TOP,
-            OverlayRule::Xor => {
-                let is_subject = fill & BOTH_TOP == SUBJECT_TOP;
-                let is_clip = fill & BOTH_TOP == CLIP_TOP;
-                is_subject || is_clip
-            }
-        }
-    }
-
-    fn is_fill_bottom(&self, fill: SegmentFill) -> bool {
-        match self {
-            OverlayRule::Subject => fill & SUBJECT_BOTTOM == SUBJECT_BOTTOM,
-            OverlayRule::Clip => fill & CLIP_BOTTOM == CLIP_BOTTOM,
-            OverlayRule::Intersect => fill & BOTH_BOTTOM == BOTH_BOTTOM,
-            OverlayRule::Union => fill & BOTH_TOP == NONE,
-            OverlayRule::Difference => fill & BOTH_BOTTOM == SUBJECT_BOTTOM,
-            OverlayRule::Xor => {
-                let is_subject = fill & BOTH_BOTTOM == SUBJECT_BOTTOM;
-                let is_clip = fill & BOTH_BOTTOM == CLIP_BOTTOM;
-                is_subject || is_clip
-            }
+impl XOrder for Point {
+    fn order_by_x(&self, other: &Self) -> Ordering {
+        if self.x < other.x {
+            Ordering::Less
+        } else {
+            Ordering::Greater
         }
     }
 }

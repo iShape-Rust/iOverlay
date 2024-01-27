@@ -11,22 +11,19 @@ mod tests {
     #[test]
     fn test_clockwise_direct() {
         let mut overlay = Overlay::new(8);
-        overlay.add_paths(&[
-                              [
-                                  FixVec::new_f64(-10.0, -10.0),
-                                  FixVec::new_f64(-10.0,  10.0),
-                                  FixVec::new_f64( 10.0,  10.0),
-                                  FixVec::new_f64( 10.0, -10.0)
-                              ].to_vec()
-                          ].to_vec(), ShapeType::Subject);
-        overlay.add_paths(&[
-            [
-                FixVec::new_f64(-5.0, -5.0),
-                FixVec::new_f64(-5.0,  5.0),
-                FixVec::new_f64( 5.0,  5.0),
-                FixVec::new_f64( 5.0, -5.0)
-            ].to_vec()
-        ].to_vec(), ShapeType::Clip);
+        overlay.add_path(&vec![
+            FixVec::new_f64(-10.0, -10.0),
+            FixVec::new_f64(-10.0, 10.0),
+            FixVec::new_f64(10.0, 10.0),
+            FixVec::new_f64(10.0, -10.0),
+        ], ShapeType::Subject);
+
+        overlay.add_path(&vec![
+            FixVec::new_f64(-5.0, -5.0),
+            FixVec::new_f64(-5.0, 5.0),
+            FixVec::new_f64(5.0, 5.0),
+            FixVec::new_f64(5.0, -5.0),
+        ], ShapeType::Clip);
 
         let graph = overlay.build_graph(FillRule::EvenOdd);
 
@@ -48,16 +45,16 @@ mod tests {
         overlay.add_paths(&[
             [
                 FixVec::new_f64(-10.0, -10.0),
-                FixVec::new_f64(10.0,  -10.0),
-                FixVec::new_f64(10.0,  10.0),
+                FixVec::new_f64(10.0, -10.0),
+                FixVec::new_f64(10.0, 10.0),
                 FixVec::new_f64(-10.0, 10.0)
             ].to_vec()
         ].to_vec(), ShapeType::Subject);
         overlay.add_paths(&[
             [
                 FixVec::new_f64(-5.0, -5.0),
-                FixVec::new_f64(5.0,  -5.0),
-                FixVec::new_f64(5.0,  5.0),
+                FixVec::new_f64(5.0, -5.0),
+                FixVec::new_f64(5.0, 5.0),
                 FixVec::new_f64(-5.0, 5.0)
             ].to_vec()
         ].to_vec(), ShapeType::Clip);
@@ -82,17 +79,17 @@ mod tests {
         overlay.add_paths(&[
             [
                 FixVec::new_f64(-10.0, -10.0),
-                FixVec::new_f64(10.0,  -10.0),
-                FixVec::new_f64(10.0,  10.0),
+                FixVec::new_f64(10.0, -10.0),
+                FixVec::new_f64(10.0, 10.0),
                 FixVec::new_f64(-10.0, 10.0)
             ].to_vec()
         ].to_vec(), ShapeType::Subject);
         overlay.add_paths(&[
             [
                 FixVec::new_f64(-5.0, -5.0),
-                FixVec::new_f64(-5.0,  5.0),
-                FixVec::new_f64( 5.0,  5.0),
-                FixVec::new_f64( 5.0, -5.0)
+                FixVec::new_f64(-5.0, 5.0),
+                FixVec::new_f64(5.0, 5.0),
+                FixVec::new_f64(5.0, -5.0)
             ].to_vec()
         ].to_vec(), ShapeType::Clip);
 

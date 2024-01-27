@@ -540,4 +540,24 @@ mod tests {
     fn test_101() {
         execute(101);
     }
+
+    #[test]
+    fn test_102() {
+        execute(102);
+    }
+
+    #[test]
+    fn test_103() {
+        execute(103);
+    }
+
+    #[test]
+    fn test_104() {
+        execute(104);
+    }
+
+    #[test]
+    fn test_105() {
+        execute(105);
+    }
 }
