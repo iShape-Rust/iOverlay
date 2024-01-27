@@ -35,7 +35,7 @@ impl OverlayGraph {
         for (seg_index, segment) in segments.iter().enumerate() {
             end_bs.push(End {
                 seg_index,
-                bit_pack: segment.b.bit_pack(),
+                bit_pack: segment.seg.b.bit_pack(),
             });
         }
 
@@ -49,7 +49,7 @@ impl OverlayGraph {
 
         let mut ai = 0;
         let mut bi = 0;
-        let mut a = segments[0].a.bit_pack();
+        let mut a = segments[0].seg.a.bit_pack();
         let mut b = end_bs[0].bit_pack;
 
         while ai < n || bi < n {
@@ -58,7 +58,7 @@ impl OverlayGraph {
             if a == b {
                 let ip = IndexPoint::new(nodes.len(), a.fix_vec());
                 while ai < n {
-                    let aa = segments[ai].a.bit_pack();
+                    let aa = segments[ai].seg.a.bit_pack();
                     if aa != a {
                         a = aa;
                         break;
@@ -83,7 +83,7 @@ impl OverlayGraph {
             } else if ai < n && a < b {
                 let ip = IndexPoint::new(nodes.len(), a.fix_vec());
                 while ai < n {
-                    let aa = segments[ai].a.bit_pack();
+                    let aa = segments[ai].seg.a.bit_pack();
                     if aa != a {
                         a = aa;
                         break;

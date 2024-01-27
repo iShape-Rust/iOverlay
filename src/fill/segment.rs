@@ -1,4 +1,4 @@
-use i_float::fix_vec::FixVec;
+use crate::geom::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 use crate::split::shape_edge::ShapeEdge;
 
@@ -20,11 +20,7 @@ pub const ALL: SegmentFill = SUBJECT_BOTH | CLIP_BOTH;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Segment {
-    // start < end
-    pub(crate) a: FixVec,
-    // start
-    pub(crate) b: FixVec,
-    // end
+    pub(crate) seg: XSegment,
     pub(crate) count: ShapeCount,
     pub(crate) fill: SegmentFill,
 }
@@ -32,8 +28,7 @@ pub struct Segment {
 impl Segment {
     pub(crate) fn new(edge: &ShapeEdge) -> Self {
         Self {
-            a: edge.a,
-            b: edge.b,
+            seg: XSegment::with_edge(edge),
             count: edge.count,
             fill: NONE,
         }

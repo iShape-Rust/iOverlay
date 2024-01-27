@@ -5,3 +5,4 @@ pub mod split;
 pub mod index;
 pub mod ext;
 pub mod space;
+mod geom;
