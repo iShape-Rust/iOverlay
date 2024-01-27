@@ -18,7 +18,6 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
-
     // for js version
     pub fn links(&self) -> &Vec<OverlayLink> {
         &self.links
@@ -53,7 +52,17 @@ impl OverlayGraph {
         let mut b = end_bs[0].bit_pack;
 
         while ai < n || bi < n {
-            let mut indices = Vec::new();
+            let mut cnt = 0;
+            if a == b {
+                cnt += segments.size(a, ai);
+                cnt += end_bs.size(b, bi);
+            } else if ai < n && a < b {
+                cnt += segments.size(a, ai);
+            } else {
+                cnt += end_bs.size(b, bi);
+            }
+
+            let mut indices = Vec::with_capacity(cnt);
 
             if a == b {
                 let ip = IndexPoint::new(nodes.len(), a.fix_vec());
@@ -186,5 +195,29 @@ impl CloseInRotation for FixVec {
         let cross_ab = a.cross_product(b);
 
         cross_ab < 0
+    }
+}
+
+trait Size {
+    fn size(&self, point: BitPack, index: usize) -> usize;
+}
+
+impl Size for Vec<Segment> {
+    fn size(&self, point: BitPack, index: usize) -> usize {
+        let mut i = index;
+        while i < self.len() && self[i].seg.a.bit_pack() == point {
+            i += 1;
+        }
+        i - index
+    }
+}
+
+impl Size for Vec<End> {
+    fn size(&self, point: BitPack, index: usize) -> usize {
+        let mut i = index;
+        while i < self.len() && self[i].bit_pack == point {
+            i += 1;
+        }
+        i - index
     }
 }
