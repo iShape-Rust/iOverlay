@@ -5,7 +5,7 @@
 <img src="Readme/balloons.svg" width="250"/>
 </p>
 
-The iOverlay is a fast poly-bool library supporting main operations like union, intersection, difference, and XOR, governed by either the even-odd or non-zero rule. This algorithm is based on Vatti clipping ideas but is an original implementation.
+The iOverlay is a fast poly-bool library supporting main operations like union, intersection, difference, and xor, governed by either the even-odd or non-zero rule. This algorithm is based on Vatti clipping ideas but is an original implementation.
 
 
 ## [Documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
