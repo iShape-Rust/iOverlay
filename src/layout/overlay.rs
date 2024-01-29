@@ -8,7 +8,6 @@ use crate::split::split_edges::SplitEdges;
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
-use crate::layout::overlay::ShapeType::Clip;
 use crate::space::line_range::LineRange;
 
 use super::overlay_graph::OverlayGraph;
