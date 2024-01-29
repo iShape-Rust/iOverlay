@@ -17,11 +17,6 @@ use crate::space::scan_space::ScanSegment;
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
 
-struct Contour {
-    is_hole: bool,
-    path: FixPath,
-}
-
 impl OverlayGraph {
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<FixShape> {
         self.extract_shapes_min_area(overlay_rule, 0)
@@ -33,15 +28,19 @@ impl OverlayGraph {
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
-        for i in 0..self.links.len() {
-            if !visited[i] {
-                let contour = self.get_contour(overlay_rule, min_area, i, &mut visited);
-
-                if !contour.path.is_empty() {
-                    if contour.is_hole {
-                        holes.push(contour.path);
+        let mut j = 0;
+        while j < self.nodes.len() {
+            let i = self.start(j, &visited);
+            if i == EMPTY_INDEX {
+                j += 1;
+            } else {
+                let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
+                let path = self.get_path(overlay_rule, is_hole, min_area, i, &mut visited);
+                if !path.is_empty() {
+                    if is_hole {
+                        holes.push(path);
                     } else {
-                        shapes.push(FixShape { paths: [contour.path].to_vec() });
+                        shapes.push(FixShape { paths: [path].to_vec() });
                     }
                 }
             }
@@ -52,7 +51,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_contour(&self, overlay_rule: OverlayRule, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> Contour {
+    fn get_path(&self, overlay_rule: OverlayRule, is_hole: bool, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> FixPath {
         let mut path = FixPath::new();
         let mut next = index;
 
@@ -60,8 +59,6 @@ impl OverlayGraph {
 
         let mut a = link.a;
         let mut b = link.b;
-
-        let mut left_link = link;
 
         let mut new_visited = Vec::new();
 
@@ -86,22 +83,10 @@ impl OverlayGraph {
             a = b;
             b = link.other(b);
 
-            // Find leftmost and bottom link
-            if left_link.a.point.bit_pack() >= link.a.point.bit_pack() {
-                let is_same_point = left_link.a.index == link.a.index;
-                let is_same_point_and_turn_clockwise = is_same_point && Triangle::is_clockwise(link.b.point, link.a.point, left_link.b.point);
-
-                if !is_same_point || is_same_point_and_turn_clockwise {
-                    left_link = link;
-                }
-            }
-
             if next == index {
                 break;
             }
         }
-
-        let is_hole = overlay_rule.is_fill_bottom(left_link.fill);
 
         Self::validate(&mut path, min_area, is_hole);
 
@@ -109,7 +94,7 @@ impl OverlayGraph {
             visited[idx] = true;
         }
 
-        Contour { path, is_hole }
+        path
     }
 
     fn is_clockwise(a: FixVec, b: FixVec, is_top_inside: bool) -> bool {
@@ -140,6 +125,28 @@ impl OverlayGraph {
             path.reverse();
         }
     }
+
+    fn start(&self, node_index: usize, visited: &Vec<bool>) -> usize {
+        let node = &self.nodes[node_index];
+        let mut j = EMPTY_INDEX;
+        for &i in node.indices.iter() {
+            if !visited[i] {
+                if j == EMPTY_INDEX {
+                    j = i;
+                } else {
+                    let a = self.links[j].a.point;
+                    let bj = self.links[j].b.point;
+                    let bi = self.links[i].b.point;
+
+                    if Triangle::is_clockwise(a, bi, bj) {
+                        j = i;
+                    }
+                }
+            }
+        }
+
+        j
+    }
 }
 
 trait JoinHoles {
@@ -163,15 +170,21 @@ impl JoinHoles for Vec<FixShape> {
     }
 
     fn scan_join(&mut self, holes: Vec<FixPath>) {
-        let mut i_points: Vec<IdPoint> = holes.iter().enumerate()
-            .map(|(index, hole)| IdPoint::new(index, Point::new_fix_vec(hole[0])))
-            .collect();
+        let mut y_min = i32::MAX;
+        let mut y_max = i32::MIN;
+        let mut i_points = Vec::with_capacity(holes.len());
+        for i in 0..holes.len() {
+            let p = holes[i][0];
+            let x = p.x as i32;
+            let y = p.y as i32;
+            i_points.push(IdPoint::new(i, Point::new(x, y)));
+            y_min = y_min.min(y);
+            y_max = y_max.max(y);
+        }
         i_points.sort_by(|a, b| a.point.order_by_x(&b.point));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
-        let mut y_min = i32::MAX;
-        let mut y_max = i32::MIN;
 
         let mut floors = Vec::new();
         for i in 0..self.len() {
@@ -194,7 +207,7 @@ impl JoinHoles for Vec<FixShape> {
         while i < i_points.len() {
             let x = i_points[i].point.x;
 
-            while j < floors.len() && floors[j].seg.a.x < x {
+            while j < floors.len() && floors[j].seg.a.x <= x {
                 let floor = floors[j];
                 if floor.seg.b.x > x {
                     scan_list.space.insert(ScanSegment { id: j, range: floor.seg.y_range(), stop: floor.seg.b.x })
@@ -234,6 +247,10 @@ impl JoinHoles for Vec<FixShape> {
                     }
 
                     iterator = scan_list.next(iterator);
+                }
+
+                if best_floor.is_none() {
+                    print!("None");
                 }
 
                 assert!(!best_floor.is_none());

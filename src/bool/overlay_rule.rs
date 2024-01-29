@@ -25,19 +25,4 @@ impl OverlayRule {
             }
         }
     }
-
-    pub(super) fn is_fill_bottom(&self, fill: SegmentFill) -> bool {
-        match self {
-            OverlayRule::Subject => fill & SUBJECT_BOTTOM == SUBJECT_BOTTOM,
-            OverlayRule::Clip => fill & CLIP_BOTTOM == CLIP_BOTTOM,
-            OverlayRule::Intersect => fill & BOTH_BOTTOM == BOTH_BOTTOM,
-            OverlayRule::Union => fill & BOTH_TOP == NONE,
-            OverlayRule::Difference => fill & BOTH_BOTTOM == SUBJECT_BOTTOM,
-            OverlayRule::Xor => {
-                let is_subject = fill & BOTH_BOTTOM == SUBJECT_BOTTOM;
-                let is_clip = fill & BOTH_BOTTOM == CLIP_BOTTOM;
-                is_subject || is_clip
-            }
-        }
-    }
 }

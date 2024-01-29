@@ -2,6 +2,8 @@
 mod tests {
     use std::f64::consts::PI;
     use i_float::f64_vec::F64Vec;
+    use i_float::fix_vec::FixVec;
+    use i_shape::fix_path::FixPath;
     use i_shape::fix_shape::FixShape;
     use i_overlay::bool::fill_rule::FillRule;
     use i_overlay::bool::overlay_rule::OverlayRule;
@@ -136,6 +138,20 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_7() {
+        let n = 10100;
+        let subj_paths = random_polygon(1000_000.0, n);
+
+        let mut overlay = Overlay::new(n);
+        overlay.add_path(&subj_paths, ShapeType::Subject);
+
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let result = graph.extract_shapes(OverlayRule::Subject);
+
+        assert!(!result.is_empty());
+    }
+
     fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> FixShape {
         let da = PI / count as f64;
         let mut a = angle;
@@ -158,5 +174,22 @@ mod tests {
         }
 
         FixShape::new_with_contour(points)
+    }
+
+    fn random_polygon(radius: f64, n: usize) -> FixPath {
+        let mut result = Vec::with_capacity(n);
+        let da: f64 = PI * 0.7;
+        let mut a: f64 = 0.0;
+        for _ in 0..n {
+            let sc = a.sin_cos();
+
+            let x = radius * sc.1;
+            let y = radius * sc.0;
+
+            result.push(FixVec::new_f64(x, y));
+            a += da;
+        }
+
+        result
     }
 }

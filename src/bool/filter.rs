@@ -28,10 +28,8 @@ fn filter_subject(links: &Vec<OverlayLink>) -> Vec<bool> {
 
         // Skip edge if it it inside or not belong subject
 
-        let is_top = fill & SUBJECT_TOP == SUBJECT_TOP;
-        let is_bot = fill & SUBJECT_BOTTOM == SUBJECT_BOTTOM;
-
-        skip[i] = is_top == is_bot;
+        let subj = fill & SUBJECT_BOTH;
+        skip[i] = subj == 0 || subj == SUBJECT_BOTH;
     }
 
     skip
@@ -46,10 +44,8 @@ fn filter_clip(links: &Vec<OverlayLink>) -> Vec<bool> {
 
         // Skip edge if it it inside or not belong clip
 
-        let is_top = fill & CLIP_TOP == CLIP_TOP;
-        let is_bot = fill & CLIP_BOTTOM == CLIP_BOTTOM;
-
-        skip[i] = is_top == is_bot;
+        let clip = fill & CLIP_BOTH;
+        skip[i] = clip == 0 || clip == CLIP_BOTH;
     }
 
     skip
