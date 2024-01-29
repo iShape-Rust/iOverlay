@@ -96,6 +96,8 @@ impl Overlay {
 
         segments.fill(fill_rule, range);
 
+        segments.filter();
+
         return segments;
     }
 

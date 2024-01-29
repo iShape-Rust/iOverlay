@@ -18,6 +18,7 @@ impl SplitLinkedListNode {
     pub(super) fn clear(&mut self) {
         self.next = EMPTY_INDEX;
         self.prev = EMPTY_INDEX;
+        self.edge.count = ShapeCount::new(0, 0);
         self.version += 1;
     }
 

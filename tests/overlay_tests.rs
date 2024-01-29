@@ -560,4 +560,9 @@ mod tests {
     fn test_105() {
         execute(105);
     }
+
+    #[test]
+    fn test_106() {
+        execute(106);
+    }
 }
