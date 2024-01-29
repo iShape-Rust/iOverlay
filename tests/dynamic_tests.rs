@@ -152,6 +152,25 @@ mod tests {
         assert!(!result.is_empty());
     }
 
+    #[test]
+    fn test_8() {
+        let mut r = 0.004;
+        while r < 1.0 {
+            for n in 5..10 {
+                let subj_paths = random_polygon(r, n);
+
+                let mut overlay = Overlay::new(n);
+                overlay.add_path(&subj_paths, ShapeType::Subject);
+
+                let graph = overlay.build_graph(FillRule::NonZero);
+                let result = graph.extract_shapes(OverlayRule::Subject);
+
+                assert!(!result.is_empty());
+            }
+            r += 0.001;
+        }
+    }
+
     fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> FixShape {
         let da = PI / count as f64;
         let mut a = angle;

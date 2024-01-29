@@ -4,7 +4,7 @@ use i_float::point::Point;
 use i_shape::triangle::Triangle;
 use crate::bool::fill_rule::FillRule;
 use crate::split::shape_count::ShapeCount;
-use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJECT_BOTTOM, SUBJECT_TOP};
+use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::geom::x_scan_list::XScanList;
 use crate::geom::x_segment::XSegment;
 use crate::space::line_range::LineRange;
@@ -156,8 +156,8 @@ impl Segment {
             }
         }
 
-        let subj_top = if is_subj_top { SUBJECT_TOP } else { NONE };
-        let subj_bottom = if is_subj_bottom { SUBJECT_BOTTOM } else { NONE };
+        let subj_top = if is_subj_top { SUBJ_TOP } else { NONE };
+        let subj_bottom = if is_subj_bottom { SUBJ_BOTTOM } else { NONE };
         let clip_top = if is_clip_top { CLIP_TOP } else { NONE };
         let clip_bottom = if is_clip_bottom { CLIP_BOTTOM } else { NONE };
 

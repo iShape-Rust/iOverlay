@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+use i_float::bit_pack::BitPackVec;
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
 use i_shape::triangle::Triangle;
@@ -53,5 +55,21 @@ impl XSegment {
 
     pub(crate) fn is_clockwise_points(p0: Point, p1: Point, p2: Point) -> bool {
         Triangle::is_clockwise(FixVec::new_point(p0), FixVec::new_point(p1), FixVec::new_point(p2))
+    }
+
+    pub (crate) fn order(&self, other: &Self) -> Ordering {
+        let a0 = self.a.bit_pack();
+        let a1 = other.a.bit_pack();
+        if a0 != a1 {
+            if a0 < a1 {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        } else if self.b.bit_pack() < other.b.bit_pack() {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
     }
 }

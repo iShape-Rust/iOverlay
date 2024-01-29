@@ -7,6 +7,8 @@ use crate::split::split_edges::SplitEdges;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
+use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
+use crate::layout::overlay::ShapeType::Clip;
 use crate::space::line_range::LineRange;
 
 use super::overlay_graph::OverlayGraph;
@@ -152,3 +154,33 @@ impl CreateEdges for FixPath {
         });
     }
 }
+
+trait Filter {
+
+    fn filter(&mut self);
+}
+
+impl Filter for Vec<Segment> {
+    fn filter(&mut self) {
+        let mut has_empty = false;
+        let mut i = 0;
+        while i < self.len() {
+            let fill = self[i].fill;
+            if fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH {
+                has_empty = true;
+                if i < self.len() - 1 {
+                    self.swap_remove(i);
+                } else {
+                    _ = self.pop()
+                }
+            } else {
+                i += 1
+            }
+        }
+
+        if has_empty {
+            self.sort_by(|a, b| a.seg.order(&b.seg));
+        }
+    }
+}
+

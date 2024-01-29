@@ -1,5 +1,5 @@
 use crate::{layout::overlay_link::OverlayLink};
-use crate::fill::segment::{ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJECT_BOTH, SUBJECT_BOTTOM, SUBJECT_TOP};
+use crate::fill::segment::{ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use super::overlay_rule::OverlayRule;
 
 pub(super) trait Filter {
@@ -28,8 +28,8 @@ fn filter_subject(links: &Vec<OverlayLink>) -> Vec<bool> {
 
         // Skip edge if it it inside or not belong subject
 
-        let subj = fill & SUBJECT_BOTH;
-        skip[i] = subj == 0 || subj == SUBJECT_BOTH;
+        let subj = fill & SUBJ_BOTH;
+        skip[i] = subj == 0 || subj == SUBJ_BOTH;
     }
 
     skip
@@ -97,9 +97,9 @@ fn filter_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
         // One side must belong only subject
         // Can not be subject inner edge
 
-        let subject_inner = fill == SUBJECT_BOTH;
-        let top_only_subject = fill & BOTH_TOP == SUBJECT_TOP;
-        let bot_only_subject = fill & BOTH_BOTTOM == SUBJECT_BOTTOM;
+        let subject_inner = fill == SUBJ_BOTH;
+        let top_only_subject = fill & BOTH_TOP == SUBJ_TOP;
+        let bot_only_subject = fill & BOTH_BOTTOM == SUBJ_BOTTOM;
 
         skip[i] = !(top_only_subject || bot_only_subject) || subject_inner;
     }
@@ -116,13 +116,13 @@ fn filter_xor(links: &Vec<OverlayLink>) -> Vec<bool> {
 
         // Skip edge if clip and subject share it
 
-        let subject_inner = fill == SUBJECT_BOTH;
+        let subject_inner = fill == SUBJ_BOTH;
         let clip_inner = fill == CLIP_BOTH;
         let both_inner = fill == ALL;
         let only_top = fill == BOTH_TOP;
         let only_bottom = fill == BOTH_BOTTOM;
-        let diagonal_0 = fill == CLIP_TOP | SUBJECT_BOTTOM;
-        let diagonal_1 = fill == CLIP_BOTTOM | SUBJECT_TOP;
+        let diagonal_0 = fill == CLIP_TOP | SUBJ_BOTTOM;
+        let diagonal_1 = fill == CLIP_BOTTOM | SUBJ_TOP;
 
         skip[i] = subject_inner || clip_inner || both_inner || only_top || only_bottom || diagonal_0 || diagonal_1;
     }

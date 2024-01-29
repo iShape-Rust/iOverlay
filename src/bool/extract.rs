@@ -29,14 +29,15 @@ impl OverlayGraph {
         let mut shapes = Vec::new();
 
         let mut j = 0;
+        // nodes array is sorted by link.a
         while j < self.nodes.len() {
-            let i = self.start(j, &visited);
+            let i = self.find_first_link(j, &visited);
             if i == EMPTY_INDEX {
                 j += 1;
             } else {
                 let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
-                let path = self.get_path(overlay_rule, is_hole, min_area, i, &mut visited);
-                if !path.is_empty() {
+                let mut path = self.get_path(overlay_rule, i, &mut visited);
+                if path.validate(min_area, is_hole) {
                     if is_hole {
                         holes.push(path);
                     } else {
@@ -51,7 +52,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_path(&self, overlay_rule: OverlayRule, is_hole: bool, min_area: FixFloat, index: usize, visited: &mut Vec<bool>) -> FixPath {
+    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> FixPath {
         let mut path = FixPath::new();
         let mut next = index;
 
@@ -60,11 +61,8 @@ impl OverlayGraph {
         let mut a = link.a;
         let mut b = link.b;
 
-        let mut new_visited = Vec::new();
-
         // Find a closed tour
         loop {
-            new_visited.push(next);
             path.push(a.point);
             let node = &self.nodes[b.index];
 
@@ -74,25 +72,20 @@ impl OverlayGraph {
                 let is_fill_top = overlay_rule.is_fill_top(link.fill);
                 let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
                 next = self.find_nearest_link_to(a, b, next, is_cw, visited);
-                if next == EMPTY_INDEX {
-                    break;
-                }
             }
 
             link = self.links[next];
             a = b;
             b = link.other(b);
 
+            visited[next] = true;
+
             if next == index {
                 break;
             }
         }
 
-        Self::validate(&mut path, min_area, is_hole);
-
-        for idx in new_visited {
-            visited[idx] = true;
-        }
+        visited[index] = true;
 
         path
     }
@@ -107,26 +100,7 @@ impl OverlayGraph {
         (a && b) || !(a || b)
     }
 
-    fn validate(path: &mut FixPath, min_area: FixFloat, is_hole: bool) {
-        path.remove_degenerates();
-
-        if path.len() < 3 {
-            path.clear();
-            return;
-        }
-
-        let area = path.area();
-        let fix_abs_area = area.abs() >> (FIX_FRACTION_BITS + 1);
-
-        if fix_abs_area < min_area {
-            path.clear();
-        } else if is_hole && area > 0 || !is_hole && area < 0 {
-            // for holes must be negative and for contour must be positive
-            path.reverse();
-        }
-    }
-
-    fn start(&self, node_index: usize, visited: &Vec<bool>) -> usize {
+    fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> usize {
         let node = &self.nodes[node_index];
         let mut j = EMPTY_INDEX;
         for &i in node.indices.iter() {
@@ -289,5 +263,31 @@ impl XOrder for Point {
         } else {
             Ordering::Greater
         }
+    }
+}
+
+trait Validate {
+    fn validate(&mut self, min_area: FixFloat, is_hole: bool) -> bool;
+}
+
+impl Validate for FixPath {
+    fn validate(&mut self, min_area: FixFloat, is_hole: bool) -> bool {
+        self.remove_degenerates();
+
+        if self.len() < 3 {
+            return false;
+        }
+
+        let area = self.area();
+        let fix_abs_area = area.abs() >> (FIX_FRACTION_BITS + 1);
+
+        if fix_abs_area < min_area {
+            return false;
+        } else if is_hole && area > 0 || !is_hole && area < 0 {
+            // for holes must be negative and for contour must be positive
+            self.reverse();
+        }
+
+        true
     }
 }
