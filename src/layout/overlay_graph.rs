@@ -118,7 +118,7 @@ impl OverlayGraph {
             }
 
             assert!(indices.len() > 1);
-            nodes.push(OverlayNode { indices }); // Assuming this is how you create an OverlayNode
+            nodes.push(OverlayNode { indices });
         }
 
         Self { nodes, links }
