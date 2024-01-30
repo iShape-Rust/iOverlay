@@ -14,8 +14,8 @@ Cargo.lock
 *.pdb
 
 # IntelliJ IDEA specific
-.idea/
-*.iml
+**/.idea/
+**/*.iml
 
 # Visual Studio Code specific
 .vscode/
