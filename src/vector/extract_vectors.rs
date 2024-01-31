@@ -1,7 +1,6 @@
-use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
-use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_float::point::Point;
-use i_shape::fix_shape::FixShape;
+use crate::bool::filter::Filter;
+use crate::bool::overlay_rule::OverlayRule;
 use crate::geom::floor::Floors;
 use crate::geom::holes_solver::HolesSolver;
 use crate::geom::id_point::IdPoint;
@@ -9,36 +8,28 @@ use crate::geom::x_order::XOrder;
 use crate::index::EMPTY_INDEX;
 use crate::layout::overlay_graph::OverlayGraph;
 use crate::space::line_range::LineRange;
-
-use super::overlay_rule::OverlayRule;
-use super::filter::Filter;
+use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
-    pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<FixShape> {
-        self.extract_shapes_min_area(overlay_rule, 0)
-    }
-
-    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
+    pub fn extract_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
         let mut visited = self.links.filter(overlay_rule);
 
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
         let mut j = 0;
-        // nodes array is sorted by link.a
         while j < self.nodes.len() {
             let i = self.find_first_link(j, &visited);
             if i == EMPTY_INDEX {
                 j += 1;
             } else {
                 let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
-                let mut path = self.get_vector_path(overlay_rule, i, &mut visited);
-                if path.validate(min_area, is_hole) {
-                    if is_hole {
-                        holes.push(path);
-                    } else {
-                        shapes.push(FixShape { paths: [path].to_vec() });
-                    }
+                let mut path = self.get_path(overlay_rule, i, &mut visited);
+                path.validate(is_hole);
+                if is_hole {
+                    holes.push(path);
+                } else {
+                    shapes.push([path].to_vec());
                 }
             }
         }
@@ -48,8 +39,8 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> FixPath {
-        let mut path = FixPath::new();
+    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> VectorPath {
+        let mut path = VectorPath::new();
         let mut next = index;
 
         let mut link = self.links[index];
@@ -59,7 +50,7 @@ impl OverlayGraph {
 
         // Find a closed tour
         loop {
-            path.push(a.point);
+            path.push(VectorEdge::new(link.fill, a.point, b.point));
             let node = &self.nodes[b.index];
 
             if node.indices.len() == 2 {
@@ -88,31 +79,31 @@ impl OverlayGraph {
 }
 
 trait JoinHoles {
-    fn join(&mut self, holes: Vec<FixPath>);
-    fn scan_join(&mut self, holes: Vec<FixPath>);
+    fn join(&mut self, holes: Vec<VectorPath>);
+    fn scan_join(&mut self, holes: Vec<VectorPath>);
 }
 
-impl JoinHoles for Vec<FixShape> {
-    fn join(&mut self, holes: Vec<FixPath>) {
+impl JoinHoles for Vec<VectorShape> {
+    fn join(&mut self, holes: Vec<VectorPath>) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
 
         if self.len() == 1 {
-            self[0].paths.reserve_exact(holes.len());
+            self[0].reserve_exact(holes.len());
             let mut hole_paths = holes;
-            self[0].paths.append(&mut hole_paths);
+            self[0].append(&mut hole_paths);
         } else {
             self.scan_join(holes);
         }
     }
 
-    fn scan_join(&mut self, holes: Vec<FixPath>) {
+    fn scan_join(&mut self, holes: Vec<VectorPath>) {
         let mut y_min = i32::MAX;
         let mut y_max = i32::MIN;
         let mut i_points = Vec::with_capacity(holes.len());
         for i in 0..holes.len() {
-            let p = holes[i][0];
+            let p = holes[i][0].a;
             let x = p.x as i32;
             let y = p.y as i32;
             i_points.push(IdPoint::new(i, Point::new(x, y)));
@@ -126,7 +117,7 @@ impl JoinHoles for Vec<FixShape> {
 
         let mut floors = Vec::new();
         for i in 0..self.len() {
-            let mut hole_floors = self[i].contour().floors(i, x_min, x_max, &mut y_min, &mut y_max);
+            let mut hole_floors = self[i][0].floors(i, x_min, x_max, &mut y_min, &mut y_max);
             floors.append(&mut hole_floors);
         }
 
@@ -137,40 +128,38 @@ impl JoinHoles for Vec<FixShape> {
 
         for shape_index in 0..solution.hole_counter.len() {
             let capacity = solution.hole_counter[shape_index];
-            self[shape_index].paths.reserve_exact(capacity);
+            self[shape_index].reserve_exact(capacity);
         }
 
         let mut hole_index = 0;
         for hole in holes.into_iter() {
             let shape_index = solution.hole_shape[hole_index];
-            self[shape_index].paths.push(hole);
+            self[shape_index].push(hole);
             hole_index += 1;
         }
     }
 }
 
 trait Validate {
-    fn validate(&mut self, min_area: FixFloat, is_hole: bool) -> bool;
+    fn validate(&mut self, is_hole: bool);
+    fn is_positive(&self) -> bool;
 }
 
-impl Validate for FixPath {
-    fn validate(&mut self, min_area: FixFloat, is_hole: bool) -> bool {
-        self.remove_degenerates();
-
-        if self.len() < 3 {
-            return false;
+impl Validate for VectorPath {
+    fn validate(&mut self, is_hole: bool) {
+        let is_positive = self.is_positive();
+        if is_hole && !is_positive || !is_hole && is_positive {
+            for v in self.iter_mut() {
+                v.reverse();
+            }
         }
+    }
 
-        let area = self.area();
-        let fix_abs_area = area.abs() >> (FIX_FRACTION_BITS + 1);
-
-        if fix_abs_area < min_area {
-            return false;
-        } else if is_hole && area > 0 || !is_hole && area < 0 {
-            // for holes must be negative and for contour must be positive
-            self.reverse();
+    fn is_positive(&self) -> bool {
+        let mut area: i64 = 0;
+        for v in self {
+            area += v.a.cross_product(v.b);
         }
-
-        true
+        area >= 0
     }
 }

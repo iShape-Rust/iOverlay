@@ -33,5 +33,4 @@ impl Segment {
             fill: NONE,
         }
     }
-
 }

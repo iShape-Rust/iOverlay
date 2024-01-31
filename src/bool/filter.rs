@@ -2,7 +2,7 @@ use crate::{layout::overlay_link::OverlayLink};
 use crate::fill::segment::{ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use super::overlay_rule::OverlayRule;
 
-pub(super) trait Filter {
+pub(crate) trait Filter {
     fn filter(&self, fill_rule: OverlayRule) -> Vec<bool>;
 }
 

@@ -18,7 +18,7 @@ Cargo.lock
 **/*.iml
 
 # Visual Studio Code specific
-.vscode/
+**/.vscode/
 
 # macOS system files
 .DS_Store

@@ -7,8 +7,10 @@ use crate::split::split_edges::SplitEdges;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
+use crate::bool::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::space::line_range::LineRange;
+use crate::vector::vector::VectorShape;
 
 use super::overlay_graph::OverlayGraph;
 
@@ -63,6 +65,28 @@ impl Overlay {
             return Vec::new();
         }
 
+        let mut segments = self.prepare_segments(fill_rule);
+
+        segments.filter();
+
+        return segments;
+    }
+
+    pub fn build_vectors(&self, fill_rule: FillRule, overlay_rule: OverlayRule) -> Vec<VectorShape> {
+        if self.edges.is_empty() {
+            return Vec::new();
+        }
+        let graph = OverlayGraph::new(self.prepare_segments(fill_rule));
+        let vectors = graph.extract_vectors(overlay_rule);
+
+        return vectors;
+    }
+
+    pub fn build_graph(&self, fill_rule: FillRule) -> OverlayGraph {
+        OverlayGraph::new(self.build_segments(fill_rule))
+    }
+
+    fn prepare_segments(&self, fill_rule: FillRule) -> Vec<Segment> {
         let mut sorted_list = self.edges.clone();
         sorted_list.sort_by(|a, b| a.order(b));
 
@@ -95,14 +119,11 @@ impl Overlay {
 
         segments.fill(fill_rule, range);
 
-        segments.filter();
+        // segments.filter();
 
         return segments;
     }
 
-    pub fn build_graph(&self, fill_rule: FillRule) -> OverlayGraph {
-        OverlayGraph::new(self.build_segments(fill_rule))
-    }
 }
 
 struct EdgeResult {

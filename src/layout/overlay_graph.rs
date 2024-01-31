@@ -1,6 +1,7 @@
 use i_float::bit_pack::{BitPack, BitPackFix, BitPackVec};
 use i_float::fix_vec::FixVec;
 use i_shape::index_point::IndexPoint;
+use i_shape::triangle::Triangle;
 
 use crate::{fill::segment::Segment};
 use crate::index::EMPTY_INDEX;
@@ -162,6 +163,38 @@ impl OverlayGraph {
         }
 
         min_index
+    }
+
+    pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> usize {
+        let node = &self.nodes[node_index];
+        let mut j = EMPTY_INDEX;
+        for &i in node.indices.iter() {
+            if !visited[i] {
+                if j == EMPTY_INDEX {
+                    j = i;
+                } else {
+                    let a = self.links[j].a.point;
+                    let bj = self.links[j].b.point;
+                    let bi = self.links[i].b.point;
+
+                    if Triangle::is_clockwise(a, bi, bj) {
+                        j = i;
+                    }
+                }
+            }
+        }
+
+        j
+    }
+
+    pub(crate) fn is_clockwise(a: FixVec, b: FixVec, is_top_inside: bool) -> bool {
+        let is_direct = a.bit_pack() < b.bit_pack();
+
+        Self::xnor(is_direct, is_top_inside)
+    }
+
+    fn xnor(a: bool, b: bool) -> bool {
+        (a && b) || !(a || b)
     }
 }
 
