@@ -22,7 +22,7 @@ impl LineIndexer {
         let max_level = if dif <= 2 {
             0
         } else {
-            10.min(level.min(d_log - 1))
+            level.min((d_log - 1).min(10))
         };
 
         let offset = -range.min;

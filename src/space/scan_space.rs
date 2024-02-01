@@ -21,9 +21,18 @@ pub struct ScanSpace<Id: Copy, Unit: Ord + Copy> {
     index_buffer: Vec<usize>,
 }
 
+const SHIFT: usize = 4;
+
 impl<Id: Copy, Unit: Ord + Copy> ScanSpace<Id, Unit> {
+
     pub(crate) fn new(range: LineRange, count: usize) -> Self {
-        let max_level = 2.max(((count as f64).sqrt() as usize).log_two());
+        let avr_hz_count = (count as f64).sqrt() as usize;
+        let max_level = if avr_hz_count <= (1 << SHIFT) {
+            0
+        } else {
+            avr_hz_count.log_two() - 3
+        };
+
         let indexer = LineIndexer::new(max_level, range);
         let heaps: Vec<Vec<ScanSegment<Id, Unit>>> = vec![Vec::new(); indexer.size];
 
