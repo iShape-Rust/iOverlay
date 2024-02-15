@@ -1,7 +1,9 @@
 use i_float::bit_pack::BitPackVec;
 use i_float::fix_vec::FixVec;
 use i_shape::fix_path::{FixPath, FixPathExtension};
+use i_shape::fix_paths::FixPathsExtension;
 use i_shape::fix_shape::FixShape;
+use i_shape::fix_shapes::FixShapesExtension;
 use crate::fill::fill_segments::FillSegments;
 use crate::split::split_edges::SplitEdges;
 
@@ -35,11 +37,24 @@ impl Overlay {
         }
     }
 
-    pub fn from_paths(subject_paths: &[FixPath], clip_paths: &[FixPath]) -> Self {
-        let mut overlay = Self::new(64);
+    pub fn with_paths(subject_paths: &[FixPath], clip_paths: &[FixPath]) -> Self {
+        let mut overlay = Self::new(subject_paths.points_count() + clip_paths.points_count());
         overlay.add_paths(subject_paths, ShapeType::Subject);
         overlay.add_paths(clip_paths, ShapeType::Clip);
         overlay
+    }
+
+    pub fn with_shapes(subject_shapes: &[FixShape], clip_shapes: &[FixShape]) -> Self {
+        let mut overlay = Self::new(subject_shapes.points_count() + clip_shapes.points_count());
+        overlay.add_shapes(subject_shapes, ShapeType::Subject);
+        overlay.add_shapes(clip_shapes, ShapeType::Clip);
+        overlay
+    }
+
+    pub fn add_shapes(&mut self, shapes: &[FixShape], shape_type: ShapeType) {
+        for shape in shapes.iter() {
+            self.add_paths(&shape.paths, shape_type);
+        }
     }
 
     pub fn add_shape(&mut self, shape: &FixShape, shape_type: ShapeType) {
@@ -123,7 +138,6 @@ impl Overlay {
 
         return segments;
     }
-
 }
 
 struct EdgeResult {
@@ -178,7 +192,6 @@ impl CreateEdges for FixPath {
 }
 
 trait Filter {
-
     fn filter(&mut self);
 }
 

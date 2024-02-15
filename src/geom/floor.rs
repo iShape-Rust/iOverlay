@@ -36,7 +36,7 @@ impl Floors for FixPath {
 
         let mut b = self[n - 1];
         for &a in self.iter() {
-            if a.x < b.x && x_min64 < b.x && a.x < x_max64 {
+            if a.x < b.x && x_min64 < b.x && a.x <= x_max64 {
                 list.push(Floor::new(id, a, b));
                 if a.y < b.y {
                     *y_min = (*y_min).min(a.y as i32);
@@ -61,7 +61,7 @@ impl Floors for VectorPath {
         let x_max64 = x_max as i64;
 
         for vec in self.iter() {
-            if vec.a.x < vec.b.x && x_min64 < vec.b.x && vec.a.x < x_max64 {
+            if vec.a.x < vec.b.x && x_min64 < vec.b.x && vec.a.x <= x_max64 {
                 list.push(Floor::new(id, vec.a, vec.b));
                 if vec.a.y < vec.b.y {
                     *y_min = (*y_min).min(vec.a.y as i32);

@@ -35,8 +35,8 @@ mod tests {
 
         assert_eq!(shape.paths.len(), 2);
 
-        assert_eq!(shape.contour().area() > 0, true);
-        assert_eq!(shape.paths[1].area() > 0, false);
+        assert_eq!(shape.contour().area_x2() > 0, true);
+        assert_eq!(shape.paths[1].area_x2() > 0, false);
     }
 
     #[test]
@@ -69,8 +69,8 @@ mod tests {
 
         assert_eq!(shape.paths.len(), 2);
 
-        assert_eq!(shape.contour().area() > 0, true);
-        assert_eq!(shape.paths[1].area() > 0, false);
+        assert_eq!(shape.contour().area_x2() > 0, true);
+        assert_eq!(shape.paths[1].area_x2() > 0, false);
     }
 
     #[test]
@@ -103,7 +103,7 @@ mod tests {
 
         assert_eq!(shape.paths.len(), 2);
 
-        assert_eq!(shape.contour().area() > 0, true);
-        assert_eq!(shape.paths[1].area() > 0, false);
+        assert_eq!(shape.contour().area_x2() > 0, true);
+        assert_eq!(shape.paths[1].area_x2() > 0, false);
     }
 }

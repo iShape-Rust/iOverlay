@@ -161,7 +161,7 @@ impl Validate for FixPath {
             return false;
         }
 
-        let area = self.area();
+        let area = self.area_x2();
         let fix_abs_area = area.abs() >> (FIX_FRACTION_BITS + 1);
 
         if fix_abs_area < min_area {

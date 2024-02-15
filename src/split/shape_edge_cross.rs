@@ -104,17 +104,11 @@ impl ShapeEdge {
             let rb = rb0.min(rb1);
 
             if ra <= rb {
-                if ra0 < ra1 {
-                    Some(EdgeCross { nature: EdgeCrossType::EndA, point: a0, second: FixVec::ZERO })
-                } else {
-                    Some(EdgeCross { nature: EdgeCrossType::EndA, point: a1, second: FixVec::ZERO })
-                }
+                let a = if ra0 < ra1 { a0 } else { a1 };
+                Some(EdgeCross { nature: EdgeCrossType::EndA, point: a, second: FixVec::ZERO })
             } else {
-                if rb0 < rb1 {
-                    Some(EdgeCross { nature: EdgeCrossType::EndB, point: b0, second: FixVec::ZERO })
-                } else {
-                    Some(EdgeCross { nature: EdgeCrossType::EndB, point: b1, second: FixVec::ZERO })
-                }
+                let b = if rb0 < rb1 { b0 } else { b1 };
+                Some(EdgeCross { nature: EdgeCrossType::EndB, point: b, second: FixVec::ZERO })
             }
         } else {
             Some(EdgeCross { nature: EdgeCrossType::Pure, point: p, second: FixVec::ZERO })
