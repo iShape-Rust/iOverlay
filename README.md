@@ -37,35 +37,39 @@ i_overlay
 
 Let's union two squares
 ```rust
-let mut overlay = Overlay::new(2);
+let mut overlay = Overlay::new(1);
 
-let left_bottom_square = FixShape::new_with_contour([
-    FixVec::new_f64(-10.0, -10.0),
-    FixVec::new_f64(-10.0, 10.0),
-    FixVec::new_f64(10.0, 10.0),
-    FixVec::new_f64(10.0, -10.0)
-].to_vec());
+let subj = [
+    FixVec::new_number(-10, -10),
+    FixVec::new_number(-10, 10),
+    FixVec::new_number(10, 10),
+    FixVec::new_number(10, -10),
+];
 
-let right_top_square = FixShape::new_with_contour([
-    FixVec::new_f64(-5.0, -5.0),
-    FixVec::new_f64(-5.0, 15.0),
-    FixVec::new_f64(15.0, 15.0),
-    FixVec::new_f64(15.0, -5.0)
-].to_vec());
+let clip = [
+    FixVec::new_number(-5, -5),
+    FixVec::new_number(-5, 15),
+    FixVec::new_number(15, 15),
+    FixVec::new_number(15, -5),
+];
 
-// add new geometry
-overlay.add_shape(&left_bottom_square, ShapeType::Subject);
-overlay.add_shape(&right_top_square, ShapeType::Clip);
+overlay.add_path(&subj.to_vec(), ShapeType::Subject);
+overlay.add_path(&clip.to_vec(), ShapeType::Clip);
+let graph = overlay.build_graph(FillRule::NonZero);
 
-// resolve shapes geometry
-let graph = overlay.build_graph(FillRule::EvenOdd);
-
-// apply union operation and get result (in our case it will be only one element)
 let shapes = graph.extract_shapes(OverlayRule::Union);
 
-// do something with new shapes...
+println!("shapes count: {}", shapes.len());
 
-print!("shapes: {:?}", shapes)
+if shapes.len() > 0 {
+    let contour = shapes[0].contour();
+    println!("shape 0 contour: ");
+    for p in contour {
+        let x = p.x.f32();
+        let y = p.x.f32();
+        println!("({}, {})", x, y);
+    }
+}
 ```
 
 # Overlay Rules
