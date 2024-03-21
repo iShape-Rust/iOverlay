@@ -14,10 +14,18 @@ use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
 
 impl OverlayGraph {
+
+    /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
+    /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
+    /// - Returns: A vector of `FixShape`, representing the geometric result of the applied overlay rule.
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<FixShape> {
         self.extract_shapes_min_area(overlay_rule, 0)
     }
 
+    /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes. This is useful for filtering out shapes that do not meet a certain size threshold, which can be beneficial for eliminating artifacts or noise from the output.
+    /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - Returns: A vector of `FixShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
         let mut visited = self.links.filter(overlay_rule);
 

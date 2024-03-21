@@ -13,6 +13,7 @@ struct End {
     bit_pack: BitPack,
 }
 
+/// `OverlayGraph` models the relationships and intersections between shapes for boolean operations. It enables efficient execution of operations like union, intersection, difference, and xor, and supports the extraction of resultant shapes.
 pub struct OverlayGraph {
     pub(crate) nodes: Vec<OverlayNode>,
     pub(crate) links: Vec<OverlayLink>,
