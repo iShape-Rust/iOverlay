@@ -30,5 +30,4 @@ impl XScanList {
             LineRange { min: i32::MIN, max: i32::MAX }
         }
     }
-
 }

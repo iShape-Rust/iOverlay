@@ -1,128 +1,81 @@
 use std::cmp::Ordering;
-use i_float::fix_vec::FixVec;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
 use crate::bool::fill_rule::FillRule;
+use crate::fill::count_segment::CountSegment;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
-use crate::geom::x_scan_list::XScanList;
-use crate::geom::x_segment::XSegment;
-use crate::space::line_range::LineRange;
-use crate::space::scan_space::ScanSegment;
+use crate::fill::store::ScanFillStore;
 
-struct Handler {
+struct XGroup {
     i: usize,
-    y: i32,
+    x: i32,
 }
 
-struct SegEnd {
+struct PGroup {
     i: usize,
     p: Point,
 }
 
-pub(crate) trait FillSegments {
-    fn fill(&mut self, fill_rule: FillRule, range: LineRange);
+pub(crate) trait FillSegments<S: ScanFillStore> {
+    fn fill(&mut self, scan_store: S, fill_rule: FillRule);
 }
 
-impl FillSegments for Vec<Segment> {
-    fn fill(&mut self, fill_rule: FillRule, range: LineRange) {
-        let mut scan_list = XScanList::new(range, self.len());
-        let mut counts = vec![ShapeCount { subj: 0, clip: 0 }; self.len()];
+impl<S: ScanFillStore> FillSegments<S> for Vec<Segment> {
+    fn fill(&mut self, scan_store: S, fill_rule: FillRule) {
+        let mut scan_list = scan_store;
         let mut x_buf = Vec::new();
-        let mut e_buf = Vec::new();
-        let mut candidates = Vec::new();
+        let mut p_buf = Vec::new();
 
         let n = self.len();
         let mut i = 0;
 
         while i < n {
             let x = self[i].seg.a.x;
+
             x_buf.clear();
 
             // find all new segments with same a.x
-
             while i < n && self[i].seg.a.x == x {
-                x_buf.push(Handler { i, y: self[i].seg.a.y });
-                i += 1
+                x_buf.push(XGroup { i, x: self[i].seg.a.y });
+                i += 1;
             }
 
             if x_buf.len() > 1 {
-                // sort all by a.y
-                x_buf.sort_by(|a, b| a.order_asc(b));
+                x_buf.sort_by(|a, b| a.order_by_x(b));
             }
-
-            // find nearest segment from scan list for all new segments
 
             let mut j = 0;
             while j < x_buf.len() {
-                let y = x_buf[j].y;
+                let y = x_buf[j].x;
 
-                e_buf.clear();
+                p_buf.clear();
 
                 // group new segments by same y (all segments in eBuf must have same a)
-                while j < x_buf.len() && x_buf[j].y == y {
+                while j < x_buf.len() && x_buf[j].x == y {
                     let handler = &x_buf[j];
-                    e_buf.push(SegEnd { i: handler.i, p: self[handler.i].seg.b });
-                    j += 1
+                    p_buf.push(PGroup { i: handler.i, p: self[handler.i].seg.b });
+                    j += 1;
                 }
 
                 let p = Point::new(x, y);
 
-                if e_buf.len() > 1 {
-                    // sort by angle in counter clock-wise direction
-                    let center = FixVec::new_point(p);
-                    e_buf.sort_by(|a, b| a.order(b, center));
+                if p_buf.len() > 1 {
+                    p_buf.sort_by(|a, b| a.order_by_angle(b, p));
                 }
 
-                let mut iterator = scan_list.iterator_to_bottom(y);
-                let mut best_segment: Option<XSegment> = None;
-                let mut best_index = usize::MAX;
-
-                while iterator.min != i32::MIN {
-                    scan_list.space.ids_in_range(iterator, x, &mut candidates);
-                    if !candidates.is_empty() {
-                        for &seg_index in candidates.iter() {
-                            let segment = self[seg_index].seg;
-                            if segment.is_under_point(p) {
-                                if let Some(best_seg) = best_segment {
-                                    if best_seg.is_under_segment(segment) {
-                                        best_segment = Some(segment);
-                                        best_index = seg_index;
-                                    }
-                                } else {
-                                    best_segment = Some(segment.clone());
-                                    best_index = seg_index;
-                                }
-                            }
-                        }
-                        candidates.clear();
-                    }
-
-                    if let Some(best_seg) = best_segment {
-                        if best_seg.is_above_point(Point::new(x, iterator.min)) {
-                            break;
-                        }
-                    }
-
-                    iterator = scan_list.next(iterator);
-                }
-
-                let mut sum_count: ShapeCount;
-                if best_index != usize::MAX {
-                    sum_count = counts[best_index]
+                let mut sum_count = if let Some(count) = scan_list.find_under(p, x) {
+                    count
                 } else {
-                    // this is the most bottom segment group
-                    sum_count = ShapeCount::new(0, 0);
-                }
+                    ShapeCount::new(0, 0)
+                };
 
-                for se in e_buf.iter() {
+                for se in p_buf.iter() {
                     if self[se.i].seg.is_vertical() {
                         _ = self[se.i].add_and_fill(sum_count, fill_rule);
                     } else {
                         sum_count = self[se.i].add_and_fill(sum_count, fill_rule);
-                        counts[se.i] = sum_count;
-                        let seg = &self[se.i].seg;
-                        scan_list.space.insert(ScanSegment { id: se.i, range: seg.y_range(), stop: seg.b.x });
+                        scan_list.insert(CountSegment { count: sum_count, x_segment: self[se.i].seg }, x);
                     }
                 }
             }
@@ -167,9 +120,10 @@ impl Segment {
     }
 }
 
-impl Handler {
-    pub(super) fn order_asc(&self, other: &Self) -> Ordering {
-        if self.y < other.y {
+
+impl PGroup {
+    fn order_by_angle(&self, other: &Self, center: Point) -> Ordering {
+        if Triangle::is_clockwise_point(center, other.p, self.p) {
             Ordering::Less
         } else {
             Ordering::Greater
@@ -177,9 +131,9 @@ impl Handler {
     }
 }
 
-impl SegEnd {
-    pub(super) fn order(&self, other: &Self, center: FixVec) -> Ordering {
-        if Triangle::is_clockwise(center, FixVec::new_point(other.p), FixVec::new_point(self.p)) {
+impl XGroup {
+    fn order_by_x(&self, other: &Self) -> Ordering {
+        if self.x < other.x {
             Ordering::Less
         } else {
             Ordering::Greater

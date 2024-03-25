@@ -1,11 +1,10 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShapeCount {
     pub(crate) subj: i32,
-    pub(crate) clip: i32
+    pub(crate) clip: i32,
 }
 
 impl ShapeCount {
-
     pub(crate) fn is_empty(self) -> bool { self.subj == 0 && self.clip == 0 }
     pub(crate) fn is_not_empty(self) -> bool { self.subj != 0 || self.clip != 0 }
 

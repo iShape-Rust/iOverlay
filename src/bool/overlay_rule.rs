@@ -14,7 +14,7 @@ pub enum OverlayRule {
     Intersect,
     Union,
     Difference,
-    Xor
+    Xor,
 }
 
 impl OverlayRule {

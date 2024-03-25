@@ -27,7 +27,7 @@ pub(crate) trait Floors {
 }
 
 impl Floors for FixPath {
-    fn floors(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max:&mut i32) -> Vec<Floor> {
+    fn floors(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max: &mut i32) -> Vec<Floor> {
         let n = self.len();
         let mut list = Vec::with_capacity(3 * n / 4);
 
@@ -53,7 +53,7 @@ impl Floors for FixPath {
 }
 
 impl Floors for VectorPath {
-    fn floors(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max:&mut i32) -> Vec<Floor> {
+    fn floors(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max: &mut i32) -> Vec<Floor> {
         let n = self.len();
         let mut list = Vec::with_capacity(3 * n / 4);
 

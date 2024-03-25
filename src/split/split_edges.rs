@@ -82,12 +82,12 @@ impl SplitEdges for Vec<ShapeEdge> {
                                 let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, x, this_edge.count);
                                 let this_rt = ShapeEdge::create_and_validate(x, this_edge.x_segment.b, this_edge.count);
 
-                                assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+                                debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
 
                                 let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, x, scan_edge.count);
                                 let scan_rt = ShapeEdge::create_and_validate(x, scan_edge.x_segment.b, scan_edge.count);
 
-                                assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
+                                debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
                                 let new_this_left = list.add_and_merge(e_index.index, this_lt);
                                 _ = list.add_and_merge(e_index.index, this_rt);
@@ -122,7 +122,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                                 let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, x, this_edge.count);
                                 let this_rt = ShapeEdge::create_and_validate(x, this_edge.x_segment.b, this_edge.count);
 
-                                assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+                                debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
 
                                 _ = list.add_and_merge(e_index.index, this_rt);
                                 let new_this_left = list.add_and_merge(e_index.index, this_lt);
@@ -144,8 +144,8 @@ impl SplitEdges for Vec<ShapeEdge> {
                                 let this1 = ShapeEdge::new(scan_edge.x_segment.a, scan_edge.x_segment.b, this_edge.count);
                                 let this2 = ShapeEdge::new(scan_edge.x_segment.b, this_edge.x_segment.b, this_edge.count);
 
-                                assert!(this0.x_segment.is_less(&this1.x_segment));
-                                assert!(this1.x_segment.is_less(&this2.x_segment));
+                                debug_assert!(this0.x_segment.is_less(&this1.x_segment));
+                                debug_assert!(this1.x_segment.is_less(&this2.x_segment));
 
                                 _ = list.add_and_merge(e_index.index, this1);
                                 _ = list.add_and_merge(e_index.index, this2);
@@ -171,7 +171,7 @@ impl SplitEdges for Vec<ShapeEdge> {
                                 let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, x, scan_edge.count);
                                 let scan_rt = ShapeEdge::create_and_validate(x, scan_edge.x_segment.b, scan_edge.count);
 
-                                assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
+                                debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
                                 let new_scan_left = list.add_and_merge(v_index.index, scan_lt);
                                 _ = list.add_and_merge(v_index.index, scan_rt);
@@ -199,8 +199,8 @@ impl SplitEdges for Vec<ShapeEdge> {
                                 let scan1 = ShapeEdge::new(this_edge.x_segment.a, this_edge.x_segment.b, scan_edge.count);
                                 let scan2 = ShapeEdge::new(this_edge.x_segment.b, scan_edge.x_segment.b, scan_edge.count);
 
-                                assert!(scan0.x_segment.is_less(&scan1.x_segment));
-                                assert!(scan1.x_segment.is_less(&scan2.x_segment));
+                                debug_assert!(scan0.x_segment.is_less(&scan1.x_segment));
+                                debug_assert!(scan1.x_segment.is_less(&scan2.x_segment));
 
                                 let new_scan0 = list.add_and_merge(v_index.index, scan0);
                                 _ = list.add_and_merge(v_index.index, scan1);
@@ -232,12 +232,12 @@ impl SplitEdges for Vec<ShapeEdge> {
                                 let this_lt = ShapeEdge::new(this_edge.x_segment.a, x_this, this_edge.count);
                                 let this_rt = ShapeEdge::new(x_this, this_edge.x_segment.b, this_edge.count);
 
-                                assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+                                debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
 
                                 let scan_lt = ShapeEdge::new(scan_edge.x_segment.a, x_scan, scan_edge.count);
                                 let scan_rt = ShapeEdge::new(x_scan, scan_edge.x_segment.b, scan_edge.count);
 
-                                assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
+                                debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
                                 let new_scan_left = list.add_and_merge(v_index.index, scan_lt);
                                 _ = list.add_and_merge(v_index.index, scan_rt);

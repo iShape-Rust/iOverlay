@@ -71,7 +71,7 @@ impl HolesSolver {
                     iterator = scan_list.next(iterator);
                 }
 
-                assert!(!best_floor.is_none());
+                debug_assert!(!best_floor.is_none());
                 let shape_index = best_floor.map_or(0, |f| f.id);
                 let hole_index = i_points[i].id;
 

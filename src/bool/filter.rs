@@ -7,7 +7,6 @@ pub(crate) trait Filter {
 }
 
 impl Filter for Vec<OverlayLink> {
-
     fn filter(&self, overlay_rule: OverlayRule) -> Vec<bool> {
         match overlay_rule {
             OverlayRule::Subject => filter_subject(self),
@@ -26,7 +25,7 @@ fn filter_subject(links: &Vec<OverlayLink>) -> Vec<bool> {
     for i in 0..n {
         let fill = links[i].fill;
 
-        // Skip edge if it it inside or not belong subject
+        // Skip edge if it inside or not belong subject
 
         let subj = fill & SUBJ_BOTH;
         skip[i] = subj == 0 || subj == SUBJ_BOTH;
@@ -42,7 +41,7 @@ fn filter_clip(links: &Vec<OverlayLink>) -> Vec<bool> {
     for i in 0..n {
         let fill = links[i].fill;
 
-        // Skip edge if it it inside or not belong clip
+        // Skip edge if it inside or not belong clip
 
         let clip = fill & CLIP_BOTH;
         skip[i] = clip == 0 || clip == CLIP_BOTH;
@@ -59,7 +58,7 @@ fn filter_intersect(links: &Vec<OverlayLink>) -> Vec<bool> {
         let fill = links[i].fill;
 
         // One side must belong to both but not two side at once
-        
+
         let is_top = fill & BOTH_TOP == BOTH_TOP;
         let is_bot = fill & BOTH_BOTTOM == BOTH_BOTTOM;
 

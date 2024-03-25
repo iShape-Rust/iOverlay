@@ -5,7 +5,7 @@ pub(crate) struct OverlayNode {
 
 impl OverlayNode {
     pub(crate) fn other(&self, index: usize) -> usize {
-        assert_eq!(self.indices.len(), 2);
+        debug_assert_eq!(self.indices.len(), 2);
         if self.indices[0] == index {
             self.indices[1]
         } else {

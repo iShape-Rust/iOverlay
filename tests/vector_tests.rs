@@ -4,6 +4,7 @@ mod tests {
     use i_overlay::bool::fill_rule::FillRule;
     use i_overlay::bool::overlay_rule::OverlayRule;
     use i_overlay::layout::overlay::{Overlay, ShapeType};
+    use i_overlay::layout::solver::Solver;
     use i_overlay::vector::vector::VectorEdge;
 
     #[test]
@@ -26,7 +27,7 @@ mod tests {
         overlay.add_path(&subj, ShapeType::Subject);
         overlay.add_path(&clip, ShapeType::Clip);
 
-        let shapes = overlay.build_vectors(FillRule::NonZero, OverlayRule::Subject);
+        let shapes = overlay.build_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::Auto);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -78,7 +79,7 @@ mod tests {
         overlay.add_path(&subj, ShapeType::Subject);
         overlay.add_path(&clip, ShapeType::Clip);
 
-        let shapes = overlay.build_vectors(FillRule::NonZero, OverlayRule::Subject);
+        let shapes = overlay.build_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::Auto);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

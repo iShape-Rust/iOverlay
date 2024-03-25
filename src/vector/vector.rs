@@ -24,6 +24,7 @@ impl Reverse for SideFill {
         (subj_left << 1) | (subj_right >> 1) | (clip_left << 1) | (clip_right >> 1)
     }
 }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VectorEdge {
     pub a: FixVec,

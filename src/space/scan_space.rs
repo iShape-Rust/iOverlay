@@ -48,7 +48,7 @@ impl<Id: Copy, Unit: Ord + Copy> ScanSpace<Id, Unit> {
         self.indexer.fill_unsafe(range, &mut self.index_buffer);
 
         for &major in self.index_buffer.iter() {
-            assert!(major < self.heaps.len());
+            debug_assert!(major < self.heaps.len());
             unsafe {
                 let segments = self.heaps.get_unchecked_mut(major);
                 let mut minor = 0;

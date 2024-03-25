@@ -10,8 +10,11 @@ use crate::split::split_edges::SplitEdges;
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
 use crate::bool::overlay_rule::OverlayRule;
+use crate::fill::scan_list::ScanFillList;
+use crate::fill::scan_tree::ScanFillTree;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::geom::x_segment::XSegment;
+use crate::layout::solver::Solver;
 use crate::space::line_range::LineRange;
 use crate::vector::vector::VectorShape;
 
@@ -104,12 +107,13 @@ impl Overlay {
 
     /// Constructs segments from the added paths or shapes according to the specified fill rule.
     /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
-    pub fn build_segments(&self, fill_rule: FillRule) -> Vec<Segment> {
+    /// - `solver`: Type of solver to use.
+    pub fn build_segments(&self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
         if self.edges.is_empty() {
             return Vec::new();
         }
 
-        let mut segments = self.prepare_segments(fill_rule);
+        let mut segments = self.prepare_segments(fill_rule, solver);
 
         segments.filter();
 
@@ -119,11 +123,12 @@ impl Overlay {
     /// Constructs vector shapes from the added paths or shapes, applying the specified fill and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
-    pub fn build_vectors(&self, fill_rule: FillRule, overlay_rule: OverlayRule) -> Vec<VectorShape> {
+    /// - `solver`: Type of solver to use.
+    pub fn build_vectors(&self, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<VectorShape> {
         if self.edges.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(self.prepare_segments(fill_rule));
+        let graph = OverlayGraph::new(self.prepare_segments(fill_rule, solver));
         let vectors = graph.extract_vectors(overlay_rule);
 
         return vectors;
@@ -132,10 +137,17 @@ impl Overlay {
     /// Constructs an `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     pub fn build_graph(&self, fill_rule: FillRule) -> OverlayGraph {
-        OverlayGraph::new(self.build_segments(fill_rule))
+        OverlayGraph::new(self.build_segments(fill_rule, Solver::Auto))
     }
 
-    fn prepare_segments(&self, fill_rule: FillRule) -> Vec<Segment> {
+    /// Constructs an `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
+    /// - `solver`: Type of solver to use.
+    pub fn build_graph_with_solver(&self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
+        OverlayGraph::new(self.build_segments(fill_rule, solver))
+    }
+
+    fn prepare_segments(&self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
         let mut sorted_list = self.edges.clone();
         sorted_list.sort_by(|a, b| a.x_segment.order(&b.x_segment));
 
@@ -164,15 +176,27 @@ impl Overlay {
             buffer.push(prev);
         }
 
+        let is_small_range = (self.y_max - self.y_min) < 128;
+        let is_list: bool;
+        #[cfg(debug_assertions)]
+        {
+            is_list = matches!(solver, Solver::List) || (matches!(solver, Solver::Auto) && (buffer.len() < 1_000 || is_small_range));
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            is_list = matches!(solver, Solver::List) || (matches!(solver, Solver::Auto) && buffer.len() < 1_000) || is_small_range;
+        }
+
         let range = LineRange { min: self.y_min, max: self.y_max };
+        let mut segments: Vec<Segment> = buffer.split(range);
+        if is_list {
+            segments.fill(ScanFillList::new(buffer.len()), fill_rule);
+        } else {
+            segments.fill(ScanFillTree::new(buffer.len()), fill_rule);
+        }
 
-        let mut segments = buffer.split(range);
-
-        segments.fill(fill_rule, range);
-
-        // segments.filter();
-
-        return segments;
+        segments
     }
 }
 

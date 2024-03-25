@@ -38,8 +38,8 @@ impl LineIndexer {
         if self.max_level < 1 {
             return 0;
         }
-        assert!(range.min >= self.range.min);
-        assert!(range.max <= self.range.max);
+        debug_assert!(range.min >= self.range.min);
+        debug_assert!(range.max <= self.range.max);
 
         // scale to indexer coordinate system
         let mut i_min = (range.min + self.offset) as usize;
@@ -98,7 +98,7 @@ impl LineIndexer {
 
             for x in x_left..=x_right {
                 let index = index_offset + x;
-                assert!(index > 0);
+                debug_assert!(index > 0);
                 buffer.push(index);
             }
 
@@ -136,7 +136,7 @@ impl LineIndexer {
 
             for x in x_left..=x_right {
                 let index = index_offset + x;
-                assert!(index > 0);
+                debug_assert!(index > 0);
                 buffer.push(index);
             }
         }
