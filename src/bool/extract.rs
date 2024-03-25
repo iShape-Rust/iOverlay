@@ -127,7 +127,7 @@ impl JoinHoles for Vec<FixShape> {
             y_min = y_min.min(y);
             y_max = y_max.max(y);
         }
-        i_points.sort_by(|a, b| a.point.order_by_x(&b.point));
+        i_points.sort_by(|a, b| a.point.order_by_x(b.point));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
@@ -138,7 +138,7 @@ impl JoinHoles for Vec<FixShape> {
             floors.append(&mut hole_floors);
         }
 
-        floors.sort_by(|a, b| a.seg.a.order_by_x(&b.seg.a));
+        floors.sort_by(|a, b| a.seg.a.order_by_x(b.seg.a));
 
         let y_range = LineRange { min: y_min, max: y_max };
         let solution = HolesSolver::solve(self.len(), y_range, i_points, floors);

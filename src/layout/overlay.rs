@@ -1,5 +1,5 @@
 use i_float::bit_pack::BitPackVec;
-use i_float::fix_vec::FixVec;
+use i_float::point::Point;
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_shape::fix_paths::FixPathsExtension;
 use i_shape::fix_shape::FixShape;
@@ -11,6 +11,7 @@ use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segm
 use crate::bool::fill_rule::FillRule;
 use crate::bool::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
+use crate::geom::x_segment::XSegment;
 use crate::space::line_range::LineRange;
 use crate::vector::vector::VectorShape;
 
@@ -25,6 +26,7 @@ pub enum ShapeType {
     Subject,
     Clip,
 }
+
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 pub struct Overlay {
     y_min: i32,
@@ -33,7 +35,6 @@ pub struct Overlay {
 }
 
 impl Overlay {
-
     /// Constructs a new `Overlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
@@ -136,18 +137,20 @@ impl Overlay {
 
     fn prepare_segments(&self, fill_rule: FillRule) -> Vec<Segment> {
         let mut sorted_list = self.edges.clone();
-        sorted_list.sort_by(|a, b| a.order(b));
+        sorted_list.sort_by(|a, b| a.x_segment.order(&b.x_segment));
 
         let mut buffer = Vec::with_capacity(sorted_list.len());
 
         let mut prev = ShapeEdge {
-            a: FixVec::ZERO,
-            b: FixVec::ZERO,
+            x_segment: XSegment {
+                a: Point::ZERO,
+                b: Point::ZERO,
+            },
             count: ShapeCount::new(0, 0),
         };
 
         for next in sorted_list.into_iter() {
-            if prev.is_equal(&next) {
+            if prev.x_segment == next.x_segment {
                 prev.count = prev.count.add(next.count);
             } else {
                 if prev.count.is_not_empty() {
@@ -193,13 +196,13 @@ impl CreateEdges for FixPath {
         let mut edges = vec![ShapeEdge::ZERO; n];
 
         let i0 = n - 1;
-        let mut p0 = self[i0];
+        let mut p0 = Point::new_fix_vec(self[i0]);
 
         let mut y_min = p0.y;
         let mut y_max = p0.y;
 
         for i in 0..n {
-            let p1 = self[i];
+            let p1 = Point::new_fix_vec(self[i]);
             y_min = y_min.min(p1.y);
             y_max = y_max.max(p1.y);
 
@@ -216,11 +219,7 @@ impl CreateEdges for FixPath {
             p0 = p1
         }
 
-        return Some(EdgeResult {
-            edges,
-            y_min: y_min as i32,
-            y_max: y_max as i32,
-        });
+        Some(EdgeResult { edges, y_min, y_max })
     }
 }
 

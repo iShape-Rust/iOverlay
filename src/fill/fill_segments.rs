@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
-use i_shape::triangle::Triangle;
+use i_float::triangle::Triangle;
 use crate::bool::fill_rule::FillRule;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};

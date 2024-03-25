@@ -1,6 +1,7 @@
 use i_float::bit_pack::BitPackVec;
 use crate::space::dual_index::DualIndex;
 use crate::fill::segment::Segment;
+use crate::geom::x_segment::XSegment;
 use crate::index::EMPTY_INDEX;
 use crate::split::shape_count::ShapeCount;
 use crate::split::shape_edge::ShapeEdge;
@@ -75,9 +76,9 @@ impl SplitRangeList {
     }
 
     pub(super) fn add_and_merge(&mut self, anchor_index: DualIndex, new_edge: ShapeEdge) -> VersionedIndex {
-        let index = self.find_index(anchor_index, &new_edge);
+        let index = self.find_index(anchor_index, new_edge.x_segment);
         let edge = self.edge(index);
-        let version = if edge.is_equal(&new_edge) {
+        let version = if edge.x_segment == new_edge.x_segment {
             self.update_count(index, edge.count.add(new_edge.count))
         } else {
             self.update_edge(index, new_edge)
@@ -86,16 +87,16 @@ impl SplitRangeList {
         VersionedIndex { version, index }
     }
 
-    pub(super) fn find_index(&mut self, anchor_index: DualIndex, edge: &ShapeEdge) -> DualIndex {
-        let a = edge.a.bit_pack();
+    pub(super) fn find_index(&mut self, anchor_index: DualIndex, seg: XSegment) -> DualIndex {
+        let a = seg.a.bit_pack();
         let base: usize;
         let node: usize;
         if self.ranges[anchor_index.major] < a && a <= self.ranges[(anchor_index.major) + 1] {
             base = anchor_index.major;
-            node = self.lists[base].find(anchor_index.minor, edge);
+            node = self.lists[base].find(anchor_index.minor, seg);
         } else {
             base = self.ranges.find_index(a) - 1; // -1 is ranges offset
-            node = self.lists[base].find_from_start(edge);
+            node = self.lists[base].find_from_start(seg);
         }
 
         DualIndex { major: base, minor: node }
@@ -119,9 +120,9 @@ impl SplitRangeList {
             let i0 = i;
 
             i = (edges.len() - 1).min(i + length);
-            let a = edges[i].a;
+            let a = edges[i].x_segment.a;
             i += 1;
-            while i < edges.len() && edges[i].a == a {
+            while i < edges.len() && edges[i].x_segment.a == a {
                 i += 1
             }
 

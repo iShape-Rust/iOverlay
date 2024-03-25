@@ -1,3 +1,4 @@
+use crate::geom::x_segment::XSegment;
 use crate::split::shape_edge::ShapeEdge;
 use crate::index::EMPTY_INDEX;
 use crate::split::shape_count::ShapeCount;
@@ -44,7 +45,6 @@ pub(super) struct SplitLinkedList {
 }
 
 impl SplitLinkedList {
-
     pub(super) fn new(edges: &[ShapeEdge]) -> Self {
         let extra_capacity = 16.min(edges.len() / 2);
         let capacity = edges.len() + extra_capacity;
@@ -106,19 +106,19 @@ impl SplitLinkedList {
         self.nodes[index].update_count(count)
     }
 
-    pub(super) fn find_from_start(&mut self, edge: &ShapeEdge) -> usize {
+    pub(super) fn find_from_start(&mut self, seg: XSegment) -> usize {
         if self.first != EMPTY_INDEX {
-            let first_edge = self.nodes[self.first].edge;
-            if first_edge.is_equal(edge) {
+            let first_seg = self.nodes[self.first].edge.x_segment;
+            if first_seg == seg {
                 self.first
-            } else if edge.is_less(&first_edge) {
+            } else if seg.is_less(&first_seg) {
                 let old_first = self.first;
                 self.first = self.any_free();
                 self.nodes[old_first].prev = self.first;
                 self.nodes[self.first].next = old_first;
                 self.first
             } else {
-                self.find_forward(self.first, edge)
+                self.find_forward(self.first, seg)
             }
         } else {
             self.first = self.any_free();
@@ -126,13 +126,13 @@ impl SplitLinkedList {
         }
     }
 
-    fn find_back(&mut self, from_index: usize, edge: &ShapeEdge) -> usize {
+    fn find_back(&mut self, from_index: usize, seg: XSegment) -> usize {
         let mut node_prev = self.nodes[from_index].prev;
         let mut next_index = from_index;
 
         while node_prev != EMPTY_INDEX {
             let prev_edge = self.nodes[node_prev].edge;
-            if prev_edge.is_less(edge) {
+            if prev_edge.x_segment.is_less(&seg) {
                 // insert new
                 let new_index = self.any_free();
 
@@ -142,7 +142,7 @@ impl SplitLinkedList {
                 self.nodes[next_index].prev = new_index;
 
                 return new_index;
-            } else if prev_edge.is_equal(edge) {
+            } else if prev_edge.x_segment == seg {
                 return node_prev;
             }
 
@@ -159,14 +159,14 @@ impl SplitLinkedList {
         self.first
     }
 
-    fn find_forward(&mut self, from_index: usize, edge: &ShapeEdge) -> usize {
+    fn find_forward(&mut self, from_index: usize, seg: XSegment) -> usize {
         let mut prev_next = self.nodes[from_index].next;
         let mut prev_index = from_index;
 
         while prev_next != EMPTY_INDEX {
             let next_index = prev_next;
-            let next_edge = self.nodes[next_index].edge;
-            if edge.is_less(&next_edge) {
+            let next_seg = self.nodes[next_index].edge.x_segment;
+            if seg.is_less(&next_seg) {
                 // insert new
                 let new_index = self.any_free();
 
@@ -176,7 +176,7 @@ impl SplitLinkedList {
                 self.nodes[next_index].prev = new_index;
 
                 return new_index;
-            } else if next_edge.is_equal(edge) {
+            } else if next_seg == seg {
                 return next_index;
             }
 
@@ -193,18 +193,18 @@ impl SplitLinkedList {
         new_index
     }
 
-    pub(super) fn find(&mut self, anchor_index: usize, edge: &ShapeEdge) -> usize {
+    pub(super) fn find(&mut self, anchor_index: usize, seg: XSegment) -> usize {
         let anchor = &self.nodes[anchor_index];
         if anchor.is_removed() {
-            return self.find_from_start(edge);
+            return self.find_from_start(seg);
         }
 
-        if edge.is_equal(&anchor.edge) {
+        if seg == anchor.edge.x_segment {
             anchor_index
-        } else if edge.is_less(&anchor.edge) {
-            self.find_back(anchor_index, edge)
+        } else if seg.is_less(&anchor.edge.x_segment) {
+            self.find_back(anchor_index, seg)
         } else {
-            self.find_forward(anchor_index, edge)
+            self.find_forward(anchor_index, seg)
         }
     }
 

@@ -28,7 +28,7 @@ pub struct Segment {
 impl Segment {
     pub(crate) fn new(edge: &ShapeEdge) -> Self {
         Self {
-            seg: XSegment::with_edge(edge),
+            seg: edge.x_segment,
             count: edge.count,
             fill: NONE,
         }

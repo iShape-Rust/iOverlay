@@ -1,12 +1,13 @@
 use i_float::fix_vec::FixVec;
-use i_shape::triangle::Triangle;
-use crate::split::shape_edge::ShapeEdge;
+use i_float::point::Point;
+use i_float::triangle::Triangle;
+use crate::geom::x_segment::XSegment;
 
 #[derive(Debug, Clone, Copy)]
 pub struct EdgeCross {
     pub nature: EdgeCrossType,
-    pub point: FixVec,
-    pub second: FixVec,
+    pub point: Point,
+    pub second: Point,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -19,13 +20,13 @@ pub enum EdgeCrossType {
     EndB,
 }
 
-impl ShapeEdge {
-    pub fn cross(&self, other: &ShapeEdge) -> Option<EdgeCross> {
-        let a0 = self.a;
-        let a1 = self.b;
+impl XSegment {
+    pub fn cross(&self, other: &XSegment) -> Option<EdgeCross> {
+        let a0 = FixVec::new_point(self.a);
+        let a1 = FixVec::new_point(self.b);
 
-        let b0 = other.a;
-        let b1 = other.b;
+        let b0 = FixVec::new_point(other.a);
+        let b1 = FixVec::new_point(other.b);
 
         let a0_area = Triangle::area_two(b0, a0, b1);
         let a1_area = Triangle::area_two(b0, a1, b1);
@@ -45,16 +46,16 @@ impl ShapeEdge {
         }
 
         if a0_area == 0 {
-            return if other.is_box_contain_point(a0) {
-                Some(EdgeCross { nature: EdgeCrossType::EndA, point: a0, second: FixVec::ZERO })
+            return if other.is_box_contain_point(self.a) {
+                Some(EdgeCross { nature: EdgeCrossType::EndA, point: self.a, second: Point::ZERO })
             } else {
                 None
             };
         }
 
         if a1_area == 0 {
-            return if other.is_box_contain_point(a1) {
-                Some(EdgeCross { nature: EdgeCrossType::EndA, point: a1, second: FixVec::ZERO })
+            return if other.is_box_contain_point(self.b) {
+                Some(EdgeCross { nature: EdgeCrossType::EndA, point: self.b, second: Point::ZERO })
             } else {
                 None
             };
@@ -63,8 +64,8 @@ impl ShapeEdge {
         let b0_area = Triangle::area_two(a0, b0, a1);
 
         if b0_area == 0 {
-            return if self.is_box_contain_point(b0) {
-                Some(EdgeCross { nature: EdgeCrossType::EndB, point: b0, second: FixVec::ZERO })
+            return if self.is_box_contain_point(other.a) {
+                Some(EdgeCross { nature: EdgeCrossType::EndB, point: other.a, second: Point::ZERO })
             } else {
                 None
             };
@@ -73,8 +74,8 @@ impl ShapeEdge {
         let b1_area = Triangle::area_two(a0, b1, a1);
 
         if b1_area == 0 {
-            return if self.is_box_contain_point(b1) {
-                Some(EdgeCross { nature: EdgeCrossType::EndB, point: b1, second: FixVec::ZERO })
+            return if self.is_box_contain_point(other.b) {
+                Some(EdgeCross { nature: EdgeCrossType::EndB, point: other.b, second: Point::ZERO })
             } else {
                 None
             };
@@ -91,7 +92,7 @@ impl ShapeEdge {
         let p = Self::cross_point(a0, a1, b0, b1);
 
         // still can be common ends cause rounding
-        // snap to a nearest end with radius 1, (1^2 + 1^2 == 2)
+        // snap to nearest end with radius 1, (1^2 + 1^2 == 2)
 
         let ra0 = a0.sqr_distance(p);
         let ra1 = a1.sqr_distance(p);
@@ -105,13 +106,13 @@ impl ShapeEdge {
 
             if ra <= rb {
                 let a = if ra0 < ra1 { a0 } else { a1 };
-                Some(EdgeCross { nature: EdgeCrossType::EndA, point: a, second: FixVec::ZERO })
+                Some(EdgeCross { nature: EdgeCrossType::EndA, point: Point::new_fix_vec(a), second: Point::ZERO })
             } else {
                 let b = if rb0 < rb1 { b0 } else { b1 };
-                Some(EdgeCross { nature: EdgeCrossType::EndB, point: b, second: FixVec::ZERO })
+                Some(EdgeCross { nature: EdgeCrossType::EndB, point: Point::new_fix_vec(b), second: Point::ZERO })
             }
         } else {
-            Some(EdgeCross { nature: EdgeCrossType::Pure, point: p, second: FixVec::ZERO })
+            Some(EdgeCross { nature: EdgeCrossType::Pure, point: Point::new_fix_vec(p), second: Point::ZERO })
         }
     }
 
@@ -170,14 +171,14 @@ impl ShapeEdge {
         let x0: i64;
         let y0: i64;
 
-        // a1y and a1x cannot be zero simultaneously, cause we will get edge a0<>a1 zero length and it is impossible
+        // a1y and a1x cannot be zero simultaneously, because we will get edge a0<>a1 zero length and it is impossible
 
         if a1x == 0 {
-            // dxB is not zero cause it will be parallel case and it's impossible
+            // dxB is not zero because it will be parallel case and it's impossible
             x0 = 0;
             y0 = xy_b / dx_b;
         } else if a1y == 0 {
-            // dyB is not zero cause it will be parallel case and it's impossible
+            // dyB is not zero because it will be parallel case and it's impossible
             y0 = 0;
             x0 = -xy_b / dy_b;
         } else {
@@ -199,14 +200,14 @@ impl ShapeEdge {
         FixVec::new(x, y)
     }
 
-    pub fn is_box_contain_point(&self, p: FixVec) -> bool {
+    pub fn is_box_contain_point(&self, p: Point) -> bool {
         let x = self.a.x <= p.x && p.x <= self.b.x || self.b.x <= p.x && p.x <= self.a.x;
         let y = self.a.y <= p.y && p.y <= self.b.y || self.b.y <= p.y && p.y <= self.a.y;
 
         x && y
     }
 
-    pub fn is_box_contain_edge(&self, edge: &ShapeEdge) -> bool {
+    pub fn is_box_contain_edge(&self, edge: &XSegment) -> bool {
         let x_contain = self.a.x <= edge.a.x && edge.b.x <= self.b.x;
         if !x_contain {
             return false;
@@ -228,7 +229,7 @@ impl ShapeEdge {
     }
 
 
-    fn same_line_overlay(edge_a: &ShapeEdge, edge_b: &ShapeEdge) -> Option<EdgeCross> {
+    fn same_line_overlay(edge_a: &XSegment, edge_b: &XSegment) -> Option<EdgeCross> {
         let is_a = edge_a.is_box_contain_edge(edge_b); // b inside a
         let is_b = edge_b.is_box_contain_edge(edge_a); // a inside b
 
@@ -261,19 +262,19 @@ impl ShapeEdge {
         Some(EdgeCross { nature: EdgeCrossType::Penetrate, point: ap, second: bp })
     }
 
-    fn solve_inside(&self, other: &ShapeEdge, end: EdgeCrossType, overlay: EdgeCrossType) -> EdgeCross {
+    fn solve_inside(&self, other: &XSegment, end: EdgeCrossType, overlay: EdgeCrossType) -> EdgeCross {
         let is_be0 = other.a == self.a || other.a == self.b;
         let is_be1 = other.b == self.a || other.b == self.b;
 
         return if is_be0 {
             // first point is common
-            EdgeCross { nature: end, point: other.b, second: FixVec::ZERO }
+            EdgeCross { nature: end, point: other.b, second: Point::ZERO }
         } else if is_be1 {
             // second point is common
-            EdgeCross { nature: end, point: other.a, second: FixVec::ZERO }
+            EdgeCross { nature: end, point: other.a, second: Point::ZERO }
         } else {
             // no common points
-            EdgeCross { nature: overlay, point: FixVec::ZERO, second: FixVec::ZERO }
+            EdgeCross { nature: overlay, point: Point::ZERO, second: Point::ZERO }
         };
     }
 }

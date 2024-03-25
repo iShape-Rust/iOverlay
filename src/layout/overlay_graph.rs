@@ -1,7 +1,7 @@
 use i_float::bit_pack::{BitPack, BitPackFix, BitPackVec};
 use i_float::fix_vec::FixVec;
+use i_float::triangle::Triangle;
 use i_shape::index_point::IndexPoint;
-use i_shape::triangle::Triangle;
 
 use crate::{fill::segment::Segment};
 use crate::index::EMPTY_INDEX;

@@ -1,59 +1,25 @@
-use std::cmp::Ordering;
-use i_float::bit_pack::BitPackVec;
-
-use i_float::fix_vec::FixVec;
+use i_float::point::Point;
+use crate::geom::x_order::XOrder;
+use crate::geom::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ShapeEdge {
-    pub a: FixVec,
-    pub b: FixVec,
-    pub (crate) count: ShapeCount,
+    pub(crate) x_segment: XSegment,
+    pub(crate) count: ShapeCount,
 }
 
 impl ShapeEdge {
-
-    pub (crate) const ZERO: ShapeEdge = ShapeEdge {
-        a: FixVec::ZERO,
-        b: FixVec::ZERO,
-        count: ShapeCount { subj: 0, clip: 0 }
+    pub(crate) const ZERO: ShapeEdge = ShapeEdge {
+        x_segment: XSegment { a: Point::ZERO, b: Point::ZERO },
+        count: ShapeCount { subj: 0, clip: 0 },
     };
 
-    pub fn new(a: FixVec, b: FixVec, count: ShapeCount) -> Self {
-        if a.bit_pack() <= b.bit_pack() {
-            Self { a, b, count }
+    pub fn new(a: Point, b: Point, count: ShapeCount) -> Self {
+        if a.order_by_line_compare(b) {
+            Self { x_segment: XSegment { a, b }, count }
         } else {
-            Self { a: b, b: a, count }
-        }
-    }
-
-    pub (crate) fn is_less(&self, other: &ShapeEdge) -> bool {
-        let a0 = self.a.bit_pack();
-        let a1 = other.a.bit_pack();
-        if a0 != a1 {
-            a0 < a1
-        } else {
-            self.b.bit_pack() < other.b.bit_pack()
-        }
-    }
-
-    pub (crate) fn is_equal(&self, other: &ShapeEdge) -> bool {
-        self.a == other.a && self.b == other.b
-    }
-
-    pub (crate) fn order(&self, other: &Self) -> Ordering {
-        let a0 = self.a.bit_pack();
-        let a1 = other.a.bit_pack();
-        if a0 != a1 {
-            if a0 < a1 {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        } else if self.b.bit_pack() < other.b.bit_pack() {
-            Ordering::Less
-        } else {
-            Ordering::Greater
+            Self { x_segment: XSegment { a: b, b: a }, count }
         }
     }
 }

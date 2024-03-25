@@ -1,18 +1,21 @@
 use std::cmp::Ordering;
-use i_float::bit_pack::BitPackVec;
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
-use i_shape::triangle::Triangle;
+use i_float::triangle::Triangle;
+use crate::geom::x_order::XOrder;
 use crate::space::line_range::LineRange;
-use crate::split::shape_edge::ShapeEdge;
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct XSegment {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct XSegment {
     pub(crate) a: Point,
     pub(crate) b: Point,
 }
 
 impl XSegment {
+    pub fn new(a: Point, b: Point) -> Self {
+        Self { a, b }
+    }
+
     pub(crate) fn y_range(&self) -> LineRange {
         if self.a.y < self.b.y {
             LineRange { min: self.a.y, max: self.b.y }
@@ -23,13 +26,6 @@ impl XSegment {
 
     pub(crate) fn is_vertical(&self) -> bool {
         self.a.x == self.b.x
-    }
-
-    pub(crate) fn with_edge(edge: &ShapeEdge) -> Self {
-        Self {
-            a: Point::new_fix_vec(edge.a),
-            b: Point::new_fix_vec(edge.b),
-        }
     }
 
     pub(crate) fn is_under_point(&self, p: Point) -> bool {
@@ -58,18 +54,18 @@ impl XSegment {
     }
 
     pub (crate) fn order(&self, other: &Self) -> Ordering {
-        let a0 = self.a.bit_pack();
-        let a1 = other.a.bit_pack();
-        if a0 != a1 {
-            if a0 < a1 {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        } else if self.b.bit_pack() < other.b.bit_pack() {
-            Ordering::Less
+        if self.a == other.a {
+            self.b.order_by_line(other.b)
         } else {
-            Ordering::Greater
+            self.a.order_by_line(other.a)
+        }
+    }
+
+    pub (crate) fn is_less(&self, other: &Self) -> bool {
+        if self.a == other.a {
+            self.b.order_by_line_compare(other.b)
+        } else {
+            self.a.order_by_line_compare(other.a)
         }
     }
 }
