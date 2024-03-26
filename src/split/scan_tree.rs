@@ -187,7 +187,7 @@ impl ScanSplitTree {
                 continue;
             }
 
-            // order is important! this x scan
+            // order is important! this * scan
             if let Some(cross) = this.cross(&scan.x_segment) {
                 let index = scan.index;
                 let segment = scan.clone();
@@ -392,7 +392,7 @@ impl Log2Extension for i32 {
 
 impl LineRange {
     fn middle(&self) -> i32 {
-        self.min + ((self.max - self.min) >> 1)
+        (self.max + self.min) >> 1
     }
     fn log2(&self) -> usize {
         (self.max - self.min).log2()
