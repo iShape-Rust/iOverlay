@@ -1,7 +1,7 @@
 use crate::space::dual_index::DualIndex;
 use crate::index::EMPTY_INDEX;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub (super) struct VersionedIndex {
     pub (super) version: usize,
     pub (super) index: DualIndex
