@@ -1,5 +1,5 @@
 use i_float::point::Point;
-use crate::geom::floor::Floor;
+use crate::geom::segment::IdSegment;
 use crate::geom::id_point::IdPoint;
 use crate::geom::x_scan_list::XScanList;
 use crate::space::line_range::LineRange;
@@ -13,7 +13,7 @@ pub(crate) struct HolesSolution {
 pub(crate) struct HolesSolver;
 
 impl HolesSolver {
-    pub(crate) fn solve(shape_count: usize, y_range: LineRange, i_points: Vec<IdPoint>, floors: Vec<Floor>) -> HolesSolution {
+    pub(crate) fn solve(shape_count: usize, y_range: LineRange, i_points: Vec<IdPoint>, floors: Vec<IdSegment>) -> HolesSolution {
         let hole_count = i_points.len();
 
         let mut scan_list = XScanList::new(y_range, floors.len());
@@ -29,10 +29,10 @@ impl HolesSolver {
         while i < i_points.len() {
             let x = i_points[i].point.x;
 
-            while j < floors.len() && floors[j].seg.a.x <= x {
+            while j < floors.len() && floors[j].x_segment.a.x <= x {
                 let floor = floors[j];
-                if floor.seg.b.x > x {
-                    scan_list.space.insert(ScanSegment { id: j, range: floor.seg.y_range(), stop: floor.seg.b.x })
+                if floor.x_segment.b.x > x {
+                    scan_list.space.insert(ScanSegment { id: j, range: floor.x_segment.y_range(), stop: floor.x_segment.b.x })
                 }
                 j += 1;
             }
@@ -42,16 +42,16 @@ impl HolesSolver {
 
                 // find nearest scan segment for y
                 let mut iterator = scan_list.iterator_to_bottom(p.y);
-                let mut best_floor: Option<Floor> = None;
+                let mut best_floor: Option<IdSegment> = None;
 
                 while iterator.min != i32::MIN {
                     scan_list.space.ids_in_range(iterator, x, &mut candidates);
                     if !candidates.is_empty() {
                         for &floor_index in candidates.iter() {
                             let floor = floors[floor_index];
-                            if floor.seg.is_under_point(p) {
+                            if floor.x_segment.is_under_point(p) {
                                 if let Some(best_seg) = best_floor {
-                                    if best_seg.seg.is_under_segment(floor.seg) {
+                                    if best_seg.x_segment.is_under_segment(floor.x_segment) {
                                         best_floor = Some(floor);
                                     }
                                 } else {
@@ -63,7 +63,7 @@ impl HolesSolver {
                     }
 
                     if let Some(best_seg) = best_floor {
-                        if best_seg.seg.is_above_point(Point::new(x, iterator.min)) {
+                        if best_seg.x_segment.is_above_point(Point::new(x, iterator.min)) {
                             break;
                         }
                     }

@@ -1,7 +1,7 @@
 use i_float::point::Point;
 use crate::bool::filter::Filter;
 use crate::bool::overlay_rule::OverlayRule;
-use crate::geom::floor::Floors;
+use crate::geom::segment::IdSegments;
 use crate::geom::holes_solver::HolesSolver;
 use crate::geom::id_point::IdPoint;
 use crate::geom::x_order::XOrder;
@@ -24,7 +24,7 @@ impl OverlayGraph {
                 j += 1;
             } else {
                 let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
-                let mut path = self.get_path(overlay_rule, i, &mut visited);
+                let mut path = self.get_vector_path(overlay_rule, i, &mut visited);
                 path.validate(is_hole);
                 if is_hole {
                     holes.push(path);
@@ -39,7 +39,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> VectorPath {
+    fn get_vector_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> VectorPath {
         let mut path = VectorPath::new();
         let mut next = index;
 
@@ -117,11 +117,11 @@ impl JoinHoles for Vec<VectorShape> {
 
         let mut floors = Vec::new();
         for i in 0..self.len() {
-            let mut hole_floors = self[i][0].floors(i, x_min, x_max, &mut y_min, &mut y_max);
+            let mut hole_floors = self[i][0].id_segments(i, x_min, x_max, &mut y_min, &mut y_max);
             floors.append(&mut hole_floors);
         }
 
-        floors.sort_by(|a, b| a.seg.a.order_by_x(b.seg.a));
+        floors.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
 
         let y_range = LineRange { min: y_min, max: y_max };
         let solution = HolesSolver::solve(self.len(), y_range, i_points, floors);

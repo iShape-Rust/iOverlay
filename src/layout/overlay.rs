@@ -11,8 +11,6 @@ use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segm
 use crate::bool::fill_rule::FillRule;
 use crate::bool::overlay_rule::OverlayRule;
 use crate::ext::remove::SwapRemoveIndex;
-use crate::fill::scan_list::ScanFillList;
-use crate::fill::scan_tree::ScanFillTree;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::geom::x_segment::XSegment;
 use crate::layout::solver::Solver;
@@ -177,25 +175,9 @@ impl Overlay {
             buffer.push(prev);
         }
 
-        let is_small_range = (self.y_max - self.y_min) < 128;
-        let is_list: bool;
-        #[cfg(debug_assertions)]
-        {
-            is_list = matches!(solver, Solver::List) || (matches!(solver, Solver::Auto) && (buffer.len() < 1_000 || is_small_range));
-        }
-
-        #[cfg(not(debug_assertions))]
-        {
-            is_list = matches!(solver, Solver::List) || (matches!(solver, Solver::Auto) && buffer.len() < 1_000) || is_small_range;
-        }
-
         let range = LineRange { min: self.y_min, max: self.y_max };
         let mut segments: Vec<Segment> = buffer.split(range);
-        if is_list {
-            segments.fill(ScanFillList::new(buffer.len()), fill_rule);
-        } else {
-            segments.fill(ScanFillTree::new(buffer.len()), fill_rule);
-        }
+        segments.fill(fill_rule, solver);
 
         segments
     }

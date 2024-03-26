@@ -2,7 +2,7 @@ use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_float::point::Point;
 use i_shape::fix_shape::FixShape;
-use crate::geom::floor::Floors;
+use crate::geom::segment::IdSegments;
 use crate::geom::holes_solver::HolesSolver;
 use crate::geom::id_point::IdPoint;
 use crate::geom::x_order::XOrder;
@@ -40,7 +40,7 @@ impl OverlayGraph {
                 j += 1;
             } else {
                 let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
-                let mut path = self.get_vector_path(overlay_rule, i, &mut visited);
+                let mut path = self.get_path(overlay_rule, i, &mut visited);
                 if path.validate(min_area, is_hole) {
                     if is_hole {
                         holes.push(path);
@@ -56,7 +56,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> FixPath {
+    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> FixPath {
         let mut path = FixPath::new();
         let mut next = index;
 
@@ -134,11 +134,11 @@ impl JoinHoles for Vec<FixShape> {
 
         let mut floors = Vec::new();
         for i in 0..self.len() {
-            let mut hole_floors = self[i].contour().floors(i, x_min, x_max, &mut y_min, &mut y_max);
+            let mut hole_floors = self[i].contour().id_segments(i, x_min, x_max, &mut y_min, &mut y_max);
             floors.append(&mut hole_floors);
         }
 
-        floors.sort_by(|a, b| a.seg.a.order_by_x(b.seg.a));
+        floors.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
 
         let y_range = LineRange { min: y_min, max: y_max };
         let solution = HolesSolver::solve(self.len(), y_range, i_points, floors);

@@ -3,9 +3,12 @@ use i_float::point::Point;
 use i_float::triangle::Triangle;
 use crate::bool::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
+use crate::fill::scan_list::ScanFillList;
+use crate::fill::scan_tree::ScanFillTree;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::fill::store::ScanFillStore;
+use crate::layout::solver::Solver;
 
 struct YGroup {
     i: usize,
@@ -17,12 +20,29 @@ struct PGroup {
     p: Point,
 }
 
-pub(crate) trait FillSegments<S: ScanFillStore> {
-    fn fill(&mut self, scan_store: S, fill_rule: FillRule);
+pub(crate) trait FillSegments {
+    fn fill(&mut self, fill_rule: FillRule, solver: Solver);
 }
 
-impl<S: ScanFillStore> FillSegments<S> for Vec<Segment> {
-    fn fill(&mut self, scan_store: S, fill_rule: FillRule) {
+impl FillSegments for Vec<Segment> {
+    fn fill(&mut self, fill_rule: FillRule, solver: Solver) {
+        let is_list = matches!(solver, Solver::List) || matches!(solver, Solver::Auto) && self.len() < 1_000;
+        if is_list {
+            let store = ScanFillList::new(self.len());
+            self.solve(store, fill_rule);
+        } else {
+            let store = ScanFillTree::new(self.len());
+            self.solve(store, fill_rule);
+        }
+    }
+}
+
+trait FillSolver<S: ScanFillStore> {
+    fn solve(&mut self, scan_store: S, fill_rule: FillRule);
+}
+
+impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
+    fn solve(&mut self, scan_store: S, fill_rule: FillRule) {
         let mut scan_list = scan_store;
         let mut x_buf = Vec::new();
         let mut p_buf = Vec::new();
