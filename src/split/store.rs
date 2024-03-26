@@ -1,4 +1,3 @@
-use i_float::point::Point;
 use crate::geom::x_segment::XSegment;
 use crate::split::shape_edge_cross::EdgeCross;
 use crate::split::version_index::VersionedIndex;
@@ -10,7 +9,7 @@ pub(super) struct CrossSegment {
 }
 
 pub(super) trait ScanSplitStore {
-    fn intersect(&mut self, this: XSegment, scan_pos: Point) -> Option<CrossSegment>;
+    fn intersect(&mut self, this: XSegment) -> Option<CrossSegment>;
 
     fn insert(&mut self, segment: VersionSegment);
 

@@ -24,15 +24,10 @@ pub struct ScanSplitTree {
 }
 
 impl ScanSplitTree {
-    fn new(range: LineRange, count: usize) -> Self {
+    pub(super) fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2();
         let max_power_count = ((count as f64).sqrt() as i32).log2();
         let power = 10.min(max_power_count.min(max_power_range));
-        let nodes = Self::create_nodes(range, power);
-        Self { power, nodes }
-    }
-
-    fn with_power(range: LineRange, power: usize) -> Self {
         let nodes = Self::create_nodes(range, power);
         Self { power, nodes }
     }
@@ -224,21 +219,14 @@ impl ScanSplitTree {
 
         i
     }
-
-    fn count(&self) -> usize {
-        let mut s = 0;
-        for node in self.nodes.iter() {
-            s += node.list.len();
-        }
-        s
-    }
 }
 
 impl ScanSplitStore for ScanSplitTree {
-    fn intersect(&mut self, this: XSegment, scan_pos: Point) -> Option<CrossSegment> {
+    fn intersect(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = this.y_range();
+        let scan_pos= this.a;
 
         let mut early_out = false;
 
@@ -406,6 +394,21 @@ impl LineRange {
     }
     fn log2(&self) -> usize {
         (self.max - self.min).log2()
+    }
+}
+
+#[cfg(test)]
+impl ScanSplitTree {
+    fn with_power(range: LineRange, power: usize) -> Self {
+        let nodes = Self::create_nodes(range, power);
+        Self { power, nodes }
+    }
+    fn count(&self) -> usize {
+        let mut s = 0;
+        for node in self.nodes.iter() {
+            s += node.list.len();
+        }
+        s
     }
 }
 
@@ -589,7 +592,6 @@ mod tests {
     fn test_07() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: -8, max: 9 }, 3);
         let version = VersionedIndex { version: 0, index: DualIndex::EMPTY };
-        let scan_pos = Point::new(0, 0);
 
         let a0 = Point::new(0, -6);
         let b0 = Point::new(8, 0);
@@ -600,7 +602,7 @@ mod tests {
         let xs = XSegment { a: a1, b: b1 };
 
         tree.insert(vs);
-        let r1 = tree.intersect(xs, scan_pos);
+        let r1 = tree.intersect(xs);
 
         assert_eq!(true, r1.is_none());
         assert_eq!(true, tree.count() > 0)
@@ -655,7 +657,7 @@ mod tests {
 
         let mut i = 0;
         for s in test_set.iter() {
-            if let Some(res) = &tree.intersect(s.clone(), s.a) {
+            if let Some(res) = &tree.intersect(s.clone()) {
                 result.push(res.cross.point.clone());
                 if res.cross.nature == EdgeCrossType::Penetrate {
                     result.push(res.cross.second);
@@ -692,11 +694,9 @@ mod tests {
         let mut list = ScanSplitList::new(1);
         let mut tree = ScanSplitTree::with_power(LineRange { min: range.start, max: range.end }, 5);
         let index = VersionedIndex { version: 0, index: DualIndex::EMPTY };
-        let scan_pos = Point::new(0, 0);
         let mut rng = rand::thread_rng();
 
         for _ in 0..100_000 {
-            let value = rng.gen_range(range.clone());
             let a0 = Point::new(0, rng.gen_range(range.clone()));
             let b0 = Point::new(8, rng.gen_range(range.clone()));
             let a1 = Point::new(0, rng.gen_range(range.clone()));
@@ -707,8 +707,8 @@ mod tests {
             list.insert(vs.clone());
             tree.insert(vs);
 
-            let r0 = list.intersect(xs, scan_pos);
-            let r1 = tree.intersect(xs, scan_pos);
+            let r0 = list.intersect(xs);
+            let r1 = tree.intersect(xs);
 
             if r0.is_none() != r1.is_none() {
                 print!("a0: {a0}, b0: {b0}, a1: {a1}, b1: {b1}");

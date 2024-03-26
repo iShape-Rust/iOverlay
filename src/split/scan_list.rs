@@ -1,4 +1,3 @@
-use i_float::point::Point;
 use crate::ext::remove::SwapRemoveIndex;
 use crate::geom::x_order::XOrder;
 use crate::geom::x_segment::XSegment;
@@ -17,8 +16,9 @@ impl ScanSplitList {
 }
 
 impl ScanSplitStore for ScanSplitList {
-    fn intersect(&mut self, this: XSegment, scan_pos: Point) -> Option<CrossSegment> {
+    fn intersect(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut i = 0;
+        let scan_pos= this.a;
         while i < self.buffer.len() {
             let scan = &self.buffer[i];
             if scan.x_segment.b.order_by_line_compare(scan_pos) {

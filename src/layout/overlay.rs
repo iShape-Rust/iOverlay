@@ -176,7 +176,7 @@ impl Overlay {
         }
 
         let range = LineRange { min: self.y_min, max: self.y_max };
-        let mut segments: Vec<Segment> = buffer.split(range);
+        let mut segments: Vec<Segment> = buffer.split(range, solver);
         segments.fill(fill_rule, solver);
 
         segments
