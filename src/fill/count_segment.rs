@@ -14,13 +14,13 @@ impl PartialEq<Self> for CountSegment {
     }
 }
 
-impl PartialOrd<Self> for CountSegment {
+impl Eq for CountSegment {}
+
+impl PartialOrd for CountSegment {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.x_segment.order(&other.x_segment))
+        Some(self.cmp(other))
     }
 }
-
-impl Eq for CountSegment {}
 
 impl Ord for CountSegment {
     fn cmp(&self, other: &Self) -> Ordering {

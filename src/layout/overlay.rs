@@ -10,6 +10,7 @@ use crate::split::split_edges::SplitEdges;
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
 use crate::bool::overlay_rule::OverlayRule;
+use crate::ext::remove::SwapRemoveIndex;
 use crate::fill::scan_list::ScanFillList;
 use crate::fill::scan_tree::ScanFillTree;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
@@ -259,11 +260,7 @@ impl Filter for Vec<Segment> {
             let fill = self[i].fill;
             if fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH {
                 has_empty = true;
-                if i < self.len() - 1 {
-                    self.swap_remove(i);
-                } else {
-                    _ = self.pop()
-                }
+                self.swap_remove_index(i);
             } else {
                 i += 1
             }

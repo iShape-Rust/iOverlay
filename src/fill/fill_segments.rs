@@ -7,9 +7,9 @@ use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::fill::store::ScanFillStore;
 
-struct XGroup {
+struct YGroup {
     i: usize,
-    x: i32,
+    y: i32,
 }
 
 struct PGroup {
@@ -37,22 +37,22 @@ impl<S: ScanFillStore> FillSegments<S> for Vec<Segment> {
 
             // find all new segments with same a.x
             while i < n && self[i].seg.a.x == x {
-                x_buf.push(XGroup { i, x: self[i].seg.a.y });
+                x_buf.push(YGroup { i, y: self[i].seg.a.y });
                 i += 1;
             }
 
             if x_buf.len() > 1 {
-                x_buf.sort_by(|a, b| a.order_by_x(b));
+                x_buf.sort_by(|a, b| a.order_by_y(b));
             }
 
             let mut j = 0;
             while j < x_buf.len() {
-                let y = x_buf[j].x;
+                let y = x_buf[j].y;
 
                 p_buf.clear();
 
                 // group new segments by same y (all segments in eBuf must have same a)
-                while j < x_buf.len() && x_buf[j].x == y {
+                while j < x_buf.len() && x_buf[j].y == y {
                     let handler = &x_buf[j];
                     p_buf.push(PGroup { i: handler.i, p: self[handler.i].seg.b });
                     j += 1;
@@ -131,9 +131,9 @@ impl PGroup {
     }
 }
 
-impl XGroup {
-    fn order_by_x(&self, other: &Self) -> Ordering {
-        if self.x < other.x {
+impl YGroup {
+    fn order_by_y(&self, other: &Self) -> Ordering {
+        if self.y < other.y {
             Ordering::Less
         } else {
             Ordering::Greater

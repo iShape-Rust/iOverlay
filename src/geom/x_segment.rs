@@ -49,10 +49,10 @@ impl XSegment {
     }
 
     pub(crate) fn order(&self, other: &Self) -> Ordering {
-        if self.a == other.a {
-            self.b.order_by_line(other.b)
+        if self.is_less(other) {
+            Ordering::Less
         } else {
-            self.a.order_by_line(other.a)
+            Ordering::Greater
         }
     }
 
