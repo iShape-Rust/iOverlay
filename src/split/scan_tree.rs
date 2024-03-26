@@ -178,10 +178,12 @@ impl ScanSplitTree {
     fn cross(&mut self, index: usize, this: XSegment, scan_pos: Point) -> Option<CrossSegment> {
         let mut j = 0;
 
-        while j < self.nodes[index].list.len() {
-            let scan = &self.nodes[index].list[j];
+        let list = &mut self.nodes[index].list;
+
+        while j < list.len() {
+            let scan = &list[j];
             if scan.x_segment.b.order_by_line_compare(scan_pos) {
-                self.nodes[index].list.swap_remove_index(j);
+                list.swap_remove_index(j);
                 continue;
             }
 
