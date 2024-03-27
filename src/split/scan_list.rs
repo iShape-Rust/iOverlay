@@ -1,4 +1,5 @@
 use crate::array::SwapRemoveIndex;
+use crate::int::Int;
 use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 use crate::split::scan_store::{CrossSegment, ScanSplitStore};
@@ -10,8 +11,7 @@ pub(super) struct ScanSplitList {
 
 impl ScanSplitList {
     pub(super) fn new(count: usize) -> Self {
-        let capacity = ((count << 1) as f64).sqrt() as usize;
-        Self { buffer: Vec::with_capacity(capacity) }
+        Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
 }
 

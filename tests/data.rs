@@ -15,12 +15,12 @@ pub mod overlay {
         pub subj_paths: Vec<FixPath>,
         #[serde(rename = "clipPaths")]
         pub clip_paths: Vec<FixPath>,
-        pub clip: Vec<FixShape>,
-        pub subject: Vec<FixShape>,
-        pub difference: Vec<FixShape>,
-        pub intersect: Vec<FixShape>,
-        pub union: Vec<FixShape>,
-        pub xor: Vec<FixShape>,
+        pub clip: Vec<Vec<FixShape>>,
+        pub subject: Vec<Vec<FixShape>>,
+        pub difference: Vec<Vec<FixShape>>,
+        pub intersect: Vec<Vec<FixShape>>,
+        pub union: Vec<Vec<FixShape>>,
+        pub xor: Vec<Vec<FixShape>>,
     }
 
     fn deserialize_fill_rule<'de, D>(deserializer: D) -> Result<Option<FillRule>, D::Error>

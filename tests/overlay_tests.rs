@@ -2,33 +2,45 @@ mod data;
 
 #[cfg(test)]
 mod tests {
+    use i_shape::fix_shape::FixShape;
     use i_overlay::bool::fill_rule::FillRule;
     use i_overlay::bool::overlay_rule::OverlayRule;
-    use i_overlay::layout::overlay::{Overlay, ShapeType};
+    use i_overlay::layout::overlay::Overlay;
+    use i_overlay::layout::solver::Solver;
     use crate::data::overlay::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
+        let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
+        let solvers = [Solver::List, Solver::Tree];
+        for solver in solvers {
+            let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
+            let graph = overlay.build_graph_with_solver(fill_rule, solver);
 
-        let mut overlay = Overlay::new(8);
-        overlay.add_paths(&test.subj_paths, ShapeType::Subject);
-        overlay.add_paths(&test.clip_paths, ShapeType::Clip);
+            let clip = graph.extract_shapes(OverlayRule::Clip);
+            let subject = graph.extract_shapes(OverlayRule::Subject);
+            let difference = graph.extract_shapes(OverlayRule::Difference);
+            let intersect = graph.extract_shapes(OverlayRule::Intersect);
+            let union = graph.extract_shapes(OverlayRule::Union);
+            let xor = graph.extract_shapes(OverlayRule::Xor);
 
-        let graph = overlay.build_graph(test.fill_rule.unwrap_or(FillRule::EvenOdd));
+            assert_eq!(true, test_result(&clip, &test.clip));
+            assert_eq!(true, test_result(&subject, &test.subject));
+            assert_eq!(true, test_result(&difference, &test.difference));
+            assert_eq!(true, test_result(&intersect, &test.intersect));
+            assert_eq!(true, test_result(&union, &test.union));
+            assert_eq!(true, test_result(&xor, &test.xor));
+        }
+    }
 
-        let clip = graph.extract_shapes(OverlayRule::Clip);
-        let subject = graph.extract_shapes(OverlayRule::Subject);
-        let difference = graph.extract_shapes(OverlayRule::Difference);
-        let intersect = graph.extract_shapes(OverlayRule::Intersect);
-        let union = graph.extract_shapes(OverlayRule::Union);
-        let xor = graph.extract_shapes(OverlayRule::Xor);
+    fn test_result(result: &Vec<FixShape>, bank: &Vec<Vec<FixShape>>) -> bool {
+        for item in bank.iter() {
+            if item == result {
+                return true;
+            }
+        }
 
-        assert_eq!(test.clip, clip);
-        assert_eq!(test.subject, subject);
-        assert_eq!(test.difference, difference);
-        assert_eq!(test.intersect, intersect);
-        assert_eq!(test.union, union);
-        assert_eq!(test.xor, xor);
+        false
     }
 
     #[test]

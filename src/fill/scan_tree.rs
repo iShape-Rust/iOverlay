@@ -3,6 +3,7 @@ use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_store::ScanFillStore;
+use crate::int::Int;
 use crate::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 
@@ -12,7 +13,7 @@ pub(crate) struct ScanFillTree {
 
 impl ScanFillTree {
     pub(crate) fn new(count: usize) -> Self {
-        let capacity = ((count << 1) as f64).sqrt() as usize;
+        let capacity = count.log2_sqrt();
         let count = ShapeCount { subj: 0, clip: 0 };
         let x_segment = XSegment { a: Point::ZERO, b: Point::ZERO };
         Self { tree: Tree::new(CountSegment { count, x_segment }, capacity) }
