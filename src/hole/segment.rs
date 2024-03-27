@@ -1,7 +1,8 @@
+use std::cmp::Ordering;
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
 use i_shape::fix_path::FixPath;
-use crate::geom::x_segment::XSegment;
+use crate::x_segment::XSegment;
 use crate::vector::vector::VectorPath;
 
 #[derive(Debug, Clone, Copy)]
@@ -22,12 +23,36 @@ impl IdSegment {
     }
 }
 
+impl PartialEq<Self> for IdSegment {
+    fn eq(&self, other: &Self) -> bool {
+        self.x_segment == other.x_segment
+    }
+}
+
+impl Eq for IdSegment {}
+
+impl PartialOrd for IdSegment {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for IdSegment {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.x_segment.is_under_segment(other.x_segment) {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
+    }
+}
+
 pub(crate) trait IdSegments {
-    fn id_segments(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max: &mut i32) -> Vec<IdSegment>;
+    fn id_segments(&self, id: usize, x_min: i32, x_max: i32) -> Vec<IdSegment>;
 }
 
 impl IdSegments for FixPath {
-    fn id_segments(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max: &mut i32) -> Vec<IdSegment> {
+    fn id_segments(&self, id: usize, x_min: i32, x_max: i32) -> Vec<IdSegment> {
         let n = self.len();
         let mut list = Vec::with_capacity(3 * n / 4);
 
@@ -38,13 +63,6 @@ impl IdSegments for FixPath {
         for &a in self.iter() {
             if a.x < b.x && x_min64 < b.x && a.x <= x_max64 {
                 list.push(IdSegment::new(id, a, b));
-                if a.y < b.y {
-                    *y_min = (*y_min).min(a.y as i32);
-                    *y_max = (*y_max).max(b.y as i32);
-                } else {
-                    *y_min = (*y_min).min(b.y as i32);
-                    *y_max = (*y_max).max(a.y as i32);
-                }
             }
             b = a
         }
@@ -53,7 +71,7 @@ impl IdSegments for FixPath {
 }
 
 impl IdSegments for VectorPath {
-    fn id_segments(&self, id: usize, x_min: i32, x_max: i32, y_min: &mut i32, y_max: &mut i32) -> Vec<IdSegment> {
+    fn id_segments(&self, id: usize, x_min: i32, x_max: i32) -> Vec<IdSegment> {
         let n = self.len();
         let mut list = Vec::with_capacity(3 * n / 4);
 
@@ -63,13 +81,6 @@ impl IdSegments for VectorPath {
         for vec in self.iter() {
             if vec.a.x < vec.b.x && x_min64 < vec.b.x && vec.a.x <= x_max64 {
                 list.push(IdSegment::new(id, vec.a, vec.b));
-                if vec.a.y < vec.b.y {
-                    *y_min = (*y_min).min(vec.a.y as i32);
-                    *y_max = (*y_max).max(vec.b.y as i32);
-                } else {
-                    *y_min = (*y_min).min(vec.b.y as i32);
-                    *y_max = (*y_max).max(vec.a.y as i32);
-                }
             }
         }
         list

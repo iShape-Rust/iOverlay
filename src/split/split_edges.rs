@@ -1,17 +1,17 @@
 use i_float::point::Point;
 use i_float::triangle::Triangle;
 use crate::fill::segment::Segment;
-use crate::geom::x_order::XOrder;
-use crate::geom::x_segment::XSegment;
+use crate::x_order::XOrder;
+use crate::x_segment::XSegment;
 use crate::layout::solver::Solver;
 use crate::split::shape_edge::ShapeEdge;
-use crate::space::line_range::LineRange;
+use crate::line_range::LineRange;
 use crate::split::scan_list::ScanSplitList;
 use crate::split::scan_tree::ScanSplitTree;
 use crate::split::shape_count::ShapeCount;
 use crate::split::shape_edge_cross::EdgeCrossType;
 use crate::split::split_range_list::SplitRangeList;
-use crate::split::store::ScanSplitStore;
+use crate::split::scan_store::ScanSplitStore;
 use crate::split::version_segment::VersionSegment;
 
 pub(crate) trait SplitEdges {

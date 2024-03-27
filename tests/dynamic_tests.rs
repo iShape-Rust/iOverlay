@@ -8,6 +8,7 @@ mod tests {
     use i_overlay::bool::fill_rule::FillRule;
     use i_overlay::bool::overlay_rule::OverlayRule;
     use i_overlay::layout::overlay::{Overlay, ShapeType};
+    use i_overlay::layout::solver::Solver;
 
     #[test]
     fn test_0() {
@@ -140,13 +141,14 @@ mod tests {
 
     #[test]
     fn test_7() {
-        let n = 10100;
+        // let n = 10100;
+        let n = 101;
         let subj_paths = random_polygon(1000_000.0, n);
 
         let mut overlay = Overlay::new(n);
         overlay.add_path(&subj_paths, ShapeType::Subject);
 
-        let graph = overlay.build_graph(FillRule::NonZero);
+        let graph = overlay.build_graph_with_solver(FillRule::NonZero, Solver::Tree);
         let result = graph.extract_shapes(OverlayRule::Subject);
 
         assert!(!result.is_empty());

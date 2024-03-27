@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
-use crate::geom::x_order::XOrder;
-use crate::space::line_range::LineRange;
+use crate::x_order::XOrder;
+use crate::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct XSegment {
@@ -31,11 +31,6 @@ impl XSegment {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::is_clockwise_point(self.a, p, self.b)
-    }
-
-    pub(crate) fn is_above_point(&self, p: Point) -> bool {
-        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
-        Triangle::is_clockwise_point(self.a, self.b, p)
     }
 
     pub(crate) fn is_under_segment(&self, other: XSegment) -> bool {

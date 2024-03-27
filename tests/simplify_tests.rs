@@ -3,7 +3,7 @@ mod tests {
     use i_float::fix_vec::FixVec;
     use i_shape::fix_shape::FixShape;
     use i_overlay::bool::fill_rule::FillRule;
-    use i_overlay::ext::simplify::Simplify;
+    use i_overlay::bool::simplify::Simplify;
 
     #[test]
     fn test_0() {

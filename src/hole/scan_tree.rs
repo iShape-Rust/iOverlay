@@ -1,26 +1,25 @@
 use i_float::point::Point;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
-use crate::fill::count_segment::CountSegment;
-use crate::fill::scan_store::ScanFillStore;
+use crate::hole::scan_store::ScanHoleStore;
+use crate::hole::segment::IdSegment;
+use crate::int::Int;
 use crate::x_segment::XSegment;
-use crate::split::shape_count::ShapeCount;
 
-pub(crate) struct ScanFillTree {
-    tree: Tree<CountSegment>,
+pub(crate) struct ScanHoleTree {
+    tree: Tree<IdSegment>,
 }
 
-impl ScanFillTree {
+impl ScanHoleTree {
     pub(crate) fn new(count: usize) -> Self {
-        let capacity = ((count << 1) as f64).sqrt() as usize;
-        let count = ShapeCount { subj: 0, clip: 0 };
         let x_segment = XSegment { a: Point::ZERO, b: Point::ZERO };
-        Self { tree: Tree::new(CountSegment { count, x_segment }, capacity) }
+        let segment = IdSegment { id: usize::MAX, x_segment };
+        Self { tree: Tree::new(segment, count.log2_sqrt()) }
     }
 }
 
-impl ScanFillStore for ScanFillTree {
-    fn insert(&mut self, segment: CountSegment, stop: i32) {
+impl ScanHoleStore for ScanHoleTree {
+    fn insert(&mut self, segment: IdSegment, stop: i32) {
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;
         let mut is_left = false;
@@ -70,7 +69,7 @@ impl ScanFillStore for ScanFillTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> Option<ShapeCount> {
+    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> usize {
         let mut index = self.tree.root;
         let mut result = EMPTY_REF;
         while index != EMPTY_REF {
@@ -93,10 +92,6 @@ impl ScanFillStore for ScanFillTree {
             }
         }
 
-        if result == EMPTY_REF {
-            None
-        } else {
-            Some(self.tree.node(result).value.count)
-        }
+        self.tree.node(result).value.id
     }
 }

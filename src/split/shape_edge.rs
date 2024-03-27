@@ -1,6 +1,6 @@
 use i_float::point::Point;
-use crate::geom::x_order::XOrder;
-use crate::geom::x_segment::XSegment;
+use crate::x_order::XOrder;
+use crate::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]

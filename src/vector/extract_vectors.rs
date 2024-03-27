@@ -1,13 +1,12 @@
 use i_float::point::Point;
 use crate::bool::filter::Filter;
 use crate::bool::overlay_rule::OverlayRule;
-use crate::geom::segment::IdSegments;
-use crate::geom::holes_solver::HolesSolver;
-use crate::geom::id_point::IdPoint;
-use crate::geom::x_order::XOrder;
+use crate::hole::segment::IdSegments;
+use crate::hole::solver::HoleSolver;
+use crate::hole::id_point::IdPoint;
+use crate::x_order::XOrder;
 use crate::index::EMPTY_INDEX;
 use crate::layout::overlay_graph::OverlayGraph;
-use crate::space::line_range::LineRange;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
@@ -99,32 +98,27 @@ impl JoinHoles for Vec<VectorShape> {
     }
 
     fn scan_join(&mut self, holes: Vec<VectorPath>) {
-        let mut y_min = i32::MAX;
-        let mut y_max = i32::MIN;
         let mut i_points = Vec::with_capacity(holes.len());
         for i in 0..holes.len() {
             let p = holes[i][0].a;
             let x = p.x as i32;
             let y = p.y as i32;
             i_points.push(IdPoint::new(i, Point::new(x, y)));
-            y_min = y_min.min(y);
-            y_max = y_max.max(y);
         }
         i_points.sort_by(|a, b| a.point.order_by_x(b.point));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
 
-        let mut floors = Vec::new();
+        let mut segments = Vec::new();
         for i in 0..self.len() {
-            let mut hole_floors = self[i][0].id_segments(i, x_min, x_max, &mut y_min, &mut y_max);
-            floors.append(&mut hole_floors);
+            let mut hole_floors = self[i][0].id_segments(i, x_min, x_max);
+            segments.append(&mut hole_floors);
         }
 
-        floors.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
+        segments.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
 
-        let y_range = LineRange { min: y_min, max: y_max };
-        let solution = HolesSolver::solve(self.len(), y_range, i_points, floors);
+        let solution = HoleSolver::solve(self.len(), i_points, segments);
 
         for shape_index in 0..solution.hole_counter.len() {
             let capacity = solution.hole_counter[shape_index];

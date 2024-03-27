@@ -1,7 +1,7 @@
-use crate::ext::remove::SwapRemoveIndex;
-use crate::geom::x_order::XOrder;
-use crate::geom::x_segment::XSegment;
-use crate::split::store::{CrossSegment, ScanSplitStore};
+use crate::array::SwapRemoveIndex;
+use crate::x_order::XOrder;
+use crate::x_segment::XSegment;
+use crate::split::scan_store::{CrossSegment, ScanSplitStore};
 use crate::split::version_segment::VersionSegment;
 
 pub(super) struct ScanSplitList {

@@ -10,11 +10,11 @@ use crate::split::split_edges::SplitEdges;
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::bool::fill_rule::FillRule;
 use crate::bool::overlay_rule::OverlayRule;
-use crate::ext::remove::SwapRemoveIndex;
+use crate::array::SwapRemoveIndex;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
-use crate::geom::x_segment::XSegment;
+use crate::x_segment::XSegment;
 use crate::layout::solver::Solver;
-use crate::space::line_range::LineRange;
+use crate::line_range::LineRange;
 use crate::vector::vector::VectorShape;
 
 use super::overlay_graph::OverlayGraph;

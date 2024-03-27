@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use crate::geom::x_segment::XSegment;
+use crate::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 
 #[derive(Debug, Clone)]

@@ -13,7 +13,11 @@ struct End {
     bit_pack: BitPack,
 }
 
-/// `OverlayGraph` models the relationships and intersections between shapes for boolean operations. It enables efficient execution of operations like union, intersection, difference, and xor, and supports the extraction of resultant shapes.
+/// A representation of geometric shapes organized for efficient boolean operations.
+///
+/// `OverlayGraph` is a core structure designed to facilitate the execution of boolean operations on shapes, such as union, intersection, and difference. It organizes and preprocesses geometric data, making it optimized for these operations. This struct is the result of compiling shape data into a form where boolean operations can be applied directly, efficiently managing the complex relationships between different geometric entities.
+///
+/// Use `OverlayGraph` to perform boolean operations on the geometric shapes you've added to an `Overlay`, after it has processed the shapes according to the specified fill and overlay rules.
 pub struct OverlayGraph {
     pub(crate) nodes: Vec<OverlayNode>,
     pub(crate) links: Vec<OverlayLink>,

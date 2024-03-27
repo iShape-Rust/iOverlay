@@ -1,9 +1,9 @@
 use i_float::point::Point;
-use crate::ext::remove::SwapRemoveIndex;
-use crate::geom::x_order::XOrder;
-use crate::geom::x_segment::XSegment;
-use crate::space::line_range::LineRange;
-use crate::split::store::{CrossSegment, ScanSplitStore};
+use crate::array::SwapRemoveIndex;
+use crate::x_order::XOrder;
+use crate::x_segment::XSegment;
+use crate::line_range::LineRange;
+use crate::split::scan_store::{CrossSegment, ScanSplitStore};
 use crate::split::version_segment::{RemoveVersionSegment, VersionSegment};
 
 #[derive(Debug, Clone)]
@@ -26,7 +26,7 @@ pub struct ScanSplitTree {
 impl ScanSplitTree {
     pub(super) fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2();
-        let max_power_count = ((count as f64).sqrt() as i32).log2();
+        let max_power_count = (count as i32).log2() >> 1;
         let power = 10.min(max_power_count.min(max_power_range));
         let nodes = Self::create_nodes(range, power);
         Self { power, nodes }
@@ -418,14 +418,13 @@ impl ScanSplitTree {
 mod tests {
     use i_float::point::Point;
     use rand::Rng;
-    use crate::geom::x_segment::XSegment;
-    use crate::space::dual_index::DualIndex;
-    use crate::space::line_range::LineRange;
+    use crate::x_segment::XSegment;
+    use crate::line_range::LineRange;
     use crate::split::scan_list::ScanSplitList;
     use crate::split::scan_tree::ScanSplitTree;
     use crate::split::shape_edge_cross::EdgeCrossType;
-    use crate::split::store::ScanSplitStore;
-    use crate::split::version_index::VersionedIndex;
+    use crate::split::scan_store::ScanSplitStore;
+    use crate::split::version_index::{DualIndex, VersionedIndex};
     use crate::split::version_segment::VersionSegment;
 
     #[test]

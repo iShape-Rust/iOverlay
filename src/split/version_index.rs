@@ -1,5 +1,14 @@
-use crate::space::dual_index::DualIndex;
 use crate::index::EMPTY_INDEX;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct DualIndex {
+    pub major: usize,
+    pub minor: usize
+}
+
+impl DualIndex {
+    pub const EMPTY: Self = Self { major: usize::MAX, minor: usize::MAX };
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub (super) struct VersionedIndex {

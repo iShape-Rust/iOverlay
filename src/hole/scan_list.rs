@@ -1,28 +1,27 @@
 use i_float::point::Point;
-use crate::fill::count_segment::CountSegment;
-use crate::fill::scan_store::ScanFillStore;
-use crate::split::shape_count::ShapeCount;
 use crate::array::SwapRemoveIndex;
+use crate::hole::scan_store::ScanHoleStore;
+use crate::hole::segment::IdSegment;
 use crate::int::Int;
 
-pub(crate) struct ScanFillList {
-    buffer: Vec<CountSegment>,
+pub(crate) struct ScanHoleList {
+    buffer: Vec<IdSegment>,
 }
 
-impl ScanFillList {
+impl ScanHoleList {
     pub(crate) fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
 }
 
-impl ScanFillStore for ScanFillList {
-    fn insert(&mut self, segment: CountSegment, _stop: i32) {
+impl ScanHoleStore for ScanHoleList {
+    fn insert(&mut self, segment: IdSegment, _stop: i32) {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> Option<ShapeCount> {
+    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> usize {
         let mut i = 0;
-        let mut result: Option<CountSegment> = None;
+        let mut result: Option<IdSegment> = None;
         while i < self.buffer.len() {
             if self.buffer[i].x_segment.b.x <= stop {
                 self.buffer.swap_remove_index(i);
@@ -42,10 +41,10 @@ impl ScanFillStore for ScanFillList {
             }
         }
 
-        if let Some(count_seg) = &result {
-            Some(count_seg.count)
+        if let Some(result) = &result {
+            result.id
         } else {
-            None
+            0
         }
     }
 }

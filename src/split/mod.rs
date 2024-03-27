@@ -5,7 +5,7 @@ pub(super) mod split_linked_list;
 pub(super) mod split_edges;
 mod version_index;
 mod split_range_list;
-mod store;
+mod scan_store;
 mod version_segment;
 mod scan_list;
 mod scan_tree;

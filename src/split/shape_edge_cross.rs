@@ -1,7 +1,7 @@
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
-use crate::geom::x_segment::XSegment;
+use crate::x_segment::XSegment;
 
 #[derive(Debug, Clone, Copy)]
 pub struct EdgeCross {

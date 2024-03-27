@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use i_float::point::Point;
-    use i_overlay::geom::x_segment::XSegment;
+    use i_overlay::x_segment::XSegment;
     use i_overlay::split::shape_edge_cross::EdgeCrossType;
 
     #[test]
