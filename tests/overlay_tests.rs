@@ -33,6 +33,36 @@ mod tests {
         }
     }
 
+    fn debug_execute(index: usize, overlay_rule: OverlayRule, solver: Solver) {
+        let test = Test::load(index);
+        let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
+        let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
+        let graph = overlay.build_graph_with_solver(fill_rule, solver);
+        let result = graph.extract_shapes(overlay_rule);
+
+        // print!("result: {:?}", result);
+        match overlay_rule {
+            OverlayRule::Subject => {
+                assert_eq!(true, test_result(&result, &test.subject));
+            }
+            OverlayRule::Clip => {
+                assert_eq!(true, test_result(&result, &test.clip));
+            }
+            OverlayRule::Intersect => {
+                assert_eq!(true, test_result(&result, &test.intersect));
+            }
+            OverlayRule::Union => {
+                assert_eq!(true, test_result(&result, &test.union));
+            }
+            OverlayRule::Difference => {
+                assert_eq!(true, test_result(&result, &test.difference));
+            }
+            OverlayRule::Xor => {
+                assert_eq!(true, test_result(&result, &test.xor));
+            }
+        }
+    }
+
     fn test_result(result: &Vec<FixShape>, bank: &Vec<Vec<FixShape>>) -> bool {
         for item in bank.iter() {
             if item == result {
@@ -576,5 +606,10 @@ mod tests {
     #[test]
     fn test_106() {
         execute(106);
+    }
+
+    #[test]
+    fn test_debug() {
+        debug_execute(106, OverlayRule::Xor, Solver::List);
     }
 }
