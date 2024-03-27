@@ -9,11 +9,12 @@ repository = "https://github.com/iShape-Rust/iOverlay"
 
 
 [dependencies]
-#i_float = { version = "^0.9" }
-#i_shape = { version = "^0.15" }
-i_float = { path = "../iFloat" }
-i_shape = { path = "../iShape" }
-i_tree = { path = "../iTree" }
+i_float = { version = "^0.9.0" }
+i_shape = { version = "^0.15.0" }
+i_tree = { version = "^0.2.0" }
+#i_float = { path = "../iFloat" }
+#i_shape = { path = "../iShape" }
+#i_tree = { path = "../iTree" }
 
 
 [dev-dependencies]
