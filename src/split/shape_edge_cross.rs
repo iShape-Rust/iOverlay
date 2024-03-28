@@ -1,6 +1,7 @@
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
+use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 
 #[derive(Debug, Clone, Copy)]
@@ -14,7 +15,6 @@ pub struct EdgeCross {
 pub enum EdgeCrossType {
     Pure,
     OverlayA,
-    OverlayB,
     Penetrate,
     EndA,
     EndB,
@@ -22,6 +22,12 @@ pub enum EdgeCrossType {
 
 impl XSegment {
     pub fn cross(&self, other: &XSegment) -> Option<EdgeCross> {
+        let test_y = self.a.y > other.a.y && self.a.y > other.b.y && self.b.y > other.a.y && self.b.y > other.b.y
+            || self.a.y < other.a.y && self.a.y < other.b.y && self.b.y < other.a.y && self.b.y < other.b.y;
+        if test_y {
+            return None;
+        }
+
         let a0 = FixVec::new_point(self.a);
         let a1 = FixVec::new_point(self.b);
 
@@ -238,11 +244,6 @@ impl XSegment {
             return None;
         }
 
-        if is_a {
-            // b inside a
-            return Some(edge_a.solve_inside(edge_b, EdgeCrossType::EndB, EdgeCrossType::OverlayB));
-        }
-
         if is_b {
             // a inside b
             return Some(edge_b.solve_inside(edge_a, EdgeCrossType::EndA, EdgeCrossType::OverlayA));
@@ -254,12 +255,21 @@ impl XSegment {
             return None;
         }
 
+        // debug_assert!(!is_a && !is_b);
+        if !is_a && !is_b {
+            print!("catch")
+        }
+
         // penetrate
 
         let ap = if edge_a.is_box_contain_point(edge_b.a) { edge_b.a } else { edge_b.b };
         let bp = if edge_b.is_box_contain_point(edge_a.a) { edge_a.a } else { edge_a.b };
 
-        Some(EdgeCross { nature: EdgeCrossType::Penetrate, point: ap, second: bp })
+        if Point::order_by_line_compare(ap, bp) {
+            Some(EdgeCross { nature: EdgeCrossType::Penetrate, point: ap, second: bp })
+        } else {
+            Some(EdgeCross { nature: EdgeCrossType::Penetrate, point: bp, second: ap })
+        }
     }
 
     fn solve_inside(&self, other: &XSegment, end: EdgeCrossType, overlay: EdgeCrossType) -> EdgeCross {

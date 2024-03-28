@@ -79,7 +79,6 @@ impl<S: ScanSplitStore> SplitSolver<S> for Vec<ShapeEdge> {
                 let scan_edge = if let Some(edge) = list.validate_edge(v_index) {
                     edge
                 } else {
-                    e_index = list.next(e_index.index);
                     continue;
                 };
 
@@ -142,28 +141,6 @@ impl<S: ScanSplitStore> SplitSolver<S> for Vec<ShapeEdge> {
                         let is_bend = this_edge.x_segment.is_not_same_line(x);
                         need_to_fix = need_to_fix || is_bend;
                     }
-                    EdgeCrossType::OverlayB => {
-                        // split this into 3 segments
-
-                        let this0 = ShapeEdge::new(this_edge.x_segment.a, scan_edge.x_segment.a, this_edge.count);
-                        let this1 = ShapeEdge::new(scan_edge.x_segment.a, scan_edge.x_segment.b, this_edge.count);
-                        let this2 = ShapeEdge::new(scan_edge.x_segment.b, this_edge.x_segment.b, this_edge.count);
-
-                        debug_assert!(this0.x_segment.is_less(&this1.x_segment));
-                        debug_assert!(this1.x_segment.is_less(&this2.x_segment));
-
-                        _ = list.add_and_merge(e_index.index, this1);
-                        _ = list.add_and_merge(e_index.index, this2);
-                        let new_this0 = list.add_and_merge(e_index.index, this0);
-
-                        list.remove(e_index.index);
-
-                        // new point must be exactly on the same line
-                        let is_bend = this_edge.x_segment.is_not_same_line(scan_edge.x_segment.a) || this_edge.x_segment.is_not_same_line(scan_edge.x_segment.b);
-                        need_to_fix = need_to_fix || is_bend;
-
-                        e_index = new_this0;
-                    }
                     EdgeCrossType::EndA => {
                         // this edge end divide scan edge into 2 parts
 
@@ -191,58 +168,57 @@ impl<S: ScanSplitStore> SplitSolver<S> for Vec<ShapeEdge> {
                     EdgeCrossType::OverlayA => {
                         // split scan into 3 segments
 
+                        // remove it first to avoid double merge
+                        list.remove(e_index.index);
+
                         let scan0 = ShapeEdge::new(scan_edge.x_segment.a, this_edge.x_segment.a, scan_edge.count);
-                        let scan1 = ShapeEdge::new(this_edge.x_segment.a, this_edge.x_segment.b, scan_edge.count);
+                        let scan1 = ShapeEdge::new(this_edge.x_segment.a, this_edge.x_segment.b, scan_edge.count.add(this_edge.count));
                         let scan2 = ShapeEdge::new(this_edge.x_segment.b, scan_edge.x_segment.b, scan_edge.count);
 
                         debug_assert!(scan0.x_segment.is_less(&scan1.x_segment));
                         debug_assert!(scan1.x_segment.is_less(&scan2.x_segment));
 
-                        let new_scan0 = list.add_and_merge(v_index.index, scan0);
-                        _ = list.add_and_merge(v_index.index, scan1);
+                        // left part
+                        _ = list.add_and_merge(v_index.index, scan0);
+
+                        // middle part
+                        let m_index = list.add_and_merge(v_index.index, scan1);
+
+                        // right part
                         _ = list.add_and_merge(v_index.index, scan2);
 
                         list.remove(v_index.index);
 
-                        let is_bend = scan_edge.x_segment.is_not_same_line(this_edge.x_segment.a) || scan_edge.x_segment.is_not_same_line(this_edge.x_segment.b);
-                        need_to_fix = need_to_fix || is_bend;
+                        // edges are parallel so bend test no needed
+                        debug_assert!(!(scan_edge.x_segment.is_not_same_line(this_edge.x_segment.a) || scan_edge.x_segment.is_not_same_line(this_edge.x_segment.b)));
 
-                        // do not update e_index
-                        scan_store.insert(VersionSegment { index: new_scan0, x_segment: scan0.x_segment });
+                        e_index = m_index;
                     }
                     EdgeCrossType::Penetrate => {
                         // penetrate each other
 
-                        let x_this = cross_seg.cross.point;
-                        let x_scan = cross_seg.cross.second;
+                        // scan.a < p0 < p1 < this.b
+                        // scan_lt < (scan_rt == this_lt)-middle < this_rt
+                        let p0 = cross_seg.cross.point;
+                        let p1 = cross_seg.cross.second;
 
                         // divide both segments
 
-                        let this_lt = ShapeEdge::new(this_edge.x_segment.a, x_this, this_edge.count);
-                        let this_rt = ShapeEdge::new(x_this, this_edge.x_segment.b, this_edge.count);
+                        let scan_lt = ShapeEdge::new(scan_edge.x_segment.a, p0, scan_edge.count);
+                        let this_rt = ShapeEdge::new(p1, this_edge.x_segment.b, this_edge.count);
+                        let middle = ShapeEdge::new(p0, p1, this_edge.count.add(scan_edge.count));
 
-                        debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
-
-                        let scan_lt = ShapeEdge::new(scan_edge.x_segment.a, x_scan, scan_edge.count);
-                        let scan_rt = ShapeEdge::new(x_scan, scan_edge.x_segment.b, scan_edge.count);
-
-                        debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
-
-                        let new_scan_left = list.add_and_merge(v_index.index, scan_lt);
-                        _ = list.add_and_merge(v_index.index, scan_rt);
-
-                        _ = list.add_and_merge(e_index.index, this_rt);
-                        let new_this_left = list.add_and_merge(e_index.index, this_lt);
+                        let lt_index = list.add_and_merge(v_index.index, scan_lt);
+                        let md_index = list.add_and_merge(lt_index.index, middle);
+                        list.add_and_merge(e_index.index, this_rt);
 
                         list.remove(e_index.index);
                         list.remove(v_index.index);
 
-                        // new point must be exactly on the same line
-                        let is_bend = this_edge.x_segment.is_not_same_line(x_this) || scan_edge.x_segment.is_not_same_line(x_scan);
-                        need_to_fix = need_to_fix || is_bend;
+                        // points exactly on same line so bend test no needed
+                        debug_assert!(!(scan_edge.x_segment.is_not_same_line(p0) || this_edge.x_segment.is_not_same_line(p1)));
 
-                        e_index = new_this_left;
-                        scan_store.insert(VersionSegment { index: new_scan_left, x_segment: scan_lt.x_segment });
+                        e_index = md_index;
                     }
                 }
             } // while

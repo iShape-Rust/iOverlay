@@ -141,14 +141,13 @@ mod tests {
 
     #[test]
     fn test_7() {
-        // let n = 10100;
-        let n = 101;
+        let n = 10100;
         let subj_paths = random_polygon(1000_000.0, n);
 
         let mut overlay = Overlay::new(n);
         overlay.add_path(&subj_paths, ShapeType::Subject);
 
-        let graph = overlay.build_graph_with_solver(FillRule::NonZero, Solver::Tree);
+        let graph = overlay.build_graph_with_solver(FillRule::NonZero, Solver::Auto);
         let result = graph.extract_shapes(OverlayRule::Subject);
 
         assert!(!result.is_empty());

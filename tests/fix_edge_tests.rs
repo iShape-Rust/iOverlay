@@ -141,14 +141,4 @@ mod tests {
         assert_eq!(Point::ZERO, result.point);
         assert_eq!(Point::new(512, 0), result.second);
     }
-
-    #[test]
-    fn test_full_overlay() {
-        let ea = XSegment::new(Point::new(-2, 0), Point::new(2, 0));
-        let eb = XSegment::new(Point::new(-1, 0), Point::new(1, 0));
-
-        let result = ea.cross(&eb).unwrap();
-
-        assert_eq!(EdgeCrossType::OverlayB, result.nature);
-    }
 }
