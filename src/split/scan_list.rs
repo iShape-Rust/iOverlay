@@ -1,6 +1,6 @@
 use crate::array::SwapRemoveIndex;
 use crate::int::Int;
-use crate::x_order::XOrder;
+use crate::split::cross_solver::ScanCrossSolver;
 use crate::x_segment::XSegment;
 use crate::split::scan_store::{CrossSegment, ScanSplitStore};
 use crate::split::version_segment::VersionSegment;
@@ -18,16 +18,17 @@ impl ScanSplitList {
 impl ScanSplitStore for ScanSplitList {
     fn intersect(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut i = 0;
-        let scan_pos= this.a;
         while i < self.buffer.len() {
             let scan = &self.buffer[i];
-            if scan.x_segment.b.order_by_line_compare(scan_pos) {
+
+            let is_valid = ScanCrossSolver::is_valid_scan(&scan.x_segment, &this);
+            if !is_valid {
                 self.buffer.swap_remove_index(i);
                 continue;
             }
 
             // order is important! this x scan
-            if let Some(cross) = this.cross(&scan.x_segment) {
+            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan.x_segment) {
                 let index = scan.index.clone();
                 self.buffer.swap_remove_index(i);
                 return Some(CrossSegment { index, cross });

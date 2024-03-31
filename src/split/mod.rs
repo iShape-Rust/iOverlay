@@ -1,6 +1,6 @@
 pub mod shape_edge;
 pub mod shape_count;
-pub mod shape_edge_cross;
+pub mod cross_solver;
 pub(super) mod split_edges;
 mod split_linked_list;
 mod split_range_list;

@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use i_float::point::Point;
+    use i_overlay::split::cross_solver::{CrossResult, ScanCrossSolver};
     use i_overlay::x_segment::XSegment;
-    use i_overlay::split::shape_edge_cross::EdgeCrossType;
 
     #[test]
     fn test_simple_cross() {
@@ -11,10 +11,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, 0), Point::new(s, 0));
         let eb = XSegment::new(Point::new(0, -s), Point::new(0, s));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::Pure, result.nature);
-        assert_eq!(Point::ZERO, result.point);
+        match result {
+            CrossResult::Pure(point) => {
+                assert_eq!(Point::ZERO, point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -24,10 +30,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, 0), Point::new(s, 0));
         let eb = XSegment::new(Point::new(0, -s), Point::new(0, s));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::Pure, result.nature);
-        assert_eq!(Point::ZERO, result.point);
+        match result {
+            CrossResult::Pure(point) => {
+                assert_eq!(Point::ZERO, point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -37,10 +49,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, 0), Point::new(s, 0));
         let eb = XSegment::new(Point::new(1024, -s), Point::new(1024, s));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::Pure, result.nature);
-        assert_eq!(Point::new(1024, 0), result.point);
+        match result {
+            CrossResult::Pure(point) => {
+                assert_eq!(Point::new(1024, 0), point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -51,10 +69,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, -s), Point::new(s, s));
         let eb = XSegment::new(Point::new(q, -s), Point::new(q, s));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::Pure, result.nature);
-        assert_eq!(Point::new(512_000_000, 512_000_000), result.point);
+        match result {
+            CrossResult::Pure(point) => {
+                assert_eq!(Point::new(512_000_000, 512_000_000), point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -64,10 +88,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, 0), Point::new(s, 0));
         let eb = XSegment::new(Point::new(-s, -s), Point::new(-s, s));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::EndA, result.nature);
-        assert_eq!(Point::new(-s, 0), result.point);
+        match result {
+            CrossResult::TargetEndExact(point) => {
+                assert_eq!(Point::new(-s, 0), point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -77,10 +107,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, 0), Point::new(s, 0));
         let eb = XSegment::new(Point::new(s, -s), Point::new(s, s));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::EndA, result.nature);
-        assert_eq!(Point::new(s, 0), result.point);
+        match result {
+            CrossResult::TargetEndExact(point) => {
+                assert_eq!(Point::new(s, 0), point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -90,7 +126,7 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, s), Point::new(s, s));
         let eb = XSegment::new(Point::new(-s, s), Point::new(-s, -s));
 
-        let result = ea.cross(&eb);
+        let result = ScanCrossSolver::scan_cross(&ea, &eb);
         assert!(result.is_none());
     }
 
@@ -99,12 +135,14 @@ mod tests {
         let ea = XSegment::new(Point::new(7256, -14637), Point::new(7454, -15045));
         let eb = XSegment::new(Point::new(7343, -14833), Point::new(7506, -15144));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert!(ea.is_box_contain_point(result.point));
-        assert!(eb.is_box_contain_point(result.point));
-
-        assert_eq!(EdgeCrossType::Pure, result.nature);
+        match result {
+            CrossResult::Pure(_point) => {},
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -112,10 +150,16 @@ mod tests {
         let ea = XSegment::new(Point::new(-8555798, -1599355), Point::new(-1024000, 0));
         let eb = XSegment::new(Point::new(-8571363, 1513719), Point::new(-1023948, -10239));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::Pure, result.nature);
-        assert_eq!(Point::new(-1048691, -5244), result.point);
+        match result {
+            CrossResult::Pure(point) => {
+                assert_eq!(Point::new(-1048691, -5244), point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -123,9 +167,37 @@ mod tests {
         let ea = XSegment::new(Point::new(-8555798, -1599355), Point::new(513224, -5243));
         let eb = XSegment::new(Point::new(-8555798, -1599355), Point::new(513224, -5243));
 
-        let result = ea.cross(&eb);
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert!(result.is_none());
+        match result {
+            CrossResult::EndOverlap => {},
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_real_case_4() {
+        let ea = XSegment::new(
+            Point::new(-276659431, 380789039),
+            Point::new(-221915258, 435533212)
+        );
+        let eb = XSegment::new(
+            Point::new(-276659432, 380789038),
+            Point::new(-276659430, 380789040)
+        );
+
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+
+        match result {
+            CrossResult::Overlap => {
+
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 
     #[test]
@@ -135,10 +207,14 @@ mod tests {
         let ea = XSegment::new(Point::new(-s, 0), Point::new(s / 2, 0));
         let eb = XSegment::new(Point::new(0, 0), Point::new(s, 0));
 
-        let result = ea.cross(&eb).unwrap();
+        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
-        assert_eq!(EdgeCrossType::Penetrate, result.nature);
-        assert_eq!(Point::ZERO, result.point);
-        assert_eq!(Point::new(512, 0), result.second);
+        match result {
+            CrossResult::Overlap => {
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
     }
 }

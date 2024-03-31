@@ -1,11 +1,11 @@
+use crate::split::cross_solver::CrossResult;
 use crate::x_segment::XSegment;
-use crate::split::shape_edge_cross::EdgeCross;
 use crate::split::version_index::VersionedIndex;
 use crate::split::version_segment::VersionSegment;
 
 pub(super) struct CrossSegment {
     pub(super) index: VersionedIndex,
-    pub(super) cross: EdgeCross
+    pub(super) cross: CrossResult
 }
 
 pub(super) trait ScanSplitStore {

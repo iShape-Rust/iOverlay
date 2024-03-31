@@ -1,8 +1,8 @@
 use i_float::point::Point;
 use crate::array::SwapRemoveIndex;
-use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 use crate::line_range::LineRange;
+use crate::split::cross_solver::ScanCrossSolver;
 use crate::split::scan_store::{CrossSegment, ScanSplitStore};
 use crate::split::version_segment::{RemoveVersionSegment, VersionSegment};
 
@@ -182,13 +182,15 @@ impl ScanSplitTree {
 
         while j < list.len() {
             let scan = &list[j];
-            if scan.x_segment.b.order_by_line_compare(scan_pos) {
+
+            let is_valid = ScanCrossSolver::is_valid_scan(&scan.x_segment, &this);
+            if !is_valid {
                 list.swap_remove_index(j);
                 continue;
             }
 
             // order is important! this * scan
-            if let Some(cross) = this.cross(&scan.x_segment) {
+            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan.x_segment) {
                 let index = scan.index;
                 let segment = scan.clone();
                 self.remove(&segment, scan_pos);
@@ -228,7 +230,7 @@ impl ScanSplitStore for ScanSplitTree {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = this.y_range();
-        let scan_pos= this.a;
+        let scan_pos = this.a;
 
         let mut early_out = false;
 
@@ -422,7 +424,6 @@ mod tests {
     use crate::line_range::LineRange;
     use crate::split::scan_list::ScanSplitList;
     use crate::split::scan_tree::ScanSplitTree;
-    use crate::split::shape_edge_cross::EdgeCrossType;
     use crate::split::scan_store::ScanSplitStore;
     use crate::split::version_index::{DualIndex, VersionedIndex};
     use crate::split::version_segment::VersionSegment;
@@ -620,7 +621,7 @@ mod tests {
 
         let result = intersect_test(test_set);
 
-        assert_eq!(1, result.len());
+        assert_eq!(1, result);
     }
 
     #[test]
@@ -634,7 +635,7 @@ mod tests {
 
         let result = intersect_test(test_set);
 
-        assert_eq!(1, result.len());
+        assert_eq!(1, result);
     }
 
     #[test]
@@ -648,21 +649,18 @@ mod tests {
 
         let result = intersect_test(test_set);
 
-        assert_eq!(1, result.len());
+        assert_eq!(1, result);
     }
 
-    fn intersect_test(test_set: Vec<XSegment>) -> Vec<Point> {
-        let mut result = Vec::new();
+    fn intersect_test(test_set: Vec<XSegment>) -> usize {
+        let mut result = 0;
         let range = range(&test_set);
         let mut tree = ScanSplitTree::new(range, test_set.len());
 
         let mut i = 0;
         for s in test_set.iter() {
-            if let Some(res) = &tree.intersect(s.clone()) {
-                result.push(res.cross.point.clone());
-                if res.cross.nature == EdgeCrossType::Penetrate {
-                    result.push(res.cross.second);
-                }
+            if let Some(_res) = &tree.intersect(s.clone()) {
+                result += 1;
             } else {
                 let index = VersionedIndex { version: i, index: DualIndex::EMPTY };
                 let v = VersionSegment { index, x_segment: s.clone() };

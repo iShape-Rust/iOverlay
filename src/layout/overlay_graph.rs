@@ -123,7 +123,7 @@ impl OverlayGraph {
                 }
             }
 
-            debug_assert!(indices.len() > 1);
+            debug_assert!(indices.len() > 1, "indices: {}", indices.len());
             nodes.push(OverlayNode { indices });
         }
 
