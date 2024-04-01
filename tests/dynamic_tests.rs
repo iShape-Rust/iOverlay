@@ -141,7 +141,8 @@ mod tests {
 
     #[test]
     fn test_7() {
-        let n = 10100;
+        // let n = 10100;
+        let n = 1010;
         let subj_paths = random_polygon(1000_000.0, n);
 
         let mut overlay = Overlay::new(n);

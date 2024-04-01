@@ -609,6 +609,76 @@ mod tests {
     }
 
     #[test]
+    fn test_107() {
+        execute(107);
+    }
+
+    #[test]
+    fn test_108() {
+        execute(108);
+    }
+
+    #[test]
+    fn test_109() {
+        execute(109);
+    }
+
+    #[test]
+    fn test_110() {
+        execute(110);
+    }
+
+    #[test]
+    fn test_111() {
+        execute(111);
+    }
+
+    #[test]
+    fn test_112() {
+        execute(112);
+    }
+
+    #[test]
+    fn test_113() {
+        execute(113);
+    }
+
+    #[test]
+    fn test_114() {
+        execute(114);
+    }
+
+    #[test]
+    fn test_115() {
+        execute(115);
+    }
+
+    #[test]
+    fn test_116() {
+        execute(116);
+    }
+
+    #[test]
+    fn test_117() {
+        execute(117);
+    }
+
+    #[test]
+    fn test_118() {
+        execute(118);
+    }
+
+    #[test]
+    fn test_119() {
+        execute(119);
+    }
+
+    #[test]
+    fn test_120() {
+        execute(120);
+    }
+
+    #[test]
     fn test_debug() {
         debug_execute(106, OverlayRule::Xor, Solver::List);
     }

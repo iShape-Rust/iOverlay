@@ -9,7 +9,7 @@ pub(super) struct CrossSegment {
 }
 
 pub(super) trait ScanSplitStore {
-    fn intersect(&mut self, this: XSegment) -> Option<CrossSegment>;
+    fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment>;
 
     fn insert(&mut self, segment: VersionSegment);
 

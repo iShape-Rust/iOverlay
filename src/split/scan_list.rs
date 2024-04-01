@@ -16,7 +16,7 @@ impl ScanSplitList {
 }
 
 impl ScanSplitStore for ScanSplitList {
-    fn intersect(&mut self, this: XSegment) -> Option<CrossSegment> {
+    fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut i = 0;
         while i < self.buffer.len() {
             let scan = &self.buffer[i];

@@ -175,7 +175,7 @@ impl ScanSplitTree {
         }
     }
 
-    fn cross(&mut self, index: usize, this: XSegment, scan_pos: Point) -> Option<CrossSegment> {
+    fn cross(&mut self, index: usize, this: XSegment) -> Option<CrossSegment> {
         let mut j = 0;
 
         let list = &mut self.nodes[index].list;
@@ -193,7 +193,7 @@ impl ScanSplitTree {
             if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan.x_segment) {
                 let index = scan.index;
                 let segment = scan.clone();
-                self.remove(&segment, scan_pos);
+                self.remove(&segment, this.a);
                 return Some(CrossSegment { index, cross });
             }
             j += 1;
@@ -226,16 +226,15 @@ impl ScanSplitTree {
 }
 
 impl ScanSplitStore for ScanSplitTree {
-    fn intersect(&mut self, this: XSegment) -> Option<CrossSegment> {
+    fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = this.y_range();
-        let scan_pos = this.a;
 
         let mut early_out = false;
 
         while s > 0 {
-            let cross = self.cross(i, this, scan_pos);
+            let cross = self.cross(i, this);
             if !cross.is_none() {
                 return cross;
             }
@@ -263,7 +262,7 @@ impl ScanSplitStore for ScanSplitTree {
         i = i_lt;
 
         while i <= i_rt {
-            let cross = self.cross(i, this, scan_pos);
+            let cross = self.cross(i, this);
             if !cross.is_none() {
                 return cross;
             }
@@ -604,7 +603,7 @@ mod tests {
         let xs = XSegment { a: a1, b: b1 };
 
         tree.insert(vs);
-        let r1 = tree.intersect(xs);
+        let r1 = tree.intersect_and_remove_other(xs);
 
         assert_eq!(true, r1.is_none());
         assert_eq!(true, tree.count() > 0)
@@ -659,7 +658,7 @@ mod tests {
 
         let mut i = 0;
         for s in test_set.iter() {
-            if let Some(_res) = &tree.intersect(s.clone()) {
+            if let Some(_res) = &tree.intersect_and_remove_other(s.clone()) {
                 result += 1;
             } else {
                 let index = VersionedIndex { version: i, index: DualIndex::EMPTY };
@@ -706,8 +705,8 @@ mod tests {
             list.insert(vs.clone());
             tree.insert(vs);
 
-            let r0 = list.intersect(xs);
-            let r1 = tree.intersect(xs);
+            let r0 = list.intersect_and_remove_other(xs);
+            let r1 = tree.intersect_and_remove_other(xs);
 
             if r0.is_none() != r1.is_none() {
                 print!("a0: {a0}, b0: {b0}, a1: {a1}, b1: {b1}");
