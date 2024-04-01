@@ -272,7 +272,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
     fn divide_scan_overlap(&mut self, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
         // segments collinear
-        // this.b == scan.b and scan.b < this.a < scan.b
+        // this.b == scan.b and scan.a < this.a < scan.b
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, this_edge.x_segment.a, scan_edge.count);
         let merge = this_edge.count.add(scan_edge.count);
@@ -292,10 +292,13 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let merge = this_edge.count.add(scan_edge.count);
         let this_rt = ShapeEdge::create_and_validate(scan_edge.x_segment.b, this_edge.x_segment.b, this_edge.count);
 
-        self.list.update_count(other, merge);
+        let new_version = self.list.update_count(other, merge);
         self.list.add_and_merge(other, this_rt);
 
         self.list.remove(this);
+
+        let ver_index = VersionedIndex { version: new_version, index: other };
+        self.scan_store.insert(VersionSegment { index: ver_index, x_segment: scan_edge.x_segment });
 
         self.list.next(other)
     }
