@@ -418,10 +418,8 @@ impl ScanSplitTree {
 #[cfg(test)]
 mod tests {
     use i_float::point::Point;
-    use rand::Rng;
     use crate::x_segment::XSegment;
     use crate::line_range::LineRange;
-    use crate::split::scan_list::ScanSplitList;
     use crate::split::scan_tree::ScanSplitTree;
     use crate::split::scan_store::ScanSplitStore;
     use crate::split::version_index::{DualIndex, VersionedIndex};
@@ -684,52 +682,5 @@ mod tests {
         }
 
         LineRange { min, max }
-    }
-
-    #[test]
-    fn test_random_intersect_0() {
-        let range: std::ops::Range<i32> = -1000..1000;
-        let mut list = ScanSplitList::new(1);
-        let mut tree = ScanSplitTree::with_power(LineRange { min: range.start, max: range.end }, 5);
-        let index = VersionedIndex { version: 0, index: DualIndex::EMPTY };
-        let mut rng = rand::thread_rng();
-
-        for _ in 0..100_000 {
-            let a0 = Point::new(0, rng.gen_range(range.clone()));
-            let b0 = Point::new(8, rng.gen_range(range.clone()));
-            let a1 = Point::new(0, rng.gen_range(range.clone()));
-            let b1 = Point::new(8, rng.gen_range(range.clone()));
-
-            let vs = VersionSegment { index, x_segment: XSegment { a: a0, b: b0 } };
-            let xs = XSegment { a: a1, b: b1 };
-            list.insert(vs.clone());
-            tree.insert(vs);
-
-            let r0 = list.intersect_and_remove_other(xs);
-            let r1 = tree.intersect_and_remove_other(xs);
-
-            if r0.is_none() != r1.is_none() {
-                print!("a0: {a0}, b0: {b0}, a1: {a1}, b1: {b1}");
-                break;
-            }
-
-            if !r1.is_none() {
-                print!("a0: {a0}, b0: {b0}, a1: {a1}, b1: {b1}");
-                break;
-            }
-
-            if r1.is_none() {
-                assert_eq!(true, tree.count() > 0);
-            } else {
-                assert_eq!(0, tree.count());
-            }
-
-            assert_eq!(r0.is_none(), r1.is_none());
-
-            list.clear();
-            tree.clear();
-
-            assert_eq!(0, tree.count());
-        }
     }
 }

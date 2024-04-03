@@ -6,8 +6,8 @@ use crate::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct XSegment {
-    pub(crate) a: Point,
-    pub(crate) b: Point,
+    pub a: Point,
+    pub b: Point,
 }
 
 impl XSegment {
@@ -15,7 +15,7 @@ impl XSegment {
         Self { a, b }
     }
 
-    pub(crate) fn y_range(&self) -> LineRange {
+    pub fn y_range(&self) -> LineRange {
         if self.a.y < self.b.y {
             LineRange { min: self.a.y, max: self.b.y }
         } else {
@@ -23,17 +23,23 @@ impl XSegment {
         }
     }
 
-    pub(crate) fn is_vertical(&self) -> bool {
+    pub fn is_vertical(&self) -> bool {
         self.a.x == self.b.x
     }
 
-    pub(crate) fn is_under_point(&self, p: Point) -> bool {
+    pub fn is_under_point(&self, p: Point) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
-        Triangle::is_clockwise_point(self.a, p, self.b)
+        Triangle::area_two_point(self.a, p, self.b) > 0
     }
 
-    pub(crate) fn is_under_segment(&self, other: XSegment) -> bool {
+    pub fn is_above_point(&self, p: Point) -> bool {
+        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
+        debug_assert!(p != self.a && p != self.b);
+        Triangle::area_two_point(self.a, p, self.b) < 0
+    }
+
+    pub fn is_under_segment(&self, other: XSegment) -> bool {
         if self.a == other.a {
             Triangle::is_clockwise_point(self.a, other.b, self.b)
         } else if self.a.x < other.a.x {
@@ -43,7 +49,7 @@ impl XSegment {
         }
     }
 
-    pub(crate) fn order(&self, other: &Self) -> Ordering {
+    pub fn order(&self, other: &Self) -> Ordering {
         if self.is_less(other) {
             Ordering::Less
         } else {
@@ -51,7 +57,7 @@ impl XSegment {
         }
     }
 
-    pub(crate) fn is_less(&self, other: &Self) -> bool {
+    pub fn is_less(&self, other: &Self) -> bool {
         if self.a == other.a {
             self.b.order_by_line_compare(other.b)
         } else {

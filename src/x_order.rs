@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use i_float::point::Point;
 
-pub(crate) trait XOrder {
+pub trait XOrder {
     fn order_by_x(self, other: Self) -> Ordering;
     fn order_by_line(self, b: Self) -> Ordering;
     fn order_by_line_compare(self, other: Self) -> bool;

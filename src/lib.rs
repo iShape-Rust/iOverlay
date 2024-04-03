@@ -6,7 +6,7 @@ pub mod index;
 pub mod vector;
 pub mod hole;
 pub mod x_segment;
-pub(crate) mod x_order;
+pub mod x_order;
 pub(crate) mod array;
 pub mod line_range;
 mod int;
