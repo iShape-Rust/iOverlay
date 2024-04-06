@@ -1,12 +1,12 @@
 use i_float::point::Point;
-use crate::bool::filter::Filter;
-use crate::bool::overlay_rule::OverlayRule;
-use crate::hole::segment::IdSegments;
-use crate::hole::solver::HoleSolver;
-use crate::hole::id_point::IdPoint;
+use crate::bind::segment::IdSegments;
+use crate::bind::solver::ShapeBinder;
+use crate::bind::id_point::IdPoint;
 use crate::x_order::XOrder;
-use crate::index::EMPTY_INDEX;
-use crate::layout::overlay_graph::OverlayGraph;
+use crate::core::overlay_graph::OverlayGraph;
+use crate::core::overlay_rule::OverlayRule;
+use crate::core::filter::Filter;
+use crate::util::EMPTY_INDEX;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
@@ -118,16 +118,16 @@ impl JoinHoles for Vec<VectorShape> {
 
         segments.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
 
-        let solution = HoleSolver::solve(self.len(), i_points, segments);
+        let solution = ShapeBinder::bind(self.len(), i_points, segments);
 
-        for shape_index in 0..solution.hole_counter.len() {
-            let capacity = solution.hole_counter[shape_index];
+        for shape_index in 0..solution.children_count_for_parent.len() {
+            let capacity = solution.children_count_for_parent[shape_index];
             self[shape_index].reserve_exact(capacity);
         }
 
         let mut hole_index = 0;
         for hole in holes.into_iter() {
-            let shape_index = solution.hole_shape[hole_index];
+            let shape_index = solution.parent_for_child[hole_index];
             self[shape_index].push(hole);
             hole_index += 1;
         }

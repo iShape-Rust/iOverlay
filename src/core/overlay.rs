@@ -8,12 +8,12 @@ use crate::fill::fill_segments::FillSegments;
 use crate::split::split_edges::SplitEdges;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
-use crate::bool::fill_rule::FillRule;
-use crate::bool::overlay_rule::OverlayRule;
-use crate::array::SwapRemoveIndex;
+use crate::util::SwapRemoveIndex;
+use crate::core::fill_rule::FillRule;
+use crate::core::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::x_segment::XSegment;
-use crate::layout::solver::Solver;
+use crate::core::solver::Solver;
 use crate::line_range::LineRange;
 use crate::vector::vector::VectorShape;
 

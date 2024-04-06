@@ -1,12 +1,11 @@
-use i_overlay::bool::overlay_rule::OverlayRule;
 
 #[cfg(test)]
 mod tests {
     use i_float::fix_vec::FixVec;
     use i_shape::fix_shape::FixShape;
-    use i_overlay::bool::fill_rule::FillRule;
-    use i_overlay::layout::overlay::{Overlay, ShapeType};
-    use super::*;
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::{Overlay, ShapeType};
+    use i_overlay::core::overlay_rule::OverlayRule;
 
     #[test]
     fn test_fill_rule() {

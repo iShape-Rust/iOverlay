@@ -1,7 +1,7 @@
 use crate::x_segment::XSegment;
 use crate::split::shape_edge::ShapeEdge;
-use crate::index::EMPTY_INDEX;
 use crate::split::shape_count::ShapeCount;
+use crate::util::EMPTY_INDEX;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) struct SplitLinkedListNode {

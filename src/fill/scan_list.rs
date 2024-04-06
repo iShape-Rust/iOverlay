@@ -2,8 +2,7 @@ use i_float::point::Point;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_store::ScanFillStore;
 use crate::split::shape_count::ShapeCount;
-use crate::array::SwapRemoveIndex;
-use crate::int::Int;
+use crate::util::{Int, SwapRemoveIndex};
 
 pub(crate) struct ScanFillList {
     buffer: Vec<CountSegment>,

@@ -1,12 +1,9 @@
-pub mod bool;
 pub mod fill;
-pub mod layout;
+pub mod core;
 pub mod split;
-pub mod index;
 pub mod vector;
-pub mod hole;
+pub mod bind;
 pub mod x_segment;
 pub mod x_order;
-pub(crate) mod array;
+pub(crate) mod util;
 pub mod line_range;
-mod int;

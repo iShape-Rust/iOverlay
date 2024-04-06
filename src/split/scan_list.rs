@@ -1,5 +1,4 @@
-use crate::array::SwapRemoveIndex;
-use crate::int::Int;
+use crate::util::{Int, SwapRemoveIndex};
 use crate::split::cross_solver::ScanCrossSolver;
 use crate::x_segment::XSegment;
 use crate::split::scan_store::{CrossSegment, ScanSplitStore};

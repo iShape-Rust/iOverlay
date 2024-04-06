@@ -2,12 +2,12 @@ use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
 use i_shape::fix_path::{FixPath, FixPathExtension};
 use i_float::point::Point;
 use i_shape::fix_shape::FixShape;
-use crate::hole::segment::IdSegments;
-use crate::hole::solver::HoleSolver;
-use crate::hole::id_point::IdPoint;
+use crate::bind::segment::IdSegments;
+use crate::bind::solver::ShapeBinder;
+use crate::bind::id_point::IdPoint;
 use crate::x_order::XOrder;
-use crate::index::EMPTY_INDEX;
-use crate::layout::overlay_graph::OverlayGraph;
+use crate::core::overlay_graph::OverlayGraph;
+use crate::util::EMPTY_INDEX;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
@@ -135,16 +135,16 @@ impl JoinHoles for Vec<FixShape> {
 
         segments.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
 
-        let solution = HoleSolver::solve(self.len(), i_points, segments);
+        let solution = ShapeBinder::bind(self.len(), i_points, segments);
 
-        for shape_index in 0..solution.hole_counter.len() {
-            let capacity = solution.hole_counter[shape_index];
+        for shape_index in 0..solution.children_count_for_parent.len() {
+            let capacity = solution.children_count_for_parent[shape_index];
             self[shape_index].paths.reserve_exact(capacity);
         }
 
         let mut hole_index = 0;
         for hole in holes.into_iter() {
-            let shape_index = solution.hole_shape[hole_index];
+            let shape_index = solution.parent_for_child[hole_index];
             self[shape_index].paths.push(hole);
             hole_index += 1;
         }

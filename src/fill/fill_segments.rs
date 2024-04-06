@@ -1,14 +1,14 @@
 use std::cmp::Ordering;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
-use crate::bool::fill_rule::FillRule;
+use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_list::ScanFillList;
 use crate::fill::scan_tree::ScanFillTree;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::fill::scan_store::ScanFillStore;
-use crate::layout::solver::Solver;
+use crate::core::solver::Solver;
 
 struct YGroup {
     i: usize,

@@ -1,8 +1,7 @@
 use i_float::point::Point;
-use crate::array::SwapRemoveIndex;
-use crate::hole::scan_store::ScanHoleStore;
-use crate::hole::segment::IdSegment;
-use crate::int::Int;
+use crate::util::{Int, SwapRemoveIndex};
+use crate::bind::scan_store::ScanHoleStore;
+use crate::bind::segment::IdSegment;
 
 pub(crate) struct ScanHoleList {
     buffer: Vec<IdSegment>,

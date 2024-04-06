@@ -1,5 +1,6 @@
 use i_float::bit_pack::BitPackVec;
 use i_float::fix_vec::FixVec;
+use i_shape::fix_path::FixPath;
 
 pub type SideFill = u8;
 pub type VectorPath = Vec<VectorEdge>;
@@ -48,5 +49,15 @@ impl VectorEdge {
         self.a = self.b;
         self.b = c;
         self.fill = self.fill.reverse();
+    }
+}
+
+pub trait ToPath {
+    fn to_path(&self) -> FixPath;
+}
+
+impl ToPath for VectorPath {
+    fn to_path(&self) -> FixPath {
+        self.iter().map(|e| e.a).collect()
     }
 }

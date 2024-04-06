@@ -4,7 +4,7 @@ use i_float::triangle::Triangle;
 use i_shape::index_point::IndexPoint;
 
 use crate::{fill::segment::Segment};
-use crate::index::EMPTY_INDEX;
+use crate::util::EMPTY_INDEX;
 
 use super::{overlay_node::OverlayNode, overlay_link::OverlayLink};
 

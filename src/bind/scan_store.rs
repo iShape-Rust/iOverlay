@@ -1,5 +1,5 @@
 use i_float::point::Point;
-use crate::hole::segment::IdSegment;
+use crate::bind::segment::IdSegment;
 
 pub(crate) trait ScanHoleStore {
     fn insert(&mut self, segment: IdSegment, stop: i32);

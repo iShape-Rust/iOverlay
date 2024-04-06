@@ -3,10 +3,10 @@ mod data;
 #[cfg(test)]
 mod tests {
     use i_shape::fix_shape::FixShape;
-    use i_overlay::bool::fill_rule::FillRule;
-    use i_overlay::bool::overlay_rule::OverlayRule;
-    use i_overlay::layout::overlay::Overlay;
-    use i_overlay::layout::solver::Solver;
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::Overlay;
+    use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::core::solver::Solver;
     use crate::data::overlay::Test;
 
     fn execute(index: usize) {

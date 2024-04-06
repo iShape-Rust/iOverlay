@@ -1,4 +1,4 @@
-use crate::index::EMPTY_INDEX;
+use crate::util::EMPTY_INDEX;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(super) struct DualIndex {

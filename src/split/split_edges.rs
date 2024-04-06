@@ -3,7 +3,7 @@ use i_float::triangle::Triangle;
 use crate::fill::segment::Segment;
 use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
-use crate::layout::solver::Solver;
+use crate::core::solver::Solver;
 use crate::split::shape_edge::ShapeEdge;
 use crate::line_range::LineRange;
 use crate::split::cross_solver::{CrossResult, ScanCrossSolver};

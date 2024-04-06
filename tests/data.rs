@@ -3,7 +3,7 @@ pub mod overlay {
     use i_shape::fix_path::FixPath;
     use i_shape::fix_shape::FixShape;
     use serde::{Deserialize, Deserializer};
-    use i_overlay::bool::fill_rule::FillRule;
+    use i_overlay::core::fill_rule::FillRule;
 
     #[derive(Debug, Deserialize)]
     pub struct Test {

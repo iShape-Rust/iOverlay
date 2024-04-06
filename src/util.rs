@@ -1,3 +1,19 @@
+pub (crate) const EMPTY_INDEX: usize = usize::MAX;
+
+pub(crate) trait SwapRemoveIndex {
+    fn swap_remove_index(&mut self, index: usize);
+}
+
+impl<T> SwapRemoveIndex for Vec<T> {
+    fn swap_remove_index(&mut self, index: usize) {
+        if index + 1 < self.len() {
+            self.swap_remove(index);
+        } else {
+            _ = self.pop()
+        }
+    }
+}
+
 pub(crate) trait Int {
     fn log2_sqrt(&self) -> usize;
 }
@@ -13,7 +29,7 @@ impl Int for usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::int::Int;
+    use crate::util::Int;
 
     #[test]
     fn test_0() {

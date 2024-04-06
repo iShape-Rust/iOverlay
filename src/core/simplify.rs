@@ -1,8 +1,8 @@
 use i_shape::fix_path::FixPath;
 use i_shape::fix_shape::FixShape;
-use crate::bool::fill_rule::FillRule;
-use crate::bool::overlay_rule::OverlayRule;
-use crate::layout::overlay::{Overlay, ShapeType};
+use crate::core::fill_rule::FillRule;
+use crate::core::overlay::{Overlay, ShapeType};
+use crate::core::overlay_rule::OverlayRule;
 
 pub trait Simplify {
 

@@ -1,9 +1,9 @@
 use i_float::point::Point;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
-use crate::hole::scan_store::ScanHoleStore;
-use crate::hole::segment::IdSegment;
-use crate::int::Int;
+use crate::bind::scan_store::ScanHoleStore;
+use crate::bind::segment::IdSegment;
+use crate::util::Int;
 use crate::x_segment::XSegment;
 
 pub(crate) struct ScanHoleTree {

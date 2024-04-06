@@ -1,11 +1,11 @@
 use i_float::bit_pack::BitPackVec;
 use crate::fill::segment::Segment;
 use crate::x_segment::XSegment;
-use crate::index::EMPTY_INDEX;
 use crate::split::shape_count::ShapeCount;
 use crate::split::shape_edge::ShapeEdge;
 use crate::split::split_linked_list::SplitLinkedList;
 use crate::split::version_index::{DualIndex, VersionedIndex};
+use crate::util::EMPTY_INDEX;
 
 pub(super) struct SplitRangeList {
     ranges: Vec<u64>,
