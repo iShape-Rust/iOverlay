@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
-use crate::x_order::XOrder;
 use crate::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,9 +58,9 @@ impl XSegment {
 
     pub fn is_less(&self, other: &Self) -> bool {
         if self.a == other.a {
-            self.b.order_by_line_compare(other.b)
+            self.b < other.b
         } else {
-            self.a.order_by_line_compare(other.a)
+            self.a < other.a
         }
     }
 }

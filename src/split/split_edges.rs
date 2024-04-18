@@ -1,7 +1,5 @@
 use i_float::point::Point;
-use i_float::triangle::Triangle;
 use crate::fill::segment::Segment;
-use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 use crate::core::solver::Solver;
 use crate::split::shape_edge::ShapeEdge;
@@ -87,11 +85,12 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                 let this_edge = this_edge.clone();
 
                 match cross_result.cross {
-                    CrossResult::Pure(point) => {
-                        this = self.pure(point, &this_edge, this.index, &scan_edge, other.index);
-                        need_to_fix = need_to_fix
-                            || this_edge.x_segment.is_not_same_line(point)
-                            || scan_edge.x_segment.is_not_same_line(point);
+                    CrossResult::PureExact(point) => {
+                        this = self.pure_exact(point, &this_edge, this.index, &scan_edge, other.index);
+                    }
+                    CrossResult::PureRound(point) => {
+                        this = self.pure_round(point, &this_edge, this.index, &scan_edge, other.index);
+                        need_to_fix = true
                     }
                     CrossResult::OtherEndExact(point) => {
                         this = self.divide_this_exact(point, &this_edge, this.index, &scan_edge, other);
@@ -129,14 +128,14 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                             this = self.divide_scan_overlap(&this_edge, this.index, &scan_edge, other.index);
 
                             // scan.a < this.a
-                            debug_assert!(scan_edge.x_segment.a.order_by_line_compare(this_edge.x_segment.a));
+                            debug_assert!(scan_edge.x_segment.a < this_edge.x_segment.a);
                         } else {
                             // scan.b inside this
 
                             this = self.divide_this_overlap(&this_edge, this.index, &scan_edge, other.index);
 
                             // scan.b < this.b
-                            debug_assert!(scan_edge.x_segment.b.order_by_line_compare(this_edge.x_segment.b));
+                            debug_assert!(scan_edge.x_segment.b < this_edge.x_segment.b);
                         }
                     }
                     CrossResult::Overlap => {
@@ -146,7 +145,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                         // or
                         // partly overlap each other
 
-                        if this_edge.x_segment.b.order_by_line_compare(scan_edge.x_segment.b) {
+                        if scan_edge.x_segment.b < this_edge.x_segment.b {
                             // partly overlap
                             this = self.divide_both_partly_overlap(&this_edge, this.index, &scan_edge, other.index)
                         } else {
@@ -163,7 +162,39 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         self.list.segments()
     }
 
-    fn pure(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn pure_exact(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+        // classic middle intersection, no ends, overlaps etc
+
+        let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
+        let this_rt = ShapeEdge { x_segment: XSegment { a: p, b: this_edge.x_segment.b }, count: this_edge.count };
+
+        debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+
+        let scan_lt = ShapeEdge { x_segment: XSegment { a: scan_edge.x_segment.a, b: p }, count: scan_edge.count };
+        let scan_rt = ShapeEdge { x_segment: XSegment { a: p, b: scan_edge.x_segment.b }, count: scan_edge.count };
+
+        debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
+
+        let lt_this = self.list.add_and_merge(this, this_lt);
+        self.list.add_and_merge(this, this_rt);
+
+        let lt_scan = self.list.add_and_merge(other, scan_lt);
+         self.list.add_and_merge(other, scan_rt);
+
+        self.list.remove(this);
+        self.list.remove(other);
+
+        debug_assert!(this_lt.x_segment.a.x <= p.x);
+
+        debug_assert!(ScanCrossSolver::is_valid_scan(&scan_lt.x_segment, &this_lt.x_segment));
+        self.scan_store.insert(VersionSegment { index: lt_scan, x_segment: scan_lt.x_segment });
+
+        debug_assert!(!ScanCrossSolver::is_valid_scan(&scan_rt.x_segment, &this_lt.x_segment));
+
+        lt_this
+    }
+
+    fn pure_round(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
         // classic middle intersection, no ends, overlaps etc
 
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
@@ -358,16 +389,10 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
 impl ShapeEdge {
     fn create_and_validate(a: Point, b: Point, count: ShapeCount) -> Self {
-        if a.order_by_line_compare(b) {
+        if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {
             Self { x_segment: XSegment { a: b, b: a }, count: count.invert() }
         }
-    }
-}
-
-impl XSegment {
-    fn is_not_same_line(&self, point: Point) -> bool {
-        Triangle::is_not_line_point(self.a, self.b, point)
     }
 }

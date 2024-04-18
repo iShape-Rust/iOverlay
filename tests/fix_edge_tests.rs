@@ -14,7 +14,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
         match result {
-            CrossResult::Pure(point) => {
+            CrossResult::PureExact(point) => {
                 assert_eq!(Point::ZERO, point);
             },
             _ => {
@@ -33,7 +33,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
         match result {
-            CrossResult::Pure(point) => {
+            CrossResult::PureExact(point) => {
                 assert_eq!(Point::ZERO, point);
             },
             _ => {
@@ -52,7 +52,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
         match result {
-            CrossResult::Pure(point) => {
+            CrossResult::PureExact(point) => {
                 assert_eq!(Point::new(1024, 0), point);
             },
             _ => {
@@ -72,7 +72,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
         match result {
-            CrossResult::Pure(point) => {
+            CrossResult::PureExact(point) => {
                 assert_eq!(Point::new(512_000_000, 512_000_000), point);
             },
             _ => {
@@ -138,7 +138,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
         match result {
-            CrossResult::Pure(_point) => {},
+            CrossResult::PureRound(_point) => {},
             _ => {
                 panic!("Fail cross result");
             },
@@ -153,7 +153,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
 
         match result {
-            CrossResult::Pure(point) => {
+            CrossResult::PureRound(point) => {
                 assert_eq!(Point::new(-1048691, -5244), point);
             },
             _ => {

@@ -1,11 +1,11 @@
 use i_float::fix_vec::FixVec;
 use i_float::point::Point;
 use i_float::triangle::Triangle;
-use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 
 pub enum CrossResult {
-    Pure(Point),
+    PureExact(Point),
+    PureRound(Point),
     EndOverlap,
     Overlap,
     TargetEndExact(Point),
@@ -19,7 +19,7 @@ pub struct ScanCrossSolver;
 impl ScanCrossSolver {
 
     pub(super) fn is_valid_scan(scan: &XSegment, this: &XSegment) -> bool {
-        let is_outdated = scan.b.order_by_line_compare(this.a);
+        let is_outdated = scan.b < this.a;
         let is_behind = scan.is_less(this);
 
         !is_outdated && is_behind
@@ -110,6 +110,10 @@ impl ScanCrossSolver {
 
         let p = ScanCrossSolver::cross_point(a0, b0, a1, b1);
 
+        if Triangle::is_line(a0, p, b0) && Triangle::is_line(a1, p, b1) {
+            return Some(CrossResult::PureExact(Point::new_fix_vec(p)))
+        }
+
         // still can be common ends because of rounding
         // snap to nearest end with r (1^2 + 1^2 == 2)
 
@@ -139,7 +143,7 @@ impl ScanCrossSolver {
             }
         }
 
-        Some(CrossResult::Pure(Point::new_fix_vec(p)))
+        Some(CrossResult::PureRound(Point::new_fix_vec(p)))
     }
 
     fn cross_point(a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> FixVec {

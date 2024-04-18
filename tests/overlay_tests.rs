@@ -40,7 +40,7 @@ mod tests {
         let graph = overlay.build_graph_with_solver(fill_rule, solver);
         let result = graph.extract_shapes(overlay_rule);
 
-        // print!("result: {:?}", result);
+        print!("result: {:?}", result);
         match overlay_rule {
             OverlayRule::Subject => {
                 assert_eq!(true, test_result(&result, &test.subject));
@@ -680,6 +680,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(106, OverlayRule::Xor, Solver::List);
+        debug_execute(120, OverlayRule::Subject, Solver::Tree);
     }
 }

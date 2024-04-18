@@ -1,5 +1,4 @@
 use i_float::point::Point;
-use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 
@@ -16,7 +15,7 @@ impl ShapeEdge {
     };
 
     pub fn new(a: Point, b: Point, count: ShapeCount) -> Self {
-        if a.order_by_line_compare(b) {
+        if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {
             Self { x_segment: XSegment { a: b, b: a }, count }

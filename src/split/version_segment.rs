@@ -1,6 +1,5 @@
 use i_float::point::Point;
 use crate::util::SwapRemoveIndex;
-use crate::x_order::XOrder;
 use crate::x_segment::XSegment;
 use crate::split::version_index::VersionedIndex;
 
@@ -19,7 +18,7 @@ impl RemoveVersionSegment for Vec<VersionSegment> {
         let mut j = 0;
         while j < self.len() {
             let seg = &self[j];
-            if seg.x_segment.b.order_by_line_compare(scan_pos) || segment == seg {
+            if seg.x_segment.b < scan_pos || segment == seg {
                 self.swap_remove_index(j);
                 continue;
             }

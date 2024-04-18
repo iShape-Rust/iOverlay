@@ -5,9 +5,9 @@ use i_shape::fix_shape::FixShape;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::bind::id_point::IdPoint;
-use crate::x_order::XOrder;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::util::EMPTY_INDEX;
+use crate::x_order::XOrder;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;

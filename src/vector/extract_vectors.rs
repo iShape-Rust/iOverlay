@@ -2,12 +2,12 @@ use i_float::point::Point;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::bind::id_point::IdPoint;
-use crate::x_order::XOrder;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
 use crate::util::EMPTY_INDEX;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
+use crate::x_order::XOrder;
 
 impl OverlayGraph {
     pub fn extract_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
