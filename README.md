@@ -2,7 +2,7 @@
 
 <p align="center">
 
-<img src="Readme/balloons.svg" width="250"/>
+![Balloons](Readme/balloons.svg)
 </p>
 
 The iOverlay is a fast poly-bool library supporting main operations like union, intersection, difference, and xor, governed by either the even-odd or non-zero rule. This algorithm is based on Vatti clipping ideas but is an original implementation.
