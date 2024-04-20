@@ -1,10 +1,8 @@
-use i_float::fix_float::{FIX_FRACTION_BITS, FixFloat};
-use i_shape::fix_path::{FixPath, FixPathExtension};
-use i_float::point::Point;
-use i_shape::fix_shape::FixShape;
+use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::shape::IntShape;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
-use crate::bind::id_point::IdPoint;
+use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::util::EMPTY_INDEX;
 use crate::x_order::XOrder;
@@ -13,19 +11,18 @@ use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
 
 impl OverlayGraph {
-
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
-    /// - Returns: A vector of `FixShape`, representing the geometric result of the applied overlay rule.
-    pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<FixShape> {
+    /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
+    pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<IntShape> {
         self.extract_shapes_min_area(overlay_rule, 0)
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes. This is useful for filtering out shapes that do not meet a certain size threshold, which can be beneficial for eliminating artifacts or noise from the output.
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
-    /// - Returns: A vector of `FixShape` that meet the specified area criteria, representing the cleaned-up geometric result.
-    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: FixFloat) -> Vec<FixShape> {
+    /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
+    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: i64) -> Vec<IntShape> {
         let mut visited = self.links.filter(overlay_rule);
 
         let mut holes = Vec::new();
@@ -44,7 +41,7 @@ impl OverlayGraph {
                     if is_hole {
                         holes.push(path);
                     } else {
-                        shapes.push(FixShape { paths: [path].to_vec() });
+                        shapes.push(vec![path]);
                     }
                 }
             }
@@ -55,8 +52,8 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> FixPath {
-        let mut path = FixPath::new();
+    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> IntPath {
+        let mut path = IntPath::new();
         let mut next = index;
 
         let mut link = self.links[index];
@@ -67,7 +64,7 @@ impl OverlayGraph {
         // Find a closed tour
         loop {
             path.push(a.point);
-            let node = &self.nodes[b.index];
+            let node = &self.nodes[b.id];
 
             if node.indices.len() == 2 {
                 next = node.other(next);
@@ -95,32 +92,30 @@ impl OverlayGraph {
 }
 
 trait JoinHoles {
-    fn join(&mut self, holes: Vec<FixPath>);
-    fn scan_join(&mut self, holes: Vec<FixPath>);
+    fn join(&mut self, holes: Vec<IntPath>);
+    fn scan_join(&mut self, holes: Vec<IntPath>);
 }
 
-impl JoinHoles for Vec<FixShape> {
-    fn join(&mut self, holes: Vec<FixPath>) {
+impl JoinHoles for Vec<IntShape> {
+    fn join(&mut self, holes: Vec<IntPath>) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
 
         if self.len() == 1 {
-            self[0].paths.reserve_exact(holes.len());
+            self[0].reserve_exact(holes.len());
             let mut hole_paths = holes;
-            self[0].paths.append(&mut hole_paths);
+            self[0].append(&mut hole_paths);
         } else {
             self.scan_join(holes);
         }
     }
 
-    fn scan_join(&mut self, holes: Vec<FixPath>) {
+    fn scan_join(&mut self, holes: Vec<IntPath>) {
         let mut i_points = Vec::with_capacity(holes.len());
         for i in 0..holes.len() {
             let p = holes[i][0];
-            let x = p.x as i32;
-            let y = p.y as i32;
-            i_points.push(IdPoint::new(i, Point::new(x, y)));
+            i_points.push(IdPoint::new(i, p));
         }
         i_points.sort_by(|a, b| a.point.order_by_x(b.point));
 
@@ -129,7 +124,7 @@ impl JoinHoles for Vec<FixShape> {
 
         let mut segments = Vec::new();
         for i in 0..self.len() {
-            let mut hole_floors = self[i].contour().id_segments(i, x_min, x_max);
+            let mut hole_floors = self[i][0].id_segments(i, x_min, x_max);
             segments.append(&mut hole_floors);
         }
 
@@ -139,34 +134,34 @@ impl JoinHoles for Vec<FixShape> {
 
         for shape_index in 0..solution.children_count_for_parent.len() {
             let capacity = solution.children_count_for_parent[shape_index];
-            self[shape_index].paths.reserve_exact(capacity);
+            self[shape_index].reserve_exact(capacity);
         }
 
         let mut hole_index = 0;
         for hole in holes.into_iter() {
             let shape_index = solution.parent_for_child[hole_index];
-            self[shape_index].paths.push(hole);
+            self[shape_index].push(hole);
             hole_index += 1;
         }
     }
 }
 
 trait Validate {
-    fn validate(&mut self, min_area: FixFloat, is_hole: bool) -> bool;
+    fn validate(&mut self, min_area: i64, is_hole: bool) -> bool;
 }
 
-impl Validate for FixPath {
-    fn validate(&mut self, min_area: FixFloat, is_hole: bool) -> bool {
+impl Validate for IntPath {
+    fn validate(&mut self, min_area: i64, is_hole: bool) -> bool {
         self.remove_degenerates();
 
         if self.len() < 3 {
             return false;
         }
 
-        let area = self.area_x2();
-        let fix_abs_area = area.abs() >> (FIX_FRACTION_BITS + 1);
+        let area = self.unsafe_area();
+        let abs_area = area.abs() >> 1;
 
-        if fix_abs_area < min_area {
+        if abs_area < min_area {
             return false;
         } else if is_hole && area > 0 || !is_hole && area < 0 {
             // for holes must be negative and for contour must be positive

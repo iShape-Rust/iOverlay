@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::bind::scan_store::ScanHoleStore;
@@ -12,7 +12,7 @@ pub(crate) struct ScanHoleTree {
 
 impl ScanHoleTree {
     pub(crate) fn new(count: usize) -> Self {
-        let x_segment = XSegment { a: Point::ZERO, b: Point::ZERO };
+        let x_segment = XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO };
         let segment = IdSegment { id: usize::MAX, x_segment };
         Self { tree: Tree::new(segment, count.log2_sqrt()) }
     }
@@ -69,7 +69,7 @@ impl ScanHoleStore for ScanHoleTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> usize {
+    fn find_under_and_nearest(&mut self, p: IntPoint, stop: i32) -> usize {
         let mut index = self.tree.root;
         let mut result = EMPTY_REF;
         while index != EMPTY_REF {

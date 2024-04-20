@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
@@ -17,7 +17,7 @@ struct YGroup {
 
 struct PGroup {
     i: usize,
-    p: Point,
+    p: IntPoint,
 }
 
 pub(crate) trait FillSegments {
@@ -78,7 +78,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
                     j += 1;
                 }
 
-                let p = Point::new(x, y);
+                let p = IntPoint::new(x, y);
 
                 if p_buf.len() > 1 {
                     p_buf.sort_by(|a, b| a.order_by_angle(b, p));
@@ -142,7 +142,7 @@ impl Segment {
 
 
 impl PGroup {
-    fn order_by_angle(&self, other: &Self, center: Point) -> Ordering {
+    fn order_by_angle(&self, other: &Self, center: IntPoint) -> Ordering {
         if Triangle::is_clockwise_point(center, other.p, self.p) {
             Ordering::Less
         } else {

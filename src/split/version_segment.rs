@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use crate::util::SwapRemoveIndex;
 use crate::x_segment::XSegment;
 use crate::split::version_index::VersionedIndex;
@@ -10,11 +10,11 @@ pub(super) struct VersionSegment {
 }
 
 pub(super) trait RemoveVersionSegment {
-    fn remove_segment(&mut self, segment: &VersionSegment, scan_pos: Point);
+    fn remove_segment(&mut self, segment: &VersionSegment, scan_pos: IntPoint);
 }
 
 impl RemoveVersionSegment for Vec<VersionSegment> {
-    fn remove_segment(&mut self, segment: &VersionSegment, scan_pos: Point) {
+    fn remove_segment(&mut self, segment: &VersionSegment, scan_pos: IntPoint) {
         let mut j = 0;
         while j < self.len() {
             let seg = &self[j];

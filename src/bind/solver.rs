@@ -1,5 +1,5 @@
 use crate::bind::segment::IdSegment;
-use crate::bind::id_point::IdPoint;
+use crate::id_point::IdPoint;
 use crate::bind::scan_list::ScanHoleList;
 use crate::bind::scan_store::ScanHoleStore;
 use crate::bind::scan_tree::ScanHoleTree;
@@ -22,7 +22,6 @@ impl ShapeBinder {
             Self::private_solve(scan_tree, shape_count, i_points, segments)
         }
     }
-
 
     fn private_solve<S: ScanHoleStore>(scan_store: S, shape_count: usize, i_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
         let children_count = i_points.len();

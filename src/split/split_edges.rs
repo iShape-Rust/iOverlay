@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use crate::fill::segment::Segment;
 use crate::x_segment::XSegment;
 use crate::core::solver::Solver;
@@ -162,7 +162,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         self.list.segments()
     }
 
-    fn pure_exact(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn pure_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
         // classic middle intersection, no ends, overlaps etc
 
         let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
@@ -179,7 +179,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         self.list.add_and_merge(this, this_rt);
 
         let lt_scan = self.list.add_and_merge(other, scan_lt);
-         self.list.add_and_merge(other, scan_rt);
+        self.list.add_and_merge(other, scan_rt);
 
         self.list.remove(this);
         self.list.remove(other);
@@ -194,7 +194,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
-    fn pure_round(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn pure_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
         // classic middle intersection, no ends, overlaps etc
 
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
@@ -229,7 +229,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
-    fn divide_this_exact(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, scan_ver: VersionedIndex) -> VersionedIndex {
+    fn divide_this_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, scan_ver: VersionedIndex) -> VersionedIndex {
         let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
         let this_rt = ShapeEdge { x_segment: XSegment { a: p, b: this_edge.x_segment.b }, count: this_edge.count };
 
@@ -247,7 +247,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
-    fn divide_this_round(&mut self, p: Point, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, scan_ver: VersionedIndex) -> VersionedIndex {
+    fn divide_this_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, scan_ver: VersionedIndex) -> VersionedIndex {
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
         let this_rt = ShapeEdge::create_and_validate(p, this_edge.x_segment.b, this_edge.count);
 
@@ -265,7 +265,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
-    fn divide_scan_exact(&mut self, p: Point, this_edge: &ShapeEdge, scan_edge: &ShapeEdge, other: DualIndex) {
+    fn divide_scan_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, scan_edge: &ShapeEdge, other: DualIndex) {
         // this segment-end divide scan(other) segment into 2 parts
 
         let scan_lt = ShapeEdge { x_segment: XSegment { a: scan_edge.x_segment.a, b: p }, count: scan_edge.count };
@@ -287,7 +287,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         }
     }
 
-    fn divide_scan_round(&mut self, p: Point, this_edge: &ShapeEdge, scan_edge: &ShapeEdge, other: DualIndex) {
+    fn divide_scan_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, scan_edge: &ShapeEdge, other: DualIndex) {
         // this segment-end divide scan(other) segment into 2 parts
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, p, scan_edge.count);
@@ -388,7 +388,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
 
 impl ShapeEdge {
-    fn create_and_validate(a: Point, b: Point, count: ShapeCount) -> Self {
+    fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {

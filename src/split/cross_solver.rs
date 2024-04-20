@@ -1,23 +1,22 @@
 use i_float::fix_vec::FixVec;
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::x_segment::XSegment;
 
 pub enum CrossResult {
-    PureExact(Point),
-    PureRound(Point),
+    PureExact(IntPoint),
+    PureRound(IntPoint),
     EndOverlap,
     Overlap,
-    TargetEndExact(Point),
-    TargetEndRound(Point),
-    OtherEndExact(Point),
-    OtherEndRound(Point),
+    TargetEndExact(IntPoint),
+    TargetEndRound(IntPoint),
+    OtherEndExact(IntPoint),
+    OtherEndRound(IntPoint),
 }
 
 pub struct ScanCrossSolver;
 
 impl ScanCrossSolver {
-
     pub(super) fn is_valid_scan(scan: &XSegment, this: &XSegment) -> bool {
         let is_outdated = scan.b < this.a;
         let is_behind = scan.is_less(this);
@@ -111,7 +110,7 @@ impl ScanCrossSolver {
         let p = ScanCrossSolver::cross_point(a0, b0, a1, b1);
 
         if Triangle::is_line(a0, p, b0) && Triangle::is_line(a1, p, b1) {
-            return Some(CrossResult::PureExact(Point::new_fix_vec(p)))
+            return Some(CrossResult::PureExact(IntPoint::new_fix_vec(p)));
         }
 
         // still can be common ends because of rounding
@@ -131,19 +130,19 @@ impl ScanCrossSolver {
                 let p = if ra0 < rb0 { a0 } else { b0 };
                 // ignore if it's a clean point
                 if Triangle::is_not_line(a1, p, b1) {
-                    return Some(CrossResult::TargetEndRound(Point::new_fix_vec(p)));
+                    return Some(CrossResult::TargetEndRound(IntPoint::new_fix_vec(p)));
                 }
             } else {
                 let p = if ra1 < rb1 { a1 } else { b1 };
 
                 // ignore if it's a clean point
                 if Triangle::is_not_line(a0, p, b0) {
-                    return Some(CrossResult::OtherEndRound(Point::new_fix_vec(p)));
+                    return Some(CrossResult::OtherEndRound(IntPoint::new_fix_vec(p)));
                 }
             }
         }
 
-        Some(CrossResult::PureRound(Point::new_fix_vec(p)))
+        Some(CrossResult::PureRound(IntPoint::new_fix_vec(p)))
     }
 
     fn cross_point(a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> FixVec {

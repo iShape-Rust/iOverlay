@@ -1,8 +1,8 @@
 
 #[cfg(test)]
 mod tests {
-    use i_float::fix_vec::FixVec;
-    use i_shape::fix_path::FixPath;
+    use i_float::point::IntPoint;
+    use i_shape::int::path::IntPath;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
@@ -37,8 +37,8 @@ mod tests {
     }
 
     fn test(n: usize, rule: OverlayRule) -> usize {
-        let subj_paths = many_squares(FixVec::new(0, 0), 20, 30, n);
-        let clip_paths = many_squares(FixVec::new(15, 15), 20, 30, n - 1);
+        let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
+        let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
         let mut overlay = Overlay::new(8 * n * n);
         overlay.add_paths(&subj_paths, ShapeType::Subject);
@@ -50,17 +50,17 @@ mod tests {
         result.len()
     }
 
-    fn many_squares(start: FixVec, size: i64, offset: i64, n: usize) -> Vec<FixPath> {
+    fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {
         let mut result = Vec::with_capacity(n * n);
         let mut y = start.y;
         for _ in 0..n {
             let mut x = start.x;
             for _ in 0..n {
-                let path: FixPath = vec![
-                    FixVec::new(x, y),
-                    FixVec::new(x, y + size),
-                    FixVec::new(x + size, y + size),
-                    FixVec::new(x + size, y),
+                let path: IntPath = vec![
+                    IntPoint::new(x, y),
+                    IntPoint::new(x, y + size),
+                    IntPoint::new(x + size, y + size),
+                    IntPoint::new(x + size, y),
                 ];
                 result.push(path);
                 x += offset;

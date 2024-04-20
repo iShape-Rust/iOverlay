@@ -1,9 +1,6 @@
-use i_float::bit_pack::BitPackVec;
-use i_float::point::Point;
-use i_shape::fix_path::{FixPath, FixPathExtension};
-use i_shape::fix_paths::FixPathsExtension;
-use i_shape::fix_shape::FixShape;
-use i_shape::fix_shapes::FixShapesExtension;
+use i_float::point::IntPoint;
+use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::shape::{IntShape, PointsCount};
 use crate::fill::fill_segments::FillSegments;
 use crate::split::split_edges::SplitEdges;
 
@@ -51,7 +48,7 @@ impl Overlay {
     /// Creates a new `Overlay` instance and initializes it with subject and clip paths.
     /// - `subject_paths`: An array of paths that together define the subject shape.
     /// - `clip_paths`: An array of paths that together define the clip shape.
-    pub fn with_paths(subject_paths: &[FixPath], clip_paths: &[FixPath]) -> Self {
+    pub fn with_paths(subject_paths: &[IntPath], clip_paths: &[IntPath]) -> Self {
         let mut overlay = Self::new(subject_paths.points_count() + clip_paths.points_count());
         overlay.add_paths(subject_paths, ShapeType::Subject);
         overlay.add_paths(clip_paths, ShapeType::Clip);
@@ -61,7 +58,7 @@ impl Overlay {
     /// Creates a new `Overlay` instance and initializes it with subject and clip shapes.
     /// - `subject_shapes`: An array of shapes to be used as the subject in the overlay operation.
     /// - `clip_shapes`: An array of shapes to be used as the clip in the overlay operation.
-    pub fn with_shapes(subject_shapes: &[FixShape], clip_shapes: &[FixShape]) -> Self {
+    pub fn with_shapes(subject_shapes: &[IntShape], clip_shapes: &[IntShape]) -> Self {
         let mut overlay = Self::new(subject_shapes.points_count() + clip_shapes.points_count());
         overlay.add_shapes(subject_shapes, ShapeType::Subject);
         overlay.add_shapes(clip_shapes, ShapeType::Clip);
@@ -69,34 +66,34 @@ impl Overlay {
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
-    /// - `shapes`: An array of `FixShape` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_shapes(&mut self, shapes: &[FixShape], shape_type: ShapeType) {
+    pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
         for shape in shapes.iter() {
-            self.add_paths(&shape.paths, shape_type);
+            self.add_paths(&shape, shape_type);
         }
     }
 
     /// Adds a single shape to the overlay as either a subject or clip shape.
-    /// - `shape`: A reference to a `FixShape` instance to be added.
+    /// - `shape`: A reference to a `IntShape` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_shape(&mut self, shape: &FixShape, shape_type: ShapeType) {
-        self.add_paths(&shape.paths, shape_type);
+    pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
+        self.add_paths(&shape, shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
-    /// - `paths`: An array of `FixPath` instances to be added to the overlay.
+    /// - `paths`: An array of `IntPath` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_paths(&mut self, paths: &[FixPath], shape_type: ShapeType) {
+    pub fn add_paths(&mut self, paths: &[IntPath], shape_type: ShapeType) {
         for path in paths.iter() {
             self.add_path(path, shape_type);
         }
     }
 
     /// Adds a single path to the overlay as either subject or clip paths.
-    /// - `path`: A reference to a `FixPath` instance to be added.
+    /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_path(&mut self, path: &FixPath, shape_type: ShapeType) {
+    pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
         if let Some(mut result) = path.to_vec().removed_degenerates().edges(shape_type) {
             self.y_min = self.y_min.min(result.y_min);
             self.y_max = self.y_max.max(result.y_max);
@@ -154,8 +151,8 @@ impl Overlay {
 
         let mut prev = ShapeEdge {
             x_segment: XSegment {
-                a: Point::ZERO,
-                b: Point::ZERO,
+                a: IntPoint::ZERO,
+                b: IntPoint::ZERO,
             },
             count: ShapeCount::new(0, 0),
         };
@@ -193,7 +190,7 @@ trait CreateEdges {
     fn edges(&self, shape_type: ShapeType) -> Option<EdgeResult>;
 }
 
-impl CreateEdges for FixPath {
+impl CreateEdges for IntPath {
     fn edges(&self, shape_type: ShapeType) -> Option<EdgeResult> {
         let n = self.len();
         if n < 3 {
@@ -203,17 +200,17 @@ impl CreateEdges for FixPath {
         let mut edges = vec![ShapeEdge::ZERO; n];
 
         let i0 = n - 1;
-        let mut p0 = Point::new_fix_vec(self[i0]);
+        let mut p0 = self[i0];
 
         let mut y_min = p0.y;
         let mut y_max = p0.y;
 
         for i in 0..n {
-            let p1 = Point::new_fix_vec(self[i]);
+            let p1 = self[i];
             y_min = y_min.min(p1.y);
             y_max = y_max.max(p1.y);
 
-            let value = if p0.bit_pack() <= p1.bit_pack() { 1 } else { -1 };
+            let value = if p0 < p1 { 1 } else { -1 };
             match shape_type {
                 ShapeType::Subject => {
                     edges[i] = ShapeEdge::new(p0, p1, ShapeCount::new(value, 0));

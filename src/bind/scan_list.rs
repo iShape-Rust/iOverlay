@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use crate::util::{Int, SwapRemoveIndex};
 use crate::bind::scan_store::ScanHoleStore;
 use crate::bind::segment::IdSegment;
@@ -18,7 +18,7 @@ impl ScanHoleStore for ScanHoleList {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> usize {
+    fn find_under_and_nearest(&mut self, p: IntPoint, stop: i32) -> usize {
         let mut i = 0;
         let mut result: Option<IdSegment> = None;
         while i < self.buffer.len() {

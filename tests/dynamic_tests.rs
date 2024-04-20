@@ -1,10 +1,9 @@
 #[cfg(test)]
 mod tests {
     use std::f64::consts::PI;
-    use i_float::f64_vec::F64Vec;
-    use i_float::fix_vec::FixVec;
-    use i_shape::fix_path::FixPath;
-    use i_shape::fix_shape::FixShape;
+    use i_float::point::IntPoint;
+    use i_shape::int::path::IntPath;
+    use i_shape::int::shape::IntShape;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
@@ -173,41 +172,45 @@ mod tests {
         }
     }
 
-    fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> FixShape {
+    fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> IntShape {
         let da = PI / count as f64;
         let mut a = angle;
 
         let mut points = Vec::new();
 
+        let sr0 = r0 * 1024.0;
+        let sr1 = r1 * 1024.0;
+
         for _ in 0..count {
-            let xr0 = r0 * a.cos();
-            let yr0 = r0 * a.sin();
+            let xr0 = (sr0 * a.cos()) as i32;
+            let yr0 = (sr0 * a.sin()) as i32;
 
             a += da;
 
-            let xr1 = r1 * a.cos();
-            let yr1 = r1 * a.sin();
+            let xr1 = (sr1 * a.cos()) as i32;
+            let yr1 = (sr1 * a.sin()) as i32;
 
             a += da;
 
-            points.push(F64Vec::new(xr0, yr0).to_fix());
-            points.push(F64Vec::new(xr1, yr1).to_fix());
+            points.push(IntPoint::new(xr0, yr0));
+            points.push(IntPoint::new(xr1, yr1));
         }
 
-        FixShape::new_with_contour(points)
+        [points].to_vec()
     }
 
-    fn random_polygon(radius: f64, n: usize) -> FixPath {
+    fn random_polygon(radius: f64, n: usize) -> IntPath {
         let mut result = Vec::with_capacity(n);
         let da: f64 = PI * 0.7;
         let mut a: f64 = 0.0;
+        let r = 1024.0 * radius;
         for _ in 0..n {
             let sc = a.sin_cos();
 
-            let x = radius * sc.1;
-            let y = radius * sc.0;
+            let x = r * sc.1;
+            let y = r * sc.0;
 
-            result.push(FixVec::new_f64(x, y));
+            result.push(IntPoint::new(x as i32, y as i32));
             a += da;
         }
 

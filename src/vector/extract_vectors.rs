@@ -1,7 +1,6 @@
-use i_float::point::Point;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
-use crate::bind::id_point::IdPoint;
+use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
@@ -50,7 +49,7 @@ impl OverlayGraph {
         // Find a closed tour
         loop {
             path.push(VectorEdge::new(link.fill, a.point, b.point));
-            let node = &self.nodes[b.index];
+            let node = &self.nodes[b.id];
 
             if node.indices.len() == 2 {
                 next = node.other(next);
@@ -101,9 +100,7 @@ impl JoinHoles for Vec<VectorShape> {
         let mut i_points = Vec::with_capacity(holes.len());
         for i in 0..holes.len() {
             let p = holes[i][0].a;
-            let x = p.x as i32;
-            let y = p.y as i32;
-            i_points.push(IdPoint::new(i, Point::new(x, y)));
+            i_points.push(IdPoint::new(i, p));
         }
         i_points.sort_by(|a, b| a.point.order_by_x(b.point));
 
