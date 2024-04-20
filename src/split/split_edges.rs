@@ -19,7 +19,7 @@ pub(crate) trait SplitEdges {
 
 impl SplitEdges for Vec<ShapeEdge> {
     fn split(&mut self, range: LineRange, solver: Solver) -> Vec<Segment> {
-        let is_small_range = range.max - range.min < 128;
+        let is_small_range = range.width() < 128;
         let is_list: bool;
         #[cfg(debug_assertions)]
         {

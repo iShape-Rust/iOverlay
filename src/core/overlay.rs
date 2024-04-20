@@ -65,20 +65,15 @@ impl Overlay {
         overlay
     }
 
-    /// Adds multiple shapes to the overlay as either subject or clip shapes.
-    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
-    /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
-        for shape in shapes.iter() {
-            self.add_paths(&shape, shape_type);
+    /// Adds a single path to the overlay as either subject or clip paths.
+    /// - `path`: A reference to a `IntPath` instance to be added.
+    /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
+    pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
+        if let Some(mut result) = path.to_vec().removed_degenerates().edges(shape_type) {
+            self.y_min = self.y_min.min(result.y_min);
+            self.y_max = self.y_max.max(result.y_max);
+            self.edges.append(&mut result.edges);
         }
-    }
-
-    /// Adds a single shape to the overlay as either a subject or clip shape.
-    /// - `shape`: A reference to a `IntShape` instance to be added.
-    /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
-        self.add_paths(&shape, shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
@@ -90,14 +85,19 @@ impl Overlay {
         }
     }
 
-    /// Adds a single path to the overlay as either subject or clip paths.
-    /// - `path`: A reference to a `IntPath` instance to be added.
-    /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
-    pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        if let Some(mut result) = path.to_vec().removed_degenerates().edges(shape_type) {
-            self.y_min = self.y_min.min(result.y_min);
-            self.y_max = self.y_max.max(result.y_max);
-            self.edges.append(&mut result.edges);
+    /// Adds a single shape to the overlay as either a subject or clip shape.
+    /// - `shape`: A reference to a `IntShape` instance to be added.
+    /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
+    pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
+        self.add_paths(&shape, shape_type);
+    }
+
+    /// Adds multiple shapes to the overlay as either subject or clip shapes.
+    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
+    /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
+    pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
+        for shape in shapes.iter() {
+            self.add_paths(&shape, shape_type);
         }
     }
 

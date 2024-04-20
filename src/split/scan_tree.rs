@@ -26,7 +26,7 @@ pub struct ScanSplitTree {
 impl ScanSplitTree {
     pub(super) fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2();
-        let max_power_count = (count as i32).log2() >> 1;
+        let max_power_count = (count as i64).log2() >> 1;
         let power = 10.min(max_power_count.min(max_power_range));
         let nodes = Self::create_nodes(range, power);
         Self { power, nodes }
@@ -383,11 +383,11 @@ trait Log2Extension {
     fn log2(&self) -> usize;
 }
 
-impl Log2Extension for i32 {
+impl Log2Extension for i64 {
     fn log2(&self) -> usize {
         debug_assert!(self >= &0);
         let n = self.leading_zeros();
-        (i32::BITS - n) as usize
+        (i64::BITS - n) as usize
     }
 }
 
@@ -396,7 +396,7 @@ impl LineRange {
         (self.max + self.min) >> 1
     }
     fn log2(&self) -> usize {
-        (self.max - self.min).log2()
+        self.width().log2()
     }
 }
 
