@@ -24,8 +24,8 @@ fn main() {
 
     overlay.add_path(&subj, ShapeType::Subject);
     overlay.add_path(&clip, ShapeType::Clip);
-    let graph = overlay.build_graph(FillRule::NonZero);
 
+    let graph = overlay.build_graph(FillRule::NonZero);
     let shapes = graph.extract_shapes(OverlayRule::Union);
 
     println!("shapes count: {}", shapes.len());
