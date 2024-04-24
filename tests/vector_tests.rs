@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use i_float::fix_vec::FixVec;
+    use i_float::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
@@ -10,18 +10,18 @@ mod tests {
     #[test]
     fn test_0() {
         let subj = [
-            FixVec::new(-10240, -10240),
-            FixVec::new(-10240, 10240),
-            FixVec::new(10240, 10240),
-            FixVec::new(10240, -10240)
-        ].to_vec();
+            IntPoint::new(-10240, -10240),
+            IntPoint::new(-10240, 10240),
+            IntPoint::new(10240, 10240),
+            IntPoint::new(10240, -10240)
+        ];
 
         let clip = [
-            FixVec::new(-5120, -5120),
-            FixVec::new(-5120, 5120),
-            FixVec::new(5120, 5120),
-            FixVec::new(5120, -5120)
-        ].to_vec();
+            IntPoint::new(-5120, -5120),
+            IntPoint::new(-5120, 5120),
+            IntPoint::new(5120, 5120),
+            IntPoint::new(5120, -5120)
+        ];
 
         let mut overlay = Overlay::new(2);
         overlay.add_path(&subj, ShapeType::Subject);
@@ -35,23 +35,23 @@ mod tests {
         let vectors = &shapes[0][0];
         let template = [
             VectorEdge {
-                a: FixVec::new(-10240,-10240),
-                b: FixVec::new(-10240,10240),
+                a: IntPoint::new(-10240,-10240),
+                b: IntPoint::new(-10240,10240),
                 fill: 2
             },
             VectorEdge {
-                a: FixVec::new(-10240,10240),
-                b: FixVec::new(10240,10240),
+                a: IntPoint::new(-10240,10240),
+                b: IntPoint::new(10240,10240),
                 fill: 2
             },
             VectorEdge {
-                a: FixVec::new(10240,10240),
-                b: FixVec::new(10240,-10240),
+                a: IntPoint::new(10240,10240),
+                b: IntPoint::new(10240,-10240),
                 fill: 2
             },
             VectorEdge {
-                a: FixVec::new(10240,-10240),
-                b: FixVec::new(-10240,-10240),
+                a: IntPoint::new(10240,-10240),
+                b: IntPoint::new(-10240,-10240),
                 fill: 2
             }
         ];
@@ -62,18 +62,18 @@ mod tests {
     #[test]
     fn test_1() {
         let subj = [
-            FixVec::new(-10240, -10240),
-            FixVec::new(-10240, 10240),
-            FixVec::new(10240, 10240),
-            FixVec::new(10240, -10240)
-        ].to_vec();
+            IntPoint::new(-10240, -10240),
+            IntPoint::new(-10240, 10240),
+            IntPoint::new(10240, 10240),
+            IntPoint::new(10240, -10240)
+        ];
 
         let clip = [
-            FixVec::new(-5120,-5120),
-            FixVec::new(-5120,15360),
-            FixVec::new(15360,15360),
-            FixVec::new(15360,-5120)
-        ].to_vec();
+            IntPoint::new(-5120,-5120),
+            IntPoint::new(-5120,15360),
+            IntPoint::new(15360,15360),
+            IntPoint::new(15360,-5120)
+        ];
 
         let mut overlay = Overlay::new(2);
         overlay.add_path(&subj, ShapeType::Subject);
@@ -87,33 +87,33 @@ mod tests {
         let vectors = &shapes[0][0];
         let template = [
             VectorEdge {
-                a: FixVec::new(-10240,-10240),
-                b: FixVec::new(-10240,10240),
+                a: IntPoint::new(-10240,-10240),
+                b: IntPoint::new(-10240,10240),
                 fill: 2
             },
             VectorEdge {
-                a: FixVec::new(-10240,10240),
-                b: FixVec::new(-5120,10240),
+                a: IntPoint::new(-10240,10240),
+                b: IntPoint::new(-5120,10240),
                 fill: 2
             },
             VectorEdge {
-                a: FixVec::new(-5120,10240),
-                b: FixVec::new(10240,10240),
+                a: IntPoint::new(-5120,10240),
+                b: IntPoint::new(10240,10240),
                 fill: 14
             },
             VectorEdge {
-                a: FixVec::new(10240,10240),
-                b: FixVec::new(10240,-5120),
+                a: IntPoint::new(10240,10240),
+                b: IntPoint::new(10240,-5120),
                 fill: 14
             },
             VectorEdge {
-                a: FixVec::new(10240,-5120),
-                b: FixVec::new(10240,-10240),
+                a: IntPoint::new(10240,-5120),
+                b: IntPoint::new(10240,-10240),
                 fill: 2
             },
             VectorEdge {
-                a: FixVec::new(10240,-10240),
-                b: FixVec::new(-10240,-10240),
+                a: IntPoint::new(10240,-10240),
+                b: IntPoint::new(-10240,-10240),
                 fill: 2
             }
         ];

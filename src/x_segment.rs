@@ -1,16 +1,16 @@
 use std::cmp::Ordering;
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct XSegment {
-    pub a: Point,
-    pub b: Point,
+    pub a: IntPoint,
+    pub b: IntPoint,
 }
 
 impl XSegment {
-    pub fn new(a: Point, b: Point) -> Self {
+    pub fn new(a: IntPoint, b: IntPoint) -> Self {
         Self { a, b }
     }
 
@@ -26,13 +26,13 @@ impl XSegment {
         self.a.x == self.b.x
     }
 
-    pub fn is_under_point(&self, p: Point) -> bool {
+    pub fn is_under_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) > 0
     }
 
-    pub fn is_above_point(&self, p: Point) -> bool {
+    pub fn is_above_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) < 0

@@ -1,6 +1,5 @@
-use i_float::bit_pack::BitPackVec;
-use i_float::fix_vec::FixVec;
-use i_shape::fix_path::FixPath;
+use i_float::point::IntPoint;
+use i_shape::int::path::IntPath;
 
 pub type SideFill = u8;
 pub type VectorPath = Vec<VectorEdge>;
@@ -28,14 +27,14 @@ impl Reverse for SideFill {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VectorEdge {
-    pub a: FixVec,
-    pub b: FixVec,
+    pub a: IntPoint,
+    pub b: IntPoint,
     pub fill: SideFill,
 }
 
 impl VectorEdge {
-    pub(crate) fn new(fill: SideFill, a: FixVec, b: FixVec) -> Self {
-        let fill = if a.bit_pack() < b.bit_pack() {
+    pub(crate) fn new(fill: SideFill, a: IntPoint, b: IntPoint) -> Self {
+        let fill = if a < b {
             fill
         } else {
             fill.reverse()
@@ -53,11 +52,11 @@ impl VectorEdge {
 }
 
 pub trait ToPath {
-    fn to_path(&self) -> FixPath;
+    fn to_path(&self) -> IntPath;
 }
 
 impl ToPath for VectorPath {
-    fn to_path(&self) -> FixPath {
+    fn to_path(&self) -> IntPath {
         self.iter().map(|e| e.a).collect()
     }
 }

@@ -1,7 +1,7 @@
 pub mod overlay {
     use std::path::PathBuf;
-    use i_shape::fix_path::FixPath;
-    use i_shape::fix_shape::FixShape;
+    use i_shape::int::path::IntPath;
+    use i_shape::int::shape::IntShape;
     use serde::{Deserialize, Deserializer};
     use i_overlay::core::fill_rule::FillRule;
 
@@ -12,15 +12,15 @@ pub mod overlay {
         #[serde(default, deserialize_with = "deserialize_fill_rule")]
         pub fill_rule: Option<FillRule>,
         #[serde(rename = "subjPaths")]
-        pub subj_paths: Vec<FixPath>,
+        pub subj_paths: Vec<IntPath>,
         #[serde(rename = "clipPaths")]
-        pub clip_paths: Vec<FixPath>,
-        pub clip: Vec<Vec<FixShape>>,
-        pub subject: Vec<Vec<FixShape>>,
-        pub difference: Vec<Vec<FixShape>>,
-        pub intersect: Vec<Vec<FixShape>>,
-        pub union: Vec<Vec<FixShape>>,
-        pub xor: Vec<Vec<FixShape>>,
+        pub clip_paths: Vec<IntPath>,
+        pub clip: Vec<Vec<IntShape>>,
+        pub subject: Vec<Vec<IntShape>>,
+        pub difference: Vec<Vec<IntShape>>,
+        pub intersect: Vec<Vec<IntShape>>,
+        pub union: Vec<Vec<IntShape>>,
+        pub xor: Vec<Vec<IntShape>>,
     }
 
     fn deserialize_fill_rule<'de, D>(deserializer: D) -> Result<Option<FillRule>, D::Error>

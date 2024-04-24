@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use i_float::fix_vec::FixVec;
-    use i_shape::fix_shape::FixShape;
+    use i_float::point::IntPoint;
+    use i_shape::int::shape::IntShape;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::simplify::Simplify;
 
@@ -10,70 +10,69 @@ mod tests {
         let paths =
             [
                 [
-                    FixVec::new(10614, 4421),
-                    FixVec::new(10609, 4421),
-                    FixVec::new(10609, 4415),
-                    FixVec::new(10614, 4415)
+                    IntPoint::new(10614, 4421),
+                    IntPoint::new(10609, 4421),
+                    IntPoint::new(10609, 4415),
+                    IntPoint::new(10614, 4415)
                 ].to_vec()
             ].to_vec();
 
-        let simplified = paths.simplify(FillRule::NonZero);
+        let simplified = paths.simplify(FillRule::NonZero, 0);
 
         assert_eq!(simplified.len(), 1);
-        assert_eq!(simplified[0].paths.len(), 1);
+        assert_eq!(simplified[0].len(), 1);
     }
 
     #[test]
     fn test_1() {
         let paths =
             [
-                square(FixVec::new_f64(-10.0, -10.0)),
-                square(FixVec::new_f64(-10.0,  0.0)),
-                square(FixVec::new_f64(-10.0,  10.0)),
-                square(FixVec::new_f64(0.0, -10.0)),
-                square(FixVec::new_f64( 0.0,  10.0)),
-                square(FixVec::new_f64(10.0, -10.0)),
-                square(FixVec::new_f64(10.0,  0.0)),
-                square(FixVec::new_f64( 10.0,  10.0))
+                square(IntPoint::new(-10, -10)),
+                square(IntPoint::new(-10, 0)),
+                square(IntPoint::new(-10, 10)),
+                square(IntPoint::new(0, -10)),
+                square(IntPoint::new(0, 10)),
+                square(IntPoint::new(10, -10)),
+                square(IntPoint::new(10, 0)),
+                square(IntPoint::new(10, 10))
             ].to_vec();
 
-        let simplified = paths.simplify(FillRule::NonZero);
+        let simplified = paths.simplify(FillRule::NonZero, 0);
 
         assert_eq!(simplified.len(), 1);
-        assert_eq!(simplified[0].paths.len(), 2);
+        assert_eq!(simplified[0].len(), 2);
     }
 
     #[test]
     fn test_2() {
         let shapes =
             [
-                square_shape(FixVec::new_f64(-10.0, -10.0)),
-                square_shape(FixVec::new_f64(-10.0,  0.0)),
-                square_shape(FixVec::new_f64(-10.0,  10.0)),
-                square_shape(FixVec::new_f64(0.0, -10.0)),
-                square_shape(FixVec::new_f64( 0.0,  10.0)),
-                square_shape(FixVec::new_f64(10.0, -10.0)),
-                square_shape(FixVec::new_f64(10.0,  0.0)),
-                square_shape(FixVec::new_f64( 10.0,  10.0))
+                square_shape(IntPoint::new(-10, -10)),
+                square_shape(IntPoint::new(-10, 0)),
+                square_shape(IntPoint::new(-10, 10)),
+                square_shape(IntPoint::new(0, -10)),
+                square_shape(IntPoint::new(0, 10)),
+                square_shape(IntPoint::new(10, -10)),
+                square_shape(IntPoint::new(10, 0)),
+                square_shape(IntPoint::new(10, 10))
             ].to_vec();
 
-        let simplified = shapes.simplify(FillRule::NonZero);
+        let simplified = shapes.simplify(FillRule::NonZero, 0);
 
         assert_eq!(simplified.len(), 1);
-        assert_eq!(simplified[0].paths.len(), 2);
+        assert_eq!(simplified[0].len(), 2);
     }
 
-    fn square(pos: FixVec) -> Vec<FixVec> {
+    fn square(pos: IntPoint) -> Vec<IntPoint> {
         [
-            FixVec::new_f64(-5.0, -5.0) + pos,
-            FixVec::new_f64(-5.0,  5.0) + pos,
-            FixVec::new_f64( 5.0,  5.0) + pos,
-            FixVec::new_f64( 5.0, -5.0) + pos
+            IntPoint::new(-5 + pos.x, -5 + pos.y),
+            IntPoint::new(-5 + pos.x, 5 + pos.y),
+            IntPoint::new(5 + pos.x, 5 + pos.y),
+            IntPoint::new(5 + pos.x, -5 + pos.y)
         ].to_vec()
     }
 
-    fn square_shape(pos: FixVec) -> FixShape {
-        FixShape::new_with_contour(square(pos))
+    fn square_shape(pos: IntPoint) -> IntShape {
+        [square(pos)].to_vec()
     }
-
 }

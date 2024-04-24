@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use crate::util::SwapRemoveIndex;
 use crate::x_segment::XSegment;
 use crate::line_range::LineRange;
@@ -26,7 +26,7 @@ pub struct ScanSplitTree {
 impl ScanSplitTree {
     pub(super) fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2();
-        let max_power_count = (count as i32).log2() >> 1;
+        let max_power_count = (count as i64).log2() >> 1;
         let power = 10.min(max_power_count.min(max_power_range));
         let nodes = Self::create_nodes(range, power);
         Self { power, nodes }
@@ -75,7 +75,7 @@ impl ScanSplitTree {
         nodes
     }
 
-    fn remove(&mut self, segment: &VersionSegment, scan_pos: Point) {
+    fn remove(&mut self, segment: &VersionSegment, scan_pos: IntPoint) {
         // same logic as for insert but now we remove
 
         let mut s = 1 << self.power;
@@ -383,11 +383,11 @@ trait Log2Extension {
     fn log2(&self) -> usize;
 }
 
-impl Log2Extension for i32 {
+impl Log2Extension for i64 {
     fn log2(&self) -> usize {
         debug_assert!(self >= &0);
         let n = self.leading_zeros();
-        (i32::BITS - n) as usize
+        (i64::BITS - n) as usize
     }
 }
 
@@ -396,7 +396,7 @@ impl LineRange {
         (self.max + self.min) >> 1
     }
     fn log2(&self) -> usize {
-        (self.max - self.min).log2()
+        self.width().log2()
     }
 }
 
@@ -417,7 +417,7 @@ impl ScanSplitTree {
 
 #[cfg(test)]
 mod tests {
-    use i_float::point::Point;
+    use i_float::point::IntPoint;
     use crate::x_segment::XSegment;
     use crate::line_range::LineRange;
     use crate::split::scan_tree::ScanSplitTree;
@@ -440,7 +440,7 @@ mod tests {
     #[test]
     fn test_02() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
-        let x_segment = XSegment { a: Point::new(0, 1), b: Point::new(0, 127) };
+        let x_segment = XSegment { a: IntPoint::new(0, 1), b: IntPoint::new(0, 127) };
         tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
 
 
@@ -470,7 +470,7 @@ mod tests {
     #[test]
     fn test_03() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
-        let x_segment = XSegment { a: Point::new(0, 16), b: Point::new(0, 112) };
+        let x_segment = XSegment { a: IntPoint::new(0, 16), b: IntPoint::new(0, 112) };
         tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
 
 
@@ -500,7 +500,7 @@ mod tests {
     #[test]
     fn test_04() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
-        let x_segment = XSegment { a: Point::new(0, 17), b: Point::new(0, 111) };
+        let x_segment = XSegment { a: IntPoint::new(0, 17), b: IntPoint::new(0, 111) };
         tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
 
 
@@ -530,7 +530,7 @@ mod tests {
     #[test]
     fn test_05() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
-        let x_segment = XSegment { a: Point::new(0, 32), b: Point::new(0, 96) };
+        let x_segment = XSegment { a: IntPoint::new(0, 32), b: IntPoint::new(0, 96) };
         tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
 
 
@@ -560,7 +560,7 @@ mod tests {
     #[test]
     fn test_06() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
-        let x_segment = XSegment { a: Point::new(0, 33), b: Point::new(0, 95) };
+        let x_segment = XSegment { a: IntPoint::new(0, 33), b: IntPoint::new(0, 95) };
         tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
 
 
@@ -592,10 +592,10 @@ mod tests {
         let mut tree = ScanSplitTree::with_power(LineRange { min: -8, max: 9 }, 3);
         let version = VersionedIndex { version: 0, index: DualIndex::EMPTY };
 
-        let a0 = Point::new(0, -6);
-        let b0 = Point::new(8, 0);
-        let a1 = Point::new(0, 3);
-        let b1 = Point::new(8, 8);
+        let a0 = IntPoint::new(0, -6);
+        let b0 = IntPoint::new(8, 0);
+        let a1 = IntPoint::new(0, 3);
+        let b1 = IntPoint::new(8, 8);
 
         let vs = VersionSegment { index: version.clone(), x_segment: XSegment { a: a0, b: b0 } };
         let xs = XSegment { a: a1, b: b1 };
@@ -610,10 +610,10 @@ mod tests {
     #[test]
     fn test_08() {
         let test_set = vec![
-            XSegment { a: Point::new(-5, 0), b: Point::new(-5, 7) },
-            XSegment { a: Point::new(-5, 1), b: Point::new(-4, 1) },
-            XSegment { a: Point::new(0, 4), b: Point::new(4, 4) },
-            XSegment { a: Point::new(5, -8), b: Point::new(7, -6) },
+            XSegment { a: IntPoint::new(-5, 0), b: IntPoint::new(-5, 7) },
+            XSegment { a: IntPoint::new(-5, 1), b: IntPoint::new(-4, 1) },
+            XSegment { a: IntPoint::new(0, 4), b: IntPoint::new(4, 4) },
+            XSegment { a: IntPoint::new(5, -8), b: IntPoint::new(7, -6) },
         ];
 
         let result = intersect_test(test_set);
@@ -624,10 +624,10 @@ mod tests {
     #[test]
     fn test_09() {
         let test_set = vec![
-            XSegment { a: Point::new(-5, -6), b: Point::new(-5, 0) },
-            XSegment { a: Point::new(0, -7), b: Point::new(7, -7) },
-            XSegment { a: Point::new(3, -7), b: Point::new(3, -2) },
-            XSegment { a: Point::new(6, -7), b: Point::new(12, -7) },
+            XSegment { a: IntPoint::new(-5, -6), b: IntPoint::new(-5, 0) },
+            XSegment { a: IntPoint::new(0, -7), b: IntPoint::new(7, -7) },
+            XSegment { a: IntPoint::new(3, -7), b: IntPoint::new(3, -2) },
+            XSegment { a: IntPoint::new(6, -7), b: IntPoint::new(12, -7) },
         ];
 
         let result = intersect_test(test_set);
@@ -638,10 +638,10 @@ mod tests {
     #[test]
     fn test_10() {
         let test_set = vec![
-            XSegment { a: Point::new(-8, -1), b: Point::new(-3, 4) },
-            XSegment { a: Point::new(-6, 3), b: Point::new(-1, 8) },
-            XSegment { a: Point::new(-5, 4), b: Point::new(-1, 4) },
-            XSegment { a: Point::new(-2, -1), b: Point::new(-2, 0) },
+            XSegment { a: IntPoint::new(-8, -1), b: IntPoint::new(-3, 4) },
+            XSegment { a: IntPoint::new(-6, 3), b: IntPoint::new(-1, 8) },
+            XSegment { a: IntPoint::new(-5, 4), b: IntPoint::new(-1, 4) },
+            XSegment { a: IntPoint::new(-2, -1), b: IntPoint::new(-2, 0) },
         ];
 
         let result = intersect_test(test_set);

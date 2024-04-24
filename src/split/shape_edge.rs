@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use crate::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 
@@ -10,11 +10,11 @@ pub struct ShapeEdge {
 
 impl ShapeEdge {
     pub(crate) const ZERO: ShapeEdge = ShapeEdge {
-        x_segment: XSegment { a: Point::ZERO, b: Point::ZERO },
+        x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
         count: ShapeCount { subj: 0, clip: 0 },
     };
 
-    pub fn new(a: Point, b: Point, count: ShapeCount) -> Self {
+    pub fn new(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {

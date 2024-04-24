@@ -1,25 +1,25 @@
-use i_float::fix_vec::FixVec;
-use i_shape::index_point::IndexPoint;
+use i_float::point::IntPoint;
 use crate::fill::segment::SegmentFill;
+use crate::id_point::IdPoint;
 
 #[derive(Debug, Clone, Copy)]
 pub struct OverlayLink {
-    pub(crate) a: IndexPoint,
-    pub(crate) b: IndexPoint,
+    pub(crate) a: IdPoint,
+    pub(crate) b: IdPoint,
     pub(crate) fill: SegmentFill
 }
 
 impl OverlayLink {
 
-    pub (super) fn new(a: IndexPoint, b: IndexPoint, fill: SegmentFill) -> OverlayLink {
+    pub (super) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
         OverlayLink { a, b, fill }
     }
 
-    pub(crate) fn other(&self, index: IndexPoint) -> IndexPoint {
+    pub(crate) fn other(&self, index: IdPoint) -> IdPoint {
         if self.a == index { self.b } else { self.a }
     }
 
-    pub fn ab(&self) -> (FixVec, FixVec) {
+    pub fn ab(&self) -> (IntPoint, IntPoint) {
         (self.a.point, self.b.point)
     }
 

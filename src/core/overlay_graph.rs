@@ -1,16 +1,17 @@
-use i_float::bit_pack::{BitPack, BitPackFix, BitPackVec};
+use std::cmp::Ordering;
 use i_float::fix_vec::FixVec;
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::index_point::IndexPoint;
 
 use crate::{fill::segment::Segment};
+use crate::id_point::IdPoint;
 use crate::util::EMPTY_INDEX;
 
 use super::{overlay_node::OverlayNode, overlay_link::OverlayLink};
 
 struct End {
     seg_index: usize,
-    bit_pack: BitPack,
+    point: IntPoint,
 }
 
 /// A representation of geometric shapes organized for efficient boolean operations.
@@ -40,22 +41,26 @@ impl OverlayGraph {
         for (seg_index, segment) in segments.iter().enumerate() {
             end_bs.push(End {
                 seg_index,
-                bit_pack: segment.seg.b.bit_pack(),
+                point: segment.seg.b,
             });
         }
 
-        end_bs.sort_unstable_by(|a, b| a.bit_pack.cmp(&b.bit_pack));
+        end_bs.sort_unstable_by(|a, b| if a.point < b.point {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        });
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(2 * n);
         let mut links: Vec<OverlayLink> = segments
             .iter()
-            .map(|segment| OverlayLink::new(IndexPoint::ZERO, IndexPoint::ZERO, segment.fill))
+            .map(|segment| OverlayLink::new(IdPoint::ZERO, IdPoint::ZERO, segment.fill))
             .collect();
 
         let mut ai = 0;
         let mut bi = 0;
-        let mut a = segments[0].seg.a.bit_pack();
-        let mut b = end_bs[0].bit_pack;
+        let mut a = segments[0].seg.a;
+        let mut b = end_bs[0].point;
 
         while ai < n || bi < n {
             let mut cnt = 0;
@@ -71,9 +76,9 @@ impl OverlayGraph {
             let mut indices = Vec::with_capacity(cnt);
 
             if a == b {
-                let ip = IndexPoint::new(nodes.len(), a.fix_vec());
+                let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
-                    let aa = segments[ai].seg.a.bit_pack();
+                    let aa = segments[ai].seg.a;
                     if aa != a {
                         a = aa;
                         break;
@@ -86,8 +91,8 @@ impl OverlayGraph {
 
                 while bi < n {
                     let e = &end_bs[bi];
-                    if e.bit_pack != b {
-                        b = e.bit_pack;
+                    if e.point != b {
+                        b = e.point;
                         break;
                     }
                     links[e.seg_index].b = ip;
@@ -96,9 +101,9 @@ impl OverlayGraph {
                     bi += 1
                 }
             } else if ai < n && a < b {
-                let ip = IndexPoint::new(nodes.len(), a.fix_vec());
+                let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
-                    let aa = segments[ai].seg.a.bit_pack();
+                    let aa = segments[ai].seg.a;
                     if aa != a {
                         a = aa;
                         break;
@@ -109,11 +114,11 @@ impl OverlayGraph {
                     ai += 1
                 }
             } else {
-                let ip = IndexPoint::new(nodes.len(), b.fix_vec());
+                let ip = IdPoint::new(nodes.len(), b);
                 while bi < n {
                     let e = &end_bs[bi];
-                    if e.bit_pack != b {
-                        b = e.bit_pack;
+                    if e.point != b {
+                        b = e.point;
                         break;
                     }
                     links[e.seg_index].b = ip;
@@ -132,13 +137,13 @@ impl OverlayGraph {
 
     pub(crate) fn find_nearest_link_to(
         &self,
-        target: IndexPoint,
-        center: IndexPoint,
+        target: IdPoint,
+        center: IdPoint,
         ignore: usize,
         in_clockwise: bool,
         visited: &[bool],
     ) -> usize {
-        let node = &self.nodes[center.index];
+        let node = &self.nodes[center.id];
 
         let (index, value) = if let Some(result) = node.indices.iter().enumerate().find(|&(_index, &val)| val != ignore && !visited[val]) {
             (result.0, *result.1)
@@ -149,15 +154,15 @@ impl OverlayGraph {
         let mut i = index + 1;
         let mut min_index = value;
 
-        let mut min_vec = self.links[min_index].other(center).point - center.point;
-        let v0 = target.point - center.point; // base vector
+        let mut min_vec = self.links[min_index].other(center).point.subtract(center.point);
+        let v0 = target.point.subtract(center.point); // base vector
 
         // compare minVec with the rest of the vectors
 
         while i < node.indices.len() {
             let j = node.indices[i];
             if !visited[j] && ignore != j {
-                let vj = self.links[j].other(center).point - center.point;
+                let vj = self.links[j].other(center).point.subtract(center.point);
 
                 if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
                     min_vec = vj;
@@ -182,7 +187,7 @@ impl OverlayGraph {
                     let bj = self.links[j].b.point;
                     let bi = self.links[i].b.point;
 
-                    if Triangle::is_clockwise(a, bi, bj) {
+                    if Triangle::is_clockwise_point(a, bi, bj) {
                         j = i;
                     }
                 }
@@ -192,9 +197,8 @@ impl OverlayGraph {
         j
     }
 
-    pub(crate) fn is_clockwise(a: FixVec, b: FixVec, is_top_inside: bool) -> bool {
-        let is_direct = a.bit_pack() < b.bit_pack();
-
+    pub(crate) fn is_clockwise(a: IntPoint, b: IntPoint, is_top_inside: bool) -> bool {
+        let is_direct = a < b;
         Self::xnor(is_direct, is_top_inside)
     }
 
@@ -237,13 +241,13 @@ impl CloseInRotation for FixVec {
 }
 
 trait Size {
-    fn size(&self, point: BitPack, index: usize) -> usize;
+    fn size(&self, point: IntPoint, index: usize) -> usize;
 }
 
 impl Size for Vec<Segment> {
-    fn size(&self, point: BitPack, index: usize) -> usize {
+    fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        while i < self.len() && self[i].seg.a.bit_pack() == point {
+        while i < self.len() && self[i].seg.a == point {
             i += 1;
         }
         i - index
@@ -251,9 +255,9 @@ impl Size for Vec<Segment> {
 }
 
 impl Size for Vec<End> {
-    fn size(&self, point: BitPack, index: usize) -> usize {
+    fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        while i < self.len() && self[i].bit_pack == point {
+        while i < self.len() && self[i].point == point {
             i += 1;
         }
         i - index

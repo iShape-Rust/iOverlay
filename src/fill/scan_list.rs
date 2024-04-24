@@ -1,4 +1,4 @@
-use i_float::point::Point;
+use i_float::point::IntPoint;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_store::ScanFillStore;
 use crate::split::shape_count::ShapeCount;
@@ -19,7 +19,7 @@ impl ScanFillStore for ScanFillList {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest(&mut self, p: Point, stop: i32) -> Option<ShapeCount> {
+    fn find_under_and_nearest(&mut self, p: IntPoint, stop: i32) -> Option<ShapeCount> {
         let mut i = 0;
         let mut result: Option<CountSegment> = None;
         while i < self.buffer.len() {

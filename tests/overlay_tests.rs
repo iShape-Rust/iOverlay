@@ -2,7 +2,7 @@ mod data;
 
 #[cfg(test)]
 mod tests {
-    use i_shape::fix_shape::FixShape;
+    use i_shape::int::shape::IntShape;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::Overlay;
     use i_overlay::core::overlay_rule::OverlayRule;
@@ -63,7 +63,7 @@ mod tests {
         }
     }
 
-    fn test_result(result: &Vec<FixShape>, bank: &Vec<Vec<FixShape>>) -> bool {
+    fn test_result(result: &Vec<IntShape>, bank: &Vec<Vec<IntShape>>) -> bool {
         for item in bank.iter() {
             if item == result {
                 return true;
