@@ -4,6 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-i_float = "0.9.0"
-i_shape = "0.15.0"
-i_overlay = "0.24.0"
+i_float = "1.0.0"
+i_overlay = "1.0.0"
