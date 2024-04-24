@@ -24,33 +24,32 @@ Try out iOverlay with an interactive demo:
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_float
-i_shape
-i_overlay
+i_float = "^1.0.0"
+i_overlay = "^1.0.0"
 ```
 
 ### Hello world
 
 Let's union two squares
 ```rust
-let mut overlay = Overlay::new(1);
-
 let subj = [
-    FixVec::new_number(-10, -10),
-    FixVec::new_number(-10, 10),
-    FixVec::new_number(10, 10),
-    FixVec::new_number(10, -10),
+    F64Point::new(-10.0, -10.0),
+    F64Point::new(-10.0, 10.0),
+    F64Point::new(10.0, 10.0),
+    F64Point::new(10.0, -10.0),
 ];
 
 let clip = [
-    FixVec::new_number(-5, -5),
-    FixVec::new_number(-5, 15),
-    FixVec::new_number(15, 15),
-    FixVec::new_number(15, -5),
+    F64Point::new(-5.0, -5.0),
+    F64Point::new(-5.0, 15.0),
+    F64Point::new(15.0, 15.0),
+    F64Point::new(15.0, -5.0),
 ];
 
-overlay.add_path(&subj.to_vec(), ShapeType::Subject);
-overlay.add_path(&clip.to_vec(), ShapeType::Clip);
+let mut overlay = FloatOverlay::new();
+
+overlay.add_path(&subj, ShapeType::Subject);
+overlay.add_path(&clip, ShapeType::Clip);
 let graph = overlay.build_graph(FillRule::NonZero);
 
 let shapes = graph.extract_shapes(OverlayRule::Union);
@@ -58,11 +57,11 @@ let shapes = graph.extract_shapes(OverlayRule::Union);
 println!("shapes count: {}", shapes.len());
 
 if shapes.len() > 0 {
-    let contour = shapes[0].contour();
+    let contour = &shapes[0][0];
     println!("shape 0 contour: ");
     for p in contour {
-        let x = p.x.f32();
-        let y = p.x.f32();
+        let x = p.x;
+        let y = p.y;
         println!("({}, {})", x, y);
     }
 }
