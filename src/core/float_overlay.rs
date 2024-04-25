@@ -1,6 +1,8 @@
+use i_float::adapter::PointAdapter;
 use i_float::f64_point::F64Point;
-use i_shape::f64::adapter::{PointAdapter, ShapeToInt};
-use i_shape::f64::rect::F64Rect;
+use i_float::f64_rect::F64Rect;
+use i_shape::f64::adapter::ShapeToInt;
+use i_shape::f64::rect::RectInit;
 use i_shape::f64::shape::F64Path;
 use crate::core::fill_rule::FillRule;
 use crate::core::float_graph::FloatOverlayGraph;

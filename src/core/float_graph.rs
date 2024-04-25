@@ -1,11 +1,12 @@
-use i_shape::f64::adapter::{PointAdapter, ShapesToFloat};
+use i_float::adapter::PointAdapter;
+use i_shape::f64::adapter::ShapesToFloat;
 use i_shape::f64::shape::F64Shapes;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 
 pub struct FloatOverlayGraph {
-    graph: OverlayGraph,
-    adapter: PointAdapter,
+    pub graph: OverlayGraph,
+    pub adapter: PointAdapter,
 }
 
 impl FloatOverlayGraph {
