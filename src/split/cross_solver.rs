@@ -109,13 +109,42 @@ impl ScanCrossSolver {
 
         let p = ScanCrossSolver::cross_point(a0, b0, a1, b1);
 
-        if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
+        let s = Self::area(p, target, other);
+
+        if s == 0 {
             return Some(CrossResult::PureExact(p));
         }
 
-        // let p = Self::snap_to_best(p, target, other);
+        let p = Self::snap_to_best(AreaPoint { area: s, point: p }, target, other);
 
         // still can be common ends because of rounding
+
+        let ra0 = target.a.sqr_distance(p);
+        let rb0 = target.b.sqr_distance(p);
+
+        let ra1 = other.a.sqr_distance(p);
+        let rb1 = other.b.sqr_distance(p);
+
+        if ra0 <= 1 || ra1 <= 1 || rb0 <= 1 || rb1 <= 1 {
+            let r0 = ra0.min(rb0);
+            let r1 = ra1.min(rb1);
+
+            if r0 <= r1 {
+                let p = if ra0 < rb0 { target.a } else { target.b };
+                // ignore if it's a clean point
+                if Triangle::is_not_line_point(other.a, p, other.b) {
+                    return Some(CrossResult::TargetEndRound(p));
+                }
+            } else {
+                let p = if ra1 < rb1 { other.a } else { other.b };
+                // still can be common ends because of rounding
+
+                // ignore if it's a clean point
+                if Triangle::is_not_line_point(target.a, p, target.b) {
+                    return Some(CrossResult::OtherEndRound(p));
+                }
+            }
+        }
 
         if p == target.a || p == target.b {
             Some(CrossResult::TargetEndRound(p))
@@ -210,71 +239,37 @@ impl ScanCrossSolver {
         IntPoint::new(x as i32, y as i32)
     }
 
-    fn snap_to_best(p: IntPoint, seg0: &XSegment, seg1: &XSegment) -> IntPoint {
-        if p.x != 0 && p.y != 0 {
-            let dx = p.x.signum();
-            let dy = p.y.signum();
+    fn snap_to_best(ap: AreaPoint, seg0: &XSegment, seg1: &XSegment) -> IntPoint {
+        let mut ap = ap;
+        let p1 = IntPoint::new(ap.point.x, ap.point.y + 1);
+        let p2 = IntPoint::new(ap.point.x + 1, ap.point.y);
+        let p3 = IntPoint::new(ap.point.x + 1, ap.point.y + 1);
 
-            let points = [
-                p,
-                IntPoint::new(p.x, p.y + dy),
-                IntPoint::new(p.x + dx, p.y),
-                IntPoint::new(p.x + dx, p.y + dy)
-            ];
-            Self::snap_to_points(&points, seg0, seg1)
-        } else if p.x == 0 && p.y == 0 {
-            let points = [
-                IntPoint::new(p.x + 1, p.y - 1),
-                IntPoint::new(p.x + 1, p.y),
-                IntPoint::new(p.x + 1, p.y + 1),
-                IntPoint::new(p.x - 1, p.y - 1),
-                IntPoint::new(p.x - 1, p.y),
-                IntPoint::new(p.x - 1, p.y + 1),
-                IntPoint::new(p.x, p.y - 1),
-                p,
-                IntPoint::new(p.x, p.y + 1)
-            ];
-            Self::snap_to_points(&points, seg0, seg1)
-        } else if p.x == 0 {
-            let dy = p.y.signum();
-            let points = [
-                IntPoint::new(p.x + 1, p.y + dy),
-                IntPoint::new(p.x - 1, p.y + dy),
-                IntPoint::new(p.x + 1, p.y),
-                IntPoint::new(p.x - 1, p.y),
-                IntPoint::new(p.x, p.y + dy),
-                p
-            ];
-            Self::snap_to_points(&points, seg0, seg1)
-        } else {
-            let dx = p.x.signum();
-            let points = [
-                IntPoint::new(p.x + dx, p.y + 1),
-                IntPoint::new(p.x + dx, p.y - 1),
-                IntPoint::new(p.x, p.y + 1),
-                IntPoint::new(p.x, p.y - 1),
-                IntPoint::new(p.x + dx, p.y),
-                p
-            ];
-            Self::snap_to_points(&points, seg0, seg1)
-        }
-    }
+        let s1 = Self::area(p1, seg0, seg1);
+        let s2 = Self::area(p2, seg0, seg1);
+        let s3 = Self::area(p3, seg0, seg1);
 
-    fn snap_to_points(points: &[IntPoint], seg0: &XSegment, seg1: &XSegment) -> IntPoint {
-        let mut best = AreaPoint { area: i64::MAX, point: IntPoint::ZERO };
-        for &p in points {
-            let s = Self::area(p, seg0, seg1);
-            if s < best.area {
-                best.area = s;
-                best.point = p;
-            }
+        if s1 < ap.area {
+            ap.area = s1;
+            ap.point = p1;
         }
-        return best.point;
+
+        if s2 < ap.area {
+            ap.area = s2;
+            ap.point = p2;
+        }
+
+        if s3 < ap.area {
+            ap.area = s3;
+            ap.point = p3;
+        }
+
+        ap.point
     }
 
     fn area(point: IntPoint, seg0: &XSegment, seg1: &XSegment) -> i64 {
-        let s0 = Triangle::area_two_point(point, seg0.a, seg0.b);
-        let s1 = Triangle::area_two_point(point, seg1.a, seg1.b);
+        let s0 = Triangle::area_two_point(point, seg0.a, seg0.b).abs();
+        let s1 = Triangle::area_two_point(point, seg1.a, seg1.b).abs();
         s0 + s1
     }
 }

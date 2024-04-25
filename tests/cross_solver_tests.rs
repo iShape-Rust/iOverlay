@@ -50,7 +50,7 @@ mod tests {
         let result = ScanCrossSolver::scan_cross(&target, &other).unwrap();
 
         if let PureRound(point) = result {
-            assert_eq!(point, IntPoint::new(0, 1));
+            assert_eq!(point, IntPoint::new(1, 1));
         }
     }
 }

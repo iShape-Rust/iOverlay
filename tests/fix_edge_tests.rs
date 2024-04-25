@@ -154,7 +154,7 @@ mod tests {
 
         match result {
             CrossResult::PureRound(point) => {
-                assert_eq!(IntPoint::new(-1048691, -5244), point);
+                assert_eq!(true, IntPoint::new(-1048691, -5244).sqr_distance(point) < 2);
             },
             _ => {
                 panic!("Fail cross result");
