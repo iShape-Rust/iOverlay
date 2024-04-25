@@ -109,43 +109,24 @@ impl ScanCrossSolver {
 
         let p = ScanCrossSolver::cross_point(a0, b0, a1, b1);
 
-        if Triangle::is_line(a0, p, b0) && Triangle::is_line(a1, p, b1) {
-            return Some(CrossResult::PureExact(IntPoint::new_fix_vec(p)));
+        if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
+            return Some(CrossResult::PureExact(p));
         }
+
+        // let p = Self::snap_to_best(p, target, other);
 
         // still can be common ends because of rounding
-        // snap to nearest end with r (1^2 + 1^2 == 2)
 
-        let ra0 = a0.sqr_distance(p);
-        let rb0 = b0.sqr_distance(p);
-
-        let ra1 = a1.sqr_distance(p);
-        let rb1 = b1.sqr_distance(p);
-
-        if ra0 <= 2 || ra1 <= 2 || rb0 <= 2 || rb1 <= 2 {
-            let r0 = ra0.min(rb0);
-            let r1 = ra1.min(rb1);
-
-            if r0 <= r1 {
-                let p = if ra0 < rb0 { a0 } else { b0 };
-                // ignore if it's a clean point
-                if Triangle::is_not_line(a1, p, b1) {
-                    return Some(CrossResult::TargetEndRound(IntPoint::new_fix_vec(p)));
-                }
-            } else {
-                let p = if ra1 < rb1 { a1 } else { b1 };
-
-                // ignore if it's a clean point
-                if Triangle::is_not_line(a0, p, b0) {
-                    return Some(CrossResult::OtherEndRound(IntPoint::new_fix_vec(p)));
-                }
-            }
+        if p == target.a || p == target.b {
+            Some(CrossResult::TargetEndRound(p))
+        } else if p == other.a || p == other.b {
+            Some(CrossResult::OtherEndRound(p))
+        } else {
+            Some(CrossResult::PureRound(p))
         }
-
-        Some(CrossResult::PureRound(IntPoint::new_fix_vec(p)))
     }
 
-    fn cross_point(a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> FixVec {
+    fn cross_point(a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> IntPoint {
         // edges are not parallel
         // FixVec(Int64, Int64) where abs(x) and abs(y) < 2^30
         // So the result must be also be in range of 2^30
@@ -226,6 +207,79 @@ impl ScanCrossSolver {
         let x = x0 + a0x;
         let y = y0 + a0y;
 
-        FixVec::new(x, y)
+        IntPoint::new(x as i32, y as i32)
     }
+
+    fn snap_to_best(p: IntPoint, seg0: &XSegment, seg1: &XSegment) -> IntPoint {
+        if p.x != 0 && p.y != 0 {
+            let dx = p.x.signum();
+            let dy = p.y.signum();
+
+            let points = [
+                p,
+                IntPoint::new(p.x, p.y + dy),
+                IntPoint::new(p.x + dx, p.y),
+                IntPoint::new(p.x + dx, p.y + dy)
+            ];
+            Self::snap_to_points(&points, seg0, seg1)
+        } else if p.x == 0 && p.y == 0 {
+            let points = [
+                IntPoint::new(p.x + 1, p.y - 1),
+                IntPoint::new(p.x + 1, p.y),
+                IntPoint::new(p.x + 1, p.y + 1),
+                IntPoint::new(p.x - 1, p.y - 1),
+                IntPoint::new(p.x - 1, p.y),
+                IntPoint::new(p.x - 1, p.y + 1),
+                IntPoint::new(p.x, p.y - 1),
+                p,
+                IntPoint::new(p.x, p.y + 1)
+            ];
+            Self::snap_to_points(&points, seg0, seg1)
+        } else if p.x == 0 {
+            let dy = p.y.signum();
+            let points = [
+                IntPoint::new(p.x + 1, p.y + dy),
+                IntPoint::new(p.x - 1, p.y + dy),
+                IntPoint::new(p.x + 1, p.y),
+                IntPoint::new(p.x - 1, p.y),
+                IntPoint::new(p.x, p.y + dy),
+                p
+            ];
+            Self::snap_to_points(&points, seg0, seg1)
+        } else {
+            let dx = p.x.signum();
+            let points = [
+                IntPoint::new(p.x + dx, p.y + 1),
+                IntPoint::new(p.x + dx, p.y - 1),
+                IntPoint::new(p.x, p.y + 1),
+                IntPoint::new(p.x, p.y - 1),
+                IntPoint::new(p.x + dx, p.y),
+                p
+            ];
+            Self::snap_to_points(&points, seg0, seg1)
+        }
+    }
+
+    fn snap_to_points(points: &[IntPoint], seg0: &XSegment, seg1: &XSegment) -> IntPoint {
+        let mut best = AreaPoint { area: i64::MAX, point: IntPoint::ZERO };
+        for &p in points {
+            let s = Self::area(p, seg0, seg1);
+            if s < best.area {
+                best.area = s;
+                best.point = p;
+            }
+        }
+        return best.point;
+    }
+
+    fn area(point: IntPoint, seg0: &XSegment, seg1: &XSegment) -> i64 {
+        let s0 = Triangle::area_two_point(point, seg0.a, seg0.b);
+        let s1 = Triangle::area_two_point(point, seg1.a, seg1.b);
+        s0 + s1
+    }
+}
+
+struct AreaPoint {
+    area: i64,
+    point: IntPoint,
 }
