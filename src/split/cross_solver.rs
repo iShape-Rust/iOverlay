@@ -19,7 +19,7 @@ pub struct ScanCrossSolver;
 impl ScanCrossSolver {
     pub(super) fn is_valid_scan(scan: &XSegment, this: &XSegment) -> bool {
         let is_outdated = scan.b < this.a;
-        let is_behind = scan.is_less(this);
+        let is_behind = scan < this;
 
         !is_outdated && is_behind
     }

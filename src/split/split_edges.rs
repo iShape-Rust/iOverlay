@@ -30,7 +30,7 @@ impl SplitEdges for Vec<ShapeEdge> {
             is_list = matches!(solver, Solver::List) || matches!(solver, Solver::Auto) && self.len() < 1_000 || is_small_range;
         }
 
-        let store = EdgeStore::new(&self, 8);
+        let store = EdgeStore::new(&self, 16);
 
         if is_list {
             let mut solver = SplitSolver { store, scan_store: ScanSplitList::new(self.len()) };
@@ -168,18 +168,18 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
         let this_rt = ShapeEdge { x_segment: XSegment { a: p, b: this_edge.x_segment.b }, count: this_edge.count };
 
-        debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+        debug_assert!(this_lt.x_segment < this_rt.x_segment);
 
         let scan_lt = ShapeEdge { x_segment: XSegment { a: scan_edge.x_segment.a, b: p }, count: scan_edge.count };
         let scan_rt = ShapeEdge { x_segment: XSegment { a: p, b: scan_edge.x_segment.b }, count: scan_edge.count };
 
-        debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
-
-        let lt_this = self.store.add_and_merge(this_lt);
-        self.store.add_and_merge(this_rt);
+        debug_assert!(scan_lt.x_segment < scan_rt.x_segment);
 
         self.store.add_and_merge(scan_lt);
         self.store.add_and_merge(scan_rt);
+
+        self.store.add_and_merge(this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
 
         debug_assert!(this_lt.x_segment.a.x <= p.x);
 
@@ -200,18 +200,18 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
         let this_rt = ShapeEdge::create_and_validate(p, this_edge.x_segment.b, this_edge.count);
 
-        debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+        debug_assert!(this_lt.x_segment < this_rt.x_segment);
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, p, scan_edge.count);
         let scan_rt = ShapeEdge::create_and_validate(p, scan_edge.x_segment.b, scan_edge.count);
 
-        debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
-
-        let lt_this = self.store.add_and_merge(this_lt);
-        self.store.add_and_merge(this_rt);
+        debug_assert!(scan_lt.x_segment < scan_rt.x_segment);
 
         self.store.add_and_merge(scan_lt);
         self.store.add_and_merge(scan_rt);
+
+        self.store.add_and_merge(this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
 
         debug_assert!(this_lt.x_segment.a.x <= p.x);
 
@@ -233,10 +233,10 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
         let this_rt = ShapeEdge { x_segment: XSegment { a: p, b: this_edge.x_segment.b }, count: this_edge.count };
 
-        debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+        debug_assert!(this_lt.x_segment < this_rt.x_segment);
 
-        let lt_this = self.store.add_and_merge(this_lt);
         _ = self.store.add_and_merge(this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
 
         if ScanCrossSolver::is_valid_scan(&scan, &this_lt.x_segment) {
             self.scan_store.insert(scan);
@@ -252,10 +252,10 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
         let this_rt = ShapeEdge::create_and_validate(p, this_edge.x_segment.b, this_edge.count);
 
-        debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
+        debug_assert!(this_lt.x_segment < this_rt.x_segment);
 
-        let lt_this = self.store.add_and_merge(this_lt);
         _ = self.store.add_and_merge(this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
 
         if ScanCrossSolver::is_valid_scan(&scan, &this_lt.x_segment) {
             self.scan_store.insert(scan);
@@ -272,7 +272,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let scan_lt = ShapeEdge { x_segment: XSegment { a: scan_edge.x_segment.a, b: p }, count: scan_edge.count };
         let scan_rt = ShapeEdge { x_segment: XSegment { a: p, b: scan_edge.x_segment.b }, count: scan_edge.count };
 
-        debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
+        debug_assert!(scan_lt.x_segment < scan_rt.x_segment);
 
         self.store.add_and_merge(scan_lt);
         self.store.add_and_merge(scan_rt);
@@ -280,7 +280,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         if this_edge.x_segment.a.x < p.x {
             // this < p
             self.scan_store.insert(scan_lt.x_segment);
-        } else if scan_rt.x_segment.is_less(&this_edge.x_segment) {
+        } else if scan_rt.x_segment < this_edge.x_segment {
             // scanRt < this
             self.scan_store.insert(scan_rt.x_segment);
         }
@@ -294,7 +294,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, p, scan_edge.count);
         let scan_rt = ShapeEdge::create_and_validate(p, scan_edge.x_segment.b, scan_edge.count);
 
-        debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
+        debug_assert!(scan_lt.x_segment < scan_rt.x_segment);
 
         self.store.add_and_merge(scan_lt);
         self.store.add_and_merge(scan_rt);
@@ -302,7 +302,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         if this_edge.x_segment.a.x < p.x {
             // this < p
             self.scan_store.insert(scan_lt.x_segment);
-        } else if scan_rt.x_segment.is_less(&this_edge.x_segment) {
+        } else if scan_rt.x_segment < this_edge.x_segment {
             // scanRt < this
             self.scan_store.insert(scan_rt.x_segment);
         }

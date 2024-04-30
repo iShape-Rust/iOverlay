@@ -47,20 +47,28 @@ impl XSegment {
             Triangle::is_clockwise_point(other.a, other.b, self.a)
         }
     }
+}
 
-    pub fn order(&self, other: &Self) -> Ordering {
-        if self.is_less(other) {
+impl PartialOrd for XSegment {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for XSegment {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.a == other.a {
+            if self.b == other.b {
+                Ordering::Equal
+            } else if self.b < other.b {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        } else if self.a < other.a {
             Ordering::Less
         } else {
             Ordering::Greater
-        }
-    }
-
-    pub fn is_less(&self, other: &Self) -> bool {
-        if self.a == other.a {
-            self.b < other.b
-        } else {
-            self.a < other.a
         }
     }
 }

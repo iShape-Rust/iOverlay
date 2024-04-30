@@ -680,6 +680,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(120, OverlayRule::Subject, Solver::Tree);
+        debug_execute(3, OverlayRule::Subject, Solver::List);
     }
 }

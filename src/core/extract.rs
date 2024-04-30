@@ -5,7 +5,6 @@ use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::util::EMPTY_INDEX;
-use crate::x_order::XOrder;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
@@ -56,37 +55,38 @@ impl OverlayGraph {
         let mut path = IntPath::new();
         let mut next = index;
 
-        let mut link = self.links[index];
+        unsafe {
+            let mut link = self.links.get_unchecked(index);
 
-        let mut a = link.a;
-        let mut b = link.b;
+            let mut a = link.a;
+            let mut b = link.b;
 
-        // Find a closed tour
-        loop {
-            path.push(a.point);
-            let node = &self.nodes[b.id];
+            // Find a closed tour
+            loop {
+                path.push(a.point);
+                let node = self.nodes.get_unchecked(b.id);
 
-            if node.indices.len() == 2 {
-                next = node.other(next);
-            } else {
-                let is_fill_top = overlay_rule.is_fill_top(link.fill);
-                let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
-                next = self.find_nearest_link_to(a, b, next, is_cw, visited);
+                if node.indices.len() == 2 {
+                    next = node.other(next);
+                } else {
+                    let is_fill_top = overlay_rule.is_fill_top(link.fill);
+                    let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
+                    next = self.find_nearest_link_to(a, b, next, is_cw, visited);
+                }
+
+                link = self.links.get_unchecked(next);
+                a = b;
+                b = link.other(b);
+
+                *visited.get_unchecked_mut(next) = true;
+
+                if next == index {
+                    break;
+                }
             }
 
-            link = self.links[next];
-            a = b;
-            b = link.other(b);
-
-            visited[next] = true;
-
-            if next == index {
-                break;
-            }
+            *visited.get_unchecked_mut(index) = true;
         }
-
-        visited[index] = true;
-
         path
     }
 }
@@ -117,7 +117,7 @@ impl JoinHoles for Vec<IntShape> {
             let p = holes[i][0];
             i_points.push(IdPoint::new(i, p));
         }
-        i_points.sort_by(|a, b| a.point.order_by_x(b.point));
+        i_points.sort_by(|a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
@@ -128,7 +128,7 @@ impl JoinHoles for Vec<IntShape> {
             segments.append(&mut hole_floors);
         }
 
-        segments.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
+        segments.sort_by(|a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), i_points, segments);
 

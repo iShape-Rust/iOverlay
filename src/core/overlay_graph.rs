@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
@@ -45,11 +44,7 @@ impl OverlayGraph {
             });
         }
 
-        end_bs.sort_unstable_by(|a, b| if a.point < b.point {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        });
+        end_bs.sort_by(|a, b| a.point.cmp(&b.point));
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(2 * n);
         let mut links: Vec<OverlayLink> = segments
@@ -143,36 +138,38 @@ impl OverlayGraph {
         in_clockwise: bool,
         visited: &[bool],
     ) -> usize {
-        let node = &self.nodes[center.id];
+        unsafe {
+            let node = &self.nodes.get_unchecked(center.id);
 
-        let (index, value) = if let Some(result) = node.indices.iter().enumerate().find(|&(_index, &val)| val != ignore && !visited[val]) {
-            (result.0, *result.1)
-        } else {
-            return EMPTY_INDEX;
-        };
+            let (index, value) = if let Some(result) = node.indices.iter().enumerate().find(|&(_index, &val)| val != ignore && !visited[val]) {
+                (result.0, *result.1)
+            } else {
+                return EMPTY_INDEX;
+            };
 
-        let mut i = index + 1;
-        let mut min_index = value;
+            let mut i = index + 1;
+            let mut min_index = value;
 
-        let mut min_vec = self.links[min_index].other(center).point.subtract(center.point);
-        let v0 = target.point.subtract(center.point); // base vector
+            let mut min_vec = self.links[min_index].other(center).point.subtract(center.point);
+            let v0 = target.point.subtract(center.point); // base vector
 
-        // compare minVec with the rest of the vectors
+            // compare minVec with the rest of the vectors
 
-        while i < node.indices.len() {
-            let j = node.indices[i];
-            if !visited[j] && ignore != j {
-                let vj = self.links[j].other(center).point.subtract(center.point);
+            while i < node.indices.len() {
+                let j = *node.indices.get_unchecked(i);
+                if !visited.get_unchecked(j) && ignore != j {
+                    let vj = self.links.get_unchecked(j).other(center).point.subtract(center.point);
 
-                if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
-                    min_vec = vj;
-                    min_index = j;
+                    if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
+                        min_vec = vj;
+                        min_index = j;
+                    }
                 }
+                i += 1
             }
-            i += 1
-        }
 
-        min_index
+            min_index
+        }
     }
 
     pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> usize {
@@ -247,8 +244,10 @@ trait Size {
 impl Size for Vec<Segment> {
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        while i < self.len() && self[i].seg.a == point {
-            i += 1;
+        unsafe {
+            while i < self.len() && self.get_unchecked(i).seg.a == point {
+                i += 1;
+            }
         }
         i - index
     }
@@ -257,8 +256,10 @@ impl Size for Vec<Segment> {
 impl Size for Vec<End> {
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        while i < self.len() && self[i].point == point {
-            i += 1;
+        unsafe {
+            while i < self.len() && self.get_unchecked(i).point == point {
+                i += 1;
+            }
         }
         i - index
     }

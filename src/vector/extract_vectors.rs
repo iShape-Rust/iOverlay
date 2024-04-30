@@ -6,7 +6,6 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
 use crate::util::EMPTY_INDEX;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
-use crate::x_order::XOrder;
 
 impl OverlayGraph {
     pub fn extract_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
@@ -102,7 +101,7 @@ impl JoinHoles for Vec<VectorShape> {
             let p = holes[i][0].a;
             i_points.push(IdPoint::new(i, p));
         }
-        i_points.sort_by(|a, b| a.point.order_by_x(b.point));
+        i_points.sort_by(|a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
@@ -113,7 +112,7 @@ impl JoinHoles for Vec<VectorShape> {
             segments.append(&mut hole_floors);
         }
 
-        segments.sort_by(|a, b| a.x_segment.a.order_by_x(b.x_segment.a));
+        segments.sort_by(|a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), i_points, segments);
 

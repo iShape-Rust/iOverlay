@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use i_tree::node::EMPTY_REF;
 use i_tree::tree::Tree;
 use crate::split::shape_count::ShapeCount;
@@ -20,13 +21,16 @@ impl EdgeSubTree {
 
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment == *x_segment {
-                return index;
-            }
-            if x_segment.is_less(&node.value.x_segment) {
-                index = node.left;
-            } else {
-                index = node.right
+            match node.value.x_segment.cmp(x_segment) {
+                Ordering::Equal => {
+                    return index;
+                }
+                Ordering::Less => {
+                    index = node.right;
+                }
+                Ordering::Greater => {
+                    index = node.left;
+                }
             }
         }
 
@@ -38,17 +42,18 @@ impl EdgeSubTree {
         let mut index = self.tree.root;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment == *x_segment {
-                return index;
-            }
-
-            let is_left = x_segment.is_less(&node.value.x_segment);
-            if is_left {
-                p_index = index;
-                index = node.left;
-            } else {
-                p_index = index;
-                index = node.right;
+            match node.value.x_segment.cmp(x_segment) {
+                Ordering::Equal => {
+                    return index;
+                }
+                Ordering::Less => {
+                    p_index = index;
+                    index = node.left;
+                }
+                Ordering::Greater => {
+                    p_index = index;
+                    index = node.right;
+                }
             }
         }
 
@@ -63,7 +68,7 @@ impl EdgeSubTree {
         let mut result = EMPTY_REF;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment.is_less(&x_segment) {
+            if node.value.x_segment < x_segment {
                 result = index;
                 index = node.right;
             } else {
@@ -98,24 +103,27 @@ impl EdgeSubTree {
         let mut is_left = false;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment == edge.x_segment {
-                let count = node.value.count.add(edge.count);
-                return if count.is_empty() {
-                    _ = self.tree.delete_index(index);
-                    EMPTY_REF
-                } else {
-                    self.tree.mut_node(index).value.count = count;
-                    index
-                };
-            }
-
-            is_left = edge.x_segment.is_less(&node.value.x_segment);
-            if is_left {
-                p_index = index;
-                index = node.left;
-            } else {
-                p_index = index;
-                index = node.right;
+            match edge.x_segment.cmp(&node.value.x_segment) {
+                Ordering::Equal => {
+                    let count = node.value.count.add(edge.count);
+                    return if count.is_empty() {
+                        _ = self.tree.delete_index(index);
+                        EMPTY_REF
+                    } else {
+                        self.tree.mut_node(index).value.count = count;
+                        index
+                    };
+                }
+                Ordering::Less => {
+                    p_index = index;
+                    index = node.left;
+                    is_left = true;
+                }
+                Ordering::Greater => {
+                    p_index = index;
+                    index = node.right;
+                    is_left = false;
+                }
             }
         }
 

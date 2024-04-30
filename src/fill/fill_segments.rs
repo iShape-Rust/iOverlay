@@ -62,7 +62,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
             }
 
             if x_buf.len() > 1 {
-                x_buf.sort_by(|a, b| a.order_by_y(b));
+                x_buf.sort_by(|a, b| a.y.cmp(&b.y));
             }
 
             let mut j = 0;
@@ -144,16 +144,6 @@ impl Segment {
 impl PGroup {
     fn order_by_angle(&self, other: &Self, center: IntPoint) -> Ordering {
         if Triangle::is_clockwise_point(center, other.p, self.p) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
-    }
-}
-
-impl YGroup {
-    fn order_by_y(&self, other: &Self) -> Ordering {
-        if self.y < other.y {
             Ordering::Less
         } else {
             Ordering::Greater

@@ -40,10 +40,6 @@ impl PartialOrd for ShapeEdge {
 
 impl Ord for ShapeEdge {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.x_segment.is_less(&other.x_segment) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
+        self.x_segment.cmp(&other.x_segment)
     }
 }

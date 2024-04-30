@@ -145,7 +145,7 @@ impl Overlay {
 
     fn prepare_segments(&self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
         let mut sorted_list = self.edges.clone();
-        sorted_list.sort_by(|a, b| a.x_segment.order(&b.x_segment));
+        sorted_list.sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
 
         let mut buffer = Vec::with_capacity(sorted_list.len());
 
@@ -246,7 +246,7 @@ impl Filter for Vec<Segment> {
         }
 
         if has_empty {
-            self.sort_by(|a, b| a.seg.order(&b.seg));
+            self.sort_by(|a, b| a.seg.cmp(&b.seg));
         }
     }
 }
