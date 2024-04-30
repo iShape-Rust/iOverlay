@@ -2,10 +2,9 @@ use crate::util::{Int, SwapRemoveIndex};
 use crate::split::cross_solver::ScanCrossSolver;
 use crate::x_segment::XSegment;
 use crate::split::scan_store::{CrossSegment, ScanSplitStore};
-use crate::split::version_segment::VersionSegment;
 
 pub(super) struct ScanSplitList {
-    buffer: Vec<VersionSegment>,
+    buffer: Vec<XSegment>,
 }
 
 impl ScanSplitList {
@@ -20,17 +19,17 @@ impl ScanSplitStore for ScanSplitList {
         while i < self.buffer.len() {
             let scan = &self.buffer[i];
 
-            let is_valid = ScanCrossSolver::is_valid_scan(&scan.x_segment, &this);
+            let is_valid = ScanCrossSolver::is_valid_scan(&scan, &this);
             if !is_valid {
                 self.buffer.swap_remove_index(i);
                 continue;
             }
 
             // order is important! this x scan
-            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan.x_segment) {
-                let index = scan.index.clone();
+            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan) {
+                let scan = scan.clone();
                 self.buffer.swap_remove_index(i);
-                return Some(CrossSegment { index, cross });
+                return Some(CrossSegment { other: scan, cross });
             }
 
             i += 1
@@ -39,7 +38,7 @@ impl ScanSplitStore for ScanSplitList {
         None
     }
 
-    fn insert(&mut self, segment: VersionSegment) {
+    fn insert(&mut self, segment: XSegment) {
         self.buffer.push(segment);
     }
 

@@ -3,13 +3,13 @@ use crate::util::SwapRemoveIndex;
 use crate::x_segment::XSegment;
 use crate::line_range::LineRange;
 use crate::split::cross_solver::ScanCrossSolver;
+use crate::split::remove_x_segment::RemoveXSegment;
 use crate::split::scan_store::{CrossSegment, ScanSplitStore};
-use crate::split::version_segment::{RemoveVersionSegment, VersionSegment};
 
 #[derive(Debug, Clone)]
 struct IntervalNode {
     range: LineRange,
-    list: Vec<VersionSegment>,
+    list: Vec<XSegment>,
 }
 
 impl IntervalNode {
@@ -75,12 +75,12 @@ impl ScanSplitTree {
         nodes
     }
 
-    fn remove(&mut self, segment: &VersionSegment, scan_pos: IntPoint) {
+    fn remove(&mut self, segment: &XSegment, scan_pos: IntPoint) {
         // same logic as for insert but now we remove
 
         let mut s = 1 << self.power;
         let mut i = s - 1;
-        let range = segment.x_segment.y_range();
+        let range = segment.y_range();
 
         let mut early_out = false;
 
@@ -183,18 +183,17 @@ impl ScanSplitTree {
         while j < list.len() {
             let scan = &list[j];
 
-            let is_valid = ScanCrossSolver::is_valid_scan(&scan.x_segment, &this);
+            let is_valid = ScanCrossSolver::is_valid_scan(scan, &this);
             if !is_valid {
                 list.swap_remove_index(j);
                 continue;
             }
 
             // order is important! this * scan
-            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan.x_segment) {
-                let index = scan.index;
-                let segment = scan.clone();
-                self.remove(&segment, this.a);
-                return Some(CrossSegment { index, cross });
+            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan) {
+                let scan = scan.clone();
+                self.remove(&scan, this.a);
+                return Some(CrossSegment { other: scan, cross });
             }
             j += 1;
         }
@@ -272,10 +271,10 @@ impl ScanSplitStore for ScanSplitTree {
         return None;
     }
 
-    fn insert(&mut self, segment: VersionSegment) {
+    fn insert(&mut self, segment: XSegment) {
         let mut s = 1 << self.power;
         let mut i = s - 1;
-        let range = segment.x_segment.y_range();
+        let range = segment.y_range();
 
         let mut early_out = false;
 
@@ -422,8 +421,6 @@ mod tests {
     use crate::line_range::LineRange;
     use crate::split::scan_tree::ScanSplitTree;
     use crate::split::scan_store::ScanSplitStore;
-    use crate::split::version_index::{DualIndex, VersionedIndex};
-    use crate::split::version_segment::VersionSegment;
 
     #[test]
     fn test_0() {
@@ -441,7 +438,7 @@ mod tests {
     fn test_02() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
         let x_segment = XSegment { a: IntPoint::new(0, 1), b: IntPoint::new(0, 127) };
-        tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
+        tree.insert(x_segment);
 
 
         assert_eq!(true, !tree.nodes[0].list.is_empty());
@@ -471,7 +468,7 @@ mod tests {
     fn test_03() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
         let x_segment = XSegment { a: IntPoint::new(0, 16), b: IntPoint::new(0, 112) };
-        tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
+        tree.insert(x_segment);
 
 
         assert_eq!(true, tree.nodes[0].list.is_empty());
@@ -501,7 +498,7 @@ mod tests {
     fn test_04() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
         let x_segment = XSegment { a: IntPoint::new(0, 17), b: IntPoint::new(0, 111) };
-        tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
+        tree.insert(x_segment);
 
 
         assert_eq!(true, tree.nodes[0].list.is_empty());
@@ -531,7 +528,7 @@ mod tests {
     fn test_05() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
         let x_segment = XSegment { a: IntPoint::new(0, 32), b: IntPoint::new(0, 96) };
-        tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
+        tree.insert(x_segment);
 
 
         assert_eq!(true, tree.nodes[0].list.is_empty());
@@ -561,7 +558,7 @@ mod tests {
     fn test_06() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: 0, max: 128 }, 3);
         let x_segment = XSegment { a: IntPoint::new(0, 33), b: IntPoint::new(0, 95) };
-        tree.insert(VersionSegment { index: VersionedIndex::EMPTY, x_segment });
+        tree.insert(x_segment);
 
 
         assert_eq!(true, tree.nodes[0].list.is_empty());
@@ -590,18 +587,14 @@ mod tests {
     #[test]
     fn test_07() {
         let mut tree = ScanSplitTree::with_power(LineRange { min: -8, max: 9 }, 3);
-        let version = VersionedIndex { version: 0, index: DualIndex::EMPTY };
 
         let a0 = IntPoint::new(0, -6);
         let b0 = IntPoint::new(8, 0);
         let a1 = IntPoint::new(0, 3);
         let b1 = IntPoint::new(8, 8);
 
-        let vs = VersionSegment { index: version.clone(), x_segment: XSegment { a: a0, b: b0 } };
-        let xs = XSegment { a: a1, b: b1 };
-
-        tree.insert(vs);
-        let r1 = tree.intersect_and_remove_other(xs);
+        tree.insert(XSegment { a: a0, b: b0 });
+        let r1 = tree.intersect_and_remove_other(XSegment { a: a1, b: b1 });
 
         assert_eq!(true, r1.is_none());
         assert_eq!(true, tree.count() > 0)
@@ -654,15 +647,11 @@ mod tests {
         let range = range(&test_set);
         let mut tree = ScanSplitTree::new(range, test_set.len());
 
-        let mut i = 0;
         for s in test_set.iter() {
             if let Some(_res) = &tree.intersect_and_remove_other(s.clone()) {
                 result += 1;
             } else {
-                let index = VersionedIndex { version: i, index: DualIndex::EMPTY };
-                let v = VersionSegment { index, x_segment: s.clone() };
-                tree.insert(v);
-                i += 1;
+                tree.insert(s.clone());
             }
         }
 

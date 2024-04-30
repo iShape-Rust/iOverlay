@@ -1,17 +1,16 @@
 use i_float::point::IntPoint;
+use i_tree::node::EMPTY_REF;
 use crate::fill::segment::Segment;
 use crate::x_segment::XSegment;
 use crate::core::solver::Solver;
 use crate::split::shape_edge::ShapeEdge;
 use crate::line_range::LineRange;
 use crate::split::cross_solver::{CrossResult, ScanCrossSolver};
+use crate::split::edge_store::{EdgeStore, StoreIndex};
 use crate::split::scan_list::ScanSplitList;
 use crate::split::scan_tree::ScanSplitTree;
 use crate::split::shape_count::ShapeCount;
-use crate::split::split_range_list::SplitRangeList;
 use crate::split::scan_store::ScanSplitStore;
-use crate::split::version_index::{DualIndex, VersionedIndex};
-use crate::split::version_segment::VersionSegment;
 
 pub(crate) trait SplitEdges {
     fn split(&mut self, range: LineRange, solver: Solver) -> Vec<Segment>;
@@ -31,13 +30,13 @@ impl SplitEdges for Vec<ShapeEdge> {
             is_list = matches!(solver, Solver::List) || matches!(solver, Solver::Auto) && self.len() < 1_000 || is_small_range;
         }
 
-        let list = SplitRangeList::new(self);
+        let store = EdgeStore::new(&self, 8);
 
         if is_list {
-            let mut solver = SplitSolver { list, scan_store: ScanSplitList::new(self.len()) };
+            let mut solver = SplitSolver { store, scan_store: ScanSplitList::new(self.len()) };
             solver.solve()
         } else {
-            let mut solver = SplitSolver { list, scan_store: ScanSplitTree::new(range, self.len()) };
+            let mut solver = SplitSolver { store, scan_store: ScanSplitTree::new(range, self.len()) };
             solver.solve()
         }
     }
@@ -46,7 +45,7 @@ impl SplitEdges for Vec<ShapeEdge> {
 
 struct SplitSolver<S> {
     scan_store: S,
-    list: SplitRangeList,
+    store: EdgeStore,
 }
 
 impl<S: ScanSplitStore> SplitSolver<S> {
@@ -56,63 +55,57 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         while need_to_fix {
             need_to_fix = false;
 
-            let mut this = self.list.first();
+            let mut this = self.store.first(0);
 
-            while this.is_not_nil() {
-                let this_edge = self.list.edge(this.index);
+            while this.node != EMPTY_REF {
+                let this_edge = self.store.edge(this);
 
                 if this_edge.count.is_empty() {
-                    this = self.list.remove_and_next(this.index);
+                    this = self.store.remove_and_next(this);
                     continue;
                 }
 
-                let cross_result = if let Some(cross) = self.scan_store.intersect_and_remove_other(this_edge.x_segment) {
+                let scan_result = if let Some(cross) = self.scan_store.intersect_and_remove_other(this_edge.x_segment) {
                     cross
                 } else {
-                    self.scan_store.insert(VersionSegment { index: this, x_segment: this_edge.x_segment });
-                    this = self.list.next(this.index);
+                    self.scan_store.insert(this_edge.x_segment);
+                    this = self.store.next(this);
                     continue;
                 };
 
-                let other = cross_result.index;
+                let other = self.store.find(&scan_result.other);
 
-                let scan_edge = if let Some(edge) = self.list.validate_edge(other) {
-                    edge
-                } else {
+                if other.node == EMPTY_REF {
                     continue;
-                };
+                }
 
-                let this_edge = this_edge.clone();
-
-                match cross_result.cross {
+                match scan_result.cross {
                     CrossResult::PureExact(point) => {
-                        this = self.pure_exact(point, &this_edge, this.index, &scan_edge, other.index);
+                        this = self.pure_exact(point, &this_edge, other);
                     }
                     CrossResult::PureRound(point) => {
-                        this = self.pure_round(point, &this_edge, this.index, &scan_edge, other.index);
+                        this = self.pure_round(point, &this_edge, other);
                         need_to_fix = true
                     }
                     CrossResult::OtherEndExact(point) => {
-                        this = self.divide_this_exact(point, &this_edge, this.index, &scan_edge, other);
+                        this = self.divide_this_exact(point, &this_edge, this, other);
                     }
                     CrossResult::OtherEndRound(point) => {
-                        this = self.divide_this_round(point, &this_edge, this.index, &scan_edge, other);
+                        this = self.divide_this_round(point, &this_edge, this, other);
                         need_to_fix = true;
                     }
                     CrossResult::TargetEndExact(point) => {
                         self.divide_scan_exact(
                             point,
                             &this_edge,
-                            &scan_edge,
-                            other.index,
+                            other,
                         );
                     }
                     CrossResult::TargetEndRound(point) => {
                         self.divide_scan_round(
                             point,
                             &this_edge,
-                            &scan_edge,
-                            other.index,
+                            other,
                         );
                         need_to_fix = true;
                     }
@@ -123,19 +116,21 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                         // or
                         // scan.b inside this
 
-                        if this_edge.x_segment.b == scan_edge.x_segment.b {
+                        let scan = &self.store.get(other).x_segment;
+
+                        if this_edge.x_segment.b == scan.b {
                             // this.a inside scan(other)
-                            this = self.divide_scan_overlap(&this_edge, this.index, &scan_edge, other.index);
+                            this = self.divide_scan_overlap(&this_edge, other);
 
                             // scan.a < this.a
-                            debug_assert!(scan_edge.x_segment.a < this_edge.x_segment.a);
+                            debug_assert!(scan.a < this_edge.x_segment.a);
                         } else {
                             // scan.b inside this
 
-                            this = self.divide_this_overlap(&this_edge, this.index, &scan_edge, other.index);
+                            this = self.divide_this_overlap(&this_edge, this, other);
 
                             // scan.b < this.b
-                            debug_assert!(scan_edge.x_segment.b < this_edge.x_segment.b);
+                            debug_assert!(scan.b < this_edge.x_segment.b);
                         }
                     }
                     CrossResult::Overlap => {
@@ -145,12 +140,14 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                         // or
                         // partly overlap each other
 
-                        if scan_edge.x_segment.b < this_edge.x_segment.b {
+                        let scan = &self.store.get(other).x_segment;
+
+                        if scan.b < this_edge.x_segment.b {
                             // partly overlap
-                            this = self.divide_both_partly_overlap(&this_edge, this.index, &scan_edge, other.index)
+                            this = self.divide_both_partly_overlap(&this_edge, other)
                         } else {
                             // this inside scan
-                            this = self.divide_scan_by_three(&this_edge, this.index, &scan_edge, other.index)
+                            this = self.divide_scan_by_three(&this_edge, this, other)
                         }
                     }
                 }
@@ -159,11 +156,14 @@ impl<S: ScanSplitStore> SplitSolver<S> {
             self.scan_store.clear();
         } // while
 
-        self.list.segments()
+        self.store.segments()
     }
 
-    fn pure_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn pure_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // classic middle intersection, no ends, overlaps etc
+
+        let scan_edge = self.store.get_and_remove(other);
+        self.store.remove(this_edge);
 
         let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
         let this_rt = ShapeEdge { x_segment: XSegment { a: p, b: this_edge.x_segment.b }, count: this_edge.count };
@@ -175,27 +175,27 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
         debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
-        let lt_this = self.list.add_and_merge(this, this_lt);
-        self.list.add_and_merge(this, this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
+        self.store.add_and_merge(this_rt);
 
-        let lt_scan = self.list.add_and_merge(other, scan_lt);
-        self.list.add_and_merge(other, scan_rt);
-
-        self.list.remove(this);
-        self.list.remove(other);
+        self.store.add_and_merge(scan_lt);
+        self.store.add_and_merge(scan_rt);
 
         debug_assert!(this_lt.x_segment.a.x <= p.x);
 
         debug_assert!(ScanCrossSolver::is_valid_scan(&scan_lt.x_segment, &this_lt.x_segment));
-        self.scan_store.insert(VersionSegment { index: lt_scan, x_segment: scan_lt.x_segment });
+        self.scan_store.insert(scan_lt.x_segment);
 
         debug_assert!(!ScanCrossSolver::is_valid_scan(&scan_rt.x_segment, &this_lt.x_segment));
 
         lt_this
     }
 
-    fn pure_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn pure_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // classic middle intersection, no ends, overlaps etc
+
+        let scan_edge = self.store.get_and_remove(other);
+        self.store.remove(this_edge);
 
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
         let this_rt = ShapeEdge::create_and_validate(p, this_edge.x_segment.b, this_edge.count);
@@ -207,182 +207,188 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
         debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
-        let lt_this = self.list.add_and_merge(this, this_lt);
-        self.list.add_and_merge(this, this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
+        self.store.add_and_merge(this_rt);
 
-        let lt_scan = self.list.add_and_merge(other, scan_lt);
-        let rt_scan = self.list.add_and_merge(other, scan_rt);
-
-        self.list.remove(this);
-        self.list.remove(other);
+        self.store.add_and_merge(scan_lt);
+        self.store.add_and_merge(scan_rt);
 
         debug_assert!(this_lt.x_segment.a.x <= p.x);
 
         if ScanCrossSolver::is_valid_scan(&scan_lt.x_segment, &this_lt.x_segment) {
-            self.scan_store.insert(VersionSegment { index: lt_scan, x_segment: scan_lt.x_segment });
+            self.scan_store.insert(scan_lt.x_segment);
         }
 
         if ScanCrossSolver::is_valid_scan(&scan_rt.x_segment, &this_lt.x_segment) {
-            self.scan_store.insert(VersionSegment { index: rt_scan, x_segment: scan_rt.x_segment });
+            self.scan_store.insert(scan_rt.x_segment);
         }
 
         lt_this
     }
 
-    fn divide_this_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, scan_ver: VersionedIndex) -> VersionedIndex {
+    fn divide_this_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
+        let scan = self.store.get(other).x_segment;
+        self.store.remove_index(this);
+
         let this_lt = ShapeEdge { x_segment: XSegment { a: this_edge.x_segment.a, b: p }, count: this_edge.count };
         let this_rt = ShapeEdge { x_segment: XSegment { a: p, b: this_edge.x_segment.b }, count: this_edge.count };
 
         debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
 
-        let lt_this = self.list.add_and_merge(this, this_lt);
-        _ = self.list.add_and_merge(lt_this.index, this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
+        _ = self.store.add_and_merge(this_rt);
 
-        self.list.remove(this);
-
-        if ScanCrossSolver::is_valid_scan(&scan_edge.x_segment, &this_lt.x_segment) {
-            self.scan_store.insert(VersionSegment { index: scan_ver, x_segment: scan_edge.x_segment });
+        if ScanCrossSolver::is_valid_scan(&scan, &this_lt.x_segment) {
+            self.scan_store.insert(scan);
         }
 
         lt_this
     }
 
-    fn divide_this_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, scan_ver: VersionedIndex) -> VersionedIndex {
+    fn divide_this_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
+        let scan = self.store.get(other).x_segment;
+        self.store.remove_index(this);
+
         let this_lt = ShapeEdge::create_and_validate(this_edge.x_segment.a, p, this_edge.count);
         let this_rt = ShapeEdge::create_and_validate(p, this_edge.x_segment.b, this_edge.count);
 
         debug_assert!(this_lt.x_segment.is_less(&this_rt.x_segment));
 
-        let lt_this = self.list.add_and_merge(this, this_lt);
-        _ = self.list.add_and_merge(lt_this.index, this_rt);
+        let lt_this = self.store.add_and_merge(this_lt);
+        _ = self.store.add_and_merge(this_rt);
 
-        self.list.remove(this);
-
-        if ScanCrossSolver::is_valid_scan(&scan_edge.x_segment, &this_lt.x_segment) {
-            self.scan_store.insert(VersionSegment { index: scan_ver, x_segment: scan_edge.x_segment });
+        if ScanCrossSolver::is_valid_scan(&scan, &this_lt.x_segment) {
+            self.scan_store.insert(scan);
         }
 
         lt_this
     }
 
-    fn divide_scan_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, scan_edge: &ShapeEdge, other: DualIndex) {
+    fn divide_scan_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) {
         // this segment-end divide scan(other) segment into 2 parts
+
+        let scan_edge = self.store.get_and_remove(other);
 
         let scan_lt = ShapeEdge { x_segment: XSegment { a: scan_edge.x_segment.a, b: p }, count: scan_edge.count };
         let scan_rt = ShapeEdge { x_segment: XSegment { a: p, b: scan_edge.x_segment.b }, count: scan_edge.count };
 
         debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
-        let new_scan_left = self.list.add_and_merge(other, scan_lt);
-        let new_scan_right = self.list.add_and_merge(other, scan_rt);
-
-        self.list.remove(other);
+        self.store.add_and_merge(scan_lt);
+        self.store.add_and_merge(scan_rt);
 
         if this_edge.x_segment.a.x < p.x {
             // this < p
-            self.scan_store.insert(VersionSegment { index: new_scan_left, x_segment: scan_lt.x_segment });
+            self.scan_store.insert(scan_lt.x_segment);
         } else if scan_rt.x_segment.is_less(&this_edge.x_segment) {
             // scanRt < this
-            self.scan_store.insert(VersionSegment { index: new_scan_right, x_segment: scan_rt.x_segment });
+            self.scan_store.insert(scan_rt.x_segment);
         }
     }
 
-    fn divide_scan_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, scan_edge: &ShapeEdge, other: DualIndex) {
+    fn divide_scan_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) {
         // this segment-end divide scan(other) segment into 2 parts
+
+        let scan_edge = self.store.get_and_remove(other);
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, p, scan_edge.count);
         let scan_rt = ShapeEdge::create_and_validate(p, scan_edge.x_segment.b, scan_edge.count);
 
         debug_assert!(scan_lt.x_segment.is_less(&scan_rt.x_segment));
 
-        let new_scan_left = self.list.add_and_merge(other, scan_lt);
-        let new_scan_right = self.list.add_and_merge(other, scan_rt);
-
-        self.list.remove(other);
+        self.store.add_and_merge(scan_lt);
+        self.store.add_and_merge(scan_rt);
 
         if this_edge.x_segment.a.x < p.x {
             // this < p
-            self.scan_store.insert(VersionSegment { index: new_scan_left, x_segment: scan_lt.x_segment });
+            self.scan_store.insert(scan_lt.x_segment);
         } else if scan_rt.x_segment.is_less(&this_edge.x_segment) {
             // scanRt < this
-            self.scan_store.insert(VersionSegment { index: new_scan_right, x_segment: scan_rt.x_segment });
+            self.scan_store.insert(scan_rt.x_segment);
         }
     }
 
-    fn divide_scan_overlap(&mut self, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn divide_scan_overlap(&mut self, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // this.b == scan.b and scan.a < this.a < scan.b
 
+        let scan_edge = self.store.get_and_remove(other);
+
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, this_edge.x_segment.a, scan_edge.count);
-        let merge = this_edge.count.add(scan_edge.count);
 
-        self.list.add_and_merge(other, scan_lt);
-        self.list.update_count(this, merge);
+        _ = self.store.add_and_merge(scan_lt);
+        // add scan_edge to this
+        let new_this = self.store.add_and_merge(ShapeEdge { x_segment: this_edge.x_segment, count: scan_edge.count });
 
-        self.list.remove(other);
 
-        self.list.next(this)
+        if new_this.node == EMPTY_REF {
+            self.store.find_equal_or_next(new_this.tree, &this_edge.x_segment)
+        } else {
+            self.store.next(new_this)
+        }
     }
 
-    fn divide_this_overlap(&mut self, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn divide_this_overlap(&mut self, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // this.a == scan.a and this.a < scan.b < this.b
+
+        let scan_edge = self.store.get(other);
 
         let merge = this_edge.count.add(scan_edge.count);
         let this_rt = ShapeEdge::create_and_validate(scan_edge.x_segment.b, this_edge.x_segment.b, this_edge.count);
 
-        let new_version = self.list.update_count(other, merge);
-        self.list.add_and_merge(other, this_rt);
+        self.store.update(other, merge);
+        self.store.add_and_merge(this_rt);
 
-        self.list.remove(this);
+        self.store.remove_index(this);
 
-        let ver_index = VersionedIndex { version: new_version, index: other };
-        self.scan_store.insert(VersionSegment { index: ver_index, x_segment: scan_edge.x_segment });
+        self.scan_store.insert(scan_edge.x_segment);
 
-        self.list.next(other)
+        let new_other = self.store.find(&scan_edge.x_segment);
+
+        self.store.next(new_other)
     }
 
-    fn divide_both_partly_overlap(&mut self, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn divide_both_partly_overlap(&mut self, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // scan.a < this.a < scan.b < this.b
+
+        let scan_edge = self.store.get_and_remove(other);
+        self.store.remove(this_edge);
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, this_edge.x_segment.a, scan_edge.count);
         let middle = ShapeEdge::create_and_validate(this_edge.x_segment.a, scan_edge.x_segment.b, scan_edge.count.add(this_edge.count));
         let this_rt = ShapeEdge::create_and_validate(scan_edge.x_segment.b, this_edge.x_segment.b, this_edge.count);
 
-        let lt = self.list.add_and_merge(other, scan_lt).index;
-        let md = self.list.add_and_merge(lt, middle);
-        self.list.add_and_merge(md.index, this_rt);
+        self.store.add_and_merge(scan_lt);
+        self.store.add_and_merge(this_rt);
+        let md = self.store.add_and_merge(middle);
 
-        self.list.remove(this);
-        self.list.remove(other);
+        self.scan_store.insert(middle.x_segment);
 
-        let mid_segment = VersionSegment { index: md, x_segment: middle.x_segment };
-        self.scan_store.insert(mid_segment);
-
-        self.list.next(md.index)
+        self.store.next(md)
     }
 
-    fn divide_scan_by_three(&mut self, this_edge: &ShapeEdge, this: DualIndex, scan_edge: &ShapeEdge, other: DualIndex) -> VersionedIndex {
+    fn divide_scan_by_three(&mut self, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // scan.a < this.a < this.b < scan.b
+
+        let scan_edge = self.store.get_and_remove(other);
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, this_edge.x_segment.a, scan_edge.count);
         let merge = this_edge.count.add(scan_edge.count);
         let scan_rt = ShapeEdge::create_and_validate(this_edge.x_segment.b, scan_edge.x_segment.b, scan_edge.count);
 
-        let new_version = self.list.update_count(this, merge);
+        self.store.update(this, merge);
 
-        self.list.add_and_merge(other, scan_lt);
-        self.list.add_and_merge(this, scan_rt);
+        self.store.add_and_merge(scan_lt);
+        self.store.add_and_merge(scan_rt);
 
-        self.list.remove(other);
+        let new_this = self.store.find(&this_edge.x_segment);
 
-        let ver_index = VersionedIndex { version: new_version, index: this };
-        let ver_segment = VersionSegment { index: ver_index, x_segment: this_edge.x_segment };
-        self.scan_store.insert(ver_segment);
+        self.scan_store.insert(this_edge.x_segment);
 
-        self.list.next(this)
+        self.store.next(new_this)
     }
 }
 
