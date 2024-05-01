@@ -1,15 +1,15 @@
 pub (crate) const EMPTY_INDEX: usize = usize::MAX;
 
-pub(crate) trait SwapRemoveIndex {
-    fn swap_remove_index(&mut self, index: usize);
+pub(crate) trait SwapRemoveIndex<T> {
+    fn swap_remove_index(&mut self, index: usize) -> T;
 }
 
-impl<T> SwapRemoveIndex for Vec<T> {
-    fn swap_remove_index(&mut self, index: usize) {
+impl<T> SwapRemoveIndex<T> for Vec<T> {
+    fn swap_remove_index(&mut self, index: usize) -> T {
         if index + 1 < self.len() {
-            self.swap_remove(index);
+            self.swap_remove(index)
         } else {
-            _ = self.pop()
+            self.pop().unwrap()
         }
     }
 }

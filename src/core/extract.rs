@@ -34,7 +34,10 @@ impl OverlayGraph {
             if i == EMPTY_INDEX {
                 j += 1;
             } else {
-                let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
+                let is_hole = unsafe {
+                    overlay_rule.is_fill_top(self.links.get_unchecked(i).fill)
+                };
+
                 let mut path = self.get_path(overlay_rule, i, &mut visited);
                 if path.validate(min_area, is_hole) {
                     if is_hole {
@@ -55,36 +58,41 @@ impl OverlayGraph {
         let mut path = IntPath::new();
         let mut next = index;
 
-        unsafe {
-            let mut link = self.links.get_unchecked(index);
+        let mut link = unsafe {
+            self.links.get_unchecked(index)
+        };
+        let mut a = link.a;
+        let mut b = link.b;
 
-            let mut a = link.a;
-            let mut b = link.b;
+        // Find a closed tour
+        loop {
+            path.push(a.point);
+            let node = unsafe {
+                self.nodes.get_unchecked(b.id)
+            };
 
-            // Find a closed tour
-            loop {
-                path.push(a.point);
-                let node = self.nodes.get_unchecked(b.id);
-
-                if node.indices.len() == 2 {
-                    next = node.other(next);
-                } else {
-                    let is_fill_top = overlay_rule.is_fill_top(link.fill);
-                    let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
-                    next = self.find_nearest_link_to(a, b, next, is_cw, visited);
-                }
-
-                link = self.links.get_unchecked(next);
-                a = b;
-                b = link.other(b);
-
-                *visited.get_unchecked_mut(next) = true;
-
-                if next == index {
-                    break;
-                }
+            if node.indices.len() == 2 {
+                next = node.other(next);
+            } else {
+                let is_fill_top = overlay_rule.is_fill_top(link.fill);
+                let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
+                next = self.find_nearest_link_to(a, b, next, is_cw, visited);
             }
+            link = unsafe {
+                self.links.get_unchecked(next)
+            };
+            a = b;
+            b = link.other(b);
 
+            unsafe {
+                *visited.get_unchecked_mut(next) = true;
+            }
+            if next == index {
+                break;
+            }
+        }
+
+        unsafe {
             *visited.get_unchecked_mut(index) = true;
         }
         path

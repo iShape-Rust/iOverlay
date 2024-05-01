@@ -27,8 +27,7 @@ impl ScanSplitStore for ScanSplitList {
 
             // order is important! this x scan
             if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan) {
-                let scan = scan.clone();
-                self.buffer.swap_remove_index(i);
+                let scan = self.buffer.swap_remove_index(i);
                 return Some(CrossSegment { other: scan, cross });
             }
 

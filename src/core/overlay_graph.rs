@@ -138,52 +138,63 @@ impl OverlayGraph {
         in_clockwise: bool,
         visited: &[bool],
     ) -> usize {
-        unsafe {
-            let node = &self.nodes.get_unchecked(center.id);
+        let node = unsafe {
+            self.nodes.get_unchecked(center.id)
+        };
 
-            let (index, value) = if let Some(result) = node.indices.iter().enumerate().find(|&(_index, &val)| val != ignore && !visited[val]) {
-                (result.0, *result.1)
-            } else {
-                return EMPTY_INDEX;
+        let (index, value) = if let Some(result) = node.indices.iter().enumerate().find(|&(_index, &val)| val != ignore && !visited[val]) {
+            (result.0, *result.1)
+        } else {
+            return EMPTY_INDEX;
+        };
+
+        let mut i = index + 1;
+        let mut min_index = value;
+
+        let mut min_vec = self.links[min_index].other(center).point.subtract(center.point);
+        let v0 = target.point.subtract(center.point); // base vector
+
+        // compare minVec with the rest of the vectors
+
+        while i < node.indices.len() {
+            let j = unsafe {
+                *node.indices.get_unchecked(i)
             };
+            let is_not_visited = unsafe {
+                !visited.get_unchecked(j)
+            };
+            if is_not_visited && ignore != j {
+                let link = unsafe { self.links.get_unchecked(j) };
+                let vj = link.other(center).point.subtract(center.point);
 
-            let mut i = index + 1;
-            let mut min_index = value;
-
-            let mut min_vec = self.links[min_index].other(center).point.subtract(center.point);
-            let v0 = target.point.subtract(center.point); // base vector
-
-            // compare minVec with the rest of the vectors
-
-            while i < node.indices.len() {
-                let j = *node.indices.get_unchecked(i);
-                if !visited.get_unchecked(j) && ignore != j {
-                    let vj = self.links.get_unchecked(j).other(center).point.subtract(center.point);
-
-                    if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
-                        min_vec = vj;
-                        min_index = j;
-                    }
+                if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
+                    min_vec = vj;
+                    min_index = j;
                 }
-                i += 1
             }
-
-            min_index
+            i += 1
         }
+
+        min_index
     }
 
     pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> usize {
-        let node = &self.nodes[node_index];
+        let node = unsafe {
+            self.nodes.get_unchecked(node_index)
+        };
+
         let mut j = EMPTY_INDEX;
         for &i in node.indices.iter() {
-            if !visited[i] {
+            let is_not_visited = unsafe { !visited.get_unchecked(i) };
+            if is_not_visited {
                 if j == EMPTY_INDEX {
                     j = i;
                 } else {
-                    let a = self.links[j].a.point;
-                    let bj = self.links[j].b.point;
-                    let bi = self.links[i].b.point;
-
+                    let (a, bi, bj) = unsafe {
+                        let link = self.links.get_unchecked(j);
+                        let bi = self.links[i].b.point;
+                        (link.a.point, bi, link.b.point)
+                    };
                     if Triangle::is_clockwise_point(a, bi, bj) {
                         j = i;
                     }
@@ -244,11 +255,10 @@ trait Size {
 impl Size for Vec<Segment> {
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        unsafe {
-            while i < self.len() && self.get_unchecked(i).seg.a == point {
-                i += 1;
-            }
+        while i < self.len() && self[i].seg.a == point {
+            i += 1;
         }
+
         i - index
     }
 }
@@ -256,11 +266,10 @@ impl Size for Vec<Segment> {
 impl Size for Vec<End> {
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        unsafe {
-            while i < self.len() && self.get_unchecked(i).point == point {
-                i += 1;
-            }
+        while i < self.len() && self[i].point == point {
+            i += 1;
         }
+
         i - index
     }
 }
