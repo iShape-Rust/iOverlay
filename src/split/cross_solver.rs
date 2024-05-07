@@ -17,6 +17,8 @@ pub enum CrossResult {
 pub struct ScanCrossSolver;
 
 impl ScanCrossSolver {
+
+    #[inline(always)]
     pub(super) fn is_valid_scan(scan: &XSegment, this: &XSegment) -> bool {
         let is_outdated = scan.b < this.a;
         let is_behind = scan < this;
@@ -145,6 +147,7 @@ impl ScanCrossSolver {
         Some(CrossResult::PureRound(IntPoint::new_fix_vec(p)))
     }
 
+    #[inline(always)]
     fn cross_point(a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> FixVec {
         // edges are not parallel
         // FixVec(Int64, Int64) where abs(x) and abs(y) < 2^30

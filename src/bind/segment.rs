@@ -11,6 +11,7 @@ pub struct IdSegment {
 }
 
 impl IdSegment {
+    #[inline(always)]
     pub fn new(id: usize, a: IntPoint, b: IntPoint) -> Self {
         Self {
             id,
@@ -20,6 +21,7 @@ impl IdSegment {
 }
 
 impl PartialEq<Self> for IdSegment {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
     }
@@ -28,12 +30,14 @@ impl PartialEq<Self> for IdSegment {
 impl Eq for IdSegment {}
 
 impl PartialOrd for IdSegment {
+    #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for IdSegment {
+    #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         if self.x_segment.is_under_segment(other.x_segment) {
             Ordering::Less

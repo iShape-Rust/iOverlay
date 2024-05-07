@@ -159,6 +159,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         self.store.segments()
     }
 
+    #[inline]
     fn pure_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // classic middle intersection, no ends, overlaps etc
 
@@ -191,6 +192,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
+    #[inline]
     fn pure_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // classic middle intersection, no ends, overlaps etc
 
@@ -226,6 +228,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
+    #[inline]
     fn divide_this_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
         let scan = self.store.get(other).x_segment;
         self.store.remove_index(this);
@@ -245,6 +248,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
+    #[inline]
     fn divide_this_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
         let scan = self.store.get(other).x_segment;
         self.store.remove_index(this);
@@ -264,6 +268,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         lt_this
     }
 
+    #[inline]
     fn divide_scan_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) {
         // this segment-end divide scan(other) segment into 2 parts
 
@@ -286,6 +291,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         }
     }
 
+    #[inline]
     fn divide_scan_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) {
         // this segment-end divide scan(other) segment into 2 parts
 
@@ -308,6 +314,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         }
     }
 
+    #[inline]
     fn divide_scan_overlap(&mut self, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // this.b == scan.b and scan.a < this.a < scan.b
@@ -328,6 +335,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         }
     }
 
+    #[inline]
     fn divide_this_overlap(&mut self, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // this.a == scan.a and this.a < scan.b < this.b
@@ -349,6 +357,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         self.store.next(new_other)
     }
 
+    #[inline]
     fn divide_both_partly_overlap(&mut self, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // scan.a < this.a < scan.b < this.b
@@ -369,6 +378,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         self.store.next(md)
     }
 
+    #[inline]
     fn divide_scan_by_three(&mut self, this_edge: &ShapeEdge, this: StoreIndex, other: StoreIndex) -> StoreIndex {
         // segments collinear
         // scan.a < this.a < this.b < scan.b
@@ -394,6 +404,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
 
 impl ShapeEdge {
+    #[inline(always)]
     fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }

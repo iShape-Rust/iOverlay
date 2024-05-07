@@ -8,6 +8,8 @@ pub(super) struct ScanSplitList {
 }
 
 impl ScanSplitList {
+
+    #[inline]
     pub(super) fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
@@ -37,10 +39,12 @@ impl ScanSplitStore for ScanSplitList {
         None
     }
 
+    #[inline]
     fn insert(&mut self, segment: XSegment) {
         self.buffer.push(segment);
     }
 
+    #[inline]
     fn clear(&mut self) {
         self.buffer.clear();
     }

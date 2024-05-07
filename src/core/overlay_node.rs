@@ -4,6 +4,8 @@ pub(crate) struct OverlayNode {
 }
 
 impl OverlayNode {
+
+    #[inline]
     pub(crate) fn other(&self, index: usize) -> usize {
         debug_assert_eq!(self.indices.len(), 2);
         let (i0, i1) = unsafe {

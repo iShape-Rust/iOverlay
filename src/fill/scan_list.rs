@@ -9,12 +9,14 @@ pub(crate) struct ScanFillList {
 }
 
 impl ScanFillList {
+    #[inline(always)]
     pub(crate) fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
 }
 
 impl ScanFillStore for ScanFillList {
+    #[inline(always)]
     fn insert(&mut self, segment: CountSegment, _stop: i32) {
         self.buffer.push(segment)
     }

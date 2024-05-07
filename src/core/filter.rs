@@ -7,6 +7,8 @@ pub(crate) trait Filter {
 }
 
 impl Filter for Vec<OverlayLink> {
+
+    #[inline(always)]
     fn filter(&self, overlay_rule: OverlayRule) -> Vec<bool> {
         match overlay_rule {
             OverlayRule::Subject => filter_subject(self),

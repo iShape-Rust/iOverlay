@@ -24,6 +24,8 @@ pub struct ScanSplitTree {
 }
 
 impl ScanSplitTree {
+
+    #[inline]
     pub(super) fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2();
         let max_power_count = (count as i64).log2() >> 1;
@@ -371,6 +373,7 @@ impl ScanSplitStore for ScanSplitTree {
         }
     }
 
+    #[inline]
     fn clear(&mut self) {
         for n in self.nodes.iter_mut() {
             n.list.clear()
@@ -383,6 +386,8 @@ trait Log2Extension {
 }
 
 impl Log2Extension for i64 {
+
+    #[inline(always)]
     fn log2(&self) -> usize {
         debug_assert!(self >= &0);
         let n = self.leading_zeros();

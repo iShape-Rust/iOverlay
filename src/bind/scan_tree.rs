@@ -11,6 +11,8 @@ pub(crate) struct ScanHoleTree {
 }
 
 impl ScanHoleTree {
+
+    #[inline]
     pub(crate) fn new(count: usize) -> Self {
         let x_segment = XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO };
         let segment = IdSegment { id: usize::MAX, x_segment };

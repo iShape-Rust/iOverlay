@@ -8,12 +8,16 @@ pub(crate) struct ScanHoleList {
 }
 
 impl ScanHoleList {
+
+    #[inline(always)]
     pub(crate) fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
 }
 
 impl ScanHoleStore for ScanHoleList {
+
+    #[inline(always)]
     fn insert(&mut self, segment: IdSegment, _stop: i32) {
         self.buffer.push(segment)
     }

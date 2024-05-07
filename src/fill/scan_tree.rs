@@ -12,6 +12,8 @@ pub(crate) struct ScanFillTree {
 }
 
 impl ScanFillTree {
+
+    #[inline]
     pub(crate) fn new(count: usize) -> Self {
         let capacity = count.log2_sqrt();
         let count = ShapeCount { subj: 0, clip: 0 };

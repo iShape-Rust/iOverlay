@@ -10,10 +10,13 @@ pub struct XSegment {
 }
 
 impl XSegment {
+
+    #[inline(always)]
     pub fn new(a: IntPoint, b: IntPoint) -> Self {
         Self { a, b }
     }
 
+    #[inline]
     pub fn y_range(&self) -> LineRange {
         if self.a.y < self.b.y {
             LineRange { min: self.a.y, max: self.b.y }
@@ -22,22 +25,26 @@ impl XSegment {
         }
     }
 
+    #[inline]
     pub fn is_vertical(&self) -> bool {
         self.a.x == self.b.x
     }
 
+    #[inline]
     pub fn is_under_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) > 0
     }
 
+    #[inline]
     pub fn is_above_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) < 0
     }
 
+    #[inline]
     pub fn is_under_segment(&self, other: XSegment) -> bool {
         if self.a == other.a {
             Triangle::is_clockwise_point(self.a, other.b, self.b)
@@ -56,6 +63,8 @@ impl PartialOrd for XSegment {
 }
 
 impl Ord for XSegment {
+
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         if self.a == other.a {
             if self.b == other.b {

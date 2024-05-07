@@ -142,6 +142,7 @@ impl Segment {
 
 
 impl PGroup {
+    #[inline(always)]
     fn order_by_angle(&self, other: &Self, center: IntPoint) -> Ordering {
         if Triangle::is_clockwise_point(center, other.p, self.p) {
             Ordering::Less

@@ -10,11 +10,13 @@ pub struct ShapeEdge {
 }
 
 impl ShapeEdge {
+
     pub(crate) const ZERO: ShapeEdge = ShapeEdge {
         x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
         count: ShapeCount { subj: 0, clip: 0 },
     };
 
+    #[inline(always)]
     pub fn new(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }
@@ -25,6 +27,8 @@ impl ShapeEdge {
 }
 
 impl PartialEq<Self> for ShapeEdge {
+
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
     }
@@ -33,12 +37,14 @@ impl PartialEq<Self> for ShapeEdge {
 impl Eq for ShapeEdge {}
 
 impl PartialOrd for ShapeEdge {
+    #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for ShapeEdge {
+    #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.x_segment.cmp(&other.x_segment)
     }

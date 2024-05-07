@@ -25,6 +25,8 @@ pub struct OverlayGraph {
 
 impl OverlayGraph {
     // for js version
+
+    #[inline(always)]
     pub fn links(&self) -> &Vec<OverlayLink> {
         &self.links
     }
@@ -205,11 +207,13 @@ impl OverlayGraph {
         j
     }
 
+    #[inline]
     pub(crate) fn is_clockwise(a: IntPoint, b: IntPoint, is_top_inside: bool) -> bool {
         let is_direct = a < b;
         Self::xnor(is_direct, is_top_inside)
     }
 
+    #[inline(always)]
     fn xnor(a: bool, b: bool) -> bool {
         (a && b) || !(a || b)
     }
@@ -253,6 +257,8 @@ trait Size {
 }
 
 impl Size for Vec<Segment> {
+
+    #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
         while i < self.len() && self[i].seg.a == point {
@@ -264,6 +270,8 @@ impl Size for Vec<Segment> {
 }
 
 impl Size for Vec<End> {
+
+    #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
         while i < self.len() && self[i].point == point {

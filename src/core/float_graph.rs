@@ -10,6 +10,8 @@ pub struct FloatOverlayGraph {
 }
 
 impl FloatOverlayGraph {
+
+    #[inline(always)]
     pub(super) fn new(graph: OverlayGraph, adapter: PointAdapter) -> Self {
         Self { graph, adapter }
     }
@@ -17,6 +19,7 @@ impl FloatOverlayGraph {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - Returns: A vector of `F64Shape`, representing the geometric result of the applied overlay rule.
+    #[inline(always)]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> F64Shapes {
         self.extract_shapes_min_area(overlay_rule, 0.0)
     }
@@ -25,6 +28,7 @@ impl FloatOverlayGraph {
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     /// - Returns: A vector of `F64Shape` that meet the specified area criteria, representing the cleaned-up geometric result.
+    #[inline]
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: f64) -> F64Shapes {
         let sqr_scale = self.adapter.dir_scale * self.adapter.dir_scale;
         let area = (sqr_scale * min_area) as i64;

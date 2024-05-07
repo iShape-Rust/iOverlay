@@ -13,6 +13,7 @@ impl OverlayGraph {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
+    #[inline(always)]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Vec<IntShape> {
         self.extract_shapes_min_area(overlay_rule, 0)
     }
@@ -105,6 +106,8 @@ trait JoinHoles {
 }
 
 impl JoinHoles for Vec<IntShape> {
+
+    #[inline]
     fn join(&mut self, holes: Vec<IntPath>) {
         if self.is_empty() || holes.is_empty() {
             return;

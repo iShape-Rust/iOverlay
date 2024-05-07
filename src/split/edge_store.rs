@@ -51,6 +51,7 @@ impl EdgeStore {
         Self { ranges, trees, range_length }
     }
 
+    #[inline]
     pub(super) fn first(&self, index: u32) -> StoreIndex {
         let i0 = index as usize;
         let i1 = self.trees.len();
@@ -64,16 +65,19 @@ impl EdgeStore {
         StoreIndex { tree: EMPTY_REF, node: EMPTY_REF }
     }
 
+    #[inline]
     pub(super) fn edge(&self, index: StoreIndex) -> ShapeEdge {
         self.sub_tree(index.tree as usize).tree.node(index.node).value
     }
 
+    #[inline]
     pub(super) fn find(&self, x_segment: &XSegment) -> StoreIndex {
         let tree = self.find_tree(x_segment.a.x);
         let node = self.sub_tree(tree).find(x_segment);
         StoreIndex { tree: tree as u32, node }
     }
 
+    #[inline]
     pub(super) fn find_equal_or_next(&self, tree: u32, x_segment: &XSegment) -> StoreIndex {
         let node = self.sub_tree(tree as usize).find_equal_or_next(x_segment);
         if node == EMPTY_REF {
@@ -83,6 +87,7 @@ impl EdgeStore {
         }
     }
 
+    #[inline]
     pub(super) fn next(&self, index: StoreIndex) -> StoreIndex {
         let node = self.sub_tree(index.tree as usize).tree.next_by_order(index.node);
         if node == EMPTY_REF {
@@ -92,23 +97,28 @@ impl EdgeStore {
         }
     }
 
+    #[inline]
     pub(super) fn get(&self, index: StoreIndex) -> ShapeEdge {
         self.sub_tree(index.tree as usize).tree.node(index.node).value
     }
 
+    #[inline]
     pub(super) fn get_and_remove(&mut self, index: StoreIndex) -> ShapeEdge {
         self.mut_sub_tree(index.tree as usize).get_and_remove(index.node)
     }
 
+    #[inline]
     pub(super) fn remove(&mut self, edge: &ShapeEdge) {
         let tree = self.find_tree(edge.x_segment.a.x);
         self.mut_sub_tree(tree).remove(edge);
     }
 
+    #[inline]
     pub(super) fn remove_index(&mut self, index: StoreIndex) {
         self.mut_sub_tree(index.tree as usize).remove_index(index.node);
     }
 
+    #[inline]
     pub(super) fn remove_and_next(&mut self, index: StoreIndex) -> StoreIndex {
         let next = self.mut_sub_tree(index.tree as usize).remove_and_next(index.node);
         if next == EMPTY_REF {
@@ -118,10 +128,12 @@ impl EdgeStore {
         }
     }
 
+    #[inline]
     pub(super) fn update(&mut self, index: StoreIndex, count: ShapeCount) {
         self.mut_sub_tree(index.tree as usize).update(index.node, count);
     }
 
+    #[inline]
     pub(super) fn add_and_merge(&mut self, edge: ShapeEdge) -> StoreIndex {
         let tree = self.find_tree(edge.x_segment.a.x);
         let node = self.mut_sub_tree(tree).merge(edge);
@@ -149,12 +161,14 @@ impl EdgeStore {
         left
     }
 
+    #[inline(always)]
      fn sub_tree(&self, index: usize) -> &EdgeSubTree {
         unsafe {
             self.trees.get_unchecked(index)
         }
     }
 
+    #[inline(always)]
     fn mut_sub_tree(&mut self, index: usize) -> &mut EdgeSubTree {
         unsafe {
             self.trees.get_unchecked_mut(index)

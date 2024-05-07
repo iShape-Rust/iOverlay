@@ -10,6 +10,8 @@ pub(super) struct EdgeSubTree {
 }
 
 impl EdgeSubTree {
+
+    #[inline]
     pub(super) fn new(edges: &[ShapeEdge]) -> Self {
         let n = edges.len();
         assert!(n > 0);
@@ -79,20 +81,24 @@ impl EdgeSubTree {
         result
     }
 
+    #[inline]
     pub(super) fn get_and_remove(&mut self, index: u32) -> ShapeEdge {
         let edge = self.tree.node(index).value.clone();
         _ = self.tree.delete_index(index);
         edge
     }
 
+    #[inline]
     pub(super) fn remove_index(&mut self, index: u32) {
         _ = self.tree.delete_index(index);
     }
 
+    #[inline]
     pub(super) fn remove(&mut self, edge: &ShapeEdge) {
         _ = self.tree.delete(edge);
     }
 
+    #[inline]
     pub(super) fn update(&mut self, index: u32, count: ShapeCount) {
         _ = self.tree.mut_node(index).value.count = count;
     }

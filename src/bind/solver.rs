@@ -13,6 +13,7 @@ pub struct ShapeBinder;
 
 impl ShapeBinder {
 
+    #[inline]
     pub fn bind(shape_count: usize, i_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
         if i_points.len() < 128 {
             let scan_list = ScanHoleList::new(segments.len());

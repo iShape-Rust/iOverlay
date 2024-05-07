@@ -6,6 +6,7 @@ pub struct LineRange {
 
 impl LineRange {
 
+    #[inline(always)]
     pub fn width(&self) -> i64 {
         self.max as i64 - self.min as i64
     }

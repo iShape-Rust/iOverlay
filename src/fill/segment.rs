@@ -26,6 +26,8 @@ pub struct Segment {
 }
 
 impl Segment {
+
+    #[inline(always)]
     pub(crate) fn new(edge: &ShapeEdge) -> Self {
         Self {
             seg: edge.x_segment,
