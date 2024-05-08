@@ -6,14 +6,40 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::Overlay;
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::core::solver::Solver;
+    use i_overlay::core::solver::{Solver, Strategy};
     use crate::data::overlay::Test;
+
+    const SOLVERS: [Solver; 4] = [
+        Solver {
+            strategy: Strategy::List,
+            chunk_start_length: 8,
+            chunk_list_max_size: 16,
+            tree_list_threshold: 1024,
+        },
+        Solver {
+            strategy: Strategy::Tree,
+            chunk_start_length: 16,
+            chunk_list_max_size: 32,
+            tree_list_threshold: 1024,
+        },
+        Solver {
+            strategy: Strategy::Auto,
+            chunk_start_length: 2,
+            chunk_list_max_size: 4,
+            tree_list_threshold: 1024,
+        },
+        Solver {
+            strategy: Strategy::Auto,
+            chunk_start_length: 1,
+            chunk_list_max_size: 2,
+            tree_list_threshold: 1024,
+        }
+    ];
 
     fn execute(index: usize) {
         let test = Test::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
-        let solvers = [Solver::List, Solver::Tree];
-        for solver in solvers {
+        for solver in SOLVERS {
             let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
             let graph = overlay.build_graph_with_solver(fill_rule, solver);
 
@@ -680,6 +706,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(3, OverlayRule::Subject, Solver::List);
+        debug_execute(18, OverlayRule::Union, SOLVERS[3]);
     }
 }

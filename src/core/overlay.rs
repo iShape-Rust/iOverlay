@@ -133,7 +133,7 @@ impl Overlay {
     /// Constructs an `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     pub fn build_graph(&self, fill_rule: FillRule) -> OverlayGraph {
-        OverlayGraph::new(self.build_segments(fill_rule, Solver::Auto))
+        OverlayGraph::new(self.build_segments(fill_rule, Solver::AUTO))
     }
 
     /// Constructs an `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.

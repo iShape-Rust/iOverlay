@@ -2,11 +2,11 @@ use i_float::point::IntPoint;
 use i_tree::node::EMPTY_REF;
 use crate::fill::segment::Segment;
 use crate::x_segment::XSegment;
-use crate::core::solver::Solver;
+use crate::core::solver::{Solver, Strategy};
 use crate::split::shape_edge::ShapeEdge;
 use crate::line_range::LineRange;
 use crate::split::cross_solver::{CrossResult, ScanCrossSolver};
-use crate::split::edge_store::{EdgeStore, StoreIndex};
+use crate::split::store::{EdgeStore, StoreIndex};
 use crate::split::scan_list::ScanSplitList;
 use crate::split::scan_tree::ScanSplitTree;
 use crate::split::shape_count::ShapeCount;
@@ -22,15 +22,15 @@ impl SplitEdges for Vec<ShapeEdge> {
         let is_list: bool;
         #[cfg(debug_assertions)]
         {
-            is_list = matches!(solver, Solver::List) || matches!(solver, Solver::Auto) && (self.len() < 1_000 || is_small_range);
+            is_list = matches!(solver.strategy, Strategy::List) || matches!(solver.strategy, Strategy::Auto) && (self.len() < solver.tree_list_threshold || is_small_range);
         }
 
         #[cfg(not(debug_assertions))]
         {
-            is_list = matches!(solver, Solver::List) || matches!(solver, Solver::Auto) && self.len() < 1_000 || is_small_range;
+            is_list = matches!(solver.strategy, Strategy::List) || matches!(solver.strategy, Strategy::Auto) && self.len() < solver.tree_list_threshold || is_small_range;
         }
 
-        let store = EdgeStore::new(&self, 16);
+        let store = EdgeStore::new(&self, solver.chunk_start_length, solver.chunk_list_max_size);
 
         if is_list {
             let mut solver = SplitSolver { store, scan_store: ScanSplitList::new(self.len()) };
@@ -95,15 +95,17 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                         need_to_fix = true;
                     }
                     CrossResult::TargetEndExact(point) => {
-                        self.divide_scan_exact(
+                        this = self.divide_scan_exact(
                             point,
+                            this,
                             &this_edge,
                             other,
                         );
                     }
                     CrossResult::TargetEndRound(point) => {
-                        self.divide_scan_round(
+                        this = self.divide_scan_round(
                             point,
+                            this,
                             &this_edge,
                             other,
                         );
@@ -119,18 +121,17 @@ impl<S: ScanSplitStore> SplitSolver<S> {
                         let scan = &self.store.get(other).x_segment;
 
                         if this_edge.x_segment.b == scan.b {
-                            // this.a inside scan(other)
-                            this = self.divide_scan_overlap(&this_edge, other);
-
                             // scan.a < this.a
                             debug_assert!(scan.a < this_edge.x_segment.a);
+
+                            // this.a inside scan(other)
+                            this = self.divide_scan_overlap(&this_edge, other);
                         } else {
-                            // scan.b inside this
-
-                            this = self.divide_this_overlap(&this_edge, this, other);
-
                             // scan.b < this.b
                             debug_assert!(scan.b < this_edge.x_segment.b);
+
+                            // scan.b inside this
+                            this = self.divide_this_overlap(&this_edge, this, other);
                         }
                     }
                     CrossResult::Overlap => {
@@ -269,7 +270,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
     }
 
     #[inline]
-    fn divide_scan_exact(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) {
+    fn divide_scan_exact(&mut self, p: IntPoint, this: StoreIndex, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // this segment-end divide scan(other) segment into 2 parts
 
         let scan_edge = self.store.get_and_remove(other);
@@ -289,10 +290,12 @@ impl<S: ScanSplitStore> SplitSolver<S> {
             // scanRt < this
             self.scan_store.insert(scan_rt.x_segment);
         }
+
+        self.store.find_equal_or_next(this.root, &this_edge.x_segment)
     }
 
     #[inline]
-    fn divide_scan_round(&mut self, p: IntPoint, this_edge: &ShapeEdge, other: StoreIndex) {
+    fn divide_scan_round(&mut self, p: IntPoint, this: StoreIndex, this_edge: &ShapeEdge, other: StoreIndex) -> StoreIndex {
         // this segment-end divide scan(other) segment into 2 parts
 
         let scan_edge = self.store.get_and_remove(other);
@@ -312,6 +315,8 @@ impl<S: ScanSplitStore> SplitSolver<S> {
             // scanRt < this
             self.scan_store.insert(scan_rt.x_segment);
         }
+
+        self.store.find_equal_or_next(this.root, &this_edge.x_segment)
     }
 
     #[inline]
@@ -329,7 +334,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
 
         if new_this.node == EMPTY_REF {
-            self.store.find_equal_or_next(new_this.tree, &this_edge.x_segment)
+            self.store.find_equal_or_next(new_this.root, &this_edge.x_segment)
         } else {
             self.store.next(new_this)
         }
@@ -346,6 +351,7 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let this_rt = ShapeEdge::create_and_validate(scan_edge.x_segment.b, this_edge.x_segment.b, this_edge.count);
 
         self.store.update(other, merge);
+
         self.store.add_and_merge(this_rt);
 
         self.store.remove_index(this);
@@ -383,20 +389,21 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         // segments collinear
         // scan.a < this.a < this.b < scan.b
 
-        let scan_edge = self.store.get_and_remove(other);
+        let scan_edge = self.store.get(other);
 
         let scan_lt = ShapeEdge::create_and_validate(scan_edge.x_segment.a, this_edge.x_segment.a, scan_edge.count);
         let merge = this_edge.count.add(scan_edge.count);
         let scan_rt = ShapeEdge::create_and_validate(this_edge.x_segment.b, scan_edge.x_segment.b, scan_edge.count);
 
         self.store.update(this, merge);
+        self.store.remove_index(other);
 
         self.store.add_and_merge(scan_lt);
         self.store.add_and_merge(scan_rt);
 
-        let new_this = self.store.find(&this_edge.x_segment);
-
         self.scan_store.insert(this_edge.x_segment);
+
+        let new_this = self.store.find(&this_edge.x_segment);
 
         self.store.next(new_this)
     }

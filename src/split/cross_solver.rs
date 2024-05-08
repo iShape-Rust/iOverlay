@@ -17,13 +17,9 @@ pub enum CrossResult {
 pub struct ScanCrossSolver;
 
 impl ScanCrossSolver {
-
     #[inline(always)]
     pub(super) fn is_valid_scan(scan: &XSegment, this: &XSegment) -> bool {
-        let is_outdated = scan.b < this.a;
-        let is_behind = scan < this;
-
-        !is_outdated && is_behind
+        scan.b >= this.a && scan < this
     }
 
     #[cfg(debug_assertions)]
@@ -50,43 +46,39 @@ impl ScanCrossSolver {
             return None;
         }
 
-        let is_end0 = target.a == other.a || target.a == other.b;
-        let is_end1 = target.b == other.a || target.b == other.b;
+        let aa = target.a == other.a;
+        let ab = target.a == other.b;
+        let ba = target.b == other.a;
+        let bb = target.b == other.b;
 
-        let a0 = FixVec::new_point(target.a);
-        let b0 = FixVec::new_point(target.b);
+        let is_end0 = aa || ab;
+        let is_end1 = ba || bb;
 
-        let a1 = FixVec::new_point(other.a);
-        let b1 = FixVec::new_point(other.b);
+        let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
+        let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
 
+        let a1b1a0 = Triangle::clock_direction_point(other.a, other.b, target.a);
+        let a1b1b0 = Triangle::clock_direction_point(other.a, other.b, target.b);
 
-        let a0b0a1 = Triangle::clock_direction(a0, b0, a1);
-        let a0b0b1 = Triangle::clock_direction(a0, b0, b1);
+        let is_collinear = a0b0a1 | a0b0b1 | a1b1a0 | a1b1b0 == 0;
 
-        let a1b1a0 = Triangle::clock_direction(a1, b1, a0);
-        let a1b1b0 = Triangle::clock_direction(a1, b1, b0);
-
-        let is_collinear = a0b0a1 == 0 && a0b0b1 == 0 && a1b1a0 == 0 && a1b1b0 == 0;
-
-        if (is_end0 || is_end1) && is_collinear {
-            let dot_product = if is_end0 {
-                let p = if a0 == a1 { b1 } else { a1 };
-                (a0 - b0).dot_product(a0 - p)
-            } else {
-                let p = if b0 == a1 { b1 } else { a1 };
-                (b0 - a0).dot_product(b0 - p)
-            };
-            return if dot_product < 0 {
-                // only one common end
-                None
-            } else {
-                Some(CrossResult::EndOverlap)
-            };
+        if is_end0 || is_end1 {
+            if is_collinear {
+                let p = if aa || ba { other.b } else { other.a };
+                let v0 = target.a.subtract(p);
+                let v1 = if is_end0 {
+                    target.a.subtract(target.b)
+                } else {
+                    target.b.subtract(target.a)
+                };
+                let dot_product = v1.dot_product(v0);
+                if dot_product >= 0 {
+                    return Some(CrossResult::EndOverlap);
+                }
+            }
+            return None;
         } else if is_collinear {
             return Some(CrossResult::Overlap);
-        } else if is_end0 || is_end1 {
-            debug_assert!(!(is_end0 && is_end1));
-            return None;
         }
 
         let not_same0 = a0b0a1 != a0b0b1;
@@ -96,7 +88,7 @@ impl ScanCrossSolver {
             return None;
         }
 
-        if a0b0a1 == 0 || a0b0b1 == 0 || a1b1a0 == 0 || a1b1b0 == 0 {
+        if a0b0a1 & a0b0b1 & a1b1a0 & a1b1b0 == 0 {
             // one end is on the other edge
             return if a0b0a1 == 0 {
                 Some(CrossResult::OtherEndExact(other.a))
@@ -108,6 +100,12 @@ impl ScanCrossSolver {
                 Some(CrossResult::TargetEndExact(target.b))
             };
         }
+
+        let a0 = FixVec::new_point(target.a);
+        let b0 = FixVec::new_point(target.b);
+
+        let a1 = FixVec::new_point(other.a);
+        let b1 = FixVec::new_point(other.b);
 
         let p = ScanCrossSolver::cross_point(a0, b0, a1, b1);
 

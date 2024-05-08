@@ -147,7 +147,7 @@ mod tests {
         let mut overlay = Overlay::new(n);
         overlay.add_path(&subj_paths, ShapeType::Subject);
 
-        let graph = overlay.build_graph_with_solver(FillRule::NonZero, Solver::Auto);
+        let graph = overlay.build_graph_with_solver(FillRule::NonZero, Solver::AUTO);
         let result = graph.extract_shapes(OverlayRule::Subject);
 
         assert!(!result.is_empty());

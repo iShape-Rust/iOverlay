@@ -5,17 +5,21 @@ use crate::split::shape_count::ShapeCount;
 use crate::split::shape_edge::ShapeEdge;
 use crate::x_segment::XSegment;
 
-pub(super) struct EdgeSubTree {
+pub(super) struct SubStoreTree {
     pub(super) tree: Tree<ShapeEdge>,
 }
 
-impl EdgeSubTree {
-
+impl SubStoreTree {
     #[inline]
     pub(super) fn new(edges: &[ShapeEdge]) -> Self {
         let n = edges.len();
         assert!(n > 0);
         Self { tree: Tree::with_sorted_array(ShapeEdge::ZERO, edges, 2) }
+    }
+
+    #[inline(always)]
+    pub(super) fn first(&self) -> u32 {
+        self.tree.first_by_order()
     }
 
     pub(super) fn find(&self, x_segment: &XSegment) -> u32 {
@@ -44,7 +48,7 @@ impl EdgeSubTree {
         let mut index = self.tree.root;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            match node.value.x_segment.cmp(x_segment) {
+            match x_segment.cmp(&node.value.x_segment) {
                 Ordering::Equal => {
                     return index;
                 }

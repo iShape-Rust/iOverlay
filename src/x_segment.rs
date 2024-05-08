@@ -66,18 +66,11 @@ impl Ord for XSegment {
 
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.a == other.a {
-            if self.b == other.b {
-                Ordering::Equal
-            } else if self.b < other.b {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        } else if self.a < other.a {
-            Ordering::Less
+        let a = self.a.cmp(&other.a);
+        if a == Ordering::Equal {
+            self.b.cmp(&other.b)
         } else {
-            Ordering::Greater
+            a
         }
     }
 }
