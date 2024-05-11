@@ -2,9 +2,13 @@ use i_float::point::IntPoint;
 use crate::util::SwapRemoveIndex;
 use crate::x_segment::XSegment;
 use crate::line_range::LineRange;
-use crate::split::cross_solver::ScanCrossSolver;
-use crate::split::remove_x_segment::RemoveXSegment;
-use crate::split::scan_store::{CrossSegment, ScanSplitStore};
+use crate::split::cross_solver::{CrossResult, ScanCrossSolver};
+
+pub(super) struct CrossSegment {
+    pub(super) other: XSegment,
+    pub(super) cross: CrossResult
+}
+
 
 #[derive(Debug, Clone)]
 struct IntervalNode {
@@ -192,7 +196,7 @@ impl ScanSplitTree {
             }
 
             // order is important! this * scan
-            if let Some(cross) = ScanCrossSolver::scan_cross(&this, &scan) {
+            if let Some(cross) = ScanCrossSolver::cross(&this, &scan) {
                 let scan = scan.clone();
                 self.remove(&scan, this.a);
                 return Some(CrossSegment { other: scan, cross });
@@ -224,10 +228,8 @@ impl ScanSplitTree {
 
         i
     }
-}
 
-impl ScanSplitStore for ScanSplitTree {
-    fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment> {
+    pub(super) fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = this.y_range();
@@ -273,7 +275,7 @@ impl ScanSplitStore for ScanSplitTree {
         return None;
     }
 
-    fn insert(&mut self, segment: XSegment) {
+    pub(super) fn insert(&mut self, segment: XSegment) {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = segment.y_range();
@@ -374,9 +376,28 @@ impl ScanSplitStore for ScanSplitTree {
     }
 
     #[inline]
-    fn clear(&mut self) {
+    pub(super) fn clear(&mut self) {
         for n in self.nodes.iter_mut() {
             n.list.clear()
+        }
+    }
+}
+
+trait RemoveXSegment {
+    fn remove_segment(&mut self, segment: &XSegment, scan_pos: IntPoint);
+}
+
+impl RemoveXSegment for Vec<XSegment> {
+    fn remove_segment(&mut self, segment: &XSegment, scan_pos: IntPoint) {
+        let mut j = 0;
+        while j < self.len() {
+            let seg = &self[j];
+            if seg.b < scan_pos || segment == seg {
+                self.swap_remove_index(j);
+                continue;
+            }
+
+            j += 1;
         }
     }
 }
@@ -425,7 +446,6 @@ mod tests {
     use crate::x_segment::XSegment;
     use crate::line_range::LineRange;
     use crate::split::scan_tree::ScanSplitTree;
-    use crate::split::scan_store::ScanSplitStore;
 
     #[test]
     fn test_0() {

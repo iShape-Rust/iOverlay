@@ -32,7 +32,7 @@ impl ScanCrossSolver {
         debug_assert!(!test_x);
     }
 
-    pub fn scan_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+    pub fn cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
         // by this time segments already at intersection range by x
         #[cfg(debug_assertions)]
         ScanCrossSolver::validate_x(target, other);

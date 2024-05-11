@@ -11,7 +11,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::PureExact(point) => {
@@ -30,7 +30,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::PureExact(point) => {
@@ -49,7 +49,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(1024, -s), IntPoint::new(1024, s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::PureExact(point) => {
@@ -69,7 +69,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(s, s));
         let eb = XSegment::new(IntPoint::new(q, -s), IntPoint::new(q, s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::PureExact(point) => {
@@ -88,7 +88,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(-s, s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::TargetEndExact(point) => {
@@ -107,7 +107,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(s, -s), IntPoint::new(s, s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::TargetEndExact(point) => {
@@ -126,7 +126,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, s), IntPoint::new(s, s));
         let eb = XSegment::new(IntPoint::new(-s, s), IntPoint::new(-s, -s));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb);
+        let result = ScanCrossSolver::cross(&ea, &eb);
         assert!(result.is_none());
     }
 
@@ -135,7 +135,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(7256, -14637), IntPoint::new(7454, -15045));
         let eb = XSegment::new(IntPoint::new(7343, -14833), IntPoint::new(7506, -15144));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::PureRound(_point) => {},
@@ -150,7 +150,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(-1024000, 0));
         let eb = XSegment::new(IntPoint::new(-8571363, 1513719), IntPoint::new(-1023948, -10239));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::PureRound(point) => {
@@ -167,7 +167,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
         let eb = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::EndOverlap => {},
@@ -188,7 +188,7 @@ mod tests {
             IntPoint::new(-276659430, 380789040)
         );
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::Overlap => {
@@ -207,7 +207,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s / 2, 0));
         let eb = XSegment::new(IntPoint::new(0, 0), IntPoint::new(s, 0));
 
-        let result = ScanCrossSolver::scan_cross(&ea, &eb).unwrap();
+        let result = ScanCrossSolver::cross(&ea, &eb).unwrap();
 
         match result {
             CrossResult::Overlap => {

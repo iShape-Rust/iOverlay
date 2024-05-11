@@ -9,30 +9,31 @@ mod tests {
     use i_overlay::core::solver::{Solver, Strategy};
     use crate::data::overlay::Test;
 
-    const SOLVERS: [Solver; 4] = [
+    const SOLVERS: [Solver; 5] = [
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 8,
-            chunk_list_max_size: 16,
-            tree_list_threshold: 1024,
+            chunk_list_max_size: 256
+        },
+        Solver {
+            strategy: Strategy::List,
+            chunk_start_length: 8,
+            chunk_list_max_size: 16
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 16,
-            chunk_list_max_size: 32,
-            tree_list_threshold: 1024,
+            chunk_list_max_size: 32
         },
         Solver {
             strategy: Strategy::Auto,
             chunk_start_length: 2,
-            chunk_list_max_size: 4,
-            tree_list_threshold: 1024,
+            chunk_list_max_size: 4
         },
         Solver {
             strategy: Strategy::Auto,
             chunk_start_length: 1,
-            chunk_list_max_size: 2,
-            tree_list_threshold: 1024,
+            chunk_list_max_size: 2
         }
     ];
 
@@ -706,6 +707,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(18, OverlayRule::Union, SOLVERS[3]);
+        debug_execute(106, OverlayRule::Union, SOLVERS[2]);
     }
 }

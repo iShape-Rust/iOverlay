@@ -8,7 +8,6 @@ use crate::fill::scan_tree::ScanFillTree;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::fill::scan_store::ScanFillStore;
-use crate::core::solver::{Solver, Strategy};
 
 struct YGroup {
     i: usize,
@@ -21,12 +20,11 @@ struct PGroup {
 }
 
 pub(crate) trait FillSegments {
-    fn fill(&mut self, fill_rule: FillRule, solver: Solver);
+    fn fill(&mut self, fill_rule: FillRule, is_list: bool);
 }
 
 impl FillSegments for Vec<Segment> {
-    fn fill(&mut self, fill_rule: FillRule, solver: Solver) {
-        let is_list = matches!(solver.strategy, Strategy::List) || matches!(solver.strategy, Strategy::Auto) && self.len() < solver.tree_list_threshold;
+    fn fill(&mut self, fill_rule: FillRule, is_list: bool) {
         if is_list {
             let store = ScanFillList::new(self.len());
             self.solve(store, fill_rule);

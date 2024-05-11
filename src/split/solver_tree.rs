@@ -1,55 +1,24 @@
 use i_float::point::IntPoint;
 use i_tree::node::EMPTY_REF;
-use crate::fill::segment::Segment;
 use crate::x_segment::XSegment;
-use crate::core::solver::{Solver, Strategy};
 use crate::split::shape_edge::ShapeEdge;
-use crate::line_range::LineRange;
 use crate::split::cross_solver::{CrossResult, ScanCrossSolver};
-use crate::split::store::{EdgeStore, StoreIndex};
-use crate::split::scan_list::ScanSplitList;
 use crate::split::scan_tree::ScanSplitTree;
-use crate::split::shape_count::ShapeCount;
-use crate::split::scan_store::ScanSplitStore;
+use crate::split::store_index::StoreIndex;
+use crate::split::store_tree::StoreTree;
 
-pub(crate) trait SplitEdges {
-    fn split(&mut self, range: LineRange, solver: Solver) -> Vec<Segment>;
+pub(super) struct SplitSolverTree {
+    pub(super) store: StoreTree,
+    scan_store: ScanSplitTree,
 }
 
-impl SplitEdges for Vec<ShapeEdge> {
-    fn split(&mut self, range: LineRange, solver: Solver) -> Vec<Segment> {
-        let is_small_range = range.width() < 128;
-        let is_list: bool;
-        #[cfg(debug_assertions)]
-        {
-            is_list = matches!(solver.strategy, Strategy::List) || matches!(solver.strategy, Strategy::Auto) && (self.len() < solver.tree_list_threshold || is_small_range);
-        }
+impl SplitSolverTree {
 
-        #[cfg(not(debug_assertions))]
-        {
-            is_list = matches!(solver.strategy, Strategy::List) || matches!(solver.strategy, Strategy::Auto) && self.len() < solver.tree_list_threshold || is_small_range;
-        }
-
-        let store = EdgeStore::new(&self, solver.chunk_start_length, solver.chunk_list_max_size);
-
-        if is_list {
-            let mut solver = SplitSolver { store, scan_store: ScanSplitList::new(self.len()) };
-            solver.solve()
-        } else {
-            let mut solver = SplitSolver { store, scan_store: ScanSplitTree::new(range, self.len()) };
-            solver.solve()
-        }
+    pub(super) fn new(store: StoreTree, scan_store: ScanSplitTree) -> Self {
+        Self { store, scan_store }
     }
-}
 
-
-struct SplitSolver<S> {
-    scan_store: S,
-    store: EdgeStore,
-}
-
-impl<S: ScanSplitStore> SplitSolver<S> {
-    fn solve(&mut self) -> Vec<Segment> {
+    pub(super) fn split(&mut self) {
         let mut need_to_fix = true;
 
         while need_to_fix {
@@ -156,8 +125,6 @@ impl<S: ScanSplitStore> SplitSolver<S> {
 
             self.scan_store.clear();
         } // while
-
-        self.store.segments()
     }
 
     #[inline]
@@ -406,17 +373,5 @@ impl<S: ScanSplitStore> SplitSolver<S> {
         let new_this = self.store.find(&this_edge.x_segment);
 
         self.store.next(new_this)
-    }
-}
-
-
-impl ShapeEdge {
-    #[inline(always)]
-    fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
-        if a < b {
-            Self { x_segment: XSegment { a, b }, count }
-        } else {
-            Self { x_segment: XSegment { a: b, b: a }, count: count.invert() }
-        }
     }
 }

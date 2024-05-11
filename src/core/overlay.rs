@@ -2,7 +2,6 @@ use i_float::point::IntPoint;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, PointsCount};
 use crate::fill::fill_segments::FillSegments;
-use crate::split::split_edges::SplitEdges;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::util::SwapRemoveIndex;
@@ -12,6 +11,7 @@ use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::x_segment::XSegment;
 use crate::core::solver::Solver;
 use crate::line_range::LineRange;
+use crate::split::solver::SplitSolver;
 use crate::vector::vector::VectorShape;
 
 use super::overlay_graph::OverlayGraph;
@@ -173,8 +173,11 @@ impl Overlay {
         }
 
         let range = LineRange { min: self.y_min, max: self.y_max };
-        let mut segments: Vec<Segment> = buffer.split(range, solver);
-        segments.fill(fill_rule, solver);
+        let result = SplitSolver::split(buffer, solver, range);
+
+        let mut segments = result.0;
+        let is_list = result.1;
+        segments.fill(fill_rule, is_list);
 
         segments
     }

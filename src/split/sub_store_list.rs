@@ -22,26 +22,18 @@ impl SubStoreList {
     }
 
     #[inline(always)]
+    pub(super) fn with_edges(edges: Vec<ShapeEdge>) -> Self {
+        let n = edges.len();
+        debug_assert!(n > 0);
+        Self { edges }
+    }
+
+    #[inline(always)]
     pub(super) fn first(&self) -> u32 {
         if self.edges.is_empty() {
             EMPTY_REF
         } else {
             0
-        }
-    }
-
-    #[inline(always)]
-    pub(super) fn find(&self, x_segment: &XSegment) -> u32 {
-        self.index(x_segment).index
-    }
-
-    #[inline(always)]
-    pub(super) fn find_equal_or_next(&self, x_segment: &XSegment) -> u32 {
-        let result = self.index(x_segment);
-        if result.index < self.edges.len() as u32 {
-            result.index
-        } else {
-            EMPTY_REF
         }
     }
 
@@ -55,6 +47,16 @@ impl SubStoreList {
         self.edges.remove(index as usize);
         if index < self.edges.len() as u32 {
             index
+        } else {
+            EMPTY_REF
+        }
+    }
+
+    #[inline(always)]
+    pub(super) fn next(&self, index: u32) -> u32 {
+        let next = index + 1;
+        if next < self.edges.len() as u32 {
+            next
         } else {
             EMPTY_REF
         }

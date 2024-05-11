@@ -24,6 +24,15 @@ impl ShapeEdge {
             Self { x_segment: XSegment { a: b, b: a }, count }
         }
     }
+
+    #[inline(always)]
+    pub(super) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
+        if a < b {
+            Self { x_segment: XSegment { a, b }, count }
+        } else {
+            Self { x_segment: XSegment { a: b, b: a }, count: count.invert() }
+        }
+    }
 }
 
 impl PartialEq<Self> for ShapeEdge {
