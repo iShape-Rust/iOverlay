@@ -21,18 +21,21 @@ impl SplitSolver {
                 (solver.store.segments(), true)
             }
             Strategy::Tree => {
-                let store = StoreTree::new(edges, solver.chunk_list_max_size);
-                let mut solver = SplitSolverTree::new(store, ScanSplitTree::new(range, count));
-                solver.split();
-                (solver.store.segments(), false)
-            }
-            Strategy::Auto => {
-                let list_store = StoreList::new(edges, count);
                 if range.width() < solver.chunk_list_max_size as i64 {
-                    let mut solver = SplitSolverList::new(list_store);
+                    let store = StoreList::new(edges, solver.chunk_start_length);
+                    let mut solver = SplitSolverList::new(store);
                     _ = solver.split(usize::MAX);
                     (solver.store.segments(), true)
-                } else if list_store.is_large(solver.chunk_list_max_size) {
+                } else {
+                    let store = StoreTree::new(edges, solver.chunk_list_max_size);
+                    let mut solver = SplitSolverTree::new(store, ScanSplitTree::new(range, count));
+                    solver.split();
+                    (solver.store.segments(), false)
+                }
+            }
+            Strategy::Auto => {
+                let list_store = StoreList::new(edges, solver.chunk_start_length);
+                if list_store.is_need_convert_to_tree(solver.chunk_list_max_size) {
                     let mut solver = SplitSolverTree::new(list_store.convert_to_tree(), ScanSplitTree::new(range, count));
                     solver.split();
                     (solver.store.segments(), false)
@@ -42,7 +45,7 @@ impl SplitSolver {
                     if finished {
                         (list_solver.store.segments(), true)
                     } else {
-                        let mut tree_solver = SplitSolverTree::new(list_solver.store.convert_to_tree(), ScanSplitTree::new(range, count));
+                        let mut tree_solver = SplitSolverTree::new(list_solver.store.convert_to_tree(), ScanSplitTree::new(range, count << 2));
                         tree_solver.split();
                         (tree_solver.store.segments(), false)
                     }

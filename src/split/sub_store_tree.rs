@@ -13,7 +13,7 @@ impl SubStoreTree {
     #[inline]
     pub(super) fn new(edges: &[ShapeEdge]) -> Self {
         let n = edges.len();
-        assert!(n > 0);
+        debug_assert!(n > 0);
         Self { tree: Tree::with_sorted_array(ShapeEdge::ZERO, edges, 2) }
     }
 

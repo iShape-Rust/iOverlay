@@ -23,7 +23,7 @@ pub struct Solver {
 }
 
 impl Solver {
-    pub const LIST: Self = Self { strategy: List, chunk_start_length: 8, chunk_list_max_size: 256 };
-    pub const TREE: Self = Self { strategy: Tree, chunk_start_length: 8, chunk_list_max_size: 256 };
-    pub const AUTO: Self = Self { strategy: Auto, chunk_start_length: 8, chunk_list_max_size: 256 };
+    pub const LIST: Self = Self { strategy: List, chunk_start_length: 8, chunk_list_max_size: 128 };
+    pub const TREE: Self = Self { strategy: Tree, chunk_start_length: 8, chunk_list_max_size: 128 };
+    pub const AUTO: Self = Self { strategy: Auto, chunk_start_length: 8, chunk_list_max_size: 128 };
 }

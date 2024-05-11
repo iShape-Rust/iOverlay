@@ -29,15 +29,6 @@ impl SubStoreList {
     }
 
     #[inline(always)]
-    pub(super) fn first(&self) -> u32 {
-        if self.edges.is_empty() {
-            EMPTY_REF
-        } else {
-            0
-        }
-    }
-
-    #[inline(always)]
     pub(super) fn get_and_remove(&mut self, index: u32) -> ShapeEdge {
         self.edges.remove(index as usize)
     }
@@ -47,16 +38,6 @@ impl SubStoreList {
         self.edges.remove(index as usize);
         if index < self.edges.len() as u32 {
             index
-        } else {
-            EMPTY_REF
-        }
-    }
-
-    #[inline(always)]
-    pub(super) fn next(&self, index: u32) -> u32 {
-        let next = index + 1;
-        if next < self.edges.len() as u32 {
-            next
         } else {
             EMPTY_REF
         }
