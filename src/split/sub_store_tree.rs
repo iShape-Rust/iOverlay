@@ -71,18 +71,18 @@ impl SubStoreTree {
         _ = self.tree.delete_index(r_index);
 
         let mut index = self.tree.root;
-        let mut result = EMPTY_REF;
+        let mut p_index = EMPTY_REF;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment < x_segment {
-                result = index;
-                index = node.right;
-            } else {
+            p_index = index;
+            if x_segment < node.value.x_segment {
                 index = node.left;
+            } else {
+                index = node.right;
             }
         }
 
-        result
+        p_index
     }
 
     #[inline]
@@ -116,13 +116,8 @@ impl SubStoreTree {
             match edge.x_segment.cmp(&node.value.x_segment) {
                 Ordering::Equal => {
                     let count = node.value.count.add(edge.count);
-                    return if count.is_empty() {
-                        _ = self.tree.delete_index(index);
-                        EMPTY_REF
-                    } else {
-                        self.tree.mut_node(index).value.count = count;
-                        index
-                    };
+                    self.tree.mut_node(index).value.count = count;
+                    return index;
                 }
                 Ordering::Less => {
                     p_index = index;

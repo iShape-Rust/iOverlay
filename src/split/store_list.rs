@@ -48,7 +48,7 @@ impl StoreList {
         Self { ranges, sub_stores, chunk_start_length }
     }
 
-    pub(super) fn is_need_convert_to_tree(&self, chunk_list_max_size: usize) -> bool {
+    pub(super) fn is_tree_conversion_required(&self, chunk_list_max_size: usize) -> bool {
         for sub_store in self.sub_stores.iter() {
             if sub_store.edges.len() > chunk_list_max_size {
                 return true;
@@ -60,8 +60,28 @@ impl StoreList {
 
     #[inline]
     pub(super) fn convert_to_tree(self) -> StoreTree {
-        let sub_stores = self.sub_stores.iter().map(|list| SubStoreTree::new(&list.edges)).collect();
-        StoreTree { ranges: self.ranges, sub_stores, chunk_start_length: self.chunk_start_length }
+        if self.ranges.is_empty() {
+            let sub_stores = vec![SubStoreTree::new(&self.sub_stores[0].edges)];
+            return StoreTree { ranges: self.ranges, sub_stores, chunk_start_length: self.chunk_start_length }
+        }
+
+        let mut ranges = Vec::with_capacity(self.ranges.len());
+        let mut sub_stores = Vec::with_capacity(self.sub_stores.len());
+
+        let mut i = 0;
+        while i < self.sub_stores.len() {
+            let edges = &self.sub_stores[i].edges;
+            if !edges.is_empty() {
+                sub_stores.push(SubStoreTree::new(edges));
+                if i < self.ranges.len() {
+                    ranges.push(self.ranges[i]);
+                }
+            }
+
+            i += 1;
+        }
+
+        StoreTree { ranges, sub_stores, chunk_start_length: self.chunk_start_length }
     }
 
     #[inline]

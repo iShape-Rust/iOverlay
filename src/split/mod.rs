@@ -2,7 +2,7 @@ pub mod shape_edge;
 pub mod shape_count;
 pub mod cross_solver;
 mod range_search;
-mod scan_tree;
+pub mod scan_tree;
 pub(crate) mod solver;
 mod solver_list;
 mod solver_tree;

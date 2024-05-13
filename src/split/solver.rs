@@ -27,7 +27,7 @@ impl SplitSolver {
                     _ = solver.split(usize::MAX);
                     (solver.store.segments(), true)
                 } else {
-                    let store = StoreTree::new(edges, solver.chunk_list_max_size);
+                    let store = StoreTree::new(edges, solver.chunk_start_length);
                     let mut solver = SplitSolverTree::new(store, ScanSplitTree::new(range, count));
                     solver.split();
                     (solver.store.segments(), false)
@@ -35,7 +35,7 @@ impl SplitSolver {
             }
             Strategy::Auto => {
                 let list_store = StoreList::new(edges, solver.chunk_start_length);
-                if list_store.is_need_convert_to_tree(solver.chunk_list_max_size) {
+                if list_store.is_tree_conversion_required(solver.chunk_list_max_size) {
                     let mut solver = SplitSolverTree::new(list_store.convert_to_tree(), ScanSplitTree::new(range, count));
                     solver.split();
                     (solver.store.segments(), false)
@@ -45,7 +45,10 @@ impl SplitSolver {
                     if finished {
                         (list_solver.store.segments(), true)
                     } else {
-                        let mut tree_solver = SplitSolverTree::new(list_solver.store.convert_to_tree(), ScanSplitTree::new(range, count << 2));
+                        let mut tree_solver = SplitSolverTree::new(
+                            list_solver.store.convert_to_tree(),
+                            ScanSplitTree::new(range, count << 1)
+                        );
                         tree_solver.split();
                         (tree_solver.store.segments(), false)
                     }

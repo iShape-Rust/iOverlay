@@ -4,9 +4,9 @@ use crate::x_segment::XSegment;
 use crate::line_range::LineRange;
 use crate::split::cross_solver::{CrossResult, ScanCrossSolver};
 
-pub(super) struct CrossSegment {
-    pub(super) other: XSegment,
-    pub(super) cross: CrossResult
+pub struct CrossSegment {
+    pub other: XSegment,
+    pub cross: CrossResult,
 }
 
 
@@ -28,9 +28,8 @@ pub struct ScanSplitTree {
 }
 
 impl ScanSplitTree {
-
     #[inline]
-    pub(super) fn new(range: LineRange, count: usize) -> Self {
+    pub fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2();
         let max_power_count = (count as i64).log2() >> 1;
         let power = 10.min(max_power_count.min(max_power_range));
@@ -207,29 +206,7 @@ impl ScanSplitTree {
         None
     }
 
-    fn find_node(&self, index: usize, value: i32, scale: usize) -> usize {
-        let mut s = scale;
-        let mut i = index;
-        while s > 1 {
-            let middle = self.nodes[i].range.middle();
-
-            if value == middle {
-                return i;
-            }
-
-            s >>= 1;
-
-            if value < middle {
-                i -= s;
-            } else {
-                i += s;
-            }
-        }
-
-        i
-    }
-
-    pub(super) fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment> {
+    pub fn intersect_and_remove_other(&mut self, this: XSegment) -> Option<CrossSegment> {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = this.y_range();
@@ -259,12 +236,65 @@ impl ScanSplitTree {
             return None;
         }
 
-        let i_lt = self.find_node(i - s, range.min, s);
-        let i_rt = self.find_node(i + s, range.max, s);
+        // let i_lt = self.find_node(i - s, range.min, s);
+        // let i_rt = self.find_node(i + s, range.max, s);
 
-        i = i_lt;
+        // find most left index
 
-        while i <= i_rt {
+        let mut j = i - s;
+        let mut sj = s;
+        while sj > 1 {
+            let cross = self.cross(j, this);
+            if !cross.is_none() {
+                return cross;
+            }
+
+            let middle = self.nodes[j].range.middle();
+
+            if range.min == middle {
+                break;
+            }
+
+            sj >>= 1;
+
+            if range.min < middle {
+                j -= sj;
+            } else {
+                j += sj;
+            }
+        }
+        let lt = j;
+
+        // find most right index
+
+        j = i + s;
+        sj = s;
+        while sj > 1 {
+            let cross = self.cross(j, this);
+            if !cross.is_none() {
+                return cross;
+            }
+
+            let middle = self.nodes[j].range.middle();
+
+            if range.max == middle {
+                break;
+            }
+
+            sj >>= 1;
+
+            if range.max < middle {
+                j -= sj;
+            } else {
+                j += sj;
+            }
+        }
+
+        let rt = j;
+
+        i = lt;
+
+        while i <= rt {
             let cross = self.cross(i, this);
             if !cross.is_none() {
                 return cross;
@@ -275,7 +305,7 @@ impl ScanSplitTree {
         return None;
     }
 
-    pub(super) fn insert(&mut self, segment: XSegment) {
+    pub fn insert(&mut self, segment: XSegment) {
         let mut s = 1 << self.power;
         let mut i = s - 1;
         let range = segment.y_range();
@@ -407,7 +437,6 @@ trait Log2Extension {
 }
 
 impl Log2Extension for i64 {
-
     #[inline(always)]
     fn log2(&self) -> usize {
         debug_assert!(self >= &0);

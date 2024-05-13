@@ -50,13 +50,14 @@ impl StoreTree {
 
     #[inline]
     pub(super) fn first(&self, index: u32) -> StoreIndex {
-        let i0 = index;
-        let i1 = self.sub_stores.len() as u32;
-        for i in i0..i1 {
+        let mut i = index;
+        let n = self.sub_stores.len() as u32;
+        while i < n {
             let first_index = self.sub_tree(i).first();
             if first_index != EMPTY_REF {
                 return StoreIndex { root: i, node: first_index };
             }
+            i += 1;
         }
 
         StoreIndex { root: EMPTY_REF, node: EMPTY_REF }
@@ -169,7 +170,9 @@ impl StoreTree {
             let mut n_index = tree.first_by_order();
             while n_index != EMPTY_REF {
                 let e = &tree.node(n_index).value;
-                result.push(Segment::new(e));
+                if !e.count.is_empty() {
+                    result.push(Segment::new(e));
+                }
                 n_index = tree.next_by_order(n_index);
             }
         }
