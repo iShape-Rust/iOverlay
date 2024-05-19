@@ -52,10 +52,13 @@ impl SplitSolverList {
                         break;
                     }
 
+                    if ScanCrossSolver::test_y(&this_edge.x_segment, &other_edge.x_segment) {
+                        other = self.store.next(other);
+                        continue;
+                    }
+
                     // order is important! this x scan
                     if let Some(cross) = ScanCrossSolver::cross(&this_edge.x_segment, &other_edge.x_segment) {
-                        let this_edge = this_edge.clone();
-                        let other_edge = other_edge.clone();
                         match cross {
                             CrossResult::PureExact(point) => {
                                 this = self.pure_exact(
@@ -75,14 +78,14 @@ impl SplitSolverList {
                             CrossResult::OtherEndExact(point) => {
                                 this = self.divide_e0_exact(
                                     point,
-                                    this_edge,
+                                    this_edge.clone(),
                                     this,
                                 );
                             }
                             CrossResult::OtherEndRound(point) => {
                                 this = self.divide_e0_round(
                                     point,
-                                    this_edge,
+                                    this_edge.clone(),
                                     this,
                                 );
                                 need_to_fix = true;
@@ -105,7 +108,7 @@ impl SplitSolverList {
                                 debug_assert!(this_edge.x_segment.b < other_edge.x_segment.b);
 
                                 this = self.divide_e1_overlap(
-                                    this_edge,
+                                    this_edge.clone(),
                                     other,
                                 );
                             }
@@ -119,16 +122,16 @@ impl SplitSolverList {
                                 if this_edge.x_segment.b < other_edge.x_segment.b {
                                     // partly overlap
                                     this = self.divide_both_partly_overlap(
-                                        this_edge,
+                                        this_edge.clone(),
                                         other,
                                     )
                                 } else {
                                     debug_assert!(other_edge.x_segment.b < this_edge.x_segment.b);
                                     // other inside this
                                     this = self.divide_e0_by_three(
-                                        this_edge,
+                                        this_edge.clone(),
                                         this,
-                                        other_edge,
+                                        other_edge.clone(),
                                         other,
                                     )
                                 }

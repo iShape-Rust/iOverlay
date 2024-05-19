@@ -194,6 +194,11 @@ impl ScanSplitTree {
                 continue;
             }
 
+            if ScanCrossSolver::test_y(&this, &scan) {
+                j += 1;
+                continue;
+            }
+
             // order is important! this * scan
             if let Some(cross) = ScanCrossSolver::cross(&this, &scan) {
                 let scan = scan.clone();
