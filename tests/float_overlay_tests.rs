@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use i_float::f64_point::F64Point;
+    use i_float::point::IntPoint;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::float_overlay::FloatOverlay;
@@ -215,6 +216,34 @@ mod tests {
         assert_eq!(union.len(), 1);
         assert_eq!(union[0].len(), 1);
         assert_eq!(union[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_07() {
+        let shape_0 = [
+            [
+                F64Point::new(-10.0, -10.0),
+                F64Point::new(-10.0, 10.0),
+                F64Point::new(10.0, 10.0),
+                F64Point::new(10.0, -10.0)
+            ].to_vec()
+        ].to_vec();
+        let shape_1 = [
+            [
+                F64Point::new(-5.0, -5.0),
+                F64Point::new(-5.0, 15.0),
+                F64Point::new(15.0, 15.0),
+                F64Point::new(15.0, -5.0),
+            ].to_vec()
+        ].to_vec();
+
+        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let union = graph.extract_shapes(OverlayRule::Union);
+
+        assert_eq!(union.len(), 1);
+        assert_eq!(union[0].len(), 1);
+        assert_eq!(union[0][0].len(), 8);
     }
 
     #[test]
