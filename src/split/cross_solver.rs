@@ -22,7 +22,7 @@ impl ScanCrossSolver {
         scan.b >= this.a && scan < this
     }
 
-    #[cfg(debug_assertions)]
+    #[inline(always)]
     pub fn test_x(target: &XSegment, other: &XSegment) -> bool {
         target.a.x > other.a.x && target.a.x > other.b.x
             && target.b.x > other.a.x && target.b.x > other.b.x
@@ -104,6 +104,40 @@ impl ScanCrossSolver {
             };
         }
 
+        Self::simple_cross(target, other)
+    }
+
+    pub fn pre_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+        let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
+        let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
+
+        let a1b1a0 = Triangle::clock_direction_point(other.a, other.b, target.a);
+        let a1b1b0 = Triangle::clock_direction_point(other.a, other.b, target.b);
+
+        let s = (1 & (a0b0a1 + 1)) + (1 & (a0b0b1 + 1)) + (1 & (a1b1a0 + 1)) + (1 & (a1b1b0 + 1));
+
+        let is_not_cross = a0b0a1 == a0b0b1 || a1b1a0 == a1b1b0;
+
+        if s != 0 && s != 1 || is_not_cross {
+            return None;
+        }
+
+        if s != 0 {
+            return if a0b0a1 == 0 {
+                Some(CrossResult::OtherEndExact(other.a))
+            } else if a0b0b1 == 0 {
+                Some(CrossResult::OtherEndExact(other.b))
+            } else if a1b1a0 == 0 {
+                Some(CrossResult::TargetEndExact(target.a))
+            } else {
+                Some(CrossResult::TargetEndExact(target.b))
+            };
+        }
+
+        Self::simple_cross(target, other)
+    }
+
+    fn simple_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
         let p = ScanCrossSolver::cross_point(&target, &other);
 
         if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {

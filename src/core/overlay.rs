@@ -4,13 +4,14 @@ use i_shape::int::shape::{IntShape, PointsCount};
 use crate::fill::fill_segments::FillSegments;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
-use crate::util::SwapRemoveIndex;
+use crate::util::{Int, SwapRemoveIndex};
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::x_segment::XSegment;
-use crate::core::solver::Solver;
+use crate::core::solver::{Solver, Strategy};
 use crate::line_range::LineRange;
+use crate::split::pre_split_solver::PreSplitSolver;
 use crate::split::solver::SplitSolver;
 use crate::vector::vector::VectorShape;
 
@@ -173,10 +174,20 @@ impl Overlay {
         }
 
         let range = LineRange { min: self.y_min, max: self.y_max };
-        let result = SplitSolver::split(buffer, solver, range);
 
-        let mut segments = result.0;
-        let is_list = result.1;
+        let (mut segments, is_list) = if solver.strategy == Strategy::Auto {
+            let need_to_fix = PreSplitSolver::split(solver, &mut buffer);
+            if need_to_fix {
+                SplitSolver::split(buffer, solver, range)
+            } else {
+                let segments: Vec<Segment> = buffer.iter().map(|it| Segment::new(it)).collect();
+                let is_list = segments.len().log2_sqrt() < solver.chunk_list_max_size;
+                (segments, is_list)
+            }
+        } else {
+            SplitSolver::split(buffer, solver, range)
+        };
+
         segments.fill(fill_rule, is_list);
 
         segments

@@ -9,52 +9,62 @@ mod tests {
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::{Solver, Strategy};
 
-    const SOLVERS: [Solver; 9] = [
+    const SOLVERS: [Solver; 10] = [
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 1,
             chunk_list_max_size: 2,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 2,
             chunk_list_max_size: 4,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 8,
             chunk_list_max_size: 16,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 16,
             chunk_list_max_size: 256,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 1,
             chunk_list_max_size: 2,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 2,
+            pre_split_max_count: 3,
             chunk_list_max_size: 4,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 16,
             chunk_list_max_size: 32,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Auto,
             chunk_start_length: 1,
             chunk_list_max_size: 2,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Auto,
             chunk_start_length: 2,
             chunk_list_max_size: 4,
-        }
+            pre_split_max_count: 3,
+        },
+        Solver::AUTO
     ];
 
     #[test]
@@ -243,6 +253,7 @@ mod tests {
             strategy: Strategy::Auto,
             chunk_start_length: 2,
             chunk_list_max_size: 4,
+            pre_split_max_count: 3,
         };
         let clip = create_star(1.0, 2.0, 7, 0.0);
         let a = 0.44000000000000028;

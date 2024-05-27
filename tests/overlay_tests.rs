@@ -9,37 +9,44 @@ mod tests {
     use i_overlay::core::solver::{Solver, Strategy};
     use crate::data::overlay::Test;
 
-    const SOLVERS: [Solver; 6] = [
+    const SOLVERS: [Solver; 7] = [
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 1,
-            chunk_list_max_size: 2
+            chunk_list_max_size: 2,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 2,
-            chunk_list_max_size: 4
+            chunk_list_max_size: 4,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 1,
-            chunk_list_max_size: 2
+            chunk_list_max_size: 2,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 2,
-            chunk_list_max_size: 4
+            chunk_list_max_size: 4,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 16,
-            chunk_list_max_size: 32
+            chunk_list_max_size: 32,
+            pre_split_max_count: 3,
         },
         Solver {
             strategy: Strategy::Auto,
             chunk_start_length: 2,
-            chunk_list_max_size: 4
-        }
+            chunk_list_max_size: 4,
+            pre_split_max_count: 3,
+        },
+        Solver::AUTO
     ];
 
     fn execute(index: usize) {
@@ -713,6 +720,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(99, OverlayRule::Union, SOLVERS[4]);
+        debug_execute(2, OverlayRule::Xor, Solver::AUTO);
     }
 }
