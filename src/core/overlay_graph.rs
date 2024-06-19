@@ -4,6 +4,7 @@ use i_float::triangle::Triangle;
 
 use crate::{fill::segment::Segment};
 use crate::id_point::IdPoint;
+use crate::sort::SmartSort;
 use crate::util::EMPTY_INDEX;
 
 use super::{overlay_node::OverlayNode, overlay_link::OverlayLink};
@@ -46,7 +47,7 @@ impl OverlayGraph {
             });
         }
 
-        end_bs.sort_by(|a, b| a.point.cmp(&b.point));
+        end_bs.smart_sort_by(|a, b| a.point.cmp(&b.point));
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(2 * n);
         let mut links: Vec<OverlayLink> = segments

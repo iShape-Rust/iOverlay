@@ -118,7 +118,7 @@ impl ScanCrossSolver {
 
         let is_not_cross = a0b0a1 == a0b0b1 || a1b1a0 == a1b1b0;
 
-        if s != 0 && s != 1 || is_not_cross {
+        if s > 1 || is_not_cross {
             return None;
         }
 
@@ -215,6 +215,7 @@ impl ScanCrossSolver {
         let a1x = target.b.x as i64 - a0x;
         let b0x = other.a.x as i64 - a0x;
         let b1x = other.b.x as i64 - a0x;
+
 
         // move a0.y to 0
         // move all by a0.y

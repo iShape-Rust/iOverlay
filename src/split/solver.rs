@@ -11,7 +11,7 @@ use crate::split::store_tree::StoreTree;
 pub(crate) struct SplitSolver;
 
 impl SplitSolver {
-    pub(crate) fn split(edges: Vec<ShapeEdge>, solver: Solver, range: LineRange) -> (Vec<Segment>, bool) {
+    pub(crate) fn split(edges: Vec<ShapeEdge>, solver: Solver) -> (Vec<Segment>, bool) {
         let count = edges.len();
         match solver.strategy {
             Strategy::List => {
@@ -21,6 +21,7 @@ impl SplitSolver {
                 (solver.store.segments(), true)
             }
             Strategy::Tree => {
+                let range = Self::range_y(&edges);
                 if range.width() < solver.chunk_list_max_size as i64 {
                     let store = StoreList::new(edges, solver.chunk_start_length);
                     let mut solver = SplitSolverList::new(store);
@@ -34,6 +35,7 @@ impl SplitSolver {
                 }
             }
             Strategy::Auto => {
+                let range = Self::range_y(&edges);
                 let list_store = StoreList::new(edges, solver.chunk_start_length);
                 if list_store.is_tree_conversion_required(solver.chunk_list_max_size) {
                     let mut solver = SplitSolverTree::new(list_store.convert_to_tree(), ScanSplitTree::new(range, count));
@@ -56,4 +58,14 @@ impl SplitSolver {
             }
         }
     }
+
+    fn range_y(edges: &Vec<ShapeEdge>) -> LineRange {
+        let mut range = LineRange { min: i32::MAX, max: i32::MIN };
+        for e in edges.iter() {
+            range.add_value(e.x_segment.a.y);
+            range.add_value(e.x_segment.b.y);
+        }
+        range
+    }
+
 }

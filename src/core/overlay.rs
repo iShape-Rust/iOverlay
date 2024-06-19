@@ -10,8 +10,8 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::x_segment::XSegment;
 use crate::core::solver::{Solver, Strategy};
-use crate::line_range::LineRange;
-use crate::split::pre_split_solver::PreSplitSolver;
+use crate::pre_split::solver::PreSplitSolver;
+use crate::sort::SmartSort;
 use crate::split::solver::SplitSolver;
 use crate::vector::vector::VectorShape;
 
@@ -29,8 +29,6 @@ pub enum ShapeType {
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 pub struct Overlay {
-    y_min: i32,
-    y_max: i32,
     edges: Vec<ShapeEdge>,
 }
 
@@ -40,8 +38,6 @@ impl Overlay {
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
     pub fn new(capacity: usize) -> Self {
         Self {
-            y_min: i32::MAX,
-            y_max: i32::MIN,
             edges: Vec::with_capacity(capacity),
         }
     }
@@ -70,10 +66,8 @@ impl Overlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        if let Some(mut result) = path.to_vec().removed_degenerates().edges(shape_type) {
-            self.y_min = self.y_min.min(result.y_min);
-            self.y_max = self.y_max.max(result.y_max);
-            self.edges.append(&mut result.edges);
+        if let Some(mut edges) = path.to_vec().removed_degenerates().edges(shape_type) {
+            self.edges.append(&mut edges);
         }
     }
 
@@ -146,7 +140,7 @@ impl Overlay {
 
     fn prepare_segments(&self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
         let mut sorted_list = self.edges.clone();
-        sorted_list.sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
+        sorted_list.smart_sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
 
         let mut buffer = Vec::with_capacity(sorted_list.len());
 
@@ -173,19 +167,22 @@ impl Overlay {
             buffer.push(prev);
         }
 
-        let range = LineRange { min: self.y_min, max: self.y_max };
-
         let (mut segments, is_list) = if solver.strategy == Strategy::Auto {
-            let need_to_fix = PreSplitSolver::split(solver, &mut buffer);
+            let need_to_fix = if solver.pre_split_enabled {
+                PreSplitSolver::split(solver, &mut buffer)
+            } else {
+                true
+            };
+
             if need_to_fix {
-                SplitSolver::split(buffer, solver, range)
+                SplitSolver::split(buffer, solver)
             } else {
                 let segments: Vec<Segment> = buffer.iter().map(|it| Segment::new(it)).collect();
                 let is_list = segments.len().log2_sqrt() < solver.chunk_list_max_size;
                 (segments, is_list)
             }
         } else {
-            SplitSolver::split(buffer, solver, range)
+            SplitSolver::split(buffer, solver)
         };
 
         segments.fill(fill_rule, is_list);
@@ -194,18 +191,12 @@ impl Overlay {
     }
 }
 
-struct EdgeResult {
-    edges: Vec<ShapeEdge>,
-    y_min: i32,
-    y_max: i32,
-}
-
 trait CreateEdges {
-    fn edges(&self, shape_type: ShapeType) -> Option<EdgeResult>;
+    fn edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>>;
 }
 
 impl CreateEdges for IntPath {
-    fn edges(&self, shape_type: ShapeType) -> Option<EdgeResult> {
+    fn edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>> {
         let n = self.len();
         if n < 3 {
             return None;
@@ -216,13 +207,8 @@ impl CreateEdges for IntPath {
         let i0 = n - 1;
         let mut p0 = self[i0];
 
-        let mut y_min = p0.y;
-        let mut y_max = p0.y;
-
         for i in 0..n {
             let p1 = self[i];
-            y_min = y_min.min(p1.y);
-            y_max = y_max.max(p1.y);
 
             let value = if p0 < p1 { 1 } else { -1 };
             match shape_type {
@@ -237,7 +223,7 @@ impl CreateEdges for IntPath {
             p0 = p1
         }
 
-        Some(EdgeResult { edges, y_min, y_max })
+        Some(edges)
     }
 }
 
@@ -260,7 +246,7 @@ impl Filter for Vec<Segment> {
         }
 
         if has_empty {
-            self.sort_by(|a, b| a.seg.cmp(&b.seg));
+            self.smart_sort_by(|a, b| a.seg.cmp(&b.seg));
         }
     }
 }

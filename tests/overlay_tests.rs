@@ -9,42 +9,69 @@ mod tests {
     use i_overlay::core::solver::{Solver, Strategy};
     use crate::data::overlay::Test;
 
-    const SOLVERS: [Solver; 7] = [
+    const SOLVERS: [Solver; 8] = [
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 1,
             chunk_list_max_size: 2,
-            pre_split_max_count: 3,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 1024,
+            pre_split_skip_threshold: 0,
         },
         Solver {
             strategy: Strategy::List,
             chunk_start_length: 2,
             chunk_list_max_size: 4,
-            pre_split_max_count: 3,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 1024,
+            pre_split_skip_threshold: 0,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 1,
             chunk_list_max_size: 2,
-            pre_split_max_count: 3,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 1024,
+            pre_split_skip_threshold: 0,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 2,
             chunk_list_max_size: 4,
-            pre_split_max_count: 3,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 1024,
+            pre_split_skip_threshold: 0,
         },
         Solver {
             strategy: Strategy::Tree,
             chunk_start_length: 16,
             chunk_list_max_size: 32,
-            pre_split_max_count: 3,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 1024,
+            pre_split_skip_threshold: 0,
         },
         Solver {
             strategy: Strategy::Auto,
             chunk_start_length: 2,
             chunk_list_max_size: 4,
-            pre_split_max_count: 3,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 1024,
+            pre_split_skip_threshold: 0,
+        },
+        Solver {
+            strategy: Strategy::Auto,
+            chunk_start_length: 2,
+            chunk_list_max_size: 4,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 2,
+            pre_split_skip_threshold: 0,
         },
         Solver::AUTO
     ];
@@ -720,6 +747,14 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(2, OverlayRule::Xor, Solver::AUTO);
+        debug_execute(12, OverlayRule::Xor, Solver {
+            strategy: Strategy::Auto,
+            chunk_start_length: 16,
+            chunk_list_max_size: 32,
+            pre_split_enabled: false,
+            pre_split_max_iterations: 3,
+            pre_split_multithread_threshold: 2,
+            pre_split_skip_threshold: 0,
+        });
     }
 }

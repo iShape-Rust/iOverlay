@@ -11,4 +11,12 @@ impl LineRange {
         self.max as i64 - self.min as i64
     }
 
+    #[inline]
+    pub fn add_value(&mut self, value: i32) {
+        if self.min > value {
+            self.min = value
+        } else if self.max < value {
+            self.max = value
+        }
+    }
 }

@@ -26,7 +26,7 @@ impl ShapeEdge {
     }
 
     #[inline(always)]
-    pub(super) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
+    pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {
