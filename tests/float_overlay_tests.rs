@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use i_float::f64_point::F64Point;
-    use i_float::point::IntPoint;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::float_overlay::FloatOverlay;
