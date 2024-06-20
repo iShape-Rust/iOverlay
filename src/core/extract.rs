@@ -16,8 +16,8 @@ impl OverlayGraph {
     /// # Shape Representation
     /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
     /// - The outer `Vec` represents a set of shapes.
-    /// - Each shape `Vec` represents a collection of polygons, where the first polygon is the outer boundary, and all subsequent polygons are holes in this boundary.
-    /// - Each polygon `Vec` represents a collection of points, where every two consecutive points (cyclically) make up the boundary edge of the polygon.
+    /// - Each shape `Vec` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec` represents a collection of points, where every two consecutive points (cyclically) make up the boundary edge of the polygon.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
@@ -120,7 +120,6 @@ trait JoinHoles {
 }
 
 impl JoinHoles for Vec<IntShape> {
-
     #[inline]
     fn join(&mut self, holes: Vec<IntPath>) {
         if self.is_empty() || holes.is_empty() {
