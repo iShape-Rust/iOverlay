@@ -18,6 +18,8 @@ pub mod overlay {
         pub clip: Vec<Vec<IntShape>>,
         pub subject: Vec<Vec<IntShape>>,
         pub difference: Vec<Vec<IntShape>>,
+        #[serde(rename = "inverseDifference")]
+        pub inverse_difference: Vec<Vec<IntShape>>,
         pub intersect: Vec<Vec<IntShape>>,
         pub union: Vec<Vec<IntShape>>,
         pub xor: Vec<Vec<IntShape>>,

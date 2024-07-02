@@ -38,9 +38,9 @@ impl FloatOverlayGraph {
     ///
     /// # Shape Representation
     /// The output is a `Vec<Vec<Vec<F64Point>>>`, where:
-    /// - The outer `Vec` represents a set of shapes.
-    /// - Each shape `Vec` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
-    /// - Each path `Vec` represents a collection of points, where every two consecutive points (cyclically) make up the boundary edge of the polygon.
+    /// - The outer `Vec<F64Shape>` represents a set of shapes.
+    /// - Each shape `Vec<F64Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<F64Point>` represents a collection of points, where every two consecutive points (cyclically) make up the boundary edge of the polygon.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
@@ -60,9 +60,9 @@ impl FloatOverlayGraph {
     ///
     /// # Shape Representation
     /// The output is a `Vec<Vec<Vec<F64Point>>>`, where:
-    /// - The outer `Vec` represents a set of shapes.
-    /// - Each shape `Vec` represents a collection of polygons, where the first polygon is the outer boundary, and all subsequent polygons are holes in this boundary.
-    /// - Each polygon `Vec` represents a collection of points, where every two consecutive points (cyclically) make up the boundary edge of the polygon.
+    /// - The outer `Vec<F64Shape>` represents a set of shapes.
+    /// - Each shape `Vec<F64Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<F64Point>` represents a collection of points, where every two consecutive points (cyclically) make up the boundary edge of the polygon.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]

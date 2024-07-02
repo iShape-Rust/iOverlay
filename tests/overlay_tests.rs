@@ -52,6 +52,7 @@ mod tests {
             let clip = graph.extract_shapes(OverlayRule::Clip);
             let subject = graph.extract_shapes(OverlayRule::Subject);
             let difference = graph.extract_shapes(OverlayRule::Difference);
+            let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
             let intersect = graph.extract_shapes(OverlayRule::Intersect);
             let union = graph.extract_shapes(OverlayRule::Union);
             let xor = graph.extract_shapes(OverlayRule::Xor);
@@ -59,6 +60,7 @@ mod tests {
             assert_eq!(true, test_result(&clip, &test.clip));
             assert_eq!(true, test_result(&subject, &test.subject));
             assert_eq!(true, test_result(&difference, &test.difference));
+            assert_eq!(true, test_result(&inverse_difference, &test.inverse_difference));
             assert_eq!(true, test_result(&intersect, &test.intersect));
             assert_eq!(true, test_result(&union, &test.union));
             assert_eq!(true, test_result(&xor, &test.xor));
@@ -67,7 +69,7 @@ mod tests {
 
     fn debug_execute(index: usize, overlay_rule: OverlayRule, solver: Solver) {
         let test = Test::load(index);
-        let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
+        let fill_rule = test.fill_rule.unwrap_or(FillRule::NonZero);
         let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
         let graph = overlay.build_graph_with_solver(fill_rule, solver);
         let result = graph.extract_shapes(overlay_rule);
@@ -88,6 +90,9 @@ mod tests {
             }
             OverlayRule::Difference => {
                 assert_eq!(true, test_result(&result, &test.difference));
+            }
+            OverlayRule::InverseDifference => {
+                assert_eq!(true, test_result(&result, &test.inverse_difference));
             }
             OverlayRule::Xor => {
                 assert_eq!(true, test_result(&result, &test.xor));

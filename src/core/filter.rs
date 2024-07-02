@@ -17,6 +17,7 @@ impl Filter for Vec<OverlayLink> {
             OverlayRule::Union => filter_union(self),
             OverlayRule::Difference => filter_difference(self),
             OverlayRule::Xor => filter_xor(self),
+            OverlayRule::InverseDifference => {filter_inverse_difference(self)}
         }
     }
 }
@@ -103,6 +104,26 @@ fn filter_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
         let bot_only_subject = fill & BOTH_BOTTOM == SUBJ_BOTTOM;
 
         skip[i] = !(top_only_subject || bot_only_subject) || subject_inner;
+    }
+
+    skip
+}
+
+fn filter_inverse_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
+    let n = links.len();
+    let mut skip = vec![false; n];
+
+    for i in 0..n {
+        let fill = links[i].fill;
+
+        // One side must belong only clip
+        // Can not be clip inner edge
+
+        let clip_inner = fill == CLIP_BOTH;
+        let top_only_clip = fill & BOTH_TOP == CLIP_TOP;
+        let bot_only_clip = fill & BOTH_BOTTOM == CLIP_BOTTOM;
+
+        skip[i] = !(top_only_clip || bot_only_clip) || clip_inner;
     }
 
     skip

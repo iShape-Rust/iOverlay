@@ -6,6 +6,7 @@ use crate::fill::segment::{BOTH_BOTTOM, BOTH_TOP, CLIP_TOP, NONE, SegmentFill, S
 /// - `Intersect`: Finds the common area between the subject and clip shapes, effectively identifying where they overlap.
 /// - `Union`: Combines the area of both subject and clip shapes into a single unified shape.
 /// - `Difference`: Subtracts the area of the clip shape from the subject shape, removing the clip shape's area from the subject.
+/// - `InverseDifference`: Subtracts the area of the subject shape from the clip shape, removing the subject shape's area from the clip.
 /// - `Xor`: Produces a shape consisting of areas unique to each shape, excluding any parts where the subject and clip overlap.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OverlayRule {
@@ -14,6 +15,7 @@ pub enum OverlayRule {
     Intersect,
     Union,
     Difference,
+    InverseDifference,
     Xor,
 }
 
@@ -25,6 +27,7 @@ impl OverlayRule {
             OverlayRule::Intersect => fill & BOTH_TOP == BOTH_TOP,
             OverlayRule::Union => fill & BOTH_BOTTOM == NONE,
             OverlayRule::Difference => fill & BOTH_TOP == SUBJ_TOP,
+            OverlayRule::InverseDifference => fill & BOTH_TOP == CLIP_TOP,
             OverlayRule::Xor => {
                 let is_subject = fill & BOTH_TOP == SUBJ_TOP;
                 let is_clip = fill & BOTH_TOP == CLIP_TOP;
