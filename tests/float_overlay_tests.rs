@@ -4,6 +4,7 @@ mod tests {
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::float_overlay::FloatOverlay;
+    use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
 
 
@@ -258,5 +259,84 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_empty_0() {
+        let shape = [
+            [
+                F64Point::new(-10.0, -10.0),
+                F64Point::new(-10.0, 10.0),
+                F64Point::new(10.0, 10.0),
+                F64Point::new(10.0, -10.0)
+            ].to_vec()
+        ].to_vec();
+
+        let mut overlay = FloatOverlay::new();
+        overlay.add_paths(&shape, ShapeType::Subject);
+
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_empty_1() {
+        let shape_0 = [
+            [
+                F64Point::new(-10.0, -10.0),
+                F64Point::new(-10.0, 10.0),
+                F64Point::new(10.0, 10.0),
+                F64Point::new(10.0, -10.0)
+            ].to_vec()
+        ].to_vec();
+
+        let shape_1 = [
+            [
+                F64Point::new(-500.0, -500.0)
+            ].to_vec()
+        ].to_vec();
+
+
+        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_empty_2() {
+        let shape_0 = [
+            [
+                F64Point::new(-10.0, -10.0),
+                F64Point::new(-10.0, 10.0),
+                F64Point::new(10.0, 10.0),
+                F64Point::new(10.0, -10.0)
+            ].to_vec()
+        ].to_vec();
+
+        let shape_1 = [
+            [
+                F64Point::new(-500.0, -500.0),
+                F64Point::new(-500.0, 500.0)
+            ].to_vec()
+        ].to_vec();
+
+
+        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
     }
 }
