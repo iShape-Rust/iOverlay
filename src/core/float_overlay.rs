@@ -10,8 +10,8 @@ use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::solver::Solver;
 
 pub struct FloatOverlay {
-    subj_paths: Vec<Vec<F64Point>>,
-    clip_paths: Vec<Vec<F64Point>>,
+    subj_paths: Vec<F64Path>,
+    clip_paths: Vec<F64Path>,
 }
 
 impl FloatOverlay {
@@ -73,7 +73,16 @@ impl FloatOverlay {
         let subj_rect = F64Rect::with_shape(&self.subj_paths);
         let clip_rect = F64Rect::with_shape(&self.clip_paths);
 
-        let union_rect = F64Rect::with_rects(&subj_rect, &clip_rect);
+        let union_rect = if !subj_rect.is_none() && !clip_rect.is_none() {
+            F64Rect::with_rects(&subj_rect.unwrap(), &clip_rect.unwrap())
+        } else if let Some(subj_rect) = subj_rect {
+            subj_rect
+        } else if let Some(clip_rect) = clip_rect {
+            clip_rect
+        } else {
+            F64Rect { min_x: 0.0, max_x: 0.0, min_y: 0.0, max_y: 0.0 }
+        };
+
         let adapter = PointAdapter::new(union_rect);
 
         let int_subj = self.subj_paths.to_int(&adapter);
