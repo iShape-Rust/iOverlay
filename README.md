@@ -66,6 +66,16 @@ if shapes.len() > 0 {
 }
 ```
 
+### Shapes result
+
+The output of the extract_shapes function is a `Vec<Vec<Vec<F64Point>>>`, where:
+
+- The outer `Vec<F64Shape>` represents a set of shapes.
+- Each shape `Vec<F64Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+- Each path `Vec<F64Point>` is a sequence of points, forming a closed path.
+
+**Note**: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+
 # Overlay Rules
 
 ## Union, A or B
