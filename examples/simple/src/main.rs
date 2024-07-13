@@ -1,8 +1,8 @@
-use i_float::f64_point::F64Point;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::float_overlay::FloatOverlay;
 use i_overlay::core::overlay::ShapeType;
 use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::i_float::f64_point::F64Point;
 
 fn main() {
 
