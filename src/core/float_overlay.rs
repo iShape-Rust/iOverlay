@@ -73,15 +73,13 @@ impl FloatOverlay {
         let subj_rect = F64Rect::with_shape(&self.subj_paths);
         let clip_rect = F64Rect::with_shape(&self.clip_paths);
 
-        let union_rect = if !subj_rect.is_none() && !clip_rect.is_none() {
-            F64Rect::with_rects(&subj_rect.unwrap(), &clip_rect.unwrap())
-        } else if let Some(subj_rect) = subj_rect {
-            subj_rect
-        } else if let Some(clip_rect) = clip_rect {
-            clip_rect
-        } else {
-            F64Rect { min_x: 0.0, max_x: 0.0, min_y: 0.0, max_y: 0.0 }
-        };
+        let union_rect = F64Rect::with_optional_rects(subj_rect, clip_rect)
+            .unwrap_or(F64Rect {
+                min_x: -1.0,
+                max_x: 1.0,
+                min_y: -1.0,
+                max_y: 1.0,
+            });
 
         let adapter = PointAdapter::new(union_rect);
 

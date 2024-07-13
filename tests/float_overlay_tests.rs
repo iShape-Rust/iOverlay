@@ -263,6 +263,14 @@ mod tests {
 
     #[test]
     fn test_empty_0() {
+        let graph = FloatOverlay::new().build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.is_empty(), true);
+    }
+
+    #[test]
+    fn test_empty_1() {
         let shape = [
             [
                 F64Point::new(-10.0, -10.0),
@@ -284,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_1() {
+    fn test_empty_2() {
         let shape_0 = [
             [
                 F64Point::new(-10.0, -10.0),
@@ -312,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_2() {
+    fn test_empty_3() {
         let shape_0 = [
             [
                 F64Point::new(-10.0, -10.0),
