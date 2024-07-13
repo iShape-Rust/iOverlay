@@ -7,3 +7,6 @@ pub mod x_segment;
 pub(crate) mod util;
 pub mod line_range;
 pub mod id_point;
+
+pub use i_float;
+pub use i_shape;
