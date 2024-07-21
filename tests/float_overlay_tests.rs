@@ -347,4 +347,35 @@ mod tests {
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[0][0].len(), 4);
     }
+
+    #[test]
+    fn test_empty_4() {
+        let mut overlay = FloatOverlay::new();
+        overlay.add_path(&[F64Point::new(0.0, 0.0)], ShapeType::Subject);
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_5() {
+        let mut overlay = FloatOverlay::new();
+        overlay.add_path(&[F64Point::new(0.0, 0.0)], ShapeType::Subject);
+        overlay.add_path(&[F64Point::new(1.0, 0.0)], ShapeType::Clip);
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_6() {
+        let mut overlay = FloatOverlay::new();
+        overlay.add_path(&[F64Point::new(0.0, 0.0), F64Point::new(1.0, 0.0)], ShapeType::Subject);
+        let graph = overlay.build_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(OverlayRule::Subject);
+
+        assert_eq!(shapes.len(), 0);
+    }
 }
