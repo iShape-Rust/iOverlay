@@ -28,7 +28,7 @@ mod tests {
         overlay.add_shape(&right_top_square, ShapeType::Clip);
 
         // resolve shapes geometry
-        let graph = overlay.build_graph(FillRule::EvenOdd);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
 
         // apply union operation and get result (in our case it will be only one element)
         let shapes = graph.extract_shapes(OverlayRule::Union);

@@ -23,7 +23,7 @@ mod tests {
             IntPoint::new(5, -5),
         ], ShapeType::Clip);
 
-        let graph = overlay.build_graph(FillRule::EvenOdd);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
 
         let shapes = graph.extract_shapes(OverlayRule::Difference);
 
@@ -57,7 +57,7 @@ mod tests {
             ].to_vec()
         ].to_vec(), ShapeType::Clip);
 
-        let graph = overlay.build_graph(FillRule::EvenOdd);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
 
         let shapes = graph.extract_shapes(OverlayRule::Difference);
 
@@ -91,7 +91,7 @@ mod tests {
             ].to_vec()
         ].to_vec(), ShapeType::Clip);
 
-        let graph = overlay.build_graph(FillRule::EvenOdd);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
 
         let shapes = graph.extract_shapes(OverlayRule::Difference);
 

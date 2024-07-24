@@ -10,9 +10,6 @@ impl ShapeCount {
     pub(crate) fn is_empty(self) -> bool { self.subj == 0 && self.clip == 0 }
 
     #[inline(always)]
-    pub(crate) fn is_not_empty(self) -> bool { self.subj != 0 || self.clip != 0 }
-
-    #[inline(always)]
     pub fn new(subj: i32, clip: i32) -> ShapeCount { ShapeCount { subj, clip } }
 
     #[inline(always)]
@@ -21,12 +18,6 @@ impl ShapeCount {
         let clip = self.clip + count.clip;
 
         ShapeCount { subj, clip }
-    }
-
-    #[inline(always)]
-    pub(crate) fn accumulate(&mut self, count: ShapeCount) {
-        self.subj += count.subj;
-        self.clip += count.clip;
     }
 
     #[inline(always)]

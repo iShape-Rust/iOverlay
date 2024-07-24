@@ -27,7 +27,7 @@ mod tests {
         overlay.add_path(&subj, ShapeType::Subject);
         overlay.add_path(&clip, ShapeType::Clip);
 
-        let shapes = overlay.build_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
+        let shapes = overlay.into_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -79,7 +79,7 @@ mod tests {
         overlay.add_path(&subj, ShapeType::Subject);
         overlay.add_path(&clip, ShapeType::Clip);
 
-        let shapes = overlay.build_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
+        let shapes = overlay.into_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

@@ -1,0 +1,143 @@
+use i_float::rect::IntRect;
+use crate::line_range::LineRange;
+use crate::split::fragment::Fragment;
+use crate::split::shape_edge::ShapeEdge;
+use crate::x_segment::XSegment;
+
+pub(crate) struct SpaceLayout {
+    pub(super) power: usize,
+    min_size: u64,
+}
+
+impl SpaceLayout {
+    const MIN_POWER: usize = 2;
+
+    pub(crate) const MIN_RANGE_LENGTH: i64 = 1 << Self::MIN_POWER;
+
+    pub(super) fn new(range: LineRange, count: usize) -> Self {
+        let max_power_range = range.log2() - 1;
+        let max_power_count = (count as i64).log2() >> 1;
+        let power = Self::MIN_POWER.max(max_power_range.min(max_power_count));
+        let min_size = (range.width() >> power) as u64;
+        Self { power, min_size }
+    }
+
+    pub(super) fn break_into_fragments(&self, index: usize, x_segment: &XSegment, buffer: &mut Vec<Fragment>) {
+        let min_x = x_segment.a.x;
+        let max_x = x_segment.b.x;
+
+        let is_up = x_segment.a.y < x_segment.b.y;
+
+        let (min_y, max_y) = if is_up {
+            (x_segment.a.y, x_segment.b.y)
+        } else {
+            (x_segment.b.y, x_segment.a.y)
+        };
+
+        let dx = (max_x as i64 - min_x as i64) as u64;
+        let dy = (max_y as i64 - min_y as i64) as u64;
+
+        let is_fragmentation_required = dx > self.min_size && dy > self.min_size;
+
+        if !is_fragmentation_required {
+            buffer.push(Fragment::with_index_and_segment(index, x_segment.clone()));
+            return;
+        }
+
+        let k = (dy << u32::BITS) / dx;
+
+        let s = if dx < dy {
+            self.min_size << u32::BITS
+        } else {
+            (self.min_size << u32::BITS) * dx / dy
+        };
+
+        let mut x0: u64 = 0;
+
+        let mut ix0 = min_x;
+        let mut iy0 = if is_up { min_y } else { max_y };
+
+        let x_last = (dx << u32::BITS) - s;
+
+        if x0 >= x_last {
+            // must be at least two fragments
+            return;
+        }
+
+        while x0 < x_last {
+            let x1 = x0 + s;
+            let x = x1 >> u32::BITS;
+
+            let y1 = x * k;
+            let y = y1 >> u32::BITS;
+
+            let is_same_line = x * dy == y * dx;
+            let extra = if is_same_line { 0 } else { 1 };
+
+            let ix1 = min_x + x as i32;
+
+
+            let (iy1, rect) = if is_up {
+                let iy1 = min_y + y as i32;
+                let rect = IntRect { min_x: ix0, max_x: ix1, min_y: iy0, max_y: iy1 + extra };
+                (iy1, rect)
+            } else {
+                let iy1 = max_y - y as i32;
+                let rect = IntRect { min_x: ix0, max_x: ix1, min_y: iy1 - extra, max_y: iy0 };
+                (iy1, rect)
+            };
+
+            buffer.push(Fragment { index, rect, x_segment: x_segment.clone() });
+
+            x0 = x1;
+
+            ix0 = ix1;
+            iy0 = iy1;
+        }
+
+
+        let rect = if is_up {
+            IntRect { min_x: ix0, max_x, min_y: iy0, max_y }
+        } else {
+            IntRect { min_x: ix0, max_x, min_y, max_y: iy0 }
+        };
+        buffer.push(Fragment { index, rect, x_segment: x_segment.clone() });
+    }
+
+    pub(super) fn is_fragmentation_required_for_edges(&self, edges: &[ShapeEdge]) -> bool {
+        let mut i = 0;
+        for edge in edges.iter() {
+            if self.is_fragmentation_required(edge.x_segment) {
+                i += 1;
+            }
+        }
+        // must be at least 20%
+        i * 20 > edges.len()
+    }
+
+    fn is_fragmentation_required(&self, x_segment: XSegment) -> bool {
+        let dx = (x_segment.b.x as i64 - x_segment.a.x as i64) as u64;
+        let dy = (x_segment.b.x as i64 - x_segment.a.x as i64).abs() as u64;
+
+        dx > self.min_size && dy > self.min_size
+    }
+}
+
+trait Log2Extension {
+    fn log2(&self) -> usize;
+}
+
+impl Log2Extension for i64 {
+    #[inline(always)]
+    fn log2(&self) -> usize {
+        debug_assert!(self >= &0);
+        let n = self.leading_zeros();
+        (i64::BITS - n) as usize
+    }
+}
+
+impl LineRange {
+    fn log2(&self) -> usize {
+        self.width().log2()
+    }
+}

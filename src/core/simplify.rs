@@ -13,7 +13,7 @@ impl Simplify for IntPath {
         let mut overlay = Overlay::new(self.len());
         overlay.add_path(self, ShapeType::Subject);
 
-        let graph = overlay.build_graph(fill_rule);
+        let graph = overlay.into_graph(fill_rule);
         graph.extract_shapes_min_area(OverlayRule::Subject, min_area)
     }
 }
@@ -24,7 +24,7 @@ impl Simplify for [IntPath] {
 
         overlay.add_paths(self, ShapeType::Subject);
 
-        let graph = overlay.build_graph(fill_rule);
+        let graph = overlay.into_graph(fill_rule);
         graph.extract_shapes_min_area(OverlayRule::Subject, min_area)
     }
 }
@@ -33,7 +33,7 @@ impl Simplify for IntShape {
     fn simplify(&self, fill_rule: FillRule, min_area: i64) -> Vec<IntShape> {
         let mut overlay = Overlay::new(self[0].len());
         overlay.add_shape(self, ShapeType::Subject);
-        let graph = overlay.build_graph(fill_rule);
+        let graph = overlay.into_graph(fill_rule);
         graph.extract_shapes_min_area(OverlayRule::Subject, min_area)
     }
 }
@@ -44,7 +44,7 @@ impl Simplify for [IntShape] {
         for shape in self.iter() {
             overlay.add_shape(shape, ShapeType::Subject);
         }
-        let graph = overlay.build_graph(fill_rule);
+        let graph = overlay.into_graph(fill_rule);
         graph.extract_shapes_min_area(OverlayRule::Subject, min_area)
     }
 }

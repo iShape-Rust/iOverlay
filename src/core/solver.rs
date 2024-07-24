@@ -1,4 +1,5 @@
 use crate::core::solver::Strategy::{Auto, List, Tree};
+use crate::split::space_layout::SpaceLayout;
 
 /// Represents the selection strategy or algorithm for processing geometric data, aimed at optimizing performance under various conditions.
 ///
@@ -18,12 +19,22 @@ pub enum Strategy {
 #[derive(Clone, Copy)]
 pub struct Solver {
     pub strategy: Strategy,
-    pub chunk_start_length: usize,
-    pub chunk_list_max_size: usize
 }
 
 impl Solver {
-    pub const LIST: Self = Self { strategy: List, chunk_start_length: 8, chunk_list_max_size: 128 };
-    pub const TREE: Self = Self { strategy: Tree, chunk_start_length: 8, chunk_list_max_size: 128 };
-    pub const AUTO: Self = Self { strategy: Auto, chunk_start_length: 8, chunk_list_max_size: 128 };
+    pub const LIST: Self = Self { strategy: List };
+    pub const TREE: Self = Self { strategy: Tree };
+    pub const AUTO: Self = Self { strategy: Auto };
+
+    const MAX_LIST_COUNT: usize = 1024;
+
+    pub(crate) fn is_list(&self, range: i64, count: usize) -> bool {
+        match self.strategy {
+            List => { true }
+            Tree => { false }
+            Auto => {
+                count < Self::MAX_LIST_COUNT && range > SpaceLayout::MIN_RANGE_LENGTH
+            }
+        }
+    }
 }

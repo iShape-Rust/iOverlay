@@ -44,7 +44,7 @@ mod tests {
         overlay.add_paths(&subj_paths, ShapeType::Subject);
         overlay.add_paths(&clip_paths, ShapeType::Clip);
 
-        let graph = overlay.build_graph(FillRule::NonZero);
+        let graph = overlay.into_graph(FillRule::NonZero);
         let result = graph.extract_shapes(rule);
 
         result.len()

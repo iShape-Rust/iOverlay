@@ -7,54 +7,12 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::core::solver::{Solver, Strategy};
+    use i_overlay::core::solver::Solver;
 
-    const SOLVERS: [Solver; 9] = [
-        Solver {
-            strategy: Strategy::List,
-            chunk_start_length: 1,
-            chunk_list_max_size: 2,
-        },
-        Solver {
-            strategy: Strategy::List,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4,
-        },
-        Solver {
-            strategy: Strategy::List,
-            chunk_start_length: 8,
-            chunk_list_max_size: 16,
-        },
-        Solver {
-            strategy: Strategy::List,
-            chunk_start_length: 16,
-            chunk_list_max_size: 256,
-        },
-        Solver {
-            strategy: Strategy::Tree,
-            chunk_start_length: 1,
-            chunk_list_max_size: 2,
-        },
-        Solver {
-            strategy: Strategy::Tree,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4,
-        },
-        Solver {
-            strategy: Strategy::Tree,
-            chunk_start_length: 16,
-            chunk_list_max_size: 32,
-        },
-        Solver {
-            strategy: Strategy::Auto,
-            chunk_start_length: 1,
-            chunk_list_max_size: 2,
-        },
-        Solver {
-            strategy: Strategy::Auto,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4,
-        }
+    const SOLVERS: [Solver; 3] = [
+        Solver::LIST,
+        Solver::TREE,
+        Solver::AUTO
     ];
 
     #[test]
@@ -68,7 +26,7 @@ mod tests {
                     let subj = create_star(1.0, r, 7, a);
 
                     let overlay = Overlay::with_paths(&subj, &clip);
-                    let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                    let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                     let result = graph.extract_shapes(OverlayRule::Union);
                     assert!(result.len() > 0);
                     a += 0.005
@@ -86,7 +44,7 @@ mod tests {
             while a < 4.0 * PI {
                 let subj = create_star(200.0, 30.0, 7, a);
                 let overlay = Overlay::with_paths(&subj, &clip);
-                let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                 let result = graph.extract_shapes(OverlayRule::Xor);
                 assert!(result.len() > 1 || result.len() == 0);
                 a += 0.001
@@ -103,7 +61,7 @@ mod tests {
             while a < 2.0 * PI {
                 let subj = create_star(202.5, 33.75, 24, a);
                 let overlay = Overlay::with_paths(&subj, &clip);
-                let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                 let result = graph.extract_shapes(OverlayRule::Xor);
                 assert!(result.len() > 1 || result.len() == 0);
                 a += 0.001
@@ -120,7 +78,7 @@ mod tests {
             while a < 4.0 * PI {
                 let subj = create_star(100.0, 10.0, 17, a);
                 let overlay = Overlay::with_paths(&subj, &clip);
-                let graph = overlay.build_graph_with_solver(FillRule::EvenOdd, solver);
+                let graph = overlay.into_graph_with_solver(FillRule::EvenOdd, solver);
                 let result = graph.extract_shapes(OverlayRule::Xor);
                 assert!(result.len() > 1 || result.len() == 0);
                 a += 0.001
@@ -137,7 +95,7 @@ mod tests {
             while a < 0.000_001 {
                 let subj = create_star(202.5, 33.75, 24, a);
                 let overlay = Overlay::with_paths(&subj, &clip);
-                let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                 let result = graph.extract_shapes(OverlayRule::Xor);
                 assert!(result.len() > 1 || result.len() == 0);
                 a += 0.000_000_01
@@ -154,7 +112,7 @@ mod tests {
         // println!("subj {:?}", subj);
         for &solver in SOLVERS.iter() {
             let overlay = Overlay::with_paths(&subj, &clip);
-            let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+            let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
             let result = graph.extract_shapes(OverlayRule::Xor);
             assert!(result.len() > 1 || result.len() == 0);
         }
@@ -169,7 +127,7 @@ mod tests {
             while a < 0.000_001 {
                 let subj = create_star(100.0, 50.0, 24, a);
                 let overlay = Overlay::with_paths(&subj, &clip);
-                let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                 let result = graph.extract_shapes(OverlayRule::Xor);
                 assert!(result.len() > 1 || result.len() == 0);
                 a += 0.000_000_1
@@ -186,7 +144,7 @@ mod tests {
             let mut overlay = Overlay::new(n);
             overlay.add_path(&subj_paths, ShapeType::Subject);
 
-            let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+            let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
             let result = graph.extract_shapes(OverlayRule::Subject);
 
             assert!(!result.is_empty());
@@ -204,7 +162,7 @@ mod tests {
                     let mut overlay = Overlay::new(n);
                     overlay.add_path(&subj_paths, ShapeType::Subject);
 
-                    let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                    let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                     let result = graph.extract_shapes(OverlayRule::Subject);
 
                     assert!(!result.is_empty());
@@ -227,7 +185,7 @@ mod tests {
                     let subj = create_star(r0, r, 4, a);
 
                     let overlay = Overlay::with_paths(&subj, &clip);
-                    let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+                    let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
                     let result = graph.extract_shapes(OverlayRule::Union);
                     assert!(result.len() > 0);
                     a += 0.005
@@ -239,18 +197,14 @@ mod tests {
 
     #[test]
     fn test_10() {
-        let solver = Solver {
-            strategy: Strategy::Auto,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4,
-        };
+        let solver = Solver::AUTO;
         let clip = create_star(1.0, 2.0, 7, 0.0);
         let a = 0.44000000000000028;
         let r = 1.01;
         let subj = create_star(1.0, r, 7, a);
 
         let overlay = Overlay::with_paths(&subj, &clip);
-        let graph = overlay.build_graph_with_solver(FillRule::NonZero, solver);
+        let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
         let result = graph.extract_shapes(OverlayRule::Union);
         assert!(result.len() > 0);
     }

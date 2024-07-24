@@ -87,7 +87,7 @@ impl FloatOverlay {
         let int_clip = self.clip_paths.to_int(&adapter);
 
         let overlay = Overlay::with_paths(&int_subj, &int_clip);
-        let graph = overlay.build_graph_with_solver(fill_rule, solver);
+        let graph = overlay.into_graph_with_solver(fill_rule, solver);
 
         FloatOverlayGraph::new(graph, adapter)
     }

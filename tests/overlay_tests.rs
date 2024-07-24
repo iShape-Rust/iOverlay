@@ -6,40 +6,13 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::Overlay;
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::core::solver::{Solver, Strategy};
+    use i_overlay::core::solver::Solver;
     use crate::data::overlay::Test;
 
-    const SOLVERS: [Solver; 6] = [
-        Solver {
-            strategy: Strategy::List,
-            chunk_start_length: 1,
-            chunk_list_max_size: 2
-        },
-        Solver {
-            strategy: Strategy::List,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4
-        },
-        Solver {
-            strategy: Strategy::Tree,
-            chunk_start_length: 1,
-            chunk_list_max_size: 2
-        },
-        Solver {
-            strategy: Strategy::Tree,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4
-        },
-        Solver {
-            strategy: Strategy::Tree,
-            chunk_start_length: 16,
-            chunk_list_max_size: 32
-        },
-        Solver {
-            strategy: Strategy::Auto,
-            chunk_start_length: 2,
-            chunk_list_max_size: 4
-        }
+    const SOLVERS: [Solver; 3] = [
+        Solver::LIST,
+        Solver::TREE,
+        Solver::AUTO
     ];
 
     fn execute(index: usize) {
@@ -47,7 +20,7 @@ mod tests {
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
         for solver in SOLVERS {
             let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
-            let graph = overlay.build_graph_with_solver(fill_rule, solver);
+            let graph = overlay.into_graph_with_solver(fill_rule, solver);
 
             let clip = graph.extract_shapes(OverlayRule::Clip);
             let subject = graph.extract_shapes(OverlayRule::Subject);
@@ -71,7 +44,7 @@ mod tests {
         let test = Test::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::NonZero);
         let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
-        let graph = overlay.build_graph_with_solver(fill_rule, solver);
+        let graph = overlay.into_graph_with_solver(fill_rule, solver);
         let result = graph.extract_shapes(overlay_rule);
 
         print!("result: {:?}", result);
@@ -715,9 +688,34 @@ mod tests {
         execute(120);
     }
 
+    #[test]
+    fn test_121() {
+        execute(121);
+    }
+
+    #[test]
+    fn test_122() {
+        execute(122);
+    }
+
+    #[test]
+    fn test_123() {
+        execute(123);
+    }
+
+    #[test]
+    fn test_124() {
+        execute(124);
+    }
+
+    #[test]
+    fn test_125() {
+        execute(125);
+    }
+
 
     #[test]
     fn test_debug() {
-        debug_execute(99, OverlayRule::Union, SOLVERS[4]);
+        debug_execute(99, OverlayRule::Union, Solver::TREE);
     }
 }

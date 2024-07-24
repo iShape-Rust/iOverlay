@@ -3,49 +3,22 @@ use i_float::triangle::Triangle;
 use i_float::u128::UInt128;
 use crate::x_segment::XSegment;
 
-pub enum CrossResult {
-    PureExact(IntPoint),
-    PureRound(IntPoint),
-    EndOverlap,
-    Overlap,
-    TargetEndExact(IntPoint),
-    TargetEndRound(IntPoint),
-    OtherEndExact(IntPoint),
-    OtherEndRound(IntPoint),
+pub(crate) struct CrossResult {
+    pub(crate) point: IntPoint,
+    pub(crate) cross_type: CrossType,
+    pub(crate) is_round: bool,
 }
 
-pub struct ScanCrossSolver;
+pub(crate) enum CrossType {
+    Pure,
+    TargetEnd,
+    OtherEnd,
+}
 
-impl ScanCrossSolver {
-    #[inline(always)]
-    pub(super) fn is_valid_scan(scan: &XSegment, this: &XSegment) -> bool {
-        scan.b >= this.a && scan < this
-    }
+pub(crate) struct CrossSolver;
 
-    #[cfg(debug_assertions)]
-    pub fn test_x(target: &XSegment, other: &XSegment) -> bool {
-        target.a.x > other.a.x && target.a.x > other.b.x
-            && target.b.x > other.a.x && target.b.x > other.b.x
-            || target.a.x < other.a.x && target.a.x < other.b.x
-            && target.b.x < other.a.x && target.b.x < other.b.x
-    }
-
-    #[inline(always)]
-    pub fn test_y(target: &XSegment, other: &XSegment) -> bool {
-        target.a.y > other.a.y && target.a.y > other.b.y
-            && target.b.y > other.a.y && target.b.y > other.b.y
-            || target.a.y < other.a.y && target.a.y < other.b.y
-            && target.b.y < other.a.y && target.b.y < other.b.y
-    }
-
-    pub fn cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
-        // by this time segments already at intersection range by x
-        #[cfg(debug_assertions)]
-        debug_assert!(!ScanCrossSolver::test_x(target, other));
-
-        #[cfg(debug_assertions)]
-        debug_assert!(!ScanCrossSolver::test_y(target, other));
-
+impl CrossSolver {
+    pub(crate) fn cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
         let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
         let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
 
@@ -56,58 +29,50 @@ impl ScanCrossSolver {
 
         let is_not_cross = a0b0a1 == a0b0b1 || a1b1a0 == a1b1b0;
 
-        if s == 2 || (is_not_cross && s != 4) {
+        if s > 1 || is_not_cross {
             return None;
         }
 
         if s != 0 {
-            // special case
-            return if s == 4 {
-                // collinear
-
-                let aa = target.a == other.a;
-                let ab = target.a == other.b;
-                let ba = target.b == other.a;
-                let bb = target.b == other.b;
-
-                let is_end0 = aa || ab;
-                let is_end1 = ba || bb;
-
-                if is_end0 || is_end1 {
-                    let p = if aa || ba { other.b } else { other.a };
-                    let v0 = target.a.subtract(p);
-                    let v1 = if is_end0 {
-                        target.a.subtract(target.b)
-                    } else {
-                        target.b.subtract(target.a)
-                    };
-                    let dot_product = v1.dot_product(v0);
-                    if dot_product >= 0 {
-                        return Some(CrossResult::EndOverlap);
-                    } else {
-                        // end to end connection
-                        None
-                    }
-                } else {
-                    Some(CrossResult::Overlap)
-                }
+            return if a0b0a1 == 0 {
+                Some(CrossResult {
+                    point: other.a,
+                    cross_type: CrossType::OtherEnd,
+                    is_round: false,
+                })
+            } else if a0b0b1 == 0 {
+                Some(CrossResult {
+                    point: other.b,
+                    cross_type: CrossType::OtherEnd,
+                    is_round: false,
+                })
+            } else if a1b1a0 == 0 {
+                Some(CrossResult {
+                    point: target.a,
+                    cross_type: CrossType::TargetEnd,
+                    is_round: false,
+                })
             } else {
-                if a0b0a1 == 0 {
-                    Some(CrossResult::OtherEndExact(other.a))
-                } else if a0b0b1 == 0 {
-                    Some(CrossResult::OtherEndExact(other.b))
-                } else if a1b1a0 == 0 {
-                    Some(CrossResult::TargetEndExact(target.a))
-                } else {
-                    Some(CrossResult::TargetEndExact(target.b))
-                }
+                Some(CrossResult {
+                    point: target.b,
+                    cross_type: CrossType::TargetEnd,
+                    is_round: false,
+                })
             };
         }
 
-        let p = ScanCrossSolver::cross_point(&target, &other);
+        Self::simple_cross(target, other)
+    }
+
+    fn simple_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+        let p = CrossSolver::cross_point(&target, &other);
 
         if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
-            return Some(CrossResult::PureExact(p));
+            return Some(CrossResult {
+                point: p,
+                cross_type: CrossType::Pure,
+                is_round: false,
+            });
         }
 
         // still can be common ends because of rounding
@@ -127,19 +92,31 @@ impl ScanCrossSolver {
                 let p = if ra0 < rb0 { target.a } else { target.b };
                 // ignore if it's a clean point
                 if Triangle::is_not_line_point(other.a, p, other.b) {
-                    return Some(CrossResult::TargetEndRound(p));
+                    return Some(CrossResult {
+                        point: p,
+                        cross_type: CrossType::TargetEnd,
+                        is_round: true,
+                    });
                 }
             } else {
                 let p = if ra1 < rb1 { other.a } else { other.b };
 
                 // ignore if it's a clean point
                 if Triangle::is_not_line_point(target.a, p, target.b) {
-                    return Some(CrossResult::OtherEndRound(p));
+                    return Some(CrossResult {
+                        point: p,
+                        cross_type: CrossType::OtherEnd,
+                        is_round: true,
+                    });
                 }
             }
         }
 
-        Some(CrossResult::PureRound(p))
+        Some(CrossResult {
+            point: p,
+            cross_type: CrossType::Pure,
+            is_round: true,
+        })
     }
 
     fn cross_point(target: &XSegment, other: &XSegment) -> IntPoint {
@@ -282,5 +259,208 @@ impl RoundDivide for UInt128 {
         }
 
         quotient
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use i_float::point::IntPoint;
+    use crate::split::cross_solver::{CrossSolver, CrossType};
+    use crate::x_segment::XSegment;
+
+    #[test]
+    fn test_simple_cross() {
+        let s: i32 = 1024;
+
+        let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
+        let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::Pure => {
+                assert_eq!(IntPoint::ZERO, result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_big_cross_1() {
+        let s: i32 = 1024_000_000;
+
+        let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
+        let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::Pure => {
+                assert_eq!(IntPoint::ZERO, result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_big_cross_2() {
+        let s: i32 = 1024_000_000;
+
+        let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
+        let eb = XSegment::new(IntPoint::new(1024, -s), IntPoint::new(1024, s));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::Pure => {
+                assert_eq!(IntPoint::new(1024, 0), result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_big_cross_3() {
+        let s: i32 = 1024_000_000;
+        let q: i32 = s / 2;
+
+        let ea = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(s, s));
+        let eb = XSegment::new(IntPoint::new(q, -s), IntPoint::new(q, s));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::Pure => {
+                assert_eq!(IntPoint::new(512_000_000, 512_000_000), result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_left_end() {
+        let s: i32 = 1024_000_000;
+
+        let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
+        let eb = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(-s, s));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::TargetEnd => {
+                assert_eq!(IntPoint::new(-s, 0), result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_right_end() {
+        let s: i32 = 1024_000_000;
+
+        let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
+        let eb = XSegment::new(IntPoint::new(s, -s), IntPoint::new(s, s));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::TargetEnd => {
+                assert_eq!(IntPoint::new(s, 0), result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_left_top() {
+        let s: i32 = 1024_000_000;
+
+        let ea = XSegment::new(IntPoint::new(-s, s), IntPoint::new(s, s));
+        let eb = XSegment::new(IntPoint::new(-s, s), IntPoint::new(-s, -s));
+
+        let result = CrossSolver::cross(&ea, &eb);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_real_case_1() {
+        let ea = XSegment::new(IntPoint::new(7256, -14637), IntPoint::new(7454, -15045));
+        let eb = XSegment::new(IntPoint::new(7343, -14833), IntPoint::new(7506, -15144));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::Pure => {},
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_real_case_2() {
+        let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(-1024000, 0));
+        let eb = XSegment::new(IntPoint::new(-8571363, 1513719), IntPoint::new(-1023948, -10239));
+
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
+
+        match result.cross_type {
+            CrossType::Pure => {
+                assert_eq!(IntPoint::new(-1048691, -5244), result.point);
+            },
+            _ => {
+                panic!("Fail cross result");
+            },
+        }
+    }
+
+    #[test]
+    fn test_real_case_3() {
+        let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
+        let eb = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
+
+        let result = CrossSolver::cross(&ea, &eb);
+
+        assert_eq!(result.is_none(), true);
+    }
+
+    #[test]
+    fn test_real_case_4() {
+        let ea = XSegment::new(
+            IntPoint::new(-276659431, 380789039),
+            IntPoint::new(-221915258, 435533212)
+        );
+        let eb = XSegment::new(
+            IntPoint::new(-276659432, 380789038),
+            IntPoint::new(-276659430, 380789040)
+        );
+
+        let result = CrossSolver::cross(&ea, &eb);
+
+        assert_eq!(result.is_none(), true);
+    }
+
+    #[test]
+    fn test_penetration() {
+        let s: i32 = 1024;
+
+        let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s / 2, 0));
+        let eb = XSegment::new(IntPoint::new(0, 0), IntPoint::new(s, 0));
+
+        let result = CrossSolver::cross(&ea, &eb);
+
+        assert_eq!(result.is_none(), true);
     }
 }
