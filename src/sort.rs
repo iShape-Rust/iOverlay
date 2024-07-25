@@ -16,10 +16,9 @@ impl<T: Send> SmartSort for [T] {
     where
         F: Fn(&T, &T) -> Ordering + Sync,
     {
-        const THRESHOLD: usize = 40_000;
-
         #[cfg(feature = "allow_multithreading")]
         {
+            const THRESHOLD: usize = 40_000;
             if self.len() > THRESHOLD {
                 self.par_sort_unstable_by(compare);
                 return;

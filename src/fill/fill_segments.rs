@@ -8,6 +8,7 @@ use crate::fill::scan_tree::ScanFillTree;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::fill::scan_store::ScanFillStore;
+use crate::sort::SmartSort;
 
 struct YGroup {
     i: usize,
@@ -60,7 +61,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
             }
 
             if x_buf.len() > 1 {
-                x_buf.sort_by(|a, b| a.y.cmp(&b.y));
+                x_buf.smart_sort_by(|a, b| a.y.cmp(&b.y));
             }
 
             let mut j = 0;
@@ -79,7 +80,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
                 let p = IntPoint::new(x, y);
 
                 if p_buf.len() > 1 {
-                    p_buf.sort_by(|a, b| a.order_by_angle(b, p));
+                    p_buf.smart_sort_by(|a, b| a.order_by_angle(b, p));
                 }
 
                 let mut sum_count = if let Some(count) = scan_list.find_under_and_nearest(p, x) {
