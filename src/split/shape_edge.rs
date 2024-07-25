@@ -10,7 +10,6 @@ pub struct ShapeEdge {
 }
 
 impl ShapeEdge {
-
     pub(crate) const ZERO: ShapeEdge = ShapeEdge {
         x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
         count: ShapeCount { subj: 0, clip: 0 },
@@ -36,7 +35,6 @@ impl ShapeEdge {
 }
 
 impl PartialEq<Self> for ShapeEdge {
-
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
@@ -56,5 +54,48 @@ impl Ord for ShapeEdge {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.x_segment.cmp(&other.x_segment)
+    }
+}
+
+pub(crate) trait ShapeEdgesMerge {
+    fn merge_if_needed(&mut self);
+}
+
+impl ShapeEdgesMerge for Vec<ShapeEdge> {
+    fn merge_if_needed(&mut self) {
+        let n = self.len();
+
+        if n < 2 { return; }
+
+        let mut i = 1;
+        while i < n {
+            if self[i - 1].x_segment.eq(&self[i].x_segment) {
+                break;
+            }
+            i += 1;
+        }
+
+        if i == n { return; }
+
+        let mut j = i - 1;
+        let mut prev = self[j];
+
+        while i < n {
+            if prev.x_segment.eq(&self[i].x_segment) {
+                prev.count = prev.count.add(self[i].count)
+            } else {
+                self[j] = prev;
+                j += 1;
+                prev = self[i];
+            }
+            i += 1;
+        }
+
+        self[j] = prev;
+        j += 1;
+
+        if j < n {
+            self.truncate(j);
+        }
     }
 }

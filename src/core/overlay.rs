@@ -11,6 +11,7 @@ use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::x_segment::XSegment;
 use crate::core::solver::Solver;
 use crate::line_range::LineRange;
+use crate::split::shape_edge::ShapeEdgesMerge;
 use crate::split::solver::SplitSolver;
 use crate::vector::vector::VectorShape;
 
@@ -141,6 +142,8 @@ impl Overlay {
     fn prepare_segments(self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
         let mut sorted_list = self.edges;
         sorted_list.sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
+
+        sorted_list.merge_if_needed();
 
         let is_list = SplitSolver { solver, range: sorted_list.y_range() }.split(&mut sorted_list);
 

@@ -4,7 +4,7 @@ use crate::line_range::LineRange;
 use crate::sort::SmartSort;
 use crate::split::cross_solver::{CrossType, CrossSolver};
 use crate::split::line_mark::LineMark;
-use crate::split::shape_edge::ShapeEdge;
+use crate::split::shape_edge::{ShapeEdge, ShapeEdgesMerge};
 use crate::x_segment::XSegment;
 
 pub(crate) struct SplitSolver {
@@ -92,38 +92,6 @@ impl SplitSolver {
 
         edges.smart_sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
 
-        edges.merge();
-    }
-}
-
-trait Merge {
-    fn merge(&mut self);
-}
-
-impl Merge for Vec<ShapeEdge> {
-    fn merge(&mut self) {
-        let mut prev = if let Some(edge) = self.first() {
-            edge.clone()
-        } else {
-            return;
-        };
-
-        let mut is_modified = false;
-        let mut i = 1;
-        while i < self.len() {
-            if prev.x_segment == self[i].x_segment {
-                let c = self.remove(i).count;
-                prev.count = prev.count.add(c);
-                is_modified = true;
-
-                continue;
-            } else if is_modified {
-                is_modified = false;
-                self[i - 1].count = prev.count;
-                prev = self[i];
-            }
-
-            i += 1
-        }
+        edges.merge_if_needed();
     }
 }
