@@ -93,6 +93,7 @@ impl OverlayGraph {
                 let is_fill_top = overlay_rule.is_fill_top(link.fill);
                 let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
                 next = self.find_nearest_link_to(a, b, next, is_cw, visited);
+                debug_assert!(next < usize::MAX);
             }
             link = unsafe {
                 self.links.get_unchecked(next)

@@ -42,7 +42,7 @@ impl SplitSolver {
 
             tree.clear();
 
-            Self::apply(need_to_fix, &mut marks, edges);
+            Self::apply(&mut marks, edges);
         }
     }
 
@@ -84,7 +84,7 @@ impl SplitSolver {
 
             tree.clear();
 
-            Self::apply(need_to_fix, &mut marks, edges);
+            Self::apply(&mut marks, edges);
         }
     }
 }

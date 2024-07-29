@@ -1,6 +1,6 @@
 use crate::split::shape_edge::ShapeEdge;
 use crate::split::solver::SplitSolver;
-use crate::x_segment::XSegment;
+use crate::x_segment::Boundary;
 
 impl SplitSolver {
     pub(super) fn list_split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
@@ -16,13 +16,14 @@ impl SplitSolver {
 
             for i in 0..n - 1 {
                 let ei = &edges[i].x_segment;
+                let ri = ei.boundary();
                 for j in i + 1..n {
                     let ej = &edges[j].x_segment;
                     if ei.b.x < ej.a.x {
                         break;
                     }
 
-                    if ei.is_boundary_not_cross(ej) {
+                    if !ej.boundary().is_intersect_border_include(&ri) {
                         continue;
                     }
 
@@ -35,7 +36,7 @@ impl SplitSolver {
                 return true;
             }
 
-            Self::apply(need_to_fix, &mut marks, edges);
+            Self::apply(&mut marks, edges);
 
             if !self.solver.is_list(self.range.width(), edges.len()) {
                 // finish with tree solver if edges is become large
@@ -44,23 +45,5 @@ impl SplitSolver {
         }
 
         true
-    }
-}
-
-impl XSegment {
-    fn is_boundary_not_cross(&self, other: &Self) -> bool {
-        Self::test_y(self, other) || Self::test_x(self, other)
-    }
-
-    fn test_x(target: &Self, other: &Self) -> bool {
-        // MARK: a.x <= b.x by design
-        target.a.x > other.a.x && target.a.x > other.b.x || other.a.x > target.a.x && other.a.x > target.b.x
-    }
-
-    fn test_y(target: &Self, other: &Self) -> bool {
-        target.a.y > other.a.y && target.a.y > other.b.y &&
-            target.b.y > other.a.y && target.b.y > other.b.y ||
-            target.a.y < other.a.y && target.a.y < other.b.y &&
-                target.b.y < other.a.y && target.b.y < other.b.y
     }
 }

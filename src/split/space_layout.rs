@@ -7,19 +7,24 @@ use crate::x_segment::XSegment;
 pub(crate) struct SpaceLayout {
     pub(super) power: usize,
     min_size: u64,
+    scale: usize
 }
 
 impl SpaceLayout {
     const MIN_POWER: usize = 2;
+    const MAX_POWER: usize = 12;
 
     pub(crate) const MIN_RANGE_LENGTH: i64 = 1 << Self::MIN_POWER;
 
     pub(super) fn new(range: LineRange, count: usize) -> Self {
         let max_power_range = range.log2() - 1;
-        let max_power_count = (count as i64).log2() >> 1;
-        let power = Self::MIN_POWER.max(max_power_range.min(max_power_count));
+        let max_power_count = count.log2() >> 1;
+        let original_power = max_power_range.min(max_power_count);
+        let power = original_power.clamp(Self::MIN_POWER, Self::MAX_POWER);
         let min_size = (range.width() >> power) as u64;
-        Self { power, min_size }
+        let m = (min_size as usize).log2();
+        let scale = u32::BITS as usize - m;
+        Self { power, min_size, scale }
     }
 
     pub(super) fn break_into_fragments(&self, index: usize, x_segment: &XSegment, buffer: &mut Vec<Fragment>) {
@@ -44,12 +49,12 @@ impl SpaceLayout {
             return;
         }
 
-        let k = (dy << u32::BITS) / dx;
+        let k = (dy << self.scale) / dx;
 
         let s = if dx < dy {
-            self.min_size << u32::BITS
+            self.min_size << self.scale
         } else {
-            (self.min_size << u32::BITS) * dx / dy
+            (self.min_size << self.scale) * dx / dy
         };
 
         let mut x0: u64 = 0;
@@ -57,7 +62,7 @@ impl SpaceLayout {
         let mut ix0 = min_x;
         let mut iy0 = if is_up { min_y } else { max_y };
 
-        let x_last = (dx << u32::BITS) - s;
+        let x_last = (dx << self.scale) - s;
 
         if x0 >= x_last {
             // must be at least two fragments
@@ -66,10 +71,10 @@ impl SpaceLayout {
 
         while x0 < x_last {
             let x1 = x0 + s;
-            let x = x1 >> u32::BITS;
+            let x = x1 >> self.scale;
 
             let y1 = x * k;
-            let y = y1 >> u32::BITS;
+            let y = y1 >> self.scale;
 
             let is_same_line = x * dy == y * dx;
             let extra = if is_same_line { 0 } else { 1 };
@@ -127,17 +132,17 @@ trait Log2Extension {
     fn log2(&self) -> usize;
 }
 
-impl Log2Extension for i64 {
+impl Log2Extension for usize {
     #[inline(always)]
     fn log2(&self) -> usize {
         debug_assert!(self >= &0);
         let n = self.leading_zeros();
-        (i64::BITS - n) as usize
+        (usize::BITS - n) as usize
     }
 }
 
 impl LineRange {
     fn log2(&self) -> usize {
-        self.width().log2()
+        (self.width() as usize).log2()
     }
 }

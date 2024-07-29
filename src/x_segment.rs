@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
+use i_float::rect::IntRect;
 use i_float::triangle::Triangle;
 use crate::line_range::LineRange;
 
@@ -10,7 +11,6 @@ pub struct XSegment {
 }
 
 impl XSegment {
-
     #[inline(always)]
     pub fn new(a: IntPoint, b: IntPoint) -> Self {
         Self { a, b }
@@ -63,7 +63,6 @@ impl PartialOrd for XSegment {
 }
 
 impl Ord for XSegment {
-
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         let a = self.a.cmp(&other.a);
@@ -71,6 +70,28 @@ impl Ord for XSegment {
             self.b.cmp(&other.b)
         } else {
             a
+        }
+    }
+}
+
+pub(crate) trait Boundary {
+    fn boundary(&self) -> IntRect;
+}
+
+impl Boundary for XSegment {
+    #[inline(always)]
+    fn boundary(&self) -> IntRect {
+        let (min_y, max_y) = if self.a.y < self.b.y {
+            (self.a.y, self.b.y)
+        } else {
+            (self.b.y, self.a.y)
+        };
+
+        IntRect {
+            min_x: self.a.x,
+            max_x: self.b.x,
+            min_y,
+            max_y,
         }
     }
 }

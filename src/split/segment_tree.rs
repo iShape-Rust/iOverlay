@@ -530,7 +530,7 @@ mod tests {
 
         let result = intersect_test(test_set);
 
-        assert_eq!(1, result);
+        assert_eq!(2, result);
     }
 
     #[test]

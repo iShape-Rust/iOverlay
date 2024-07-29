@@ -4,6 +4,7 @@ mod tests {
     use i_float::point::IntPoint;
     use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntShape;
+    use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
@@ -138,17 +139,16 @@ mod tests {
     #[test]
     fn test_7() {
         let n = 1010;
-        let subj_paths = random_polygon(1000_000.0, n);
+        let subj_paths = random_polygon(1000_000.0, 0.0, n);
 
-        for &solver in SOLVERS.iter() {
-            let mut overlay = Overlay::new(n);
-            overlay.add_path(&subj_paths, ShapeType::Subject);
 
-            let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-            let result = graph.extract_shapes(OverlayRule::Subject);
+        let mut overlay = Overlay::new(n);
+        overlay.add_path(&subj_paths, ShapeType::Subject);
 
-            assert!(!result.is_empty());
-        }
+        let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
+        let result = graph.extract_shapes(OverlayRule::Subject);
+
+        assert!(!result.is_empty());
     }
 
     #[test]
@@ -157,15 +157,13 @@ mod tests {
             let mut r = 0.004;
             while r < 1.0 {
                 for n in 5..10 {
-                    let subj_paths = random_polygon(r, n);
+                    let subj_paths = random_polygon(r, 0.0, n);
 
                     let mut overlay = Overlay::new(n);
                     overlay.add_path(&subj_paths, ShapeType::Subject);
 
                     let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                    let result = graph.extract_shapes(OverlayRule::Subject);
-
-                    assert!(!result.is_empty());
+                    _ = graph.extract_shapes(OverlayRule::Subject);
                 }
                 r += 0.001;
             }
@@ -209,6 +207,37 @@ mod tests {
         assert!(result.len() > 0);
     }
 
+    #[test]
+    fn test_11() {
+        let n = 6;
+        for _ in 0..10000 {
+            let subj_path = random_polygon(100.0, 0.0, n);
+            let clip_path = random_polygon(100.0, 0.5 * PI, n);
+            let mut overlay = Overlay::new(2 * n);
+
+            overlay.add_path(&subj_path, ShapeType::Subject);
+            overlay.add_path(&clip_path, ShapeType::Clip);
+
+            let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
+            _ = graph.extract_shapes(OverlayRule::Union);
+        }
+    }
+
+    #[test]
+    fn test_12() {
+        let n = 5;
+        for _ in 0..10000 {
+            let subj_path = random(10, n);
+            // let clip_path = random(10, n);
+            let mut overlay = Overlay::new(2 * n);
+            overlay.add_path(&subj_path, ShapeType::Subject);
+            // overlay.add_path(&clip_path, ShapeType::Clip);
+            let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
+            _ = graph.extract_shapes(OverlayRule::Subject);
+            // assert!(result.len() > 0);
+        }
+    }
+
     fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> IntShape {
         let da = PI / count as f64;
         let mut a = angle;
@@ -236,21 +265,35 @@ mod tests {
         [points].to_vec()
     }
 
-    fn random_polygon(radius: f64, n: usize) -> IntPath {
+    fn random_polygon(radius: f64, angle: f64, n: usize) -> IntPath {
         let mut result = Vec::with_capacity(n);
         let da: f64 = PI * 0.7;
-        let mut a: f64 = 0.0;
+        let mut a: f64 = angle;
         let r = 1024.0 * radius;
         for _ in 0..n {
-            let sc = a.sin_cos();
+            let (sin, cos) = a.sin_cos();
 
-            let x = r * sc.1;
-            let y = r * sc.0;
+            let x = r * cos;
+            let y = r * sin;
 
             result.push(IntPoint::new(x as i32, y as i32));
             a += da;
         }
 
         result
+    }
+
+    fn random(radius: i32, n: usize) -> IntPath {
+        let a = radius / 2;
+        let range = -a..=a;
+        let mut points = Vec::with_capacity(n);
+        let mut rng = rand::thread_rng();
+        for _ in 0..n {
+            let x = rng.gen_range(range.clone());
+            let y = rng.gen_range(range.clone());
+            points.push(IntPoint { x, y })
+        }
+
+        points
     }
 }

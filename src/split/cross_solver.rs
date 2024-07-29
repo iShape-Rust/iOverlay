@@ -1,24 +1,69 @@
+use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_float::u128::UInt128;
 use crate::x_segment::XSegment;
 
-pub(crate) struct CrossResult {
-    pub(crate) point: IntPoint,
-    pub(crate) cross_type: CrossType,
-    pub(crate) is_round: bool,
+pub(super) type CollinearMask = u8;
+
+pub(super) trait EndMask {
+    fn is_target_a(&self) -> bool;
+    fn is_target_b(&self) -> bool;
+    fn is_other_a(&self) -> bool;
+    fn is_other_b(&self) -> bool;
+
+    fn new(target_a: bool, target_b: bool, other_a: bool, other_b: bool) -> Self;
 }
 
-pub(crate) enum CrossType {
+const TARGET_A: u8 = 0b0001;
+const TARGET_B: u8 = 0b0010;
+const OTHER_A: u8 = 0b0100;
+const OTHER_B: u8 = 0b1000;
+
+impl EndMask for CollinearMask {
+    fn is_target_a(&self) -> bool {
+        self & TARGET_A == TARGET_A
+    }
+
+    fn is_target_b(&self) -> bool {
+        self & TARGET_B == TARGET_B
+    }
+
+    fn is_other_a(&self) -> bool {
+        self & OTHER_A == OTHER_A
+    }
+
+    fn is_other_b(&self) -> bool {
+        self & OTHER_B == OTHER_B
+    }
+
+    fn new(target_a: bool, target_b: bool, other_a: bool, other_b: bool) -> Self {
+        let a0 = target_a as u8;
+        let b0 = (target_b as u8) << 1;
+        let a1 = (other_a as u8) << 2;
+        let b1 = (other_b as u8) << 3;
+
+        a0 | b0 | a1 | b1
+    }
+}
+
+pub(super) struct CrossResult {
+    pub(super) point: IntPoint,
+    pub(super) cross_type: CrossType,
+    pub(super) is_round: bool,
+}
+
+pub(super) enum CrossType {
     Pure,
     TargetEnd,
     OtherEnd,
+    Overlay,
 }
 
-pub(crate) struct CrossSolver;
+pub(super) struct CrossSolver;
 
 impl CrossSolver {
-    pub(crate) fn cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+    pub(super) fn cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
         let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
         let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
 
@@ -26,6 +71,14 @@ impl CrossSolver {
         let a1b1b0 = Triangle::clock_direction_point(other.a, other.b, target.b);
 
         let s = (1 & (a0b0a1 + 1)) + (1 & (a0b0b1 + 1)) + (1 & (a1b1a0 + 1)) + (1 & (a1b1b0 + 1));
+
+        if s == 4 {
+            return Some(CrossResult {
+                point: IntPoint::ZERO,
+                cross_type: CrossType::Overlay,
+                is_round: false,
+            });
+        }
 
         let is_not_cross = a0b0a1 == a0b0b1 || a1b1a0 == a1b1b0;
 
@@ -61,10 +114,37 @@ impl CrossSolver {
             };
         }
 
-        Self::simple_cross(target, other)
+        Self::middle_cross(target, other)
     }
 
-    fn simple_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+    pub(super) fn collinear(target: &XSegment, other: &XSegment) -> CollinearMask {
+        let a0 = FixVec::new_point(target.a);
+        let b0 = FixVec::new_point(target.b);
+        let a1 = FixVec::new_point(other.a);
+        let b1 = FixVec::new_point(other.b);
+
+        let v1 = b1 - a1;
+
+        let aa0 = (a0 - a1).dot_product(v1).signum();
+        let ab0 = (a0 - b1).dot_product(v1).signum();
+        let ba0 = (b0 - a1).dot_product(v1).signum();
+        let bb0 = (b0 - b1).dot_product(v1).signum();
+
+        let aa1 = -aa0;
+        let ab1 = -ba0;
+        let ba1 = -ab0;
+        let bb1 = -bb0;
+
+        let is_target_a = aa0 == -ab0 && aa0 != 0;
+        let is_target_b = ba0 == -bb0 && ba0 != 0;
+
+        let is_other_a = aa1 == -ab1 && aa1 != 0;
+        let is_other_b = ba1 == -bb1 && ba1 != 0;
+
+        CollinearMask::new(is_target_a, is_target_b, is_other_a, is_other_b)
+    }
+
+    fn middle_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
         let p = CrossSolver::cross_point(&target, &other);
 
         if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
@@ -280,10 +360,10 @@ mod tests {
         match result.cross_type {
             CrossType::Pure => {
                 assert_eq!(IntPoint::ZERO, result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -299,10 +379,10 @@ mod tests {
         match result.cross_type {
             CrossType::Pure => {
                 assert_eq!(IntPoint::ZERO, result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -318,10 +398,10 @@ mod tests {
         match result.cross_type {
             CrossType::Pure => {
                 assert_eq!(IntPoint::new(1024, 0), result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -338,10 +418,10 @@ mod tests {
         match result.cross_type {
             CrossType::Pure => {
                 assert_eq!(IntPoint::new(512_000_000, 512_000_000), result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -357,10 +437,10 @@ mod tests {
         match result.cross_type {
             CrossType::TargetEnd => {
                 assert_eq!(IntPoint::new(-s, 0), result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -376,10 +456,10 @@ mod tests {
         match result.cross_type {
             CrossType::TargetEnd => {
                 assert_eq!(IntPoint::new(s, 0), result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -402,10 +482,10 @@ mod tests {
         let result = CrossSolver::cross(&ea, &eb).unwrap();
 
         match result.cross_type {
-            CrossType::Pure => {},
+            CrossType::Pure => {}
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -419,10 +499,10 @@ mod tests {
         match result.cross_type {
             CrossType::Pure => {
                 assert_eq!(IntPoint::new(-1048691, -5244), result.point);
-            },
+            }
             _ => {
                 panic!("Fail cross result");
-            },
+            }
         }
     }
 
@@ -431,25 +511,39 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
         let eb = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
 
-        let result = CrossSolver::cross(&ea, &eb);
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
 
-        assert_eq!(result.is_none(), true);
+        match result.cross_type {
+            CrossType::Overlay => {
+                assert_eq!(IntPoint::ZERO, result.point);
+            }
+            _ => {
+                panic!("Fail cross result");
+            }
+        }
     }
 
     #[test]
     fn test_real_case_4() {
         let ea = XSegment::new(
             IntPoint::new(-276659431, 380789039),
-            IntPoint::new(-221915258, 435533212)
+            IntPoint::new(-221915258, 435533212),
         );
         let eb = XSegment::new(
             IntPoint::new(-276659432, 380789038),
-            IntPoint::new(-276659430, 380789040)
+            IntPoint::new(-276659430, 380789040),
         );
 
-        let result = CrossSolver::cross(&ea, &eb);
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
 
-        assert_eq!(result.is_none(), true);
+        match result.cross_type {
+            CrossType::Overlay => {
+                assert_eq!(IntPoint::ZERO, result.point);
+            }
+            _ => {
+                panic!("Fail cross result");
+            }
+        }
     }
 
     #[test]
@@ -459,8 +553,15 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s / 2, 0));
         let eb = XSegment::new(IntPoint::new(0, 0), IntPoint::new(s, 0));
 
-        let result = CrossSolver::cross(&ea, &eb);
+        let result = CrossSolver::cross(&ea, &eb).unwrap();
 
-        assert_eq!(result.is_none(), true);
+        match result.cross_type {
+            CrossType::Overlay => {
+                assert_eq!(IntPoint::ZERO, result.point);
+            }
+            _ => {
+                panic!("Fail cross result");
+            }
+        }
     }
 }
