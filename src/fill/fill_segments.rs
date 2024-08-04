@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::core::fill_rule::FillRule;
+use crate::core::solver::Solver;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_list::ScanFillList;
 use crate::fill::scan_tree::ScanFillTree;
@@ -21,27 +22,27 @@ struct PGroup {
 }
 
 pub(crate) trait FillSegments {
-    fn fill(&mut self, fill_rule: FillRule, is_list: bool);
+    fn fill(&mut self, solver: &Solver, fill_rule: FillRule, is_list: bool);
 }
 
 impl FillSegments for Vec<Segment> {
-    fn fill(&mut self, fill_rule: FillRule, is_list: bool) {
+    fn fill(&mut self, solver: &Solver, fill_rule: FillRule, is_list: bool) {
         if is_list {
             let store = ScanFillList::new(self.len());
-            self.solve(store, fill_rule);
+            self.solve(solver, store, fill_rule);
         } else {
             let store = ScanFillTree::new(self.len());
-            self.solve(store, fill_rule);
+            self.solve(solver, store, fill_rule);
         }
     }
 }
 
 trait FillSolver<S: ScanFillStore> {
-    fn solve(&mut self, scan_store: S, fill_rule: FillRule);
+    fn solve(&mut self, solver: &Solver, scan_store: S, fill_rule: FillRule);
 }
 
 impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
-    fn solve(&mut self, scan_store: S, fill_rule: FillRule) {
+    fn solve(&mut self, solver: &Solver, scan_store: S, fill_rule: FillRule) {
         let mut scan_list = scan_store;
         let mut x_buf = Vec::new();
         let mut p_buf = Vec::new();
@@ -61,7 +62,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
             }
 
             if x_buf.len() > 1 {
-                x_buf.smart_sort_by(|a, b| a.y.cmp(&b.y));
+                x_buf.smart_sort_by(solver, |a, b| a.y.cmp(&b.y));
             }
 
             let mut j = 0;
@@ -80,7 +81,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
                 let p = IntPoint::new(x, y);
 
                 if p_buf.len() > 1 {
-                    p_buf.smart_sort_by(|a, b| a.order_by_angle(b, p));
+                    p_buf.smart_sort_by(solver, |a, b| a.order_by_angle(b, p));
                 }
 
                 let mut sum_count = if let Some(count) = scan_list.find_under_and_nearest(p, x) {

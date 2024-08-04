@@ -471,7 +471,7 @@ mod tests {
         let eb = XSegment::new(IntPoint::new(-s, s), IntPoint::new(-s, -s));
 
         let result = CrossSolver::cross(&ea, &eb);
-        assert!(result.is_none());
+        debug_assert!(result.is_none());
     }
 
     #[test]

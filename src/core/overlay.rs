@@ -10,7 +10,6 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::x_segment::XSegment;
 use crate::core::solver::Solver;
-use crate::line_range::LineRange;
 use crate::sort::SmartSort;
 use crate::split::shape_edge::ShapeEdgesMerge;
 use crate::split::solver::SplitSolver;
@@ -108,9 +107,9 @@ impl Overlay {
 
         let mut segments = self.prepare_segments(fill_rule, solver);
 
-        segments.filter();
+        segments.filter(&solver);
 
-        return segments;
+        segments
     }
 
     /// Convert into vector shapes from the added paths or shapes, applying the specified fill and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
@@ -121,36 +120,36 @@ impl Overlay {
         if self.edges.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(self.prepare_segments(fill_rule, solver));
+        let graph = OverlayGraph::new(solver, self.prepare_segments(fill_rule, solver));
         let vectors = graph.extract_vectors(overlay_rule);
 
-        return vectors;
+        vectors
     }
 
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     pub fn into_graph(self, fill_rule: FillRule) -> OverlayGraph {
-        OverlayGraph::new(self.into_segments(fill_rule, Solver::AUTO))
+        OverlayGraph::new(Default::default(), self.into_segments(fill_rule, Default::default()))
     }
 
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - `solver`: Type of solver to use.
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
-        OverlayGraph::new(self.into_segments(fill_rule, solver))
+        OverlayGraph::new(solver, self.into_segments(fill_rule, solver))
     }
 
     fn prepare_segments(self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
         let mut sorted_list = self.edges;
-        sorted_list.smart_sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
+        sorted_list.smart_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
         sorted_list.merge_if_needed();
 
-        let is_list = SplitSolver { solver, range: sorted_list.y_range() }.split(&mut sorted_list);
+        let is_list = SplitSolver::new(solver).split(&mut sorted_list);
 
-        let mut segments = sorted_list.segments();
+        let mut segments = sorted_list.into_segments();
 
-        segments.fill(fill_rule, is_list);
+        segments.fill(&solver, fill_rule, is_list);
 
         segments
     }
@@ -198,11 +197,11 @@ impl CreateEdges for IntPath {
 }
 
 trait Filter {
-    fn filter(&mut self);
+    fn filter(&mut self, solver: &Solver);
 }
 
 impl Filter for Vec<Segment> {
-    fn filter(&mut self) {
+    fn filter(&mut self, solver: &Solver) {
         let mut modified = false;
         let mut i = 0;
         while i < self.len() {
@@ -216,18 +215,17 @@ impl Filter for Vec<Segment> {
         }
 
         if modified {
-            self.smart_sort_by(|a, b| a.seg.cmp(&b.seg));
+            self.smart_sort_by(solver, |a, b| a.seg.cmp(&b.seg));
         }
     }
 }
 
-trait ShapeEdgeVecExtension {
-    fn segments(self) -> Vec<Segment>;
-    fn y_range(&self) -> LineRange;
+trait Segments {
+    fn into_segments(self) -> Vec<Segment>;
 }
 
-impl ShapeEdgeVecExtension for Vec<ShapeEdge> {
-    fn segments(self) -> Vec<Segment> {
+impl Segments for Vec<ShapeEdge> {
+    fn into_segments(self) -> Vec<Segment> {
         let mut segments = Vec::with_capacity(self.len());
 
         let mut prev = ShapeEdge { x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO }, count: ShapeCount { subj: 0, clip: 0 } };
@@ -247,20 +245,6 @@ impl ShapeEdgeVecExtension for Vec<ShapeEdge> {
             segments.push(Segment::new(&prev));
         }
 
-        return segments;
-    }
-
-    fn y_range(&self) -> LineRange {
-        let mut min_y = self[0].x_segment.a.y;
-        let mut max_y = min_y;
-
-        for edge in self.iter() {
-            min_y = min_y.min(edge.x_segment.a.y);
-            max_y = max_y.max(edge.x_segment.a.y);
-            min_y = min_y.min(edge.x_segment.b.y);
-            max_y = max_y.max(edge.x_segment.b.y);
-        }
-
-        LineRange { min: min_y, max: max_y }
+        segments
     }
 }

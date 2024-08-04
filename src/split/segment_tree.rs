@@ -288,13 +288,25 @@ impl SegmentTree {
                 continue;
             }
 
-            let is_round = SplitSolver::cross(
-                this.index,
-                scan.index,
-                &this.x_segment,
-                &scan.x_segment,
-                marks,
-            );
+            // MARK: the intersection, ensuring the right order for deterministic results
+
+            let is_round = if this.x_segment < scan.x_segment {
+                SplitSolver::cross(
+                    this.index,
+                    scan.index,
+                    &this.x_segment,
+                    &scan.x_segment,
+                    marks,
+                )
+            } else {
+                SplitSolver::cross(
+                    scan.index,
+                    this.index,
+                    &scan.x_segment,
+                    &this.x_segment,
+                    marks,
+                )
+            };
 
             any_round = is_round || any_round
         }

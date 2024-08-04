@@ -3,6 +3,7 @@ use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 
 use crate::{fill::segment::Segment};
+use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
 use crate::sort::SmartSort;
 use crate::util::EMPTY_INDEX;
@@ -20,6 +21,7 @@ struct End {
 ///
 /// Use `OverlayGraph` to perform boolean operations on the geometric shapes you've added to an `Overlay`, after it has processed the shapes according to the specified fill and overlay rules.
 pub struct OverlayGraph {
+    pub(crate) solver: Solver,
     pub(crate) nodes: Vec<OverlayNode>,
     pub(crate) links: Vec<OverlayLink>,
 }
@@ -32,11 +34,11 @@ impl OverlayGraph {
         &self.links
     }
 
-    pub(super) fn new(segments: Vec<Segment>) -> Self {
+    pub(super) fn new(solver: Solver, segments: Vec<Segment>) -> Self {
         let n = segments.len();
 
         if n == 0 {
-            return Self { nodes: vec![], links: vec![] };
+            return Self { solver: Default::default(), nodes: vec![], links: vec![] };
         }
 
         let mut end_bs: Vec<End> = Vec::with_capacity(n);
@@ -47,7 +49,7 @@ impl OverlayGraph {
             });
         }
 
-        end_bs.smart_sort_by(|a, b| a.point.cmp(&b.point));
+        end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(2 * n);
         let mut links: Vec<OverlayLink> = segments
@@ -130,7 +132,7 @@ impl OverlayGraph {
             nodes.push(OverlayNode { indices });
         }
 
-        Self { nodes, links }
+        Self { solver, nodes, links }
     }
 
     pub(crate) fn find_nearest_link_to(

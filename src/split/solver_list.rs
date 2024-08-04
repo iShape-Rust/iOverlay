@@ -8,11 +8,13 @@ impl SplitSolver {
         let mut need_to_fix = true;
 
         while need_to_fix {
-            need_to_fix = false;
-
             marks.clear();
 
             let n = edges.len();
+
+            if n < 3 {
+                return true
+            }
 
             for i in 0..n - 1 {
                 let ei = &edges[i].x_segment;
@@ -36,9 +38,9 @@ impl SplitSolver {
                 return true;
             }
 
-            Self::apply(&mut marks, edges);
+            self.apply(&mut marks, edges);
 
-            if !self.solver.is_list(self.range.width(), edges.len()) {
+            if !self.solver.is_list(edges) {
                 // finish with tree solver if edges is become large
                 return self.tree_split(edges);
             }

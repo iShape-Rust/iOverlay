@@ -1,3 +1,4 @@
+use crate::line_range::LineRange;
 use crate::split::fragment::Fragment;
 use crate::split::segment_tree::SegmentTree;
 use crate::split::shape_edge::ShapeEdge;
@@ -7,19 +8,26 @@ use crate::split::space_layout::SpaceLayout;
 
 impl SplitSolver {
     pub(super) fn tree_split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
-        let layout = SpaceLayout::new(self.range, edges.len());
+        let ver_range = edges.ver_range();
+        let height = ver_range.width() as usize;
+
+        if height < SpaceLayout::MIN_HEIGHT {
+            self.list_split(edges);
+        }
+
+        let layout = SpaceLayout::new(height, edges.len());
 
         if layout.is_fragmentation_required_for_edges(edges) {
-            self.simple(&layout, edges);
+            self.simple(ver_range, &layout, edges);
         } else {
-            self.complex(&layout, edges);
+            self.complex(ver_range, &layout, edges);
         }
 
         return false;
     }
 
-    fn simple(&self, layout: &SpaceLayout, edges: &mut Vec<ShapeEdge>) {
-        let mut tree = SegmentTree::new(self.range, layout.power);
+    fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<ShapeEdge>) {
+        let mut tree = SegmentTree::new(ver_range, layout.power);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
@@ -42,12 +50,12 @@ impl SplitSolver {
 
             tree.clear();
 
-            Self::apply(&mut marks, edges);
+            self.apply(&mut marks, edges);
         }
     }
 
-    fn complex(&self, layout: &SpaceLayout, edges: &mut Vec<ShapeEdge>) {
-        let mut tree = SegmentTree::new(self.range, layout.power);
+    fn complex(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<ShapeEdge>) {
+        let mut tree = SegmentTree::new(ver_range, layout.power);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
@@ -66,7 +74,7 @@ impl SplitSolver {
 
             if 100 * fragments.len() <= 110 * edges.len() {
                 // we can switch to simple solution
-                self.simple(layout, edges);
+                self.simple(ver_range, layout, edges);
                 return;
             }
 
@@ -84,7 +92,27 @@ impl SplitSolver {
 
             tree.clear();
 
-            Self::apply(&mut marks, edges);
+            self.apply(&mut marks, edges);
         }
+    }
+}
+
+trait VerticalRange {
+    fn ver_range(&self) -> LineRange;
+}
+
+impl VerticalRange for Vec<ShapeEdge> {
+    fn ver_range(&self) -> LineRange {
+        let mut min_y = self[0].x_segment.a.y;
+        let mut max_y = min_y;
+
+        for edge in self.iter() {
+            min_y = min_y.min(edge.x_segment.a.y);
+            max_y = max_y.max(edge.x_segment.a.y);
+            min_y = min_y.min(edge.x_segment.b.y);
+            max_y = max_y.max(edge.x_segment.b.y);
+        }
+
+        LineRange { min: min_y, max: max_y }
     }
 }

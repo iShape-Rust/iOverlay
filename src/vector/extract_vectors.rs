@@ -4,6 +4,7 @@ use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
+use crate::core::solver::Solver;
 use crate::sort::SmartSort;
 use crate::util::EMPTY_INDEX;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
@@ -32,7 +33,7 @@ impl OverlayGraph {
             }
         }
 
-        shapes.join(holes);
+        shapes.join(&self.solver, holes);
 
         shapes
     }
@@ -77,12 +78,12 @@ impl OverlayGraph {
 }
 
 trait JoinHoles {
-    fn join(&mut self, holes: Vec<VectorPath>);
-    fn scan_join(&mut self, holes: Vec<VectorPath>);
+    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>);
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>);
 }
 
 impl JoinHoles for Vec<VectorShape> {
-    fn join(&mut self, holes: Vec<VectorPath>) {
+    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -92,17 +93,17 @@ impl JoinHoles for Vec<VectorShape> {
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
         } else {
-            self.scan_join(holes);
+            self.scan_join(solver, holes);
         }
     }
 
-    fn scan_join(&mut self, holes: Vec<VectorPath>) {
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
         let mut i_points = Vec::with_capacity(holes.len());
         for i in 0..holes.len() {
             let p = holes[i][0].a;
             i_points.push(IdPoint::new(i, p));
         }
-        i_points.smart_sort_by(|a, b| a.point.x.cmp(&b.point.x));
+        i_points.smart_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
@@ -113,7 +114,7 @@ impl JoinHoles for Vec<VectorShape> {
             segments.append(&mut hole_floors);
         }
 
-        segments.smart_sort_by(|a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
+        segments.smart_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), i_points, segments);
 

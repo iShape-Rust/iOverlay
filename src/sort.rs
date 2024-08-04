@@ -1,10 +1,11 @@
 #[cfg(feature = "allow_multithreading")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
+use crate::core::solver::Solver;
 
 
 pub(crate) trait SmartSort {
-    fn smart_sort_by<F>(&mut self, compare: F)
+    fn smart_sort_by<F>(&mut self, solver: &Solver, compare: F)
     where
         F: Fn(&Self::Item, &Self::Item) -> Ordering + Sync;
 
@@ -12,16 +13,17 @@ pub(crate) trait SmartSort {
 }
 
 impl<T: Send> SmartSort for [T] {
-    fn smart_sort_by<F>(&mut self, compare: F)
+    fn smart_sort_by<F>(&mut self, solver: &Solver, compare: F)
     where
         F: Fn(&T, &T) -> Ordering + Sync,
     {
         #[cfg(feature = "allow_multithreading")]
         {
-            const THRESHOLD: usize = 40_000;
-            if self.len() > THRESHOLD {
-                self.par_sort_unstable_by(compare);
-                return;
+            if let Some(multithreading) = solver.multithreading {
+                if self.len() > multithreading.par_sort_min_size {
+                    self.par_sort_unstable_by(compare);
+                    return;
+                }
             }
         }
 
@@ -39,11 +41,11 @@ mod tests {
     #[test]
     fn test_sort_by() {
         let mut data = vec![5, 3, 1, 4, 2];
-        data.smart_sort_by(|a, b| a.cmp(b));
+        data.smart_sort_by(&Solver::AUTO, |a, b| a.cmp(b));
         assert_eq!(data, vec![1, 2, 3, 4, 5]);
 
         let mut large_data: Vec<i32> = (0..200_000).rev().collect();
-        large_data.smart_sort_by(|a, b| a.cmp(b));
+        large_data.smart_sort_by(&Solver::AUTO, |a, b| a.cmp(b));
         let sorted_large_data: Vec<i32> = (0..200_000).collect();
         assert_eq!(large_data, sorted_large_data);
     }

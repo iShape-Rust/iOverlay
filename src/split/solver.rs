@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 use crate::core::solver::Solver;
-use crate::line_range::LineRange;
 use crate::sort::SmartSort;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
@@ -8,13 +7,17 @@ use crate::split::shape_edge::{ShapeEdge, ShapeEdgesMerge};
 use crate::x_segment::XSegment;
 
 pub(crate) struct SplitSolver {
-    pub(crate) solver: Solver,
-    pub(crate) range: LineRange,
+    pub(super) solver: Solver
 }
 
 impl SplitSolver {
+
+    pub(crate) fn new(solver: Solver) -> Self {
+        Self { solver }
+    }
+
     pub(crate) fn split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
-        let is_list = self.solver.is_list(self.range.width(), edges.len());
+        let is_list = self.solver.is_list(edges);
 
         if is_list {
             self.list_split(edges)
@@ -75,8 +78,8 @@ impl SplitSolver {
         return cross.is_round;
     }
 
-    pub(super) fn apply(marks: &mut Vec<LineMark>, edges: &mut Vec<ShapeEdge>) {
-        marks.smart_sort_by(|a, b|
+    pub(super) fn apply(&self, marks: &mut Vec<LineMark>, edges: &mut Vec<ShapeEdge>) {
+        marks.smart_sort_by(&self.solver, |a, b|
         if a.index < b.index || a.index == b.index && (a.length < b.length || a.length == b.length && a.point < b.point) {
             Ordering::Less
         } else {
@@ -102,7 +105,7 @@ impl SplitSolver {
             }
         }
 
-        edges.smart_sort_by(|a, b| a.x_segment.cmp(&b.x_segment));
+        edges.smart_sort_by(&self.solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
         edges.merge_if_needed();
     }

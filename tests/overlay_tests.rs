@@ -713,9 +713,48 @@ mod tests {
         execute(125);
     }
 
+    #[test]
+    fn test_126() {
+        execute(126);
+    }
+
+    #[test]
+    fn test_127() {
+        execute(127);
+    }
+
+    #[test]
+    fn test_128() {
+        execute(128);
+    }
+
+    #[test]
+    fn test_129() {
+        execute(129);
+    }
+
+    #[test]
+    fn test_130() {
+        execute(130);
+    }
+
+    #[test]
+    fn test_131() {
+        execute(131);
+    }
+
+    #[test]
+    fn test_132() {
+        execute(132);
+    }
+
+    #[test]
+    fn test_133() {
+        execute(133);
+    }
 
     #[test]
     fn test_debug() {
-        debug_execute(99, OverlayRule::Union, Solver::TREE);
+        debug_execute(133, OverlayRule::Difference, Solver::TREE);
     }
 }

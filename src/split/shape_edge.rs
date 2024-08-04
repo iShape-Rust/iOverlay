@@ -93,8 +93,10 @@ impl ShapeEdgesMerge for Vec<ShapeEdge> {
             i += 1;
         }
 
-        self[j] = prev;
-        j += 1;
+        if !prev.count.is_empty() {
+            self[j] = prev;
+            j += 1;
+        }
 
         if j < n {
             self.truncate(j);

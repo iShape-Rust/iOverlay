@@ -1,5 +1,5 @@
 use crate::core::solver::Strategy::{Auto, List, Tree};
-use crate::split::space_layout::SpaceLayout;
+use crate::split::shape_edge::ShapeEdge;
 
 /// Represents the selection strategy or algorithm for processing geometric data, aimed at optimizing performance under various conditions.
 ///
@@ -17,23 +17,41 @@ pub enum Strategy {
 }
 
 #[derive(Clone, Copy)]
+pub struct MultithreadOptions {
+    pub par_sort_min_size: usize,
+}
+
+impl Default for MultithreadOptions {
+    fn default() -> Self {
+        Self { par_sort_min_size: 32768 }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct Solver {
     pub strategy: Strategy,
+    pub multithreading: Option<MultithreadOptions>,
+}
+
+impl Default for Solver {
+    fn default() -> Self {
+        Solver::AUTO
+    }
 }
 
 impl Solver {
-    pub const LIST: Self = Self { strategy: List };
-    pub const TREE: Self = Self { strategy: Tree };
-    pub const AUTO: Self = Self { strategy: Auto };
+    pub const LIST: Self = Self { strategy: List, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
+    pub const TREE: Self = Self { strategy: Tree, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
+    pub const AUTO: Self = Self { strategy: Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
 
     const MAX_LIST_COUNT: usize = 1024;
 
-    pub(crate) fn is_list(&self, range: i64, count: usize) -> bool {
+    pub(crate) fn is_list(&self, edges: &Vec<ShapeEdge>) -> bool {
         match self.strategy {
             List => { true }
             Tree => { false }
             Auto => {
-                count < Self::MAX_LIST_COUNT && range > SpaceLayout::MIN_RANGE_LENGTH
+                edges.len() < Self::MAX_LIST_COUNT
             }
         }
     }

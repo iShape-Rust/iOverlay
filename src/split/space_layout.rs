@@ -1,5 +1,4 @@
 use i_float::rect::IntRect;
-use crate::line_range::LineRange;
 use crate::split::fragment::Fragment;
 use crate::split::shape_edge::ShapeEdge;
 use crate::x_segment::XSegment;
@@ -13,15 +12,14 @@ pub(crate) struct SpaceLayout {
 impl SpaceLayout {
     const MIN_POWER: usize = 2;
     const MAX_POWER: usize = 12;
+    pub(super) const MIN_HEIGHT: usize = 1 << Self::MIN_POWER;
 
-    pub(crate) const MIN_RANGE_LENGTH: i64 = 1 << Self::MIN_POWER;
-
-    pub(super) fn new(range: LineRange, count: usize) -> Self {
-        let max_power_range = range.log2() - 1;
+    pub(super) fn new(height: usize, count: usize) -> Self {
+        let max_power_range = height.log2() - 1;
         let max_power_count = count.log2() >> 1;
         let original_power = max_power_range.min(max_power_count);
         let power = original_power.clamp(Self::MIN_POWER, Self::MAX_POWER);
-        let min_size = (range.width() >> power) as u64;
+        let min_size = (height >> power) as u64;
         let m = (min_size as usize).log2();
         let scale = u32::BITS as usize - m;
         Self { power, min_size, scale }
@@ -138,11 +136,5 @@ impl Log2Extension for usize {
         debug_assert!(self >= &0);
         let n = self.leading_zeros();
         (usize::BITS - n) as usize
-    }
-}
-
-impl LineRange {
-    fn log2(&self) -> usize {
-        (self.width() as usize).log2()
     }
 }
