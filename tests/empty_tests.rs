@@ -9,7 +9,7 @@ mod tests {
     #[test]
     fn test_00() {
         let overlay = FloatOverlay::new();
-        let graph = overlay.build_graph(FillRule::NonZero);
+        let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 0);

@@ -59,17 +59,17 @@ impl FloatOverlay {
         }
     }
 
-    /// Constructs an `FloatOverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline(always)]
-    pub fn build_graph(&self, fill_rule: FillRule) -> FloatOverlayGraph {
-        self.build_graph_with_solver(fill_rule, Solver::AUTO)
+    pub fn into_graph(self, fill_rule: FillRule) -> FloatOverlayGraph {
+        self.into_graph_with_solver(fill_rule, Solver::AUTO)
     }
 
-    /// Constructs an `FloatOverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - `solver`: Type of solver to use.
-    pub fn build_graph_with_solver(&self, fill_rule: FillRule, solver: Solver) -> FloatOverlayGraph {
+    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> FloatOverlayGraph {
         let subj_rect = F64Rect::with_shape(&self.subj_paths);
         let clip_rect = F64Rect::with_shape(&self.clip_paths);
 

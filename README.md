@@ -24,7 +24,7 @@ Try out iOverlay with an interactive demo:
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^1.3"
+i_overlay = "^1.4"
 ```
 
 ### Hello world
@@ -50,7 +50,7 @@ let mut overlay = FloatOverlay::new();
 overlay.add_path(&subj, ShapeType::Subject);
 overlay.add_path(&clip, ShapeType::Clip);
 
-let graph = overlay.build_graph(FillRule::NonZero);
+let graph = overlay.into_graph(FillRule::NonZero);
 let shapes = graph.extract_shapes(OverlayRule::Union);
 
 println!("shapes count: {}", shapes.len());
