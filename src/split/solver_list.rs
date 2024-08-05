@@ -8,6 +8,7 @@ impl SplitSolver {
         let mut need_to_fix = true;
 
         while need_to_fix {
+            need_to_fix = false;
             marks.clear();
 
             let n = edges.len();
