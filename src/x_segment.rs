@@ -45,7 +45,7 @@ impl XSegment {
     }
 
     #[inline]
-    pub fn is_under_segment(&self, other: XSegment) -> bool {
+    pub fn is_under_segment(&self, other: &XSegment) -> bool {
         if self.a == other.a {
             Triangle::is_clockwise_point(self.a, other.b, self.b)
         } else if self.a.x < other.a.x {

@@ -23,19 +23,15 @@ impl ScanFillStore for ScanFillList {
 
     fn find_under_and_nearest(&mut self, p: IntPoint, stop: i32) -> Option<ShapeCount> {
         let mut i = 0;
-        let mut result: Option<CountSegment> = None;
+        let mut j = usize::MAX;
         while i < self.buffer.len() {
             if self.buffer[i].x_segment.b.x <= stop {
                 self.buffer.swap_remove_index(i);
             } else {
-                let segment = self.buffer[i].x_segment;
+                let segment = &self.buffer[i].x_segment;
                 if segment.is_under_point(p) {
-                    if let Some(count_seg) = &result {
-                        if count_seg.x_segment.is_under_segment(segment) {
-                            result = Some(self.buffer[i].clone())
-                        }
-                    } else {
-                        result = Some(self.buffer[i].clone())
+                    if j == usize::MAX || unsafe { &self.buffer.get_unchecked(j) }.x_segment.is_under_segment(segment) {
+                        j = i;
                     }
                 }
 
@@ -43,10 +39,10 @@ impl ScanFillStore for ScanFillList {
             }
         }
 
-        if let Some(count_seg) = &result {
-            Some(count_seg.count)
-        } else {
+        if j == usize::MAX {
             None
+        } else {
+            Some(unsafe { self.buffer.get_unchecked(j) }.count)
         }
     }
 }

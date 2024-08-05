@@ -27,7 +27,7 @@ impl PartialOrd for CountSegment {
 impl Ord for CountSegment {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.x_segment.is_under_segment(other.x_segment) {
+        if self.x_segment.is_under_segment(&other.x_segment) {
             Ordering::Less
         } else {
             Ordering::Greater
