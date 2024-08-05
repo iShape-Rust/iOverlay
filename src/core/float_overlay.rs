@@ -9,6 +9,7 @@ use crate::core::float_graph::FloatOverlayGraph;
 use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::solver::Solver;
 
+#[derive(Clone)]
 pub struct FloatOverlay {
     subj_paths: Vec<F64Path>,
     clip_paths: Vec<F64Path>,
