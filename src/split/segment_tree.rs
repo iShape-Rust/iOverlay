@@ -33,7 +33,7 @@ impl SegmentTree {
 
         // to make round more precise we use upscale/downscale
         let scale = 4;
-        let len = (range.max - range.min) as usize;
+        let len = range.width() as usize;
         let step = (((len << scale) as f64) / (n as f64)) as i64;
 
         let capacity = (n << 1) - 1;
