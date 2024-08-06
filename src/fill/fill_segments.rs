@@ -7,11 +7,16 @@ use crate::fill::scan_list::ScanFillList;
 use crate::fill::scan_tree::ScanFillTree;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
-use crate::fill::scan_store::ScanFillStore;
 
 struct BGroup {
     id: usize,
     b: IntPoint,
+}
+
+pub(super) trait ScanFillStore {
+    fn insert(&mut self, segment: CountSegment);
+
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount;
 }
 
 pub(crate) trait FillSegments {
@@ -21,11 +26,9 @@ pub(crate) trait FillSegments {
 impl FillSegments for Vec<Segment> {
     fn fill(&mut self, fill_rule: FillRule, is_list: bool) {
         if is_list {
-            let store = ScanFillList::new(self.len());
-            self.solve(store, fill_rule);
+            self.solve(ScanFillList::new(self.len()), fill_rule);
         } else {
-            let store = ScanFillTree::new(self.len());
-            self.solve(store, fill_rule);
+            self.solve(ScanFillTree::new(self.len()), fill_rule);
         }
     }
 }

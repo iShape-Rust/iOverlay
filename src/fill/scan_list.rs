@@ -1,16 +1,16 @@
 use i_float::point::IntPoint;
 use crate::fill::count_segment::CountSegment;
-use crate::fill::scan_store::ScanFillStore;
+use crate::fill::fill_segments::ScanFillStore;
 use crate::split::shape_count::ShapeCount;
 use crate::util::{Int, SwapRemoveIndex};
 
-pub(crate) struct ScanFillList {
+pub(super) struct ScanFillList {
     buffer: Vec<CountSegment>,
 }
 
 impl ScanFillList {
     #[inline(always)]
-    pub(crate) fn new(count: usize) -> Self {
+    pub(super) fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
 }

@@ -1,5 +1,5 @@
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::IntShape;
+use i_shape::int::shape::{IntShape, PointsCount};
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
@@ -20,7 +20,7 @@ impl Simplify for IntPath {
 
 impl Simplify for [IntPath] {
     fn simplify(&self, fill_rule: FillRule, min_area: i64) -> Vec<IntShape> {
-        let mut overlay = Overlay::new(self.len());
+        let mut overlay = Overlay::new(self.points_count());
 
         overlay.add_paths(self, ShapeType::Subject);
 
@@ -31,7 +31,7 @@ impl Simplify for [IntPath] {
 
 impl Simplify for IntShape {
     fn simplify(&self, fill_rule: FillRule, min_area: i64) -> Vec<IntShape> {
-        let mut overlay = Overlay::new(self[0].len());
+        let mut overlay = Overlay::new(self.points_count());
         overlay.add_shape(self, ShapeType::Subject);
         let graph = overlay.into_graph(fill_rule);
         graph.extract_shapes_min_area(OverlayRule::Subject, min_area)

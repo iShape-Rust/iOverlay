@@ -8,7 +8,7 @@ use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segm
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
-use crate::x_segment::XSegment;
+
 use crate::core::solver::Solver;
 use crate::sort::SmartSort;
 use crate::split::shape_edge::ShapeEdgesMerge;
@@ -247,22 +247,23 @@ trait Segments {
 impl Segments for Vec<ShapeEdge> {
     fn into_segments(self) -> Vec<Segment> {
         let mut segments = Vec::with_capacity(self.len());
+        let mut iter = self.into_iter();
 
-        let mut prev = ShapeEdge { x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO }, count: ShapeCount { subj: 0, clip: 0 } };
-
-        for next in self.into_iter() {
-            if prev.x_segment == next.x_segment {
-                prev.count = prev.count.add(next.count)
-            } else {
-                if !prev.count.is_empty() {
-                    segments.push(Segment::new(&prev));
+        if let Some(mut prev) = iter.next() {
+            for next in iter {
+                if prev.x_segment == next.x_segment {
+                    prev.count = prev.count.add(next.count);
+                } else {
+                    if !prev.count.is_empty() {
+                        segments.push(Segment::new(&prev));
+                    }
+                    prev = next;
                 }
-                prev = next;
             }
-        }
 
-        if !prev.count.is_empty() {
-            segments.push(Segment::new(&prev));
+            if !prev.count.is_empty() {
+                segments.push(Segment::new(&prev));
+            }
         }
 
         segments

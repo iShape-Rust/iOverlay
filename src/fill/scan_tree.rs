@@ -2,19 +2,19 @@ use i_float::point::IntPoint;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::fill::count_segment::CountSegment;
-use crate::fill::scan_store::ScanFillStore;
+use crate::fill::fill_segments::ScanFillStore;
 use crate::x_segment::XSegment;
 use crate::split::shape_count::ShapeCount;
 use crate::util::Int;
 
-pub(crate) struct ScanFillTree {
+pub(super) struct ScanFillTree {
     tree: Tree<CountSegment>,
 }
 
 impl ScanFillTree {
 
     #[inline]
-    pub(crate) fn new(count: usize) -> Self {
+    pub(super) fn new(count: usize) -> Self {
         let capacity = count.log2_sqrt();
         let count = ShapeCount { subj: 0, clip: 0 };
         let x_segment = XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO };
