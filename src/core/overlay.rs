@@ -149,7 +149,7 @@ impl Overlay {
 
         let mut segments = sorted_list.into_segments();
 
-        segments.fill(&solver, fill_rule, is_list);
+        segments.fill(fill_rule, is_list);
 
         segments
     }
