@@ -82,18 +82,19 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
                     p_buf.sort_unstable_by(|a, b| a.order_by_angle(b, p));
                 }
 
-                let mut sum_count = if let Some(count) = scan_list.find_under_and_nearest(p, x) {
+                let mut sum_count = if let Some(count) = scan_list.find_under_and_nearest(p) {
                     count
                 } else {
                     ShapeCount::new(0, 0)
                 };
 
                 for se in p_buf.iter() {
-                    if self[se.i].seg.is_vertical() {
-                        _ = self[se.i].add_and_fill(sum_count, fill_rule);
+                    let si = unsafe{self.get_unchecked_mut(se.i)};
+                    if si.seg.is_vertical() {
+                        _ = si.add_and_fill(sum_count, fill_rule);
                     } else {
-                        sum_count = self[se.i].add_and_fill(sum_count, fill_rule);
-                        scan_list.insert(CountSegment { count: sum_count, x_segment: self[se.i].seg }, x);
+                        sum_count = si.add_and_fill(sum_count, fill_rule);
+                        scan_list.insert(CountSegment { count: sum_count, x_segment: si.seg }, x);
                     }
                 }
             }

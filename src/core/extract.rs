@@ -1,5 +1,6 @@
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, IntShapes};
+use i_shape::int::simple::Simple;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
@@ -179,7 +180,11 @@ trait Validate {
 
 impl Validate for IntPath {
     fn validate(&mut self, min_area: i64, is_hole: bool) -> bool {
-        self.remove_degenerates();
+        let slice = self.as_slice();
+        if !slice.is_simple() {
+            let simple = slice.to_simple();
+            let _ = std::mem::replace(self, simple);
+        }
 
         if self.len() < 3 {
             return false;

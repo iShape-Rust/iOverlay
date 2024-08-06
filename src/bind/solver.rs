@@ -48,7 +48,7 @@ impl ShapeBinder {
             while i < i_points.len() && i_points[i].point.x == x {
                 let p = i_points[i].point;
 
-                let parent_index = scan_store.find_under_and_nearest(p, x);
+                let parent_index = scan_store.find_under_and_nearest(p);
                 let child_index = i_points[i].id;
 
                 parent_for_child[child_index] = parent_index;

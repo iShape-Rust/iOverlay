@@ -73,12 +73,12 @@ impl ScanFillStore for ScanFillTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint, stop: i32) -> Option<ShapeCount> {
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> Option<ShapeCount> {
         let mut index = self.tree.root;
         let mut result = EMPTY_REF;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment.b.x <= stop {
+            if node.value.x_segment.b.x <= p.x {
                 let nd_parent = node.parent;
                 _ = self.tree.delete_index(index);
                 if nd_parent != EMPTY_REF {

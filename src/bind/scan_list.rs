@@ -20,18 +20,16 @@ impl ScanHoleStore for ScanHoleList {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint, stop: i32) -> usize {
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> usize {
         let mut i = 0;
         let mut j = usize::MAX;
         while i < self.buffer.len() {
-            if self.buffer[i].x_segment.b.x <= stop {
+            if self.buffer[i].x_segment.b.x <= p.x {
                 self.buffer.swap_remove_index(i);
             } else {
                 let segment = &self.buffer[i].x_segment;
-                if segment.is_under_point(p) {
-                    if j == usize::MAX || unsafe { self.buffer.get_unchecked(j) }.x_segment.is_under_segment(segment) {
-                        j = i;
-                    }
+                if segment.is_under_point(p) && (j == usize::MAX || unsafe { self.buffer.get_unchecked(j) }.x_segment.is_under_segment(segment)) {
+                    j = i;
                 }
 
                 i += 1

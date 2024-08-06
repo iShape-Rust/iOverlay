@@ -1,6 +1,7 @@
 use i_float::point::IntPoint;
-use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, PointsCount};
+use i_shape::int::simple::Simple;
 use crate::fill::fill_segments::FillSegments;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
@@ -66,7 +67,7 @@ impl Overlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        if let Some(mut edges) = path.to_vec().removed_degenerates().edges(shape_type) {
+        if let Some(mut edges) = path.option_edges(shape_type) {
             self.edges.append(&mut edges);
         }
     }
@@ -155,43 +156,52 @@ impl Overlay {
 }
 
 trait CreateEdges {
-    fn edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>>;
+    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>>;
+    fn edges(&self, shape_type: ShapeType) -> Vec<ShapeEdge>;
 }
 
-impl CreateEdges for IntPath {
-    fn edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>> {
-        let n = self.len();
-        if n < 3 {
-            return None;
+impl CreateEdges for &[IntPoint] {
+    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>> {
+        if self.is_simple() {
+            Some(self.edges(shape_type))
+        } else {
+            let path = self.to_simple();
+            if path.len() > 2 {
+                Some(self.to_simple().as_slice().edges(shape_type))
+            } else {
+                None
+            }
         }
+    }
+
+    fn edges(&self, shape_type: ShapeType) -> Vec<ShapeEdge> {
+        let n = self.len();
 
         let mut edges = vec![ShapeEdge::ZERO; n];
 
         let i0 = n - 1;
         let mut p0 = self[i0];
 
-        let mut y_min = p0.y;
-        let mut y_max = p0.y;
-
-        for i in 0..n {
-            let p1 = self[i];
-            y_min = y_min.min(p1.y);
-            y_max = y_max.max(p1.y);
-
-            let value = if p0 < p1 { 1 } else { -1 };
-            match shape_type {
-                ShapeType::Subject => {
+        match shape_type {
+            ShapeType::Subject => {
+                for i in 0..n {
+                    let p1 = self[i];
+                    let value = if p0 < p1 { 1 } else { -1 };
                     edges[i] = ShapeEdge::new(p0, p1, ShapeCount::new(value, 0));
-                }
-                ShapeType::Clip => {
-                    edges[i] = ShapeEdge::new(p0, p1, ShapeCount::new(0, value));
+                    p0 = p1
                 }
             }
-
-            p0 = p1
+            ShapeType::Clip => {
+                for i in 0..n {
+                    let p1 = self[i];
+                    let value = if p0 < p1 { 1 } else { -1 };
+                    edges[i] = ShapeEdge::new(p0, p1, ShapeCount::new(0, value));
+                    p0 = p1
+                }
+            }
         }
 
-        Some(edges)
+        edges
     }
 }
 
@@ -200,7 +210,6 @@ trait Filter {
 }
 
 impl Filter for Vec<Segment> {
-
     fn filter(&mut self) {
         let n = self.len();
         let mut i = 0;
