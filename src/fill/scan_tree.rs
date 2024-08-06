@@ -23,7 +23,8 @@ impl ScanFillTree {
 }
 
 impl ScanFillStore for ScanFillTree {
-    fn insert(&mut self, segment: CountSegment, stop: i32) {
+    fn insert(&mut self, segment: CountSegment) {
+        let stop = segment.x_segment.a.x;
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;
         let mut is_left = false;
@@ -73,7 +74,7 @@ impl ScanFillStore for ScanFillTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> Option<ShapeCount> {
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount {
         let mut index = self.tree.root;
         let mut result = EMPTY_REF;
         while index != EMPTY_REF {
@@ -97,9 +98,9 @@ impl ScanFillStore for ScanFillTree {
         }
 
         if result == EMPTY_REF {
-            None
+            ShapeCount { subj: 0, clip: 0 }
         } else {
-            Some(self.tree.node(result).value.count)
+            self.tree.node(result).value.count
         }
     }
 }

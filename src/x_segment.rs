@@ -16,7 +16,7 @@ impl XSegment {
         Self { a, b }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn y_range(&self) -> LineRange {
         if self.a.y < self.b.y {
             LineRange { min: self.a.y, max: self.b.y }
@@ -25,26 +25,26 @@ impl XSegment {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_vertical(&self) -> bool {
         self.a.x == self.b.x
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_under_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) > 0
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_above_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) < 0
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_under_segment(&self, other: &XSegment) -> bool {
         if self.a == other.a {
             Triangle::is_clockwise_point(self.a, other.b, self.b)
@@ -63,7 +63,7 @@ impl PartialOrd for XSegment {
 }
 
 impl Ord for XSegment {
-    #[inline]
+    #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         let a = self.a.cmp(&other.a);
         if a == Ordering::Equal {

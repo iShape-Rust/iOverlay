@@ -9,14 +9,9 @@ use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::fill::scan_store::ScanFillStore;
 
-struct YGroup {
-    i: usize,
-    y: i32,
-}
-
-struct PGroup {
-    i: usize,
-    p: IntPoint,
+struct BGroup {
+    id: usize,
+    b: IntPoint,
 }
 
 pub(crate) trait FillSegments {
@@ -41,61 +36,38 @@ trait FillSolver<S: ScanFillStore> {
 
 impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
     fn solve(&mut self, scan_store: S, fill_rule: FillRule) {
+        // Mark. self is sorted by seg.a
+
         let mut scan_list = scan_store;
-        let mut x_buf = Vec::new();
-        let mut p_buf = Vec::new();
+        let mut buf = Vec::new();
 
         let n = self.len();
         let mut i = 0;
 
         while i < n {
-            let x = self[i].seg.a.x;
+            let p = self[i].seg.a;
 
-            x_buf.clear();
+            buf.clear();
 
-            // find all new segments with same a.x
-            while i < n && self[i].seg.a.x == x {
-                x_buf.push(YGroup { i, y: self[i].seg.a.y });
+            while i < n && self[i].seg.a == p {
+                buf.push(BGroup { id: i, b: self[i].seg.b });
                 i += 1;
             }
 
-            if x_buf.len() > 1 {
-                x_buf.sort_unstable_by(|a, b| a.y.cmp(&b.y));
-            }
+            buf.sort_unstable_by(|s0, s1|
+            if Triangle::is_clockwise_point(p, s1.b, s0.b) {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            });
 
-            let mut j = 0;
-            while j < x_buf.len() {
-                let y = x_buf[j].y;
+            let mut sum_count = scan_list.find_under_and_nearest(p);
 
-                p_buf.clear();
-
-                // group new segments by same y (all segments in eBuf must have same a)
-                while j < x_buf.len() && x_buf[j].y == y {
-                    let handler = &x_buf[j];
-                    p_buf.push(PGroup { i: handler.i, p: self[handler.i].seg.b });
-                    j += 1;
-                }
-
-                let p = IntPoint::new(x, y);
-
-                if p_buf.len() > 1 {
-                    p_buf.sort_unstable_by(|a, b| a.order_by_angle(b, p));
-                }
-
-                let mut sum_count = if let Some(count) = scan_list.find_under_and_nearest(p) {
-                    count
-                } else {
-                    ShapeCount::new(0, 0)
-                };
-
-                for se in p_buf.iter() {
-                    let si = unsafe{self.get_unchecked_mut(se.i)};
-                    if si.seg.is_vertical() {
-                        _ = si.add_and_fill(sum_count, fill_rule);
-                    } else {
-                        sum_count = si.add_and_fill(sum_count, fill_rule);
-                        scan_list.insert(CountSegment { count: sum_count, x_segment: si.seg }, x);
-                    }
+            for se in buf.iter() {
+                let sid = unsafe { self.get_unchecked_mut(se.id) };
+                sum_count = sid.add_and_fill(sum_count, fill_rule);
+                if !sid.seg.is_vertical() {
+                    scan_list.insert(CountSegment { count: sum_count, x_segment: sid.seg });
                 }
             }
         }
@@ -103,6 +75,7 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
 }
 
 impl Segment {
+    #[inline]
     fn add_and_fill(&mut self, sum_count: ShapeCount, fill_rule: FillRule) -> ShapeCount {
         let is_subj_top: bool;
         let is_subj_bottom: bool;
@@ -136,17 +109,5 @@ impl Segment {
         self.fill = subj_top | subj_bottom | clip_top | clip_bottom;
 
         new_count
-    }
-}
-
-
-impl PGroup {
-    #[inline(always)]
-    fn order_by_angle(&self, other: &Self, center: IntPoint) -> Ordering {
-        if Triangle::is_clockwise_point(center, other.p, self.p) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
     }
 }

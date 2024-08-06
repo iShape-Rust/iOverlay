@@ -88,8 +88,8 @@ impl SplitSolver {
 
         let mut i = 0;
         while i < marks.len() {
+            let index = marks[i].index;
             let i0 = i;
-            let index = marks[i0].index;
             i += 1;
             while i < marks.len() && marks[i].index == index {
                 i += 1;

@@ -17,11 +17,11 @@ impl ScanFillList {
 
 impl ScanFillStore for ScanFillList {
     #[inline(always)]
-    fn insert(&mut self, segment: CountSegment, _stop: i32) {
+    fn insert(&mut self, segment: CountSegment) {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> Option<ShapeCount> {
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount {
         let mut i = 0;
         let mut j = usize::MAX;
         while i < self.buffer.len() {
@@ -38,9 +38,9 @@ impl ScanFillStore for ScanFillList {
         }
 
         if j == usize::MAX {
-            None
+            ShapeCount { subj: 0, clip: 0 }
         } else {
-            Some(unsafe { self.buffer.get_unchecked(j) }.count)
+            unsafe { self.buffer.get_unchecked(j) }.count
         }
     }
 }
