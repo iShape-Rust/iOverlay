@@ -311,7 +311,7 @@ impl SegmentTree {
             any_round = is_round || any_round
         }
 
-        return any_round;
+        any_round
     }
 }
 

@@ -7,11 +7,10 @@ use crate::split::shape_edge::{ShapeEdge, ShapeEdgesMerge};
 use crate::x_segment::XSegment;
 
 pub(crate) struct SplitSolver {
-    pub(super) solver: Solver
+    pub(super) solver: Solver,
 }
 
 impl SplitSolver {
-
     pub(crate) fn new(solver: Solver) -> Self {
         Self { solver }
     }
@@ -75,7 +74,8 @@ impl SplitSolver {
                 }
             }
         }
-        return cross.is_round;
+
+        cross.is_round
     }
 
     pub(super) fn apply(&self, marks: &mut Vec<LineMark>, edges: &mut Vec<ShapeEdge>) {

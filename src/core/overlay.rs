@@ -4,7 +4,6 @@ use i_shape::int::shape::{IntShape, PointsCount};
 use crate::fill::fill_segments::FillSegments;
 
 use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
-use crate::util::SwapRemoveIndex;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
@@ -107,7 +106,7 @@ impl Overlay {
 
         let mut segments = self.prepare_segments(fill_rule, solver);
 
-        segments.filter(&solver);
+        segments.filter();
 
         segments
     }
@@ -197,25 +196,37 @@ impl CreateEdges for IntPath {
 }
 
 trait Filter {
-    fn filter(&mut self, solver: &Solver);
+    fn filter(&mut self);
 }
 
 impl Filter for Vec<Segment> {
-    fn filter(&mut self, solver: &Solver) {
-        let mut modified = false;
+
+    fn filter(&mut self) {
+        let n = self.len();
         let mut i = 0;
-        while i < self.len() {
+        while i < n {
             let fill = self[i].fill;
             if fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH {
-                modified = true;
-                self.swap_remove_index(i);
-            } else {
-                i += 1
+                break;
             }
+            i += 1;
         }
 
-        if modified {
-            self.smart_sort_by(solver, |a, b| a.seg.cmp(&b.seg));
+        if i == n { return; }
+
+        let mut j = i + 1;
+
+        while j < n {
+            let fill = self[j].fill;
+            if !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH) {
+                *unsafe { self.get_unchecked_mut(i) } = self[j];
+                i += 1;
+            }
+            j += 1;
+        }
+
+        if i < n {
+            self.truncate(i);
         }
     }
 }
