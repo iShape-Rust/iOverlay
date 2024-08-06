@@ -7,7 +7,6 @@ pub(crate) trait Filter {
 }
 
 impl Filter for Vec<OverlayLink> {
-
     #[inline(always)]
     fn filter(&self, overlay_rule: OverlayRule) -> Vec<bool> {
         match overlay_rule {
@@ -17,84 +16,62 @@ impl Filter for Vec<OverlayLink> {
             OverlayRule::Union => filter_union(self),
             OverlayRule::Difference => filter_difference(self),
             OverlayRule::Xor => filter_xor(self),
-            OverlayRule::InverseDifference => {filter_inverse_difference(self)}
+            OverlayRule::InverseDifference => { filter_inverse_difference(self) }
         }
     }
 }
 
 fn filter_subject(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // Skip edge if it inside or not belong subject
 
         let subj = fill & SUBJ_BOTH;
-        skip[i] = subj == 0 || subj == SUBJ_BOTH;
-    }
-
-    skip
+        subj == 0 || subj == SUBJ_BOTH
+    }).collect()
 }
 
 fn filter_clip(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // Skip edge if it inside or not belong clip
 
         let clip = fill & CLIP_BOTH;
-        skip[i] = clip == 0 || clip == CLIP_BOTH;
-    }
-
-    skip
+        clip == 0 || clip == CLIP_BOTH
+    }).collect()
 }
 
 fn filter_intersect(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // One side must belong to both but not two side at once
 
         let is_top = fill & BOTH_TOP == BOTH_TOP;
         let is_bot = fill & BOTH_BOTTOM == BOTH_BOTTOM;
 
-        skip[i] = !(is_top || is_bot) || is_top && is_bot;
-    }
-
-    skip
+        !(is_top || is_bot) || is_top && is_bot
+    }).collect()
 }
 
 fn filter_union(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // One side must be empty
 
         let is_top_empty = fill & BOTH_TOP == NONE;
         let is_bot_empty = fill & BOTH_BOTTOM == NONE;
 
-        skip[i] = !(is_top_empty || is_bot_empty);
-    }
-
-    skip
+        !(is_top_empty || is_bot_empty)
+    }).collect()
 }
 
 fn filter_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // One side must belong only subject
         // Can not be subject inner edge
@@ -103,18 +80,13 @@ fn filter_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
         let top_only_subject = fill & BOTH_TOP == SUBJ_TOP;
         let bot_only_subject = fill & BOTH_BOTTOM == SUBJ_BOTTOM;
 
-        skip[i] = !(top_only_subject || bot_only_subject) || subject_inner;
-    }
-
-    skip
+        !(top_only_subject || bot_only_subject) || subject_inner
+    }).collect()
 }
 
 fn filter_inverse_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // One side must belong only clip
         // Can not be clip inner edge
@@ -123,18 +95,13 @@ fn filter_inverse_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
         let top_only_clip = fill & BOTH_TOP == CLIP_TOP;
         let bot_only_clip = fill & BOTH_BOTTOM == CLIP_BOTTOM;
 
-        skip[i] = !(top_only_clip || bot_only_clip) || clip_inner;
-    }
-
-    skip
+        !(top_only_clip || bot_only_clip) || clip_inner
+    }).collect()
 }
 
 fn filter_xor(links: &Vec<OverlayLink>) -> Vec<bool> {
-    let n = links.len();
-    let mut skip = vec![false; n];
-
-    for i in 0..n {
-        let fill = links[i].fill;
+    links.iter().map(|link| {
+        let fill = link.fill;
 
         // Skip edge if clip and subject share it
 
@@ -146,8 +113,6 @@ fn filter_xor(links: &Vec<OverlayLink>) -> Vec<bool> {
         let diagonal_0 = fill == CLIP_TOP | SUBJ_BOTTOM;
         let diagonal_1 = fill == CLIP_BOTTOM | SUBJ_TOP;
 
-        skip[i] = subject_inner || clip_inner || both_inner || only_top || only_bottom || diagonal_0 || diagonal_1;
-    }
-
-    skip
+        subject_inner || clip_inner || both_inner || only_top || only_bottom || diagonal_0 || diagonal_1
+    }).collect()
 }

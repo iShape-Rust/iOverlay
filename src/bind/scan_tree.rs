@@ -1,8 +1,8 @@
 use i_float::point::IntPoint;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
-use crate::bind::scan_store::ScanHoleStore;
 use crate::bind::segment::IdSegment;
+use crate::bind::solver::ScanHoleStore;
 use crate::util::Int;
 use crate::x_segment::XSegment;
 

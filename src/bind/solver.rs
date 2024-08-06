@@ -1,7 +1,7 @@
+use i_float::point::IntPoint;
 use crate::bind::segment::IdSegment;
 use crate::id_point::IdPoint;
 use crate::bind::scan_list::ScanHoleList;
-use crate::bind::scan_store::ScanHoleStore;
 use crate::bind::scan_tree::ScanHoleTree;
 
 pub struct BindSolution {
@@ -11,8 +11,13 @@ pub struct BindSolution {
 
 pub struct ShapeBinder;
 
-impl ShapeBinder {
+pub(crate) trait ScanHoleStore {
+    fn insert(&mut self, segment: IdSegment, stop: i32);
 
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> usize;
+}
+
+impl ShapeBinder {
     #[inline]
     pub fn bind(shape_count: usize, i_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
         if i_points.len() < 128 {

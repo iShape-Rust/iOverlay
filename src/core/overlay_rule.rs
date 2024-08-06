@@ -20,6 +20,8 @@ pub enum OverlayRule {
 }
 
 impl OverlayRule {
+
+    #[inline]
     pub(crate) fn is_fill_top(&self, fill: SegmentFill) -> bool {
         match self {
             OverlayRule::Subject => fill & SUBJ_TOP == SUBJ_TOP,

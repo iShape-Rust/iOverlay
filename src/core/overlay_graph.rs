@@ -27,10 +27,9 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
-    // for js version
-
     #[inline(always)]
     pub fn links(&self) -> &Vec<OverlayLink> {
+        // for js version
         &self.links
     }
 
@@ -162,12 +161,8 @@ impl OverlayGraph {
         // compare minVec with the rest of the vectors
 
         while i < node.indices.len() {
-            let j = unsafe {
-                *node.indices.get_unchecked(i)
-            };
-            let is_not_visited = unsafe {
-                !visited.get_unchecked(j)
-            };
+            let j = unsafe { *node.indices.get_unchecked(i) };
+            let is_not_visited = unsafe { !visited.get_unchecked(j) };
             if is_not_visited && ignore != j {
                 let link = unsafe { self.links.get_unchecked(j) };
                 let vj = link.other(center).point.subtract(center.point);
@@ -184,9 +179,7 @@ impl OverlayGraph {
     }
 
     pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> usize {
-        let node = unsafe {
-            self.nodes.get_unchecked(node_index)
-        };
+        let node = unsafe { self.nodes.get_unchecked(node_index) };
 
         let mut j = EMPTY_INDEX;
         for &i in node.indices.iter() {
@@ -197,7 +190,7 @@ impl OverlayGraph {
                 } else {
                     let (a, bi, bj) = unsafe {
                         let link = self.links.get_unchecked(j);
-                        let bi = self.links[i].b.point;
+                        let bi = self.links.get_unchecked(i).b.point;
                         (link.a.point, bi, link.b.point)
                     };
                     if Triangle::is_clockwise_point(a, bi, bj) {
@@ -210,7 +203,7 @@ impl OverlayGraph {
         j
     }
 
-    #[inline]
+    #[inline(always)]
     pub(crate) fn is_clockwise(a: IntPoint, b: IntPoint, is_top_inside: bool) -> bool {
         let is_direct = a < b;
         Self::xnor(is_direct, is_top_inside)
@@ -260,7 +253,6 @@ trait Size {
 }
 
 impl Size for Vec<Segment> {
-
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
@@ -273,7 +265,6 @@ impl Size for Vec<Segment> {
 }
 
 impl Size for Vec<End> {
-
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
