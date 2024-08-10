@@ -8,7 +8,7 @@ use crate::fill::scan_tree::ScanFillTree;
 use crate::split::shape_count::ShapeCount;
 use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 
-struct BGroup {
+struct Handler {
     id: usize,
     b: IntPoint,
 }
@@ -42,18 +42,18 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
         // Mark. self is sorted by seg.a
 
         let mut scan_list = scan_store;
-        let mut buf = Vec::new();
+        let mut buf = Vec::with_capacity(4);
 
         let n = self.len();
         let mut i = 0;
 
         while i < n {
             let p = self[i].seg.a;
-
-            buf.clear();
+            buf.push(Handler { id: i, b: self[i].seg.b });
+            i += 1;
 
             while i < n && self[i].seg.a == p {
-                buf.push(BGroup { id: i, b: self[i].seg.b });
+                buf.push(Handler { id: i, b: self[i].seg.b });
                 i += 1;
             }
 
@@ -69,10 +69,12 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
             for se in buf.iter() {
                 let sid = unsafe { self.get_unchecked_mut(se.id) };
                 sum_count = sid.add_and_fill(sum_count, fill_rule);
-                if !sid.seg.is_vertical() {
+                if sid.seg.is_not_vertical() {
                     scan_list.insert(CountSegment { count: sum_count, x_segment: sid.seg });
                 }
             }
+
+            buf.clear();
         }
     }
 }

@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
-use i_float::rect::IntRect;
 use i_float::triangle::Triangle;
 use crate::line_range::LineRange;
 
@@ -31,6 +30,11 @@ impl XSegment {
     }
 
     #[inline(always)]
+    pub fn is_not_vertical(&self) -> bool {
+        self.a.x != self.b.x
+    }
+
+    #[inline(always)]
     pub fn is_under_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
@@ -54,6 +58,11 @@ impl XSegment {
             Triangle::is_clockwise_point(other.a, other.b, self.a)
         }
     }
+
+    #[inline(always)]
+    pub fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
+        range.min > self.a.y && range.min > self.b.y || range.max < self.a.y && range.max < self.b.y
+    }
 }
 
 impl PartialOrd for XSegment {
@@ -70,28 +79,6 @@ impl Ord for XSegment {
             self.b.cmp(&other.b)
         } else {
             a
-        }
-    }
-}
-
-pub(crate) trait Boundary {
-    fn boundary(&self) -> IntRect;
-}
-
-impl Boundary for XSegment {
-    #[inline(always)]
-    fn boundary(&self) -> IntRect {
-        let (min_y, max_y) = if self.a.y < self.b.y {
-            (self.a.y, self.b.y)
-        } else {
-            (self.b.y, self.a.y)
-        };
-
-        IntRect {
-            min_x: self.a.x,
-            max_x: self.b.x,
-            min_y,
-            max_y,
         }
     }
 }

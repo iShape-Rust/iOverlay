@@ -1,6 +1,5 @@
 use crate::split::shape_edge::ShapeEdge;
 use crate::split::solver::SplitSolver;
-use crate::x_segment::Boundary;
 
 impl SplitSolver {
     pub(super) fn list_split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
@@ -19,14 +18,14 @@ impl SplitSolver {
 
             for i in 0..n - 1 {
                 let ei = &edges[i].x_segment;
-                let ri = ei.boundary();
+                let ri = ei.y_range();
                 for j in i + 1..n {
                     let ej = &edges[j].x_segment;
                     if ei.b.x < ej.a.x {
                         break;
                     }
 
-                    if !ej.boundary().is_intersect_border_include(&ri) {
+                    if ej.is_not_intersect_y_range(&ri) {
                         continue;
                     }
 

@@ -96,10 +96,12 @@ impl SplitSolver {
             }
 
             if i0 + 1 == i {
-                let e0 = edges[index];
+                let e0 = unsafe { edges.get_unchecked_mut(index) };
                 let p = marks[i0].point;
-                edges[index] = ShapeEdge::create_and_validate(e0.x_segment.a, p, e0.count);
-                edges.push(ShapeEdge::create_and_validate(p, e0.x_segment.b, e0.count));
+                let b = e0.x_segment.b;
+                let count = e0.count;
+                *e0 = ShapeEdge::create_and_validate(e0.x_segment.a, p, count);
+                edges.push(ShapeEdge::create_and_validate(p, b, count));
             } else {
                 Self::multi_split_edge(&marks[i0..i], edges);
             }
@@ -111,25 +113,26 @@ impl SplitSolver {
     }
 
     fn multi_split_edge(marks: &[LineMark], edges: &mut Vec<ShapeEdge>) {
-        let index = marks[0].index;
-        let mut p = marks[0].point;
-        let mut l = marks[0].length;
+        let mut iter = marks.iter();
+        let m0 = iter.next().unwrap();
 
-        let n = marks.len();
-        let e0 = edges[index];
+        let mut p = m0.point;
+        let mut l = m0.length;
 
-        edges[index] = ShapeEdge::create_and_validate(e0.x_segment.a, p, e0.count);
+        let e0 = unsafe { edges.get_unchecked_mut(m0.index) };
 
-        let mut j = 1;
-        while j < n {
-            let mj = &marks[j];
+        let b = e0.x_segment.b;
+        let count = e0.count;
+        *e0 = ShapeEdge::create_and_validate(e0.x_segment.a, p, count);
+
+        for mj in iter {
             if l != mj.length || p != mj.point {
-                edges.push(ShapeEdge::create_and_validate(p, mj.point, e0.count));
+                edges.push(ShapeEdge::create_and_validate(p, mj.point, count));
                 p = mj.point;
                 l = mj.length;
             }
-            j += 1;
         }
-        edges.push(ShapeEdge::create_and_validate(p, e0.x_segment.b, e0.count));
+
+        edges.push(ShapeEdge::create_and_validate(p, b, count));
     }
 }

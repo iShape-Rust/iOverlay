@@ -317,7 +317,7 @@ impl SegmentTree {
 
 impl LineRange {
     fn middle(&self) -> i32 {
-        (self.max + self.min) >> 1
+        ((self.max as i64 + self.min as i64) >> 1) as i32
     }
 }
 
