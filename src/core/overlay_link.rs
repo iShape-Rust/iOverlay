@@ -6,13 +6,12 @@ use crate::id_point::IdPoint;
 pub struct OverlayLink {
     pub(crate) a: IdPoint,
     pub(crate) b: IdPoint,
-    pub(crate) fill: SegmentFill
+    pub(crate) fill: SegmentFill,
 }
 
 impl OverlayLink {
-
     #[inline(always)]
-    pub (super) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
+    pub(super) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
         OverlayLink { a, b, fill }
     }
 
@@ -30,5 +29,4 @@ impl OverlayLink {
     pub fn fill(&self) -> SegmentFill {
         self.fill
     }
-
 }

@@ -254,14 +254,14 @@ impl Segments for Vec<ShapeEdge> {
                 if prev.x_segment == next.x_segment {
                     prev.count = prev.count.add(next.count);
                 } else {
-                    if !prev.count.is_empty() {
+                    if prev.count.is_not_empty() {
                         segments.push(Segment::new(&prev));
                     }
                     prev = next;
                 }
             }
 
-            if !prev.count.is_empty() {
+            if prev.count.is_not_empty() {
                 segments.push(Segment::new(&prev));
             }
         }

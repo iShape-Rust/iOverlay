@@ -50,7 +50,7 @@ impl OverlayGraph {
 
         end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
 
-        let mut nodes: Vec<OverlayNode> = Vec::with_capacity(2 * n);
+        let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
         let mut links: Vec<OverlayLink> = segments
             .iter()
             .map(|segment| OverlayLink::new(IdPoint::ZERO, IdPoint::ZERO, segment.fill))
@@ -77,24 +77,24 @@ impl OverlayGraph {
             if a == b {
                 let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
-                    let aa = segments[ai].seg.a;
+                    let aa = unsafe { segments.get_unchecked(ai) }.seg.a;
                     if aa != a {
                         a = aa;
                         break;
                     }
-                    links[ai].a = ip;
+                    unsafe { links.get_unchecked_mut(ai) }.a = ip;
                     indices.push(ai);
 
                     ai += 1
                 }
 
                 while bi < n {
-                    let e = &end_bs[bi];
+                    let e = unsafe { end_bs.get_unchecked(bi) };
                     if e.point != b {
                         b = e.point;
                         break;
                     }
-                    links[e.seg_index].b = ip;
+                    unsafe { links.get_unchecked_mut(e.seg_index) }.b = ip;
                     indices.push(e.seg_index);
 
                     bi += 1
@@ -102,12 +102,12 @@ impl OverlayGraph {
             } else if ai < n && a < b {
                 let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
-                    let aa = segments[ai].seg.a;
+                    let aa = unsafe { segments.get_unchecked(ai) }.seg.a;
                     if aa != a {
                         a = aa;
                         break;
                     }
-                    links[ai].a = ip;
+                    unsafe { links.get_unchecked_mut(ai) }.a = ip;
                     indices.push(ai);
 
                     ai += 1
@@ -115,12 +115,12 @@ impl OverlayGraph {
             } else {
                 let ip = IdPoint::new(nodes.len(), b);
                 while bi < n {
-                    let e = &end_bs[bi];
+                    let e = unsafe { end_bs.get_unchecked(bi) };
                     if e.point != b {
                         b = e.point;
                         break;
                     }
-                    links[e.seg_index].b = ip;
+                    unsafe { links.get_unchecked_mut(e.seg_index) }.b = ip;
                     indices.push(e.seg_index);
 
                     bi += 1
@@ -130,6 +130,8 @@ impl OverlayGraph {
             debug_assert!(indices.len() > 1, "indices: {}", indices.len());
             nodes.push(OverlayNode { indices });
         }
+
+        debug_assert!(nodes.len() <= n);
 
         Self { solver, nodes, links }
     }
