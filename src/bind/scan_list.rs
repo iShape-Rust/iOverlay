@@ -2,6 +2,7 @@ use i_float::point::IntPoint;
 use crate::util::{Int, SwapRemoveIndex};
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
+use crate::x_segment::XSegment;
 
 pub(crate) struct ScanHoleList {
     buffer: Vec<IdSegment>,
@@ -22,24 +23,24 @@ impl ScanHoleStore for ScanHoleList {
 
     fn find_under_and_nearest(&mut self, p: IntPoint) -> usize {
         let mut i = 0;
-        let mut j = usize::MAX;
+        let mut best = IdSegment {
+            id: 0,
+            x_segment: XSegment { a: IntPoint { x: p.x, y: i32::MIN }, b: IntPoint { x: p.x + 1, y: i32::MIN } },
+        };
+
         while i < self.buffer.len() {
-            if self.buffer[i].x_segment.b.x <= p.x {
+            let id_segment = &self.buffer[i];
+            if id_segment.x_segment.b.x <= p.x {
                 self.buffer.swap_remove_index(i);
             } else {
-                let segment = &self.buffer[i].x_segment;
-                if segment.is_under_point(p) && (j == usize::MAX || unsafe { self.buffer.get_unchecked(j) }.x_segment.is_under_segment(segment)) {
-                    j = i;
+                if id_segment.x_segment.is_under_point(p) && best.x_segment.is_under_segment(&id_segment.x_segment) {
+                    best = id_segment.clone();
                 }
 
                 i += 1
             }
         }
 
-        if j == usize::MAX {
-            0
-        } else {
-            unsafe { self.buffer.get_unchecked(j) }.id
-        }
+        best.id
     }
 }

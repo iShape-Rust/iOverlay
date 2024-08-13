@@ -54,7 +54,7 @@ pub trait IdSegments {
 impl IdSegments for IntPath {
     fn id_segments(&self, id: usize, x_min: i32, x_max: i32) -> Vec<IdSegment> {
         let n = self.len();
-        let mut list = Vec::with_capacity(3 * n / 4);
+        let mut list = Vec::with_capacity(n >> 1);
 
         let mut b = self[n - 1];
         for &a in self.iter() {
