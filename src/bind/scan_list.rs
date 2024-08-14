@@ -2,17 +2,15 @@ use i_float::point::IntPoint;
 use crate::util::Int;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
-use crate::x_segment::XSegment;
 
 pub(crate) struct ScanHoleList {
-    prev_x: i32,
     buffer: Vec<IdSegment>,
 }
 
 impl ScanHoleList {
     #[inline(always)]
     pub(crate) fn new(count: usize) -> Self {
-        Self { prev_x: i32::MIN, buffer: Vec::with_capacity(count.log2_sqrt()) }
+        Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
 }
 
@@ -23,53 +21,43 @@ impl ScanHoleStore for ScanHoleList {
     }
 
     fn find_under_and_nearest(&mut self, p: IntPoint) -> usize {
-        self.clean(p.x);
+        if self.buffer.is_empty() {
+            return 0
+        }
 
         let mut i = 0;
-        let mut best = IdSegment { id: 0, x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO }, };
-        while i < self.buffer.len() {
-            let item = &self.buffer[i];
-            i += 1;
-
-            if item.x_segment.is_under_point(p) {
-                best = item.clone();
-                break;
-            }
-        }
-
-        while i < self.buffer.len() {
-            let item = &self.buffer[i];
-            if item.x_segment.is_under_point(p) && best.x_segment.is_under_segment(&item.x_segment) {
-                best = item.clone();
-            }
-            i += 1;
-        }
-
-        best.id
-    }
-}
-
-impl ScanHoleList {
-    #[inline(always)]
-    fn clean(&mut self, x: i32) {
-        if self.prev_x >= x || self.buffer.is_empty() {
-            return;
-        }
-
-        self.prev_x = x;
-
-        let mut i = 0;
-        while i < self.buffer.len() - 1 {
-            if unsafe { self.buffer.get_unchecked(i) }.x_segment.b.x <= x {
-                self.buffer.swap_remove(i);
+        let mut j = usize::MAX;
+        let mut n = self.buffer.len();
+        while i < n {
+            let item = unsafe { self.buffer.get_unchecked(i) };
+            if item.x_segment.b.x <= p.x {
+                let last = unsafe { self.buffer.get_unchecked(n - 1) }.clone();
+                *unsafe { self.buffer.get_unchecked_mut(i) } = last;
+                n -= 1;
                 continue;
             }
 
+            if item.x_segment.is_under_point(p) {
+                if j == usize::MAX {
+                    j = i;
+                } else {
+                    let prev = unsafe { self.buffer.get_unchecked(j) };
+                    if prev.x_segment.is_under_segment(&item.x_segment) {
+                        j = i;
+                    }
+                }
+            }
             i += 1;
         }
 
-        if unsafe { self.buffer.get_unchecked(i) }.x_segment.b.x <= x {
-            self.buffer.pop();
+        if n != self.buffer.len() {
+            self.buffer.truncate(n);
+        }
+
+        if j == usize::MAX {
+            0
+        } else {
+            unsafe { self.buffer.get_unchecked(j) }.id
         }
     }
 }
