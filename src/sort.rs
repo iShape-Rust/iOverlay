@@ -13,13 +13,13 @@ pub(crate) trait SmartSort {
 }
 
 impl<T: Send> SmartSort for [T] {
-    fn smart_sort_by<F>(&mut self, solver: &Solver, compare: F)
+    fn smart_sort_by<F>(&mut self, _solver: &Solver, compare: F)
     where
         F: Fn(&T, &T) -> Ordering + Sync,
     {
         #[cfg(feature = "allow_multithreading")]
         {
-            if let Some(multithreading) = solver.multithreading {
+            if let Some(multithreading) = _solver.multithreading {
                 if self.len() > multithreading.par_sort_min_size {
                     self.par_sort_unstable_by(compare);
                     return;
