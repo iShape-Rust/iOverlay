@@ -2,7 +2,7 @@ use std::usize;
 use i_float::point::IntPoint;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::fill_segments::ScanFillStore;
-use crate::split::shape_count::ShapeCount;
+use crate::segm::shape_count::ShapeCount;
 use crate::util::Int;
 
 pub(super) struct ScanFillList {

@@ -1,5 +1,5 @@
 use i_float::point::IntPoint;
-use crate::fill::segment::SegmentFill;
+use crate::segm::segment::SegmentFill;
 use crate::id_point::IdPoint;
 
 #[derive(Debug, Clone, Copy)]

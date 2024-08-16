@@ -2,13 +2,13 @@ use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 
-use crate::{fill::segment::Segment};
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
+use crate::segm::segment::Segment;
 use crate::sort::SmartSort;
 use crate::util::EMPTY_INDEX;
 
-use super::{overlay_node::OverlayNode, overlay_link::OverlayLink};
+use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
 
 struct End {
     seg_index: usize,
@@ -44,7 +44,7 @@ impl OverlayGraph {
         for (seg_index, segment) in segments.iter().enumerate() {
             end_bs.push(End {
                 seg_index,
-                point: segment.seg.b,
+                point: segment.x_segment.b,
             });
         }
 
@@ -58,7 +58,7 @@ impl OverlayGraph {
 
         let mut ai = 0;
         let mut bi = 0;
-        let mut a = segments[0].seg.a;
+        let mut a = segments[0].x_segment.a;
         let mut b = end_bs[0].point;
 
         while ai < n || bi < n {
@@ -77,7 +77,7 @@ impl OverlayGraph {
             if a == b {
                 let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
-                    let aa = unsafe { segments.get_unchecked(ai) }.seg.a;
+                    let aa = unsafe { segments.get_unchecked(ai) }.x_segment.a;
                     if aa != a {
                         a = aa;
                         break;
@@ -102,7 +102,7 @@ impl OverlayGraph {
             } else if ai < n && a < b {
                 let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
-                    let aa = unsafe { segments.get_unchecked(ai) }.seg.a;
+                    let aa = unsafe { segments.get_unchecked(ai) }.x_segment.a;
                     if aa != a {
                         a = aa;
                         break;
@@ -258,7 +258,7 @@ impl Size for Vec<Segment> {
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        while i < self.len() && self[i].seg.a == point {
+        while i < self.len() && self[i].x_segment.a == point {
             i += 1;
         }
 

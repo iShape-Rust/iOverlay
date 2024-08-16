@@ -1,7 +1,8 @@
+/*
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
-use crate::x_segment::XSegment;
-use crate::split::shape_count::ShapeCount;
+use crate::segm::x_segment::XSegment;
+use crate::segm::shape_count::ShapeCount;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ShapeEdge {
@@ -25,7 +26,7 @@ impl ShapeEdge {
     }
 
     #[inline(always)]
-    pub(super) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
+    pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {
@@ -103,3 +104,4 @@ impl ShapeEdgesMerge for Vec<ShapeEdge> {
         }
     }
 }
+*/

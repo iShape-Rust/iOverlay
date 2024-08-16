@@ -1,5 +1,5 @@
 use crate::core::solver::Strategy::{Auto, List, Tree};
-use crate::split::shape_edge::ShapeEdge;
+use crate::segm::segment::Segment;
 
 /// Represents the selection strategy or algorithm for processing geometric data, aimed at optimizing performance under various conditions.
 ///
@@ -46,7 +46,7 @@ impl Solver {
 
     const MAX_LIST_COUNT: usize = 768;
 
-    pub(crate) fn is_list(&self, edges: &Vec<ShapeEdge>) -> bool {
+    pub(crate) fn is_list(&self, edges: &Vec<Segment>) -> bool {
         match self.strategy {
             List => { true }
             Tree => { false }

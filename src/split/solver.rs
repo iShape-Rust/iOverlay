@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 use crate::core::solver::Solver;
+use crate::segm::segment::{Segment, ShapeEdgesMerge};
 use crate::sort::SmartSort;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
-use crate::split::shape_edge::{ShapeEdge, ShapeEdgesMerge};
-use crate::x_segment::XSegment;
+use crate::segm::x_segment::XSegment;
 
 pub(crate) struct SplitSolver {
     pub(super) solver: Solver,
@@ -15,7 +15,7 @@ impl SplitSolver {
         Self { solver }
     }
 
-    pub(crate) fn split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
+    pub(crate) fn split(&self, edges: &mut Vec<Segment>) -> bool {
         let is_list = self.solver.is_list(edges);
 
         if is_list {
@@ -78,7 +78,7 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply(&self, marks: &mut Vec<LineMark>, edges: &mut Vec<ShapeEdge>) {
+    pub(super) fn apply(&self, marks: &mut Vec<LineMark>, edges: &mut Vec<Segment>) {
         marks.smart_sort_by(&self.solver, |a, b|
         if a.index < b.index || a.index == b.index && (a.length < b.length || a.length == b.length && a.point < b.point) {
             Ordering::Less
@@ -100,8 +100,8 @@ impl SplitSolver {
                 let p = marks[i0].point;
                 let b = e0.x_segment.b;
                 let count = e0.count;
-                *e0 = ShapeEdge::create_and_validate(e0.x_segment.a, p, count);
-                edges.push(ShapeEdge::create_and_validate(p, b, count));
+                *e0 = Segment::create_and_validate(e0.x_segment.a, p, count);
+                edges.push(Segment::create_and_validate(p, b, count));
             } else {
                 Self::multi_split_edge(&marks[i0..i], edges);
             }
@@ -112,7 +112,7 @@ impl SplitSolver {
         edges.merge_if_needed();
     }
 
-    fn multi_split_edge(marks: &[LineMark], edges: &mut Vec<ShapeEdge>) {
+    fn multi_split_edge(marks: &[LineMark], edges: &mut Vec<Segment>) {
         let mut iter = marks.iter();
         let m0 = iter.next().unwrap();
 
@@ -123,16 +123,16 @@ impl SplitSolver {
 
         let b = e0.x_segment.b;
         let count = e0.count;
-        *e0 = ShapeEdge::create_and_validate(e0.x_segment.a, p, count);
+        *e0 = Segment::create_and_validate(e0.x_segment.a, p, count);
 
         for mj in iter {
             if l != mj.length || p != mj.point {
-                edges.push(ShapeEdge::create_and_validate(p, mj.point, count));
+                edges.push(Segment::create_and_validate(p, mj.point, count));
                 p = mj.point;
                 l = mj.length;
             }
         }
 
-        edges.push(ShapeEdge::create_and_validate(p, b, count));
+        edges.push(Segment::create_and_validate(p, b, count));
     }
 }

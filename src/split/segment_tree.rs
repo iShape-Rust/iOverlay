@@ -332,7 +332,7 @@ impl SegmentTree {
 #[cfg(test)]
 mod tests {
     use i_float::point::IntPoint;
-    use crate::x_segment::XSegment;
+    use crate::segm::x_segment::XSegment;
     use crate::line_range::LineRange;
     use crate::split::fragment::Fragment;
     use crate::split::segment_tree::SegmentTree;

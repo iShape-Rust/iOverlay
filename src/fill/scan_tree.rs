@@ -3,8 +3,8 @@ use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::fill_segments::ScanFillStore;
-use crate::x_segment::XSegment;
-use crate::split::shape_count::ShapeCount;
+use crate::segm::x_segment::XSegment;
+use crate::segm::shape_count::ShapeCount;
 use crate::util::Int;
 
 pub(super) struct ScanFillTree {

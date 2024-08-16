@@ -1,8 +1,8 @@
-use crate::split::shape_edge::ShapeEdge;
+use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn list_split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
+    pub(super) fn list_split(&self, edges: &mut Vec<Segment>) -> bool {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 

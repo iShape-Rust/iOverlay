@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
-use crate::x_segment::XSegment;
+use crate::segm::x_segment::XSegment;
 use crate::vector::vector::VectorPath;
 
 #[derive(Debug, Clone, Copy)]

@@ -4,14 +4,14 @@ use i_shape::int::shape::{IntShape, PointsCount};
 use i_shape::int::simple::Simple;
 use crate::fill::fill_segments::FillSegments;
 
-use crate::{split::{shape_edge::ShapeEdge, shape_count::ShapeCount}, fill::{segment::Segment}};
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
-use crate::fill::segment::{CLIP_BOTH, SUBJ_BOTH};
+use crate::segm::shape_count::ShapeCount;
+use crate::segm::segment::{CLIP_BOTH, ShapeEdgesMerge, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
+use crate::segm::segment::Segment;
 use crate::sort::SmartSort;
-use crate::split::shape_edge::ShapeEdgesMerge;
 use crate::split::solver::SplitSolver;
 use crate::vector::vector::VectorShape;
 
@@ -30,7 +30,7 @@ pub enum ShapeType {
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
 pub struct Overlay {
-    edges: Vec<ShapeEdge>,
+    edges: Vec<Segment>,
 }
 
 impl Overlay {
@@ -140,14 +140,14 @@ impl Overlay {
     }
 
     fn prepare_segments(self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
-        let mut sorted_list = self.edges;
-        sorted_list.smart_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+        let mut segments = self.edges;
+        segments.smart_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
-        sorted_list.merge_if_needed();
+        segments.merge_if_needed();
 
-        let is_list = SplitSolver::new(solver).split(&mut sorted_list);
+        let is_list = SplitSolver::new(solver).split(&mut segments);
 
-        let mut segments = sorted_list.into_segments();
+        // let mut segments = sorted_list.into_segments();
 
         segments.fill(fill_rule, is_list);
 
@@ -156,12 +156,12 @@ impl Overlay {
 }
 
 trait CreateEdges {
-    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>>;
-    fn edges(&self, shape_type: ShapeType) -> Vec<ShapeEdge>;
+    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<Segment>>;
+    fn edges(&self, shape_type: ShapeType) -> Vec<Segment>;
 }
 
 impl CreateEdges for &[IntPoint] {
-    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<ShapeEdge>> {
+    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<Segment>> {
         if self.is_simple() {
             Some(self.edges(shape_type))
         } else {
@@ -174,10 +174,10 @@ impl CreateEdges for &[IntPoint] {
         }
     }
 
-    fn edges(&self, shape_type: ShapeType) -> Vec<ShapeEdge> {
+    fn edges(&self, shape_type: ShapeType) -> Vec<Segment> {
         let n = self.len();
 
-        let mut edges = vec![ShapeEdge::ZERO; n];
+        let mut edges = vec![Segment::ZERO; n];
 
         let i0 = n - 1;
         let mut p0 = self[i0];
@@ -187,7 +187,7 @@ impl CreateEdges for &[IntPoint] {
                 for i in 0..n {
                     let p1 = self[i];
                     let value = if p0 < p1 { 1 } else { -1 };
-                    edges[i] = ShapeEdge::new(p0, p1, ShapeCount::new(value, 0));
+                    edges[i] = Segment::new(p0, p1, ShapeCount::new(value, 0));
                     p0 = p1
                 }
             }
@@ -195,7 +195,7 @@ impl CreateEdges for &[IntPoint] {
                 for i in 0..n {
                     let p1 = self[i];
                     let value = if p0 < p1 { 1 } else { -1 };
-                    edges[i] = ShapeEdge::new(p0, p1, ShapeCount::new(0, value));
+                    edges[i] = Segment::new(p0, p1, ShapeCount::new(0, value));
                     p0 = p1
                 }
             }
@@ -237,35 +237,5 @@ impl Filter for Vec<Segment> {
         if i < n {
             self.truncate(i);
         }
-    }
-}
-
-trait Segments {
-    fn into_segments(self) -> Vec<Segment>;
-}
-
-impl Segments for Vec<ShapeEdge> {
-    fn into_segments(self) -> Vec<Segment> {
-        let mut segments = Vec::with_capacity(self.len());
-        let mut iter = self.into_iter();
-
-        if let Some(mut prev) = iter.next() {
-            for next in iter {
-                if prev.x_segment == next.x_segment {
-                    prev.count = prev.count.add(next.count);
-                } else {
-                    if prev.count.is_not_empty() {
-                        segments.push(Segment::new(&prev));
-                    }
-                    prev = next;
-                }
-            }
-
-            if prev.count.is_not_empty() {
-                segments.push(Segment::new(&prev));
-            }
-        }
-
-        segments
     }
 }

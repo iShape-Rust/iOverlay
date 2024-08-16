@@ -1,13 +1,13 @@
 use crate::line_range::LineRange;
+use crate::segm::segment::Segment;
 use crate::split::fragment::Fragment;
 use crate::split::segment_tree::SegmentTree;
-use crate::split::shape_edge::ShapeEdge;
 use crate::split::solver::SplitSolver;
 use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split(&self, edges: &mut Vec<ShapeEdge>) -> bool {
+    pub(super) fn tree_split(&self, edges: &mut Vec<Segment>) -> bool {
         let ver_range = edges.ver_range();
         let height = ver_range.width() as usize;
 
@@ -26,7 +26,7 @@ impl SplitSolver {
         return false;
     }
 
-    fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<ShapeEdge>) {
+    fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {
         let mut tree = SegmentTree::new(ver_range, layout.power);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
@@ -54,7 +54,7 @@ impl SplitSolver {
         }
     }
 
-    fn complex(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<ShapeEdge>) {
+    fn complex(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {
         let mut tree = SegmentTree::new(ver_range, layout.power);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
@@ -101,7 +101,7 @@ trait VerticalRange {
     fn ver_range(&self) -> LineRange;
 }
 
-impl VerticalRange for Vec<ShapeEdge> {
+impl VerticalRange for Vec<Segment> {
     fn ver_range(&self) -> LineRange {
         let mut min_y = self[0].x_segment.a.y;
         let mut max_y = min_y;

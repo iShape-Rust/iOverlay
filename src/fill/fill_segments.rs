@@ -5,8 +5,8 @@ use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_list::ScanFillList;
 use crate::fill::scan_tree::ScanFillTree;
-use crate::split::shape_count::ShapeCount;
-use crate::fill::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::segm::shape_count::ShapeCount;
+use crate::segm::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
 
 struct Handler {
     id: usize,
@@ -47,12 +47,12 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
         let mut i = 0;
 
         while i < n {
-            let p = self[i].seg.a;
-            buf.push(Handler { id: i, b: self[i].seg.b });
+            let p = self[i].x_segment.a;
+            buf.push(Handler { id: i, b: self[i].x_segment.b });
             i += 1;
 
-            while i < n && self[i].seg.a == p {
-                buf.push(Handler { id: i, b: self[i].seg.b });
+            while i < n && self[i].x_segment.a == p {
+                buf.push(Handler { id: i, b: self[i].x_segment.b });
                 i += 1;
             }
 
@@ -68,8 +68,8 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
             for se in buf.iter() {
                 let sid = unsafe { self.get_unchecked_mut(se.id) };
                 sum_count = sid.add_and_fill(sum_count, fill_rule);
-                if sid.seg.is_not_vertical() {
-                    scan_list.insert(CountSegment { count: sum_count, x_segment: sid.seg });
+                if sid.x_segment.is_not_vertical() {
+                    scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
                 }
             }
 

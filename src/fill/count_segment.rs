@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
-use crate::x_segment::XSegment;
-use crate::split::shape_count::ShapeCount;
+use crate::segm::x_segment::XSegment;
+use crate::segm::shape_count::ShapeCount;
 
 #[derive(Debug, Clone)]
 pub(crate) struct CountSegment {

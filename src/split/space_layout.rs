@@ -1,7 +1,7 @@
 use i_float::rect::IntRect;
+use crate::segm::segment::Segment;
 use crate::split::fragment::Fragment;
-use crate::split::shape_edge::ShapeEdge;
-use crate::x_segment::XSegment;
+use crate::segm::x_segment::XSegment;
 
 pub(crate) struct SpaceLayout {
     pub(super) power: usize,
@@ -107,7 +107,7 @@ impl SpaceLayout {
         buffer.push(Fragment { index, rect, x_segment: x_segment.clone() });
     }
 
-    pub(super) fn is_fragmentation_required_for_edges(&self, edges: &[ShapeEdge]) -> bool {
+    pub(super) fn is_fragmentation_required_for_edges(&self, edges: &[Segment]) -> bool {
         let mut i = 0;
         for edge in edges.iter() {
             if self.is_fragmentation_required(edge.x_segment) {
