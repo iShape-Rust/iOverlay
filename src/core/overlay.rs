@@ -155,47 +155,10 @@ impl Overlay {
 
         let is_list = SplitSolver::new(solver).split(&mut segments);
 
-        // let mut segments = sorted_list.into_segments();
-
         let fills = segments.fill(fill_rule, is_list);
 
         (segments, fills)
     }
-
-    /*
-    fn filter(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let n = fills.len();
-        let mut i = 0;
-        while i < n {
-            let fill = fills[i];
-            if fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH {
-                break;
-            }
-            i += 1;
-        }
-
-        if i == n { return; }
-
-        let mut j = i + 1;
-
-        while j < n {
-            let fill = fills[j];
-            if !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH) {
-                unsafe {
-                    *fills.get_unchecked_mut(i) = fills[j];
-                    *segments.get_unchecked_mut(i) = segments[j];
-                }
-                i += 1;
-            }
-            j += 1;
-        }
-
-        if i < n {
-            fills.truncate(i);
-            segments.truncate(i);
-        }
-    }
-    */
 }
 
 trait CreateEdges {
