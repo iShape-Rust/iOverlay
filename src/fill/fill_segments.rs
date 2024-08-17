@@ -6,7 +6,7 @@ use crate::fill::count_segment::CountSegment;
 use crate::fill::scan_list::ScanFillList;
 use crate::fill::scan_tree::ScanFillTree;
 use crate::segm::shape_count::ShapeCount;
-use crate::segm::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::segm::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP, SegmentFill};
 
 struct Handler {
     id: usize,
@@ -19,31 +19,32 @@ pub(super) trait ScanFillStore {
 }
 
 pub(crate) trait FillSegments {
-    fn fill(&mut self, fill_rule: FillRule, is_list: bool);
+    fn fill(&self, fill_rule: FillRule, is_list: bool) -> Vec<SegmentFill>;
 }
 
 impl FillSegments for Vec<Segment> {
-    fn fill(&mut self, fill_rule: FillRule, is_list: bool) {
+    fn fill(&self, fill_rule: FillRule, is_list: bool) -> Vec<SegmentFill> {
         if is_list {
-            self.solve(ScanFillList::new(self.len()), fill_rule);
+            self.solve(ScanFillList::new(self.len()), fill_rule)
         } else {
-            self.solve(ScanFillTree::new(self.len()), fill_rule);
+            self.solve(ScanFillTree::new(self.len()), fill_rule)
         }
     }
 }
 
 trait FillSolver<S: ScanFillStore> {
-    fn solve(&mut self, scan_store: S, fill_rule: FillRule);
+    fn solve(&self, scan_store: S, fill_rule: FillRule) -> Vec<SegmentFill>;
 }
 
 impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
-    fn solve(&mut self, scan_store: S, fill_rule: FillRule) {
+    fn solve(&self, scan_store: S, fill_rule: FillRule) -> Vec<SegmentFill> {
         // Mark. self is sorted by seg.a
 
         let mut scan_list = scan_store;
         let mut buf = Vec::with_capacity(4);
 
         let n = self.len();
+        let mut result = vec![NONE; n];
         let mut i = 0;
 
         while i < n {
@@ -64,10 +65,12 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
             });
 
             let mut sum_count = scan_list.find_under_and_nearest(p);
+            let mut fill: SegmentFill;
 
             for se in buf.iter() {
-                let sid = unsafe { self.get_unchecked_mut(se.id) };
-                sum_count = sid.add_and_fill(sum_count, fill_rule);
+                let sid = unsafe { self.get_unchecked(se.id) };
+                (sum_count, fill) = sid.add_and_fill(sum_count, fill_rule);
+                *unsafe { result.get_unchecked_mut(se.id) } = fill;
                 if sid.x_segment.is_not_vertical() {
                     scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
                 }
@@ -75,12 +78,14 @@ impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
 
             buf.clear();
         }
+
+        result
     }
 }
 
 impl Segment {
     #[inline]
-    fn add_and_fill(&mut self, sum_count: ShapeCount, fill_rule: FillRule) -> ShapeCount {
+    fn add_and_fill(&self, sum_count: ShapeCount, fill_rule: FillRule) -> (ShapeCount, SegmentFill) {
         let is_subj_top: bool;
         let is_subj_bottom: bool;
         let is_clip_top: bool;
@@ -110,8 +115,8 @@ impl Segment {
         let clip_top = if is_clip_top { CLIP_TOP } else { NONE };
         let clip_bottom = if is_clip_bottom { CLIP_BOTTOM } else { NONE };
 
-        self.fill = subj_top | subj_bottom | clip_top | clip_bottom;
+        let fill = subj_top | subj_bottom | clip_top | clip_bottom;
 
-        new_count
+        (new_count, fill)
     }
 }

@@ -4,7 +4,7 @@ use i_float::triangle::Triangle;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
-use crate::segm::segment::Segment;
+use crate::segm::segment::{Segment, SegmentFill};
 use crate::sort::SmartSort;
 use crate::util::EMPTY_INDEX;
 
@@ -33,7 +33,9 @@ impl OverlayGraph {
         &self.links
     }
 
-    pub(super) fn new(solver: Solver, segments: Vec<Segment>) -> Self {
+    pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
+        let segments = bundle.0;
+        let fills = bundle.1;
         let n = segments.len();
 
         if n == 0 {
@@ -51,9 +53,9 @@ impl OverlayGraph {
         end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
-        let mut links: Vec<OverlayLink> = segments
+        let mut links: Vec<OverlayLink> = fills
             .iter()
-            .map(|segment| OverlayLink::new(IdPoint::ZERO, IdPoint::ZERO, segment.fill))
+            .map(|&fill| OverlayLink::new(IdPoint::ZERO, IdPoint::ZERO, fill))
             .collect();
 
         let mut ai = 0;

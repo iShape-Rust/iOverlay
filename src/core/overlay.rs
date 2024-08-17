@@ -7,7 +7,7 @@ use crate::fill::fill_segments::FillSegments;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::segm::shape_count::ShapeCount;
-use crate::segm::segment::{CLIP_BOTH, ShapeEdgesMerge, SUBJ_BOTH};
+use crate::segm::segment::{CLIP_BOTH, SegmentFill, ShapeEdgesMerge, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
@@ -100,16 +100,24 @@ impl Overlay {
     /// Convert into segments from the added paths or shapes according to the specified fill rule.
     /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
     /// - `solver`: Type of solver to use.
-    pub fn into_segments(self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
+    pub fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
         if self.edges.is_empty() {
-            return Vec::new();
+            return (Vec::new(), Vec::new());
         }
 
-        let mut segments = self.prepare_segments(fill_rule, solver);
+        let (mut segments, mut fills) = self.prepare_segments_and_fills(fill_rule, solver);
 
-        segments.filter();
+        let mut iter = fills.iter();
+        segments.retain(|_| {
+            let fill = *iter.next().unwrap();
+            !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH)
+        });
 
-        segments
+        fills.retain(|&fill| {
+            !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH)
+        });
+
+        (segments, fills)
     }
 
     /// Convert into vector shapes from the added paths or shapes, applying the specified fill and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
@@ -120,7 +128,7 @@ impl Overlay {
         if self.edges.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(solver, self.prepare_segments(fill_rule, solver));
+        let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
         let vectors = graph.extract_vectors(overlay_rule);
 
         vectors
@@ -139,7 +147,7 @@ impl Overlay {
         OverlayGraph::new(solver, self.into_segments(fill_rule, solver))
     }
 
-    fn prepare_segments(self, fill_rule: FillRule, solver: Solver) -> Vec<Segment> {
+    fn prepare_segments_and_fills(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
         let mut segments = self.edges;
         segments.smart_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
@@ -149,10 +157,45 @@ impl Overlay {
 
         // let mut segments = sorted_list.into_segments();
 
-        segments.fill(fill_rule, is_list);
+        let fills = segments.fill(fill_rule, is_list);
 
-        segments
+        (segments, fills)
     }
+
+    /*
+    fn filter(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
+        let n = fills.len();
+        let mut i = 0;
+        while i < n {
+            let fill = fills[i];
+            if fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH {
+                break;
+            }
+            i += 1;
+        }
+
+        if i == n { return; }
+
+        let mut j = i + 1;
+
+        while j < n {
+            let fill = fills[j];
+            if !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH) {
+                unsafe {
+                    *fills.get_unchecked_mut(i) = fills[j];
+                    *segments.get_unchecked_mut(i) = segments[j];
+                }
+                i += 1;
+            }
+            j += 1;
+        }
+
+        if i < n {
+            fills.truncate(i);
+            segments.truncate(i);
+        }
+    }
+    */
 }
 
 trait CreateEdges {
@@ -202,40 +245,5 @@ impl CreateEdges for &[IntPoint] {
         }
 
         edges
-    }
-}
-
-trait Filter {
-    fn filter(&mut self);
-}
-
-impl Filter for Vec<Segment> {
-    fn filter(&mut self) {
-        let n = self.len();
-        let mut i = 0;
-        while i < n {
-            let fill = self[i].fill;
-            if fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH {
-                break;
-            }
-            i += 1;
-        }
-
-        if i == n { return; }
-
-        let mut j = i + 1;
-
-        while j < n {
-            let fill = self[j].fill;
-            if !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH) {
-                *unsafe { self.get_unchecked_mut(i) } = self[j];
-                i += 1;
-            }
-            j += 1;
-        }
-
-        if i < n {
-            self.truncate(i);
-        }
     }
 }

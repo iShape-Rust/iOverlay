@@ -22,33 +22,31 @@ pub const ALL: SegmentFill = SUBJ_BOTH | CLIP_BOTH;
 #[derive(Debug, Clone, Copy)]
 pub struct Segment {
     pub(crate) x_segment: XSegment,
-    pub(crate) count: ShapeCount,
-    pub(crate) fill: SegmentFill,
+    pub(crate) count: ShapeCount
 }
 
 impl Segment {
 
     pub(crate) const ZERO: Segment = Segment {
         x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
-        count: ShapeCount { subj: 0, clip: 0 },
-        fill: NONE,
+        count: ShapeCount { subj: 0, clip: 0 }
     };
 
     #[inline(always)]
     pub fn new(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
-            Self { x_segment: XSegment { a, b }, count, fill: NONE }
+            Self { x_segment: XSegment { a, b }, count }
         } else {
-            Self { x_segment: XSegment { a: b, b: a }, count, fill: NONE }
+            Self { x_segment: XSegment { a: b, b: a }, count }
         }
     }
 
     #[inline(always)]
     pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
-            Self { x_segment: XSegment { a, b }, count, fill: NONE }
+            Self { x_segment: XSegment { a, b }, count }
         } else {
-            Self { x_segment: XSegment { a: b, b: a }, count: count.invert(), fill: NONE }
+            Self { x_segment: XSegment { a: b, b: a }, count: count.invert() }
         }
     }
 
