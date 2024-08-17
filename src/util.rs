@@ -1,5 +1,3 @@
-pub (crate) const EMPTY_INDEX: usize = usize::MAX;
-
 pub(crate) trait SwapRemoveIndex<T> {
     fn swap_remove_index(&mut self, index: usize) -> T;
 }

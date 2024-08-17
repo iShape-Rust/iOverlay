@@ -16,8 +16,8 @@ impl OverlayLink {
     }
 
     #[inline(always)]
-    pub(crate) fn other(&self, index: IdPoint) -> IdPoint {
-        if self.a == index { self.b } else { self.a }
+    pub(crate) fn other(&self, index: &IdPoint) -> IdPoint {
+        if self.a.id == index.id { self.b } else { self.a }
     }
 
     #[inline(always)]

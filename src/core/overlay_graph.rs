@@ -5,7 +5,6 @@ use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
 use crate::segm::segment::{Segment, SegmentFill};
 use crate::sort::SmartSort;
-use crate::util::EMPTY_INDEX;
 
 use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
 
@@ -118,48 +117,45 @@ impl OverlayGraph {
 
     pub(crate) fn find_nearest_link_to(
         &self,
-        target: IdPoint,
-        center: IdPoint,
+        target: &IdPoint,
+        center: &IdPoint,
         ignore: usize,
         in_clockwise: bool,
         visited: &[bool],
     ) -> usize {
-        let node = unsafe {
-            self.nodes.get_unchecked(center.id)
-        };
+        let node = unsafe { self.nodes.get_unchecked(center.id) };
 
-        let (index, value) = if let Some(result) = node.indices.iter().enumerate()
-            .find(|(_, &val)| val != ignore && !unsafe { *visited.get_unchecked(val) }) {
-            (result.0, *result.1)
+        let mut iter = node.indices.iter();
+
+        let value = if let Some(result) = iter
+            .find(|&&val| {
+                let is_visited = unsafe { *visited.get_unchecked(val) };
+                val != ignore && !is_visited
+            }) {
+            *result
         } else {
-            return EMPTY_INDEX;
+            panic!("No one unvisited index was found");
         };
 
-        let mut i = index + 1;
         let mut min_index = value;
-
-        if i >= node.indices.len() {
-            return min_index;
-        }
 
         let mut min_vec = unsafe { self.links.get_unchecked(min_index) }.other(center).point.subtract(center.point);
         let v0 = target.point.subtract(center.point); // base vector
 
         // compare minVec with the rest of the vectors
 
-        while i < node.indices.len() {
-            let j = unsafe { *node.indices.get_unchecked(i) };
-            let is_not_visited = unsafe { !visited.get_unchecked(j) };
-            if is_not_visited && ignore != j {
-                let link = unsafe { self.links.get_unchecked(j) };
-                let vj = link.other(center).point.subtract(center.point);
-
-                if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
-                    min_vec = vj;
-                    min_index = j;
-                }
+        for &j in iter {
+            let is_visited = unsafe { *visited.get_unchecked(j) };
+            if is_visited || ignore == j {
+                continue;
             }
-            i += 1
+
+            let vj = unsafe { self.links.get_unchecked(j) }.other(center).point.subtract(center.point);
+
+            if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
+                min_vec = vj;
+                min_index = j;
+            }
         }
 
         min_index

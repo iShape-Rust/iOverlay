@@ -61,12 +61,12 @@ impl OverlayGraph {
             } else {
                 let is_fill_top = overlay_rule.is_fill_top(link.fill);
                 let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
-                next = self.find_nearest_link_to(a, b, next, is_cw, visited);
+                next = self.find_nearest_link_to(&a, &b, next, is_cw, visited);
             }
 
             link = self.links[next];
             a = b;
-            b = link.other(b);
+            b = link.other(&b);
 
             visited[next] = true;
 
