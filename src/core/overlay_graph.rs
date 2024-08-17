@@ -56,13 +56,9 @@ impl OverlayGraph {
             )
             .collect();
 
-        let mut end_bs: Vec<End> = Vec::with_capacity(n);
-        for (seg_index, link) in links.iter().enumerate() {
-            end_bs.push(End {
-                seg_index,
-                point: link.b.point,
-            });
-        }
+        let mut end_bs: Vec<End> = links.iter().enumerate()
+            .map(|(i, link)| End { seg_index: i, point: link.b.point })
+            .collect();
 
         end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
 
@@ -73,10 +69,9 @@ impl OverlayGraph {
         let mut next_a_cnt = links.size(a, ai);
         let mut next_b_cnt = end_bs.size(b, bi);
         while next_a_cnt > 0 || next_b_cnt > 0 {
-
             let (a_cnt, b_cnt) = if a == b {
                 (next_a_cnt, next_b_cnt)
-            } else if next_a_cnt != 0  && a < b {
+            } else if next_a_cnt != 0 && a < b {
                 (next_a_cnt, 0)
             } else {
                 (0, next_b_cnt)
@@ -112,61 +107,6 @@ impl OverlayGraph {
                     next_b_cnt = end_bs.size(b, bi);
                 }
             }
-
-            /*
-            if a == b {
-                let ip = IdPoint::new(nodes.len(), a);
-                while ai < n {
-                    let aa = unsafe { segments.get_unchecked(ai) }.x_segment.a;
-                    if aa != a {
-                        a = aa;
-                        break;
-                    }
-                    unsafe { links.get_unchecked_mut(ai) }.a = ip;
-                    indices.push(ai);
-
-                    ai += 1
-                }
-
-                while bi < n {
-                    let e = unsafe { end_bs.get_unchecked(bi) };
-                    if e.point != b {
-                        b = e.point;
-                        break;
-                    }
-                    unsafe { links.get_unchecked_mut(e.seg_index) }.b = ip;
-                    indices.push(e.seg_index);
-
-                    bi += 1
-                }
-            } else if ai < n && a < b {
-                let ip = IdPoint::new(nodes.len(), a);
-                while ai < n {
-                    let aa = unsafe { segments.get_unchecked(ai) }.x_segment.a;
-                    if aa != a {
-                        a = aa;
-                        break;
-                    }
-                    unsafe { links.get_unchecked_mut(ai) }.a = ip;
-                    indices.push(ai);
-
-                    ai += 1
-                }
-            } else {
-                let ip = IdPoint::new(nodes.len(), b);
-                while bi < n {
-                    let e = unsafe { end_bs.get_unchecked(bi) };
-                    if e.point != b {
-                        b = e.point;
-                        break;
-                    }
-                    unsafe { links.get_unchecked_mut(e.seg_index) }.b = ip;
-                    indices.push(e.seg_index);
-
-                    bi += 1
-                }
-            }
-            */
 
             debug_assert!(indices.len() > 1, "indices: {}", indices.len());
             nodes.push(OverlayNode { indices });
@@ -298,7 +238,7 @@ trait Size {
 impl Size for Vec<OverlayLink> {
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
-        let mut i = index;
+        let mut i = index + 1;
         while i < self.len() && self[i].a.point == point {
             i += 1;
         }
@@ -310,7 +250,7 @@ impl Size for Vec<OverlayLink> {
 impl Size for Vec<End> {
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
-        let mut i = index;
+        let mut i = index + 1;
         while i < self.len() && self[i].point == point {
             i += 1;
         }
