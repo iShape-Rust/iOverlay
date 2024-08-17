@@ -42,40 +42,78 @@ impl OverlayGraph {
             return Self { solver: Default::default(), nodes: vec![], links: vec![] };
         }
 
+        let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
+        let mut links: Vec<OverlayLink> = segments
+            .iter().enumerate()
+            .map(|(index, segment)| {
+                let fill = *unsafe { fills.get_unchecked(index) };
+                OverlayLink::new(
+                    IdPoint { id: 0, point: segment.x_segment.a },
+                    IdPoint { id: 0, point: segment.x_segment.b },
+                    fill,
+                )
+            }
+            )
+            .collect();
+
         let mut end_bs: Vec<End> = Vec::with_capacity(n);
-        for (seg_index, segment) in segments.iter().enumerate() {
+        for (seg_index, link) in links.iter().enumerate() {
             end_bs.push(End {
                 seg_index,
-                point: segment.x_segment.b,
+                point: link.b.point,
             });
         }
 
         end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
 
-        let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
-        let mut links: Vec<OverlayLink> = fills
-            .iter()
-            .map(|&fill| OverlayLink::new(IdPoint::ZERO, IdPoint::ZERO, fill))
-            .collect();
-
         let mut ai = 0;
         let mut bi = 0;
-        let mut a = segments[0].x_segment.a;
+        let mut a = links[0].a.point;
         let mut b = end_bs[0].point;
+        let mut next_a_cnt = links.size(a, ai);
+        let mut next_b_cnt = end_bs.size(b, bi);
+        while next_a_cnt > 0 || next_b_cnt > 0 {
 
-        while ai < n || bi < n {
-            let mut cnt = 0;
-            if a == b {
-                cnt += segments.size(a, ai);
-                cnt += end_bs.size(b, bi);
-            } else if ai < n && a < b {
-                cnt += segments.size(a, ai);
+            let (a_cnt, b_cnt) = if a == b {
+                (next_a_cnt, next_b_cnt)
+            } else if next_a_cnt != 0  && a < b {
+                (next_a_cnt, 0)
             } else {
-                cnt += end_bs.size(b, bi);
+                (0, next_b_cnt)
+            };
+
+            let node_id = nodes.len();
+            let mut indices = Vec::with_capacity(a_cnt + b_cnt);
+
+            if a_cnt > 0 {
+                next_a_cnt = 0;
+                for _ in 0..a_cnt {
+                    unsafe { links.get_unchecked_mut(ai) }.a.id = node_id;
+                    indices.push(ai);
+                    ai += 1;
+                }
+                if ai < n {
+                    a = unsafe { links.get_unchecked(ai) }.a.point;
+                    next_a_cnt = links.size(a, ai);
+                }
             }
 
-            let mut indices = Vec::with_capacity(cnt);
+            if b_cnt > 0 {
+                next_b_cnt = 0;
+                for _ in 0..b_cnt {
+                    let e = unsafe { end_bs.get_unchecked(bi) };
+                    indices.push(e.seg_index);
+                    unsafe { links.get_unchecked_mut(e.seg_index) }.b.id = node_id;
+                    bi += 1;
+                }
 
+                if bi < n {
+                    b = unsafe { end_bs.get_unchecked(bi) }.point;
+                    next_b_cnt = end_bs.size(b, bi);
+                }
+            }
+
+            /*
             if a == b {
                 let ip = IdPoint::new(nodes.len(), a);
                 while ai < n {
@@ -128,6 +166,7 @@ impl OverlayGraph {
                     bi += 1
                 }
             }
+            */
 
             debug_assert!(indices.len() > 1, "indices: {}", indices.len());
             nodes.push(OverlayNode { indices });
@@ -256,11 +295,11 @@ trait Size {
     fn size(&self, point: IntPoint, index: usize) -> usize;
 }
 
-impl Size for Vec<Segment> {
+impl Size for Vec<OverlayLink> {
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index;
-        while i < self.len() && self[i].x_segment.a == point {
+        while i < self.len() && self[i].a.point == point {
             i += 1;
         }
 

@@ -38,7 +38,7 @@ trait FillSolver<S: ScanFillStore> {
 
 impl<S: ScanFillStore> FillSolver<S> for Vec<Segment> {
     fn solve(&self, scan_store: S, fill_rule: FillRule) -> Vec<SegmentFill> {
-        // Mark. self is sorted by seg.a
+        // Mark. self is sorted by x_segment.a
 
         let mut scan_list = scan_store;
         let mut buf = Vec::with_capacity(4);
