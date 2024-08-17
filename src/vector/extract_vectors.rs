@@ -6,7 +6,6 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
 use crate::core::solver::Solver;
 use crate::sort::SmartSort;
-use crate::util::EMPTY_INDEX;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
@@ -18,18 +17,23 @@ impl OverlayGraph {
 
         let mut j = 0;
         while j < self.nodes.len() {
-            let i = self.find_first_link(j, &visited);
-            if i == EMPTY_INDEX {
-                j += 1;
+            let i = if let Some(index) = self.find_first_link(j, &visited) {
+                index
             } else {
-                let is_hole = overlay_rule.is_fill_top(self.links[i].fill);
-                let mut path = self.get_vector_path(overlay_rule, i, &mut visited);
-                path.validate(is_hole);
-                if is_hole {
-                    holes.push(path);
-                } else {
-                    shapes.push([path].to_vec());
-                }
+                j += 1;
+                continue;
+            };
+
+            let fill = unsafe { self.links.get_unchecked(i) }.fill;
+            let is_hole = overlay_rule.is_fill_top(fill);
+
+            let mut path = self.get_vector_path(overlay_rule, i, &mut visited);
+            path.validate(is_hole);
+
+            if is_hole {
+                holes.push(path);
+            } else {
+                shapes.push([path].to_vec());
             }
         }
 

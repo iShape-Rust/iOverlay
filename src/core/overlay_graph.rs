@@ -1,6 +1,5 @@
 use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
-use i_float::triangle::Triangle;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
@@ -129,7 +128,8 @@ impl OverlayGraph {
             self.nodes.get_unchecked(center.id)
         };
 
-        let (index, value) = if let Some(result) = node.indices.iter().enumerate().find(|&(_index, &val)| val != ignore && !visited[val]) {
+        let (index, value) = if let Some(result) = node.indices.iter().enumerate()
+            .find(|(_, &val)| val != ignore && !unsafe { *visited.get_unchecked(val) }) {
             (result.0, *result.1)
         } else {
             return EMPTY_INDEX;
@@ -138,7 +138,11 @@ impl OverlayGraph {
         let mut i = index + 1;
         let mut min_index = value;
 
-        let mut min_vec = self.links[min_index].other(center).point.subtract(center.point);
+        if i >= node.indices.len() {
+            return min_index;
+        }
+
+        let mut min_vec = unsafe { self.links.get_unchecked(min_index) }.other(center).point.subtract(center.point);
         let v0 = target.point.subtract(center.point); // base vector
 
         // compare minVec with the rest of the vectors
@@ -161,31 +165,6 @@ impl OverlayGraph {
         min_index
     }
 
-    pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> usize {
-        let node = unsafe { self.nodes.get_unchecked(node_index) };
-
-        let mut j = EMPTY_INDEX;
-        for &i in node.indices.iter() {
-            let is_not_visited = unsafe { !visited.get_unchecked(i) };
-            if is_not_visited {
-                if j == EMPTY_INDEX {
-                    j = i;
-                } else {
-                    let (a, bi, bj) = unsafe {
-                        let link = self.links.get_unchecked(j);
-                        let bi = self.links.get_unchecked(i).b.point;
-                        (link.a.point, bi, link.b.point)
-                    };
-                    if Triangle::is_clockwise_point(a, bi, bj) {
-                        j = i;
-                    }
-                }
-            }
-        }
-
-        j
-    }
-
     #[inline(always)]
     pub(crate) fn is_clockwise(a: IntPoint, b: IntPoint, is_top_inside: bool) -> bool {
         let is_direct = a < b;
@@ -195,6 +174,34 @@ impl OverlayGraph {
     #[inline(always)]
     fn xnor(a: bool, b: bool) -> bool {
         (a && b) || !(a || b)
+    }
+}
+
+trait Size {
+    fn size(&self, point: IntPoint, index: usize) -> usize;
+}
+
+impl Size for Vec<OverlayLink> {
+    #[inline]
+    fn size(&self, point: IntPoint, index: usize) -> usize {
+        let mut i = index + 1;
+        while i < self.len() && self[i].a.point == point {
+            i += 1;
+        }
+
+        i - index
+    }
+}
+
+impl Size for Vec<End> {
+    #[inline]
+    fn size(&self, point: IntPoint, index: usize) -> usize {
+        let mut i = index + 1;
+        while i < self.len() && self[i].point == point {
+            i += 1;
+        }
+
+        i - index
     }
 }
 
@@ -228,33 +235,5 @@ impl CloseInRotation for FixVec {
         let cross_ab = a.cross_product(b);
 
         cross_ab < 0
-    }
-}
-
-trait Size {
-    fn size(&self, point: IntPoint, index: usize) -> usize;
-}
-
-impl Size for Vec<OverlayLink> {
-    #[inline]
-    fn size(&self, point: IntPoint, index: usize) -> usize {
-        let mut i = index + 1;
-        while i < self.len() && self[i].a.point == point {
-            i += 1;
-        }
-
-        i - index
-    }
-}
-
-impl Size for Vec<End> {
-    #[inline]
-    fn size(&self, point: IntPoint, index: usize) -> usize {
-        let mut i = index + 1;
-        while i < self.len() && self[i].point == point {
-            i += 1;
-        }
-
-        i - index
     }
 }

@@ -1,3 +1,4 @@
+use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::int::simple::Simple;
@@ -7,7 +8,6 @@ use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::solver::Solver;
 use crate::sort::SmartSort;
-use crate::util::EMPTY_INDEX;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
@@ -48,21 +48,22 @@ impl OverlayGraph {
         let mut j = 0;
         // nodes array is sorted by link.a
         while j < self.nodes.len() {
-            let i = self.find_first_link(j, &visited);
-            if i == EMPTY_INDEX {
-                j += 1;
+            let i = if let Some(index) = self.find_first_link(j, &visited) {
+                index
             } else {
-                let is_hole = unsafe {
-                    overlay_rule.is_fill_top(self.links.get_unchecked(i).fill)
-                };
+                j += 1;
+                continue;
+            };
 
-                let mut path = self.get_path(overlay_rule, i, &mut visited);
-                if path.validate(min_area, is_hole) {
-                    if is_hole {
-                        holes.push(path);
-                    } else {
-                        shapes.push(vec![path]);
-                    }
+            let fill = unsafe { self.links.get_unchecked(i) }.fill;
+            let is_hole = overlay_rule.is_fill_top(fill);
+
+            let mut path = self.get_path(overlay_rule, i, &mut visited);
+            if path.validate(min_area, is_hole) {
+                if is_hole {
+                    holes.push(path);
+                } else {
+                    shapes.push(vec![path]);
                 }
             }
         }
@@ -76,9 +77,7 @@ impl OverlayGraph {
         let mut path = IntPath::new();
         let mut next = index;
 
-        let mut link = unsafe {
-            self.links.get_unchecked(index)
-        };
+        let mut link = unsafe { self.links.get_unchecked(index) };
         let mut a = link.a;
         let mut b = link.b;
 
@@ -97,24 +96,54 @@ impl OverlayGraph {
                 next = self.find_nearest_link_to(a, b, next, is_cw, visited);
                 debug_assert!(next < usize::MAX);
             }
-            link = unsafe {
-                self.links.get_unchecked(next)
-            };
+            link = unsafe { self.links.get_unchecked(next) };
             a = b;
             b = link.other(b);
 
-            unsafe {
-                *visited.get_unchecked_mut(next) = true;
-            }
+            *unsafe { visited.get_unchecked_mut(next) } = true;
+
             if next == index {
                 break;
             }
         }
 
-        unsafe {
-            *visited.get_unchecked_mut(index) = true;
-        }
+        *unsafe { visited.get_unchecked_mut(index) } = true;
+
         path
+    }
+
+    pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> Option<usize> {
+        let node = unsafe { self.nodes.get_unchecked(node_index) };
+
+        let mut iter = node.indices.iter();
+
+        let mut j = if let Some(index) = iter
+            .find(|&&i| {
+                let is_visited = unsafe { *visited.get_unchecked(i) };
+                !is_visited
+            }) {
+            *index
+        } else {
+            return None;
+        };
+
+        for &i in iter {
+            let is_visited = unsafe { *visited.get_unchecked(i) };
+            if is_visited {
+                continue;
+            }
+
+            let (a, bi, bj) = unsafe {
+                let link = self.links.get_unchecked(j);
+                let bi = self.links.get_unchecked(i).b.point;
+                (link.a.point, bi, link.b.point)
+            };
+            if Triangle::is_clockwise_point(a, bi, bj) {
+                j = i;
+            }
+        }
+
+        Some(j)
     }
 }
 
@@ -140,11 +169,10 @@ impl JoinHoles for Vec<IntShape> {
     }
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>) {
-        let mut i_points = Vec::with_capacity(holes.len());
-        for i in 0..holes.len() {
-            let p = holes[i][0];
-            i_points.push(IdPoint::new(i, p));
-        }
+        let mut i_points: Vec<_> = holes.iter().enumerate()
+            .map(|(i, path)| IdPoint::new(i, path.first().unwrap().clone()))
+            .collect();
+
         i_points.smart_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;
