@@ -86,6 +86,10 @@ impl SplitSolver {
             Ordering::Greater
         });
 
+        let capacity = edges.len() + marks.len();
+
+        edges.reserve(capacity);
+
         let mut i = 0;
         while i < marks.len() {
             let index = marks[i].index;
