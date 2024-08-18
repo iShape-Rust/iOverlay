@@ -7,7 +7,7 @@ use crate::fill::fill_segments::FillSegments;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::segm::shape_count::ShapeCount;
-use crate::segm::segment::{CLIP_BOTH, SegmentFill, ShapeEdgesMerge, SUBJ_BOTH};
+use crate::segm::segment::{CLIP_BOTH, NONE, SegmentFill, ShapeEdgesMerge, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
@@ -108,11 +108,11 @@ impl Overlay {
         let mut iter = fills.iter();
         segments.retain(|_| {
             let fill = *iter.next().unwrap();
-            !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH)
+            !(fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH)
         });
 
         fills.retain(|&fill| {
-            !(fill == 0 || fill == SUBJ_BOTH || fill == CLIP_BOTH)
+            !(fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH)
         });
 
         (segments, fills)

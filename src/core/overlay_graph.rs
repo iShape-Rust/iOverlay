@@ -25,24 +25,24 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
+
+    // for wasm api
     #[inline(always)]
     pub fn links(&self) -> &Vec<OverlayLink> {
-        // for js version
         &self.links
     }
 
     pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
         let segments = bundle.0;
         let fills = bundle.1;
-        let n = segments.len();
 
-        if n == 0 {
+        if segments.is_empty() {
             return Self { solver: Default::default(), nodes: vec![], links: vec![] };
         }
 
-        let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
+        let n = segments.len();
         let mut links: Vec<OverlayLink> = segments
-            .iter().enumerate()
+            .into_iter().enumerate()
             .map(|(index, segment)| {
                 let fill = *unsafe { fills.get_unchecked(index) };
                 OverlayLink::new(
@@ -50,15 +50,15 @@ impl OverlayGraph {
                     IdPoint { id: 0, point: segment.x_segment.b },
                     fill,
                 )
-            }
-            )
-            .collect();
+            }).collect();
 
         let mut end_bs: Vec<End> = links.iter().enumerate()
             .map(|(i, link)| End { seg_index: i, point: link.b.point })
             .collect();
 
         end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
+
+        let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
 
         let mut ai = 0;
         let mut bi = 0;
@@ -69,7 +69,7 @@ impl OverlayGraph {
         while next_a_cnt > 0 || next_b_cnt > 0 {
             let (a_cnt, b_cnt) = if a == b {
                 (next_a_cnt, next_b_cnt)
-            } else if next_a_cnt != 0 && a < b {
+            } else if next_a_cnt > 0 && a < b {
                 (next_a_cnt, 0)
             } else {
                 (0, next_b_cnt)
@@ -134,7 +134,7 @@ impl OverlayGraph {
             }) {
             *result
         } else {
-            panic!("No one unvisited index was found");
+            panic!("No one unvisited index is found");
         };
 
         let mut min_index = value;
