@@ -67,9 +67,7 @@ impl Overlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        if let Some(mut edges) = path.option_edges(shape_type) {
-            self.edges.append(&mut edges);
-        }
+        self.edges.append_edges(path, shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
@@ -161,52 +159,41 @@ impl Overlay {
     }
 }
 
-trait CreateEdges {
-    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<Segment>>;
-    fn edges(&self, shape_type: ShapeType) -> Vec<Segment>;
+trait BuildEdges {
+    fn append_edges(&mut self, path: &[IntPoint], shape_type: ShapeType);
 }
 
-impl CreateEdges for &[IntPoint] {
-    fn option_edges(&self, shape_type: ShapeType) -> Option<Vec<Segment>> {
-        if self.is_simple() {
-            Some(self.edges(shape_type))
+impl BuildEdges for Vec<Segment> {
+    #[inline]
+    fn append_edges(&mut self, path: &[IntPoint], shape_type: ShapeType) {
+        if path.is_simple() {
+            append_edges(self, path, shape_type);
         } else {
-            let path = self.to_simple();
+            let path = path.to_simple();
             if path.len() > 2 {
-                Some(self.to_simple().as_slice().edges(shape_type))
-            } else {
-                None
+                append_edges(self, path.as_slice(), shape_type);
             }
         }
     }
+}
 
-    fn edges(&self, shape_type: ShapeType) -> Vec<Segment> {
-        let n = self.len();
+fn append_edges(segments: &mut Vec<Segment>, path: &[IntPoint], shape_type: ShapeType) {
+    let mut p0 = path[path.len() - 1];
 
-        let mut edges = vec![Segment::ZERO; n];
-
-        let i0 = n - 1;
-        let mut p0 = self[i0];
-
-        match shape_type {
-            ShapeType::Subject => {
-                for i in 0..n {
-                    let p1 = self[i];
-                    let value = if p0 < p1 { 1 } else { -1 };
-                    edges[i] = Segment::new(p0, p1, ShapeCount::new(value, 0));
-                    p0 = p1
-                }
-            }
-            ShapeType::Clip => {
-                for i in 0..n {
-                    let p1 = self[i];
-                    let value = if p0 < p1 { 1 } else { -1 };
-                    edges[i] = Segment::new(p0, p1, ShapeCount::new(0, value));
-                    p0 = p1
-                }
+    match shape_type {
+        ShapeType::Subject => {
+            for &p1 in path {
+                let value = if p0 < p1 { 1 } else { -1 };
+                segments.push(Segment::new(p0, p1, ShapeCount::new(value, 0)));
+                p0 = p1
             }
         }
-
-        edges
+        ShapeType::Clip => {
+            for &p1 in path {
+                let value = if p0 < p1 { 1 } else { -1 };
+                segments.push(Segment::new(p0, p1, ShapeCount::new(0, value)));
+                p0 = p1
+            }
+        }
     }
 }

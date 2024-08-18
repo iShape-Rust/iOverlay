@@ -27,11 +27,6 @@ pub struct Segment {
 
 impl Segment {
 
-    pub(crate) const ZERO: Segment = Segment {
-        x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
-        count: ShapeCount { subj: 0, clip: 0 }
-    };
-
     #[inline(always)]
     pub fn new(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
