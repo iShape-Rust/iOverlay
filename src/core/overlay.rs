@@ -11,6 +11,7 @@ use crate::segm::segment::{CLIP_BOTH, NONE, SegmentFill, ShapeEdgesMerge, SUBJ_B
 
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
+use crate::segm::x_segment::XSegment;
 use crate::sort::SmartSort;
 use crate::split::solver::SplitSolver;
 use crate::vector::vector::VectorShape;
@@ -183,15 +184,23 @@ fn append_edges(segments: &mut Vec<Segment>, path: &[IntPoint], shape_type: Shap
     match shape_type {
         ShapeType::Subject => {
             for &p1 in path {
-                let value = if p0 < p1 { 1 } else { -1 };
-                segments.push(Segment::new(p0, p1, ShapeCount::new(value, 0)));
+                let segment = if p0 < p1 {
+                    Segment { x_segment: XSegment { a: p0, b: p1 }, count: ShapeCount::new(1, 0) }
+                } else {
+                    Segment { x_segment: XSegment { a: p1, b: p0 }, count: ShapeCount::new(-1, 0) }
+                };
+                segments.push(segment);
                 p0 = p1
             }
         }
         ShapeType::Clip => {
             for &p1 in path {
-                let value = if p0 < p1 { 1 } else { -1 };
-                segments.push(Segment::new(p0, p1, ShapeCount::new(0, value)));
+                let segment = if p0 < p1 {
+                    Segment { x_segment: XSegment { a: p0, b: p1 }, count: ShapeCount::new(0, 1) }
+                } else {
+                    Segment { x_segment: XSegment { a: p1, b: p0 }, count: ShapeCount::new(0, -1) }
+                };
+                segments.push(segment);
                 p0 = p1
             }
         }

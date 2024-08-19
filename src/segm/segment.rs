@@ -96,7 +96,7 @@ impl ShapeEdgesMerge for Vec<Segment> {
 
         while i < n {
             if prev.x_segment.eq(&self[i].x_segment) {
-                prev.count = prev.count.add(self[i].count)
+                prev.count.apply(self[i].count);
             } else {
                 if prev.count.is_not_empty() {
                     self[j] = prev;
@@ -112,8 +112,6 @@ impl ShapeEdgesMerge for Vec<Segment> {
             j += 1;
         }
 
-        if j < n {
-            self.truncate(j);
-        }
+        self.truncate(j);
     }
 }

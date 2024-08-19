@@ -21,6 +21,12 @@ impl ShapeCount {
     }
 
     #[inline(always)]
+    pub(crate) fn apply(&mut self, count: ShapeCount) {
+        self.subj += count.subj;
+        self.clip += count.clip;
+    }
+
+    #[inline(always)]
     pub(crate) fn invert(self) -> ShapeCount {
         ShapeCount { subj: -self.subj, clip: -self.clip }
     }
