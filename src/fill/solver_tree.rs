@@ -5,7 +5,8 @@ use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
-use crate::fill::solver::{FillSolver, Handler};
+use crate::fill::solver::FillSolver;
+use crate::segm::end::End;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
@@ -79,7 +80,7 @@ impl ScanFillTree {
 
     fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount {
         let mut index = self.tree.root;
-        let mut result = EMPTY_REF;
+        let mut result = ShapeCount { subj: 0, clip: 0 };
         while index != EMPTY_REF {
             let node = self.tree.node(index);
             if node.value.x_segment.b.x <= p.x {
@@ -92,7 +93,7 @@ impl ScanFillTree {
                 }
             } else {
                 if node.value.x_segment.is_under_point(p) {
-                    result = index;
+                    result = node.value.count;
                     index = node.right;
                 } else {
                     index = node.left;
@@ -100,11 +101,7 @@ impl ScanFillTree {
             }
         }
 
-        if result == EMPTY_REF {
-            ShapeCount { subj: 0, clip: 0 }
-        } else {
-            self.tree.node(result).value.count
-        }
+        result
     }
 }
 
@@ -122,16 +119,16 @@ impl FillSolver {
         while i < n {
             let p = segments[i].x_segment.a;
 
-            buf.push(Handler { id: i, b: segments[i].x_segment.b });
+            buf.push(End { index: i, point: segments[i].x_segment.b });
             i += 1;
 
             while i < n && segments[i].x_segment.a == p {
-                buf.push(Handler { id: i, b: segments[i].x_segment.b });
+                buf.push(End { index: i, point: segments[i].x_segment.b });
                 i += 1;
             }
 
             buf.sort_unstable_by(|s0, s1|
-            if Triangle::is_clockwise_point(p, s1.b, s0.b) {
+            if Triangle::is_clockwise_point(p, s1.point, s0.point) {
                 Ordering::Less
             } else {
                 Ordering::Greater
@@ -141,9 +138,9 @@ impl FillSolver {
             let mut fill: SegmentFill;
 
             for se in buf.iter() {
-                let sid = unsafe { segments.get_unchecked(se.id) };
+                let sid = unsafe { segments.get_unchecked(se.index) };
                 (sum_count, fill) = sid.add_and_fill(sum_count, fill_rule);
-                *unsafe { result.get_unchecked_mut(se.id) } = fill;
+                *unsafe { result.get_unchecked_mut(se.index) } = fill;
                 if sid.x_segment.is_not_vertical() {
                     scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
                 }

@@ -177,7 +177,8 @@ impl JoinHoles for Vec<IntShape> {
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
 
-        let mut segments = Vec::new();
+        let capacity = self.iter().fold(0, |s, it|s + it[0].len()) / 2;
+        let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
             shape[0].append_id_segments(&mut segments, i, x_min, x_max);
         }

@@ -4,7 +4,8 @@ use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
-use crate::fill::solver::{FillSolver, Handler};
+use crate::fill::solver::FillSolver;
+use crate::segm::end::End;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::shape_count::ShapeCount;
 use crate::util::Int;
@@ -37,9 +38,6 @@ impl ScanFillList {
 
     #[inline(always)]
     fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount {
-        if self.buffer.is_empty() {
-            return ShapeCount { subj: 0, clip: 0 };
-        }
         match self.buffer.binary_search_by(|s|
         if s.x_segment.is_under_point(p) {
             Ordering::Less
@@ -79,16 +77,16 @@ impl FillSolver {
                 x0 = p.x;
             }
 
-            buf.push(Handler { id: i, b: segments[i].x_segment.b });
+            buf.push(End { index: i, point: segments[i].x_segment.b });
             i += 1;
 
             while i < n && segments[i].x_segment.a == p {
-                buf.push(Handler { id: i, b: segments[i].x_segment.b });
+                buf.push(End { index: i, point: segments[i].x_segment.b });
                 i += 1;
             }
 
             buf.sort_unstable_by(|s0, s1|
-            if Triangle::is_clockwise_point(p, s1.b, s0.b) {
+            if Triangle::is_clockwise_point(p, s1.point, s0.point) {
                 Ordering::Less
             } else {
                 Ordering::Greater
@@ -98,9 +96,9 @@ impl FillSolver {
             let mut fill: SegmentFill;
 
             for se in buf.iter() {
-                let sid = unsafe { segments.get_unchecked(se.id) };
+                let sid = unsafe { segments.get_unchecked(se.index) };
                 (sum_count, fill) = sid.add_and_fill(sum_count, fill_rule);
-                *unsafe { result.get_unchecked_mut(se.id) } = fill;
+                *unsafe { result.get_unchecked_mut(se.index) } = fill;
                 if sid.x_segment.is_not_vertical() {
                     scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
                 }

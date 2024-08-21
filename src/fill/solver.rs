@@ -1,12 +1,6 @@
-use i_float::point::IntPoint;
 use crate::core::fill_rule::FillRule;
 use crate::segm::shape_count::ShapeCount;
 use crate::segm::segment::{Segment, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTTOM, SUBJ_TOP, SegmentFill};
-
-pub(super) struct Handler {
-    pub(super) id: usize,
-    pub(super) b: IntPoint,
-}
 
 pub(crate) struct FillSolver {}
 

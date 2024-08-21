@@ -3,15 +3,12 @@ use i_float::point::IntPoint;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
+use crate::segm::end::End;
 use crate::segm::segment::{Segment, SegmentFill};
 use crate::sort::SmartSort;
 
 use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
 
-struct End {
-    seg_index: usize,
-    point: IntPoint,
-}
 
 /// A representation of geometric shapes organized for efficient boolean operations.
 ///
@@ -53,7 +50,7 @@ impl OverlayGraph {
             }).collect();
 
         let mut end_bs: Vec<End> = links.iter().enumerate()
-            .map(|(i, link)| End { seg_index: i, point: link.b.point })
+            .map(|(i, link)| End { index: i, point: link.b.point })
             .collect();
 
         end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
@@ -95,8 +92,8 @@ impl OverlayGraph {
                 next_b_cnt = 0;
                 for _ in 0..b_cnt {
                     let e = unsafe { end_bs.get_unchecked(bi) };
-                    indices.push(e.seg_index);
-                    unsafe { links.get_unchecked_mut(e.seg_index) }.b.id = node_id;
+                    indices.push(e.index);
+                    unsafe { links.get_unchecked_mut(e.index) }.b.id = node_id;
                     bi += 1;
                 }
 
