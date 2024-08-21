@@ -2,7 +2,6 @@ use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, PointsCount};
 use i_shape::int::simple::Simple;
-use crate::fill::fill_segments::FillSegments;
 
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
@@ -10,6 +9,7 @@ use crate::segm::shape_count::ShapeCount;
 use crate::segm::segment::{CLIP_BOTH, NONE, SegmentFill, ShapeEdgesMerge, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
+use crate::fill::solver::FillSolver;
 use crate::segm::segment::Segment;
 use crate::segm::x_segment::XSegment;
 use crate::sort::SmartSort;
@@ -154,7 +154,7 @@ impl Overlay {
 
         let is_list = SplitSolver::new(solver).split(&mut segments);
 
-        let fills = segments.fill(fill_rule, is_list);
+        let fills = FillSolver::fill(fill_rule, is_list, &segments);
 
         (segments, fills)
     }

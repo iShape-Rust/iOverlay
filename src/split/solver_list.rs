@@ -40,7 +40,7 @@ impl SplitSolver {
 
             self.apply(&mut marks, edges);
 
-            if !self.solver.is_list(edges) {
+            if need_to_fix && !self.solver.is_list(edges) {
                 // finish with tree solver if edges is become large
                 return self.tree_split(edges);
             }

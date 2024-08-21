@@ -1,8 +1,12 @@
+use std::cmp::Ordering;
 use i_float::point::IntPoint;
+use i_float::triangle::Triangle;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
+use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
-use crate::fill::fill_segments::ScanFillStore;
+use crate::fill::solver::{FillSolver, Handler};
+use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
 use crate::util::Int;
@@ -12,7 +16,6 @@ pub(super) struct ScanFillTree {
 }
 
 impl ScanFillTree {
-
     #[inline]
     pub(super) fn new(count: usize) -> Self {
         let capacity = count.log2_sqrt();
@@ -22,8 +25,8 @@ impl ScanFillTree {
     }
 }
 
-impl ScanFillStore for ScanFillTree {
-    fn insert(&mut self, segment: CountSegment) {
+impl ScanFillTree {
+    pub(super) fn insert(&mut self, segment: CountSegment) {
         let stop = segment.x_segment.a.x;
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;
@@ -102,5 +105,53 @@ impl ScanFillStore for ScanFillTree {
         } else {
             self.tree.node(result).value.count
         }
+    }
+}
+
+
+impl FillSolver {
+    pub(super) fn tree_fill(segments: &Vec<Segment>, fill_rule: FillRule) -> Vec<SegmentFill> {
+        // Mark. self is sorted by x_segment.a
+        let mut scan_list = ScanFillTree::new(segments.len());
+        let mut buf = Vec::with_capacity(4);
+
+        let n = segments.len();
+        let mut result = vec![NONE; n];
+        let mut i = 0;
+
+        while i < n {
+            let p = segments[i].x_segment.a;
+
+            buf.push(Handler { id: i, b: segments[i].x_segment.b });
+            i += 1;
+
+            while i < n && segments[i].x_segment.a == p {
+                buf.push(Handler { id: i, b: segments[i].x_segment.b });
+                i += 1;
+            }
+
+            buf.sort_unstable_by(|s0, s1|
+            if Triangle::is_clockwise_point(p, s1.b, s0.b) {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            });
+
+            let mut sum_count = scan_list.find_under_and_nearest(p);
+            let mut fill: SegmentFill;
+
+            for se in buf.iter() {
+                let sid = unsafe { segments.get_unchecked(se.id) };
+                (sum_count, fill) = sid.add_and_fill(sum_count, fill_rule);
+                *unsafe { result.get_unchecked_mut(se.id) } = fill;
+                if sid.x_segment.is_not_vertical() {
+                    scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
+                }
+            }
+
+            buf.clear();
+        }
+
+        result
     }
 }

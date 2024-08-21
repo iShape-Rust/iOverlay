@@ -35,6 +35,7 @@ impl SplitSolver {
             need_to_fix = false;
 
             marks.clear();
+            tree.clear();
 
             for i in 0..edges.len() {
                 let fragment = Fragment::with_index_and_segment(i, edges[i].x_segment);
@@ -48,8 +49,6 @@ impl SplitSolver {
                 return;
             }
 
-            tree.clear();
-
             self.apply(&mut marks, edges);
         }
     }
@@ -61,15 +60,15 @@ impl SplitSolver {
 
         let mut fragments = Vec::with_capacity(2 * edges.len());
 
-
         while need_to_fix {
             need_to_fix = false;
 
             marks.clear();
             fragments.clear();
+            tree.clear();
 
             for i in 0..edges.len() {
-                layout.break_into_fragments(i, &edges[i].x_segment, &mut fragments);
+                layout.break_into_fragments(i, edges[i].x_segment, &mut fragments);
             }
 
             if 100 * fragments.len() <= 110 * edges.len() {
@@ -89,8 +88,6 @@ impl SplitSolver {
             if marks.is_empty() {
                 return;
             }
-
-            tree.clear();
 
             self.apply(&mut marks, edges);
         }

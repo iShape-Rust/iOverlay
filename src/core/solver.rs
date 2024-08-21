@@ -44,7 +44,7 @@ impl Solver {
     pub const TREE: Self = Self { strategy: Tree, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
     pub const AUTO: Self = Self { strategy: Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
 
-    const MAX_LIST_COUNT: usize = 1280;
+    const MAX_LIST_COUNT: usize = 8192;
 
     pub(crate) fn is_list(&self, edges: &Vec<Segment>) -> bool {
         match self.strategy {

@@ -25,7 +25,7 @@ impl SpaceLayout {
         Self { power, min_size, scale }
     }
 
-    pub(super) fn break_into_fragments(&self, index: usize, x_segment: &XSegment, buffer: &mut Vec<Fragment>) {
+    pub(super) fn break_into_fragments(&self, index: usize, x_segment: XSegment, buffer: &mut Vec<Fragment>) {
         let min_x = x_segment.a.x;
         let max_x = x_segment.b.x;
 
@@ -104,7 +104,8 @@ impl SpaceLayout {
         } else {
             IntRect { min_x: ix0, max_x, min_y, max_y: iy0 }
         };
-        buffer.push(Fragment { index, rect, x_segment: x_segment.clone() });
+
+        buffer.push(Fragment { index, rect, x_segment });
     }
 
     pub(super) fn is_fragmentation_required_for_edges(&self, edges: &[Segment]) -> bool {

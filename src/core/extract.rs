@@ -178,9 +178,8 @@ impl JoinHoles for Vec<IntShape> {
         let x_max = i_points[i_points.len() - 1].point.x;
 
         let mut segments = Vec::new();
-        for i in 0..self.len() {
-            let mut hole_floors = self[i][0].id_segments(i, x_min, x_max);
-            segments.append(&mut hole_floors);
+        for (i, shape) in self.iter().enumerate() {
+            shape[0].append_id_segments(&mut segments, i, x_min, x_max);
         }
 
         segments.smart_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));

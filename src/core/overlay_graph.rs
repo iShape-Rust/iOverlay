@@ -134,7 +134,7 @@ impl OverlayGraph {
             }) {
             *result
         } else {
-            panic!("No one unvisited index is found");
+            unreachable!("No one unvisited index is found");
         };
 
         let mut min_index = value;
