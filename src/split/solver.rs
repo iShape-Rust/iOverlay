@@ -15,8 +15,8 @@ impl SplitSolver {
         Self { solver }
     }
 
-    pub(crate) fn split(&self, edges: &mut Vec<Segment>) -> bool {
-        let is_list = self.solver.is_list(edges);
+    pub(crate) fn split(&self, edges: &mut Vec<Segment>) {
+        let is_list = self.solver.is_list_split(edges);
 
         if is_list {
             self.list_split(edges)
@@ -86,9 +86,7 @@ impl SplitSolver {
             Ordering::Greater
         });
 
-        let capacity = edges.len() + marks.len();
-
-        edges.reserve(capacity);
+        edges.reserve(marks.len());
 
         let mut i = 0;
         while i < marks.len() {

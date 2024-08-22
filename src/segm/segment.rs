@@ -73,28 +73,32 @@ impl Ord for Segment {
 
 pub(crate) trait ShapeEdgesMerge {
     fn merge_if_needed(&mut self);
+    fn merge(&mut self, after: usize);
 }
 
 impl ShapeEdgesMerge for Vec<Segment> {
+
+    #[inline]
     fn merge_if_needed(&mut self) {
-        let n = self.len();
+        if self.len() < 2 { return; }
 
-        if n < 2 { return; }
-
-        let mut i = 1;
-        while i < n {
-            if self[i - 1].x_segment.eq(&self[i].x_segment) {
-                break;
+        let mut prev = &self[0].x_segment;
+        for i in 1..self.len() {
+            let this = &self[i].x_segment;
+            if prev.eq(&this) {
+                self.merge(i);
+                return
             }
-            i += 1;
+            prev = this;
         }
+    }
 
-        if i == n { return; }
-
+    fn merge(&mut self, after: usize) {
+        let mut i = after;
         let mut j = i - 1;
         let mut prev = self[j];
 
-        while i < n {
+        while i < self.len() {
             if prev.x_segment.eq(&self[i].x_segment) {
                 prev.count.apply(self[i].count);
             } else {

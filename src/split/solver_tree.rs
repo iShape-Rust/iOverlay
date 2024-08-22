@@ -7,7 +7,7 @@ use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split(&self, edges: &mut Vec<Segment>) -> bool {
+    pub(super) fn tree_split(&self, edges: &mut Vec<Segment>) {
         let ver_range = edges.ver_range();
         let height = ver_range.width() as usize;
 
@@ -22,8 +22,6 @@ impl SplitSolver {
         } else {
             self.complex(ver_range, &layout, edges);
         }
-
-        return false;
     }
 
     fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {

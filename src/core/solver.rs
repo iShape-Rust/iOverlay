@@ -44,14 +44,25 @@ impl Solver {
     pub const TREE: Self = Self { strategy: Tree, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
     pub const AUTO: Self = Self { strategy: Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
 
-    const MAX_LIST_COUNT: usize = 8192;
+    const MAX_SPLIT_LIST_COUNT: usize = 4_000;
+    const MAX_FILL_LIST_COUNT: usize = 16_000;
 
-    pub(crate) fn is_list(&self, edges: &Vec<Segment>) -> bool {
+    pub(crate) fn is_list_split(&self, segments: &Vec<Segment>) -> bool {
         match self.strategy {
             List => { true }
             Tree => { false }
             Auto => {
-                edges.len() < Self::MAX_LIST_COUNT
+                segments.len() < Self::MAX_SPLIT_LIST_COUNT
+            }
+        }
+    }
+
+    pub(crate) fn is_list_fill(&self, segments: &Vec<Segment>) -> bool {
+        match self.strategy {
+            List => { true }
+            Tree => { false }
+            Auto => {
+                segments.len() < Self::MAX_FILL_LIST_COUNT
             }
         }
     }

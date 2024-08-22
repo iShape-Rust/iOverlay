@@ -106,16 +106,7 @@ impl Overlay {
 
         let (mut segments, mut fills) = self.prepare_segments_and_fills(fill_rule, solver);
 
-        let mut iter = fills.iter();
-        segments.retain(|_| {
-            let fill = *iter.next().unwrap();
-            !(fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH)
-        });
-
-        fills.retain(|&fill| {
-            !(fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH)
-        });
-
+        clean_if_needed(&mut segments, &mut fills);
         (segments, fills)
     }
 
@@ -152,8 +143,9 @@ impl Overlay {
 
         segments.merge_if_needed();
 
-        let is_list = SplitSolver::new(solver).split(&mut segments);
+        SplitSolver::new(solver).split(&mut segments);
 
+        let is_list = solver.is_list_fill(&segments);
         let fills = FillSolver::fill(fill_rule, is_list, &segments);
 
         (segments, fills)
@@ -205,4 +197,37 @@ fn append_edges(segments: &mut Vec<Segment>, path: &[IntPoint], shape_type: Shap
             }
         }
     }
+}
+
+trait Fill {
+    fn is_empty(&self) -> bool;
+}
+
+impl Fill for SegmentFill {
+    #[inline(always)]
+    fn is_empty(&self) -> bool {
+        *self == NONE || *self == SUBJ_BOTH || *self == CLIP_BOTH
+    }
+}
+
+#[inline(always)]
+fn clean_if_needed(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
+    if let Some(first_empty_index) = fills.iter().position(|fill| fill.is_empty()) {
+        clean(segments, fills, first_empty_index);
+    }
+}
+
+fn clean(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>, after: usize) {
+    let mut j = after;
+
+    for i in (after + 1)..fills.len() {
+        if !fills[i].is_empty() {
+            fills[j] = fills[i];
+            segments[j] = segments[i];
+            j += 1;
+        }
+    }
+
+    fills.truncate(j);
+    segments.truncate(j);
 }

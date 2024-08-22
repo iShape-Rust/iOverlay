@@ -2,7 +2,7 @@ use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn list_split(&self, edges: &mut Vec<Segment>) -> bool {
+    pub(super) fn list_split(&self, edges: &mut Vec<Segment>) {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
@@ -13,7 +13,7 @@ impl SplitSolver {
             let n = edges.len();
 
             if n < 3 {
-                return true
+                return;
             }
 
             for i in 0..n - 1 {
@@ -35,17 +35,16 @@ impl SplitSolver {
             }
 
             if marks.is_empty() {
-                return true;
+                return;
             }
 
             self.apply(&mut marks, edges);
 
-            if need_to_fix && !self.solver.is_list(edges) {
+            if need_to_fix && !self.solver.is_list_split(edges) {
                 // finish with tree solver if edges is become large
-                return self.tree_split(edges);
+                self.tree_split(edges);
+                return;
             }
         }
-
-        true
     }
 }
