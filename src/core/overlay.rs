@@ -154,46 +154,48 @@ impl Overlay {
 
 trait BuildEdges {
     fn append_edges(&mut self, path: &[IntPoint], shape_type: ShapeType);
+
+    fn append_private_edges(&mut self, path: &[IntPoint], shape_type: ShapeType);
 }
 
 impl BuildEdges for Vec<Segment> {
     #[inline]
     fn append_edges(&mut self, path: &[IntPoint], shape_type: ShapeType) {
         if path.is_simple() {
-            append_edges(self, path, shape_type);
+            self.append_private_edges(path, shape_type);
         } else {
             let path = path.to_simple();
             if path.len() > 2 {
-                append_edges(self, path.as_slice(), shape_type);
+                self.append_private_edges(path.as_slice(), shape_type);
             }
         }
     }
-}
 
-fn append_edges(segments: &mut Vec<Segment>, path: &[IntPoint], shape_type: ShapeType) {
-    let mut p0 = path[path.len() - 1];
+    fn append_private_edges(&mut self, path: &[IntPoint], shape_type: ShapeType) {
+        let mut p0 = path[path.len() - 1];
 
-    match shape_type {
-        ShapeType::Subject => {
-            for &p1 in path {
-                let segment = if p0 < p1 {
-                    Segment { x_segment: XSegment { a: p0, b: p1 }, count: ShapeCount::new(1, 0) }
-                } else {
-                    Segment { x_segment: XSegment { a: p1, b: p0 }, count: ShapeCount::new(-1, 0) }
-                };
-                segments.push(segment);
-                p0 = p1
+        match shape_type {
+            ShapeType::Subject => {
+                for &p1 in path {
+                    let segment = if p0 < p1 {
+                        Segment { x_segment: XSegment { a: p0, b: p1 }, count: ShapeCount::new(1, 0) }
+                    } else {
+                        Segment { x_segment: XSegment { a: p1, b: p0 }, count: ShapeCount::new(-1, 0) }
+                    };
+                    self.push(segment);
+                    p0 = p1
+                }
             }
-        }
-        ShapeType::Clip => {
-            for &p1 in path {
-                let segment = if p0 < p1 {
-                    Segment { x_segment: XSegment { a: p0, b: p1 }, count: ShapeCount::new(0, 1) }
-                } else {
-                    Segment { x_segment: XSegment { a: p1, b: p0 }, count: ShapeCount::new(0, -1) }
-                };
-                segments.push(segment);
-                p0 = p1
+            ShapeType::Clip => {
+                for &p1 in path {
+                    let segment = if p0 < p1 {
+                        Segment { x_segment: XSegment { a: p0, b: p1 }, count: ShapeCount::new(0, 1) }
+                    } else {
+                        Segment { x_segment: XSegment { a: p1, b: p0 }, count: ShapeCount::new(0, -1) }
+                    };
+                    self.push(segment);
+                    p0 = p1
+                }
             }
         }
     }

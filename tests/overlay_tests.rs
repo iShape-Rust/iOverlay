@@ -755,6 +755,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(30, OverlayRule::Difference, Solver::TREE);
+        debug_execute(3, OverlayRule::Difference, Solver::LIST);
     }
 }

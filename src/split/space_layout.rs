@@ -115,7 +115,7 @@ impl SpaceLayout {
                 i += 1;
             }
         }
-        // must be at least 20%
+        // must be at least 5%
         i * 20 > edges.len()
     }
 
