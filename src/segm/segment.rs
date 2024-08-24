@@ -22,20 +22,10 @@ pub const ALL: SegmentFill = SUBJ_BOTH | CLIP_BOTH;
 #[derive(Debug, Clone, Copy)]
 pub struct Segment {
     pub(crate) x_segment: XSegment,
-    pub(crate) count: ShapeCount
+    pub(crate) count: ShapeCount,
 }
 
 impl Segment {
-
-    #[inline(always)]
-    pub fn new(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
-        if a < b {
-            Self { x_segment: XSegment { a, b }, count }
-        } else {
-            Self { x_segment: XSegment { a: b, b: a }, count }
-        }
-    }
-
     #[inline(always)]
     pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
         if a < b {
@@ -44,7 +34,6 @@ impl Segment {
             Self { x_segment: XSegment { a: b, b: a }, count: count.invert() }
         }
     }
-
 }
 
 
@@ -77,7 +66,6 @@ pub(crate) trait ShapeEdgesMerge {
 }
 
 impl ShapeEdgesMerge for Vec<Segment> {
-
     #[inline]
     fn merge_if_needed(&mut self) {
         if self.len() < 2 { return; }
@@ -87,7 +75,7 @@ impl ShapeEdgesMerge for Vec<Segment> {
             let this = &self[i].x_segment;
             if prev.eq(&this) {
                 self.merge(i);
-                return
+                return;
             }
             prev = this;
         }
