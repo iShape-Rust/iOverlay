@@ -24,7 +24,7 @@ Try out iOverlay with an interactive demo:
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^1.4"
+i_overlay = "^1.5"
 ```
 
 ### Hello world
