@@ -45,7 +45,7 @@ impl Solver {
     pub const AUTO: Self = Self { strategy: Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
 
     const MAX_SPLIT_LIST_COUNT: usize = 4_000;
-    const MAX_FILL_LIST_COUNT: usize = 16_000;
+    const MAX_FILL_LIST_COUNT: usize = 8_000;
 
     pub(crate) fn is_list_split(&self, segments: &Vec<Segment>) -> bool {
         match self.strategy {

@@ -2,13 +2,13 @@
 mod tests {
     use i_float::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::float_overlay::FloatOverlay;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::f64::overlay::F64Overlay;
 
     #[test]
     fn test_00() {
-        let overlay = FloatOverlay::new();
+        let overlay = F64Overlay::new();
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 

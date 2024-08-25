@@ -8,10 +8,10 @@ mod tests {
     use i_shape::int::shape::IntShape;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::float_overlay::FloatOverlay;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
+    use i_overlay::f64::overlay::F64Overlay;
 
     const SOLVERS: [Solver; 3] = [
         Solver::LIST,
@@ -231,13 +231,10 @@ mod tests {
         let n = 5;
         for _ in 0..10000 {
             let subj_path = random(10, n);
-            // let clip_path = random(10, n);
             let mut overlay = Overlay::new(2 * n);
             overlay.add_path(&subj_path, ShapeType::Subject);
-            // overlay.add_path(&clip_path, ShapeType::Clip);
             let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
             _ = graph.extract_shapes(OverlayRule::Subject);
-            // assert!(result.len() > 0);
         }
     }
 
@@ -248,12 +245,10 @@ mod tests {
             let r = i as f64;
             let subj_path = random_float(r, n);
 
-            let mut overlay = FloatOverlay::new();
-            overlay.add_path(&subj_path, ShapeType::Subject);
-            // overlay.add_path(&clip_path, ShapeType::Clip);
+            let mut overlay = F64Overlay::new();
+            overlay.add_path(subj_path, ShapeType::Subject);
             let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
             _ = graph.extract_shapes(OverlayRule::Subject);
-            // assert!(result.len() > 0);
         }
     }
 

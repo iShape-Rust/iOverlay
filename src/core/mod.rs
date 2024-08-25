@@ -6,7 +6,5 @@ pub mod overlay_rule;
 pub mod extract;
 pub mod fill_rule;
 pub mod simplify;
-pub mod float_overlay;
-pub mod float_graph;
 pub(crate) mod overlay_node;
 pub(crate) mod filter;

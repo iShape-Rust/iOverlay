@@ -20,7 +20,7 @@ pub const BOTH_BOTTOM: SegmentFill = SUBJ_BOTTOM | CLIP_BOTTOM;
 pub const ALL: SegmentFill = SUBJ_BOTH | CLIP_BOTH;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Segment {
+pub(crate) struct Segment {
     pub(crate) x_segment: XSegment,
     pub(crate) count: ShapeCount,
 }

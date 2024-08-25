@@ -22,7 +22,6 @@ impl ScanFillList {
 }
 
 impl ScanFillList {
-
     #[inline(always)]
     fn clear(&mut self, x: i32) {
         self.buffer.retain(|s| s.x_segment.b.x > x);
@@ -58,7 +57,6 @@ impl ScanFillList {
 }
 
 impl FillSolver {
-
     pub(super) fn list_fill(segments: &Vec<Segment>, fill_rule: FillRule) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillList::new(segments.len());

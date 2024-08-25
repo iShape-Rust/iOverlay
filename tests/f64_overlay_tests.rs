@@ -3,9 +3,9 @@ mod tests {
     use i_float::f64_point::F64Point;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::float_overlay::FloatOverlay;
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::f64::overlay::F64Overlay;
 
 
     #[test]
@@ -27,7 +27,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -57,7 +57,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -88,7 +88,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -119,7 +119,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -149,7 +149,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -179,7 +179,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -209,7 +209,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -237,7 +237,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
 
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn test_empty_0() {
-        let graph = FloatOverlay::new().into_graph(FillRule::NonZero);
+        let graph = F64Overlay::new().into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.is_empty(), true);
@@ -280,8 +280,8 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let mut overlay = FloatOverlay::new();
-        overlay.add_paths(&shape, ShapeType::Subject);
+        let mut overlay = F64Overlay::new();
+        overlay.add_paths(shape, ShapeType::Subject);
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
@@ -309,7 +309,7 @@ mod tests {
         ].to_vec();
 
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
@@ -338,7 +338,7 @@ mod tests {
         ].to_vec();
 
 
-        let overlay = FloatOverlay::with_paths(shape_0, shape_1);
+        let overlay = F64Overlay::with_paths(shape_0, shape_1);
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
@@ -350,8 +350,8 @@ mod tests {
 
     #[test]
     fn test_empty_4() {
-        let mut overlay = FloatOverlay::new();
-        overlay.add_path(&[F64Point::new(0.0, 0.0)], ShapeType::Subject);
+        let mut overlay = F64Overlay::new();
+        overlay.add_path(vec![F64Point::new(0.0, 0.0)], ShapeType::Subject);
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
 
@@ -360,9 +360,9 @@ mod tests {
 
     #[test]
     fn test_empty_5() {
-        let mut overlay = FloatOverlay::new();
-        overlay.add_path(&[F64Point::new(0.0, 0.0)], ShapeType::Subject);
-        overlay.add_path(&[F64Point::new(1.0, 0.0)], ShapeType::Clip);
+        let mut overlay = F64Overlay::new();
+        overlay.add_path(vec![F64Point::new(0.0, 0.0)], ShapeType::Subject);
+        overlay.add_path(vec![F64Point::new(1.0, 0.0)], ShapeType::Clip);
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
 
@@ -371,8 +371,8 @@ mod tests {
 
     #[test]
     fn test_empty_6() {
-        let mut overlay = FloatOverlay::new();
-        overlay.add_path(&[F64Point::new(0.0, 0.0), F64Point::new(1.0, 0.0)], ShapeType::Subject);
+        let mut overlay = F64Overlay::new();
+        overlay.add_path(vec![F64Point::new(0.0, 0.0), F64Point::new(1.0, 0.0)], ShapeType::Subject);
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(OverlayRule::Subject);
 

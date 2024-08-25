@@ -3,7 +3,7 @@ use crate::segm::segment::Segment;
 use crate::split::fragment::Fragment;
 use crate::segm::x_segment::XSegment;
 
-pub(crate) struct SpaceLayout {
+pub(super) struct SpaceLayout {
     pub(super) power: usize,
     min_size: u64,
     scale: usize

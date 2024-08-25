@@ -1,4 +1,4 @@
-use i_float::adapter::PointAdapter;
+use i_float::f64_adapter::F64PointAdapter;
 use i_shape::f64::adapter::ShapesToFloat;
 use i_shape::f64::shape::F64Shapes;
 use crate::core::overlay_graph::OverlayGraph;
@@ -6,13 +6,12 @@ use crate::core::overlay_rule::OverlayRule;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
-pub struct FloatOverlayGraph {
+pub struct F64OverlayGraph {
     pub graph: OverlayGraph,
-    pub adapter: PointAdapter,
+    pub adapter: F64PointAdapter,
 }
 
-impl FloatOverlayGraph {
-
+impl F64OverlayGraph {
     /// Creates a new instance of `FloatOverlayGraph`.
     ///
     /// # Parameters
@@ -22,7 +21,7 @@ impl FloatOverlayGraph {
     /// # Returns
     /// A new `FloatOverlayGraph` instance.
     #[inline(always)]
-    pub(super) fn new(graph: OverlayGraph, adapter: PointAdapter) -> Self {
+    pub(crate) fn new(graph: OverlayGraph, adapter: F64PointAdapter) -> Self {
         Self { graph, adapter }
     }
 

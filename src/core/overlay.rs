@@ -99,7 +99,7 @@ impl Overlay {
     /// Convert into segments from the added paths or shapes according to the specified fill rule.
     /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
     /// - `solver`: Type of solver to use.
-    pub fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+    pub(crate) fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
         if self.edges.is_empty() {
             return (Vec::new(), Vec::new());
         }

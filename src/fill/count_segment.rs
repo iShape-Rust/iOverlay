@@ -3,9 +3,9 @@ use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
 
 #[derive(Debug, Clone)]
-pub(crate) struct CountSegment {
-    pub(crate) count: ShapeCount,
-    pub(crate) x_segment: XSegment
+pub(super) struct CountSegment {
+    pub(super) count: ShapeCount,
+    pub(super) x_segment: XSegment
 }
 
 impl PartialEq<Self> for CountSegment {
