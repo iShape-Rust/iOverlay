@@ -7,10 +7,10 @@ pub mod line_range;
 pub mod id_point;
 pub mod f64;
 pub mod f32;
+pub mod segm;
 
 mod util;
 mod sort;
-mod segm;
 
 pub use i_float;
 pub use i_shape;
