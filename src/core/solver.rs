@@ -16,6 +16,13 @@ pub enum Strategy {
     Auto,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Precision {
+    Absolute,
+    Average,
+    Auto,
+}
+
 #[derive(Clone, Copy)]
 pub struct MultithreadOptions {
     pub par_sort_min_size: usize,
@@ -30,6 +37,7 @@ impl Default for MultithreadOptions {
 #[derive(Clone, Copy)]
 pub struct Solver {
     pub strategy: Strategy,
+    pub precision: Precision,
     pub multithreading: Option<MultithreadOptions>,
 }
 
@@ -40,9 +48,9 @@ impl Default for Solver {
 }
 
 impl Solver {
-    pub const LIST: Self = Self { strategy: List, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
-    pub const TREE: Self = Self { strategy: Tree, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
-    pub const AUTO: Self = Self { strategy: Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
+    pub const LIST: Self = Self { strategy: List, precision: Precision::Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
+    pub const TREE: Self = Self { strategy: Tree, precision: Precision::Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
+    pub const AUTO: Self = Self { strategy: Auto, precision: Precision::Auto, multithreading: Some(MultithreadOptions { par_sort_min_size: 32768 }) };
 
     const MAX_SPLIT_LIST_COUNT: usize = 4_000;
     const MAX_FILL_LIST_COUNT: usize = 8_000;
@@ -63,6 +71,16 @@ impl Solver {
             Tree => { false }
             Auto => {
                 segments.len() < Self::MAX_FILL_LIST_COUNT
+            }
+        }
+    }
+
+    pub(crate) fn radius(&self, iteration: usize) -> i64 {
+        match self.precision {
+            Precision::Absolute => { 0 }
+            Precision::Average => { 2 }
+            Precision::Auto => {
+                1 << iteration.min(10)
             }
         }
     }

@@ -7,7 +7,7 @@ use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split(&self, edges: &mut Vec<Segment>) {
+    pub(super) fn tree_split(&mut self, edges: &mut Vec<Segment>) {
         let ver_range = edges.ver_range();
         let height = ver_range.width() as usize;
 
@@ -25,15 +25,16 @@ impl SplitSolver {
     }
 
     fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {
-        let mut tree = SegmentTree::new(ver_range, layout.power);
+        let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
-        while need_to_fix {
+        let mut iter = 0;
+
+        while need_to_fix && edges.len() > 2 {
             need_to_fix = false;
 
-            marks.clear();
-            tree.clear();
+            tree.radius = self.solver.radius(iter);
 
             for i in 0..edges.len() {
                 let fragment = Fragment::with_index_and_segment(i, edges[i].x_segment);
@@ -47,23 +48,27 @@ impl SplitSolver {
                 return;
             }
 
+            tree.clear();
+
             self.apply(&mut marks, edges);
+
+            marks.clear();
+
+            iter += 1;
         }
     }
 
     fn complex(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {
-        let mut tree = SegmentTree::new(ver_range, layout.power);
+        let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
         let mut fragments = Vec::with_capacity(2 * edges.len());
 
-        while need_to_fix {
-            need_to_fix = false;
+        let mut iter = 0;
 
-            marks.clear();
-            fragments.clear();
-            tree.clear();
+        while need_to_fix && edges.len() > 2 {
+            need_to_fix = false;
 
             for i in 0..edges.len() {
                 layout.break_into_fragments(i, edges[i].x_segment, &mut fragments);
@@ -75,6 +80,7 @@ impl SplitSolver {
                 return;
             }
 
+            tree.radius = self.solver.radius(iter);
 
             for fragment in fragments.iter() {
                 let any_round = tree.intersect(fragment, &mut marks);
@@ -87,7 +93,14 @@ impl SplitSolver {
                 return;
             }
 
+            fragments.clear();
+            tree.clear();
+
             self.apply(&mut marks, edges);
+
+            marks.clear();
+
+            iter += 1;
         }
     }
 }

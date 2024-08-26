@@ -60,10 +60,11 @@ pub(super) enum CrossType {
     Overlay,
 }
 
-pub(super) struct CrossSolver;
+pub(super) struct CrossSolver {}
 
 impl CrossSolver {
-    pub(super) fn cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+
+    pub(super) fn cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
         let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
         let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
 
@@ -114,7 +115,7 @@ impl CrossSolver {
             };
         }
 
-        Self::middle_cross(target, other)
+        Self::middle_cross(target, other, radius)
     }
 
     pub(super) fn collinear(target: &XSegment, other: &XSegment) -> CollinearMask {
@@ -144,7 +145,7 @@ impl CrossSolver {
         CollinearMask::new(is_target_a, is_target_b, is_other_a, is_other_b)
     }
 
-    fn middle_cross(target: &XSegment, other: &XSegment) -> Option<CrossResult> {
+    fn middle_cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
         let p = CrossSolver::cross_point(&target, &other);
 
         if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
@@ -164,7 +165,7 @@ impl CrossSolver {
         let ra1 = other.a.sqr_distance(p);
         let rb1 = other.b.sqr_distance(p);
 
-        if ra0 <= 2 || ra1 <= 2 || rb0 <= 2 || rb1 <= 2 {
+        if ra0 <= radius || ra1 <= radius || rb0 <= radius || rb1 <= radius {
             let r0 = ra0.min(rb0);
             let r1 = ra1.min(rb1);
 
@@ -355,7 +356,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Pure => {
@@ -374,7 +375,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Pure => {
@@ -393,7 +394,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(1024, -s), IntPoint::new(1024, s));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Pure => {
@@ -413,7 +414,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(s, s));
         let eb = XSegment::new(IntPoint::new(q, -s), IntPoint::new(q, s));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Pure => {
@@ -432,7 +433,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(-s, s));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::TargetEnd => {
@@ -451,7 +452,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(s, -s), IntPoint::new(s, s));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::TargetEnd => {
@@ -470,7 +471,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, s), IntPoint::new(s, s));
         let eb = XSegment::new(IntPoint::new(-s, s), IntPoint::new(-s, -s));
 
-        let result = CrossSolver::cross(&ea, &eb);
+        let result = CrossSolver::cross(&ea, &eb, 2);
         debug_assert!(result.is_none());
     }
 
@@ -479,7 +480,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(7256, -14637), IntPoint::new(7454, -15045));
         let eb = XSegment::new(IntPoint::new(7343, -14833), IntPoint::new(7506, -15144));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Pure => {}
@@ -494,7 +495,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(-1024000, 0));
         let eb = XSegment::new(IntPoint::new(-8571363, 1513719), IntPoint::new(-1023948, -10239));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Pure => {
@@ -511,7 +512,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
         let eb = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Overlay => {
@@ -534,7 +535,7 @@ mod tests {
             IntPoint::new(-276659430, 380789040),
         );
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Overlay => {
@@ -553,7 +554,7 @@ mod tests {
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s / 2, 0));
         let eb = XSegment::new(IntPoint::new(0, 0), IntPoint::new(s, 0));
 
-        let result = CrossSolver::cross(&ea, &eb).unwrap();
+        let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
         match result.cross_type {
             CrossType::Overlay => {

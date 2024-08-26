@@ -19,13 +19,14 @@ impl IntervalNode {
 pub(super) struct SegmentTree {
     power: usize,
     nodes: Vec<IntervalNode>,
+    pub(super) radius: i64
 }
 
-impl SegmentTree {
+impl<'a> SegmentTree {
     #[inline]
-    pub(super) fn new(range: LineRange, power: usize) -> Self {
+    pub(super) fn new(range: LineRange, power: usize, radius: i64) -> Self {
         let nodes = Self::create_nodes(range, power);
-        Self { power, nodes }
+        Self { power, nodes, radius }
     }
 
     fn create_nodes(range: LineRange, power: usize) -> Vec<IntervalNode> {
@@ -297,6 +298,7 @@ impl SegmentTree {
                     &this.x_segment,
                     &scan.x_segment,
                     marks,
+                    self.radius
                 )
             } else {
                 SplitSolver::cross(
@@ -305,6 +307,7 @@ impl SegmentTree {
                     &scan.x_segment,
                     &this.x_segment,
                     marks,
+                    self.radius
                 )
             };
 
@@ -325,7 +328,7 @@ impl LineRange {
 impl SegmentTree {
     fn with_power(range: LineRange, power: usize) -> Self {
         let nodes = Self::create_nodes(range, power);
-        Self { power, nodes }
+        Self { power, nodes, radius: 2 }
     }
 }
 
@@ -562,7 +565,7 @@ mod tests {
     fn intersect_test(test_set: Vec<XSegment>) -> usize {
         let mut result = 0;
         let range = range(&test_set);
-        let mut tree = SegmentTree::new(range, test_set.len());
+        let mut tree = SegmentTree::new(range, test_set.len(), 2);
 
         let mut marks = Vec::new();
         for s in test_set.iter() {

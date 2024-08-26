@@ -7,7 +7,7 @@ use crate::split::line_mark::LineMark;
 use crate::segm::x_segment::XSegment;
 
 pub(crate) struct SplitSolver {
-    pub(super) solver: Solver,
+    pub(super) solver: Solver
 }
 
 impl SplitSolver {
@@ -15,7 +15,7 @@ impl SplitSolver {
         Self { solver }
     }
 
-    pub(crate) fn split(&self, edges: &mut Vec<Segment>) {
+    pub(crate) fn split(&mut self, edges: &mut Vec<Segment>) {
         let is_list = self.solver.is_list_split(edges);
 
         if is_list {
@@ -25,8 +25,8 @@ impl SplitSolver {
         }
     }
 
-    pub(super) fn cross(i: usize, j: usize, ei: &XSegment, ej: &XSegment, marks: &mut Vec<LineMark>) -> bool {
-        let cross = if let Some(cross) = CrossSolver::cross(ei, ej) {
+    pub(super) fn cross(i: usize, j: usize, ei: &XSegment, ej: &XSegment, marks: &mut Vec<LineMark>, radius: i64) -> bool {
+        let cross = if let Some(cross) = CrossSolver::cross(ei, ej, radius) {
             cross
         } else {
             return false;

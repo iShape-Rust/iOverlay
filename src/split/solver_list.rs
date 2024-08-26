@@ -2,24 +2,22 @@ use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn list_split(&self, edges: &mut Vec<Segment>) {
+    pub(super) fn list_split(&mut self, edges: &mut Vec<Segment>) {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
-        while need_to_fix {
+        let mut iter = 0;
+
+        while need_to_fix && edges.len() > 2 {
             need_to_fix = false;
             marks.clear();
 
-            let n = edges.len();
+            let radius: i64 = self.solver.radius(iter);
 
-            if n < 3 {
-                return;
-            }
-
-            for i in 0..n - 1 {
+            for i in 0..edges.len() - 1 {
                 let ei = &edges[i].x_segment;
                 let ri = ei.y_range();
-                for j in i + 1..n {
+                for j in i + 1..edges.len() {
                     let ej = &edges[j].x_segment;
                     if ei.b.x < ej.a.x {
                         break;
@@ -29,7 +27,7 @@ impl SplitSolver {
                         continue;
                     }
 
-                    let is_round = Self::cross(i, j, ei, ej, &mut marks);
+                    let is_round = SplitSolver::cross(i, j, ei, ej, &mut marks, radius);
                     need_to_fix = need_to_fix || is_round
                 }
             }
@@ -45,6 +43,8 @@ impl SplitSolver {
                 self.tree_split(edges);
                 return;
             }
+
+            iter += 1;
         }
     }
 }
