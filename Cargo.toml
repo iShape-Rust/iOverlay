@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "1.5.1"
+version = "1.5.2"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2021"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."

@@ -88,6 +88,15 @@ impl F64Overlay {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - `solver`: Type of solver to use.
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> F64OverlayGraph {
+        let (overlay, adapter) = self.into_overlay();
+
+        let graph = overlay.into_graph_with_solver(fill_rule, solver);
+
+        F64OverlayGraph::new(graph, adapter)
+    }
+
+    /// Convert into int overlay from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
+    pub fn into_overlay(self) -> (Overlay, F64PointAdapter) {
         let subj_rect = F64Rect::with_shape(&self.subj_paths);
         let clip_rect = F64Rect::with_shape(&self.clip_paths);
 
@@ -105,8 +114,7 @@ impl F64Overlay {
         let int_clip = self.clip_paths.to_int(&adapter);
 
         let overlay = Overlay::with_paths(&int_subj, &int_clip);
-        let graph = overlay.into_graph_with_solver(fill_rule, solver);
 
-        F64OverlayGraph::new(graph, adapter)
+        (overlay, adapter)
     }
 }

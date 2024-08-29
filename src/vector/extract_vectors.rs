@@ -9,7 +9,15 @@ use crate::sort::SmartSort;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
-    pub fn extract_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
+    pub fn extract_separate_vectors(&self) -> Vec<VectorEdge> {
+        self.links.iter().map(|link| VectorEdge {
+            a: link.a.point,
+            b: link.b.point,
+            fill: link.fill,
+        }).collect()
+    }
+
+    pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
         let mut visited = self.links.filter(overlay_rule);
 
         let mut holes = Vec::new();

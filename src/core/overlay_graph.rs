@@ -23,12 +23,6 @@ pub struct OverlayGraph {
 
 impl OverlayGraph {
 
-    // for wasm api
-    #[inline(always)]
-    pub fn links(&self) -> &Vec<OverlayLink> {
-        &self.links
-    }
-
     pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
         let segments = bundle.0;
         let fills = bundle.1;

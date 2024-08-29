@@ -1,9 +1,8 @@
-use i_float::point::IntPoint;
 use crate::segm::segment::SegmentFill;
 use crate::id_point::IdPoint;
 
 #[derive(Debug, Clone, Copy)]
-pub struct OverlayLink {
+pub(crate) struct OverlayLink {
     pub(crate) a: IdPoint,
     pub(crate) b: IdPoint,
     pub(crate) fill: SegmentFill,
@@ -18,15 +17,5 @@ impl OverlayLink {
     #[inline(always)]
     pub(crate) fn other(&self, index: &IdPoint) -> IdPoint {
         if self.a.id == index.id { self.b } else { self.a }
-    }
-
-    #[inline(always)]
-    pub fn ab(&self) -> (IntPoint, IntPoint) {
-        (self.a.point, self.b.point)
-    }
-
-    #[inline(always)]
-    pub fn fill(&self) -> SegmentFill {
-        self.fill
     }
 }

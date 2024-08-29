@@ -14,7 +14,7 @@ use crate::segm::segment::Segment;
 use crate::segm::x_segment::XSegment;
 use crate::sort::SmartSort;
 use crate::split::solver::SplitSolver;
-use crate::vector::vector::VectorShape;
+use crate::vector::vector::{VectorEdge, VectorShape};
 
 use super::overlay_graph::OverlayGraph;
 
@@ -114,14 +114,25 @@ impl Overlay {
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
     /// - `solver`: Type of solver to use.
-    pub fn into_vectors(self, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<VectorShape> {
+    pub fn into_shape_vectors(self, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<VectorShape> {
         if self.edges.is_empty() {
             return Vec::new();
         }
         let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
-        let vectors = graph.extract_vectors(overlay_rule);
+        let vectors = graph.extract_shape_vectors(overlay_rule);
 
         vectors
+    }
+
+    /// Convert into vectors from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
+    /// - `fill_rule`: The fill rule to use for the shapes.
+    /// - `solver`: Type of solver to use.
+    pub fn into_separate_vectors(self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
+        if self.edges.is_empty() {
+            return Vec::new();
+        }
+        let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
+        graph.extract_separate_vectors()
     }
 
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
