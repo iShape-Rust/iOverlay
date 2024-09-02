@@ -19,6 +19,7 @@ Try out iOverlay with an interactive demo:
 - **Polygons**: with holes, self-intersections, and multiple paths.
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Fill Rules**: even-odd and non-zero.
+- **Data Types**: Supports i32, f32, and f64 APIs.
 
 ## Getting Started
 
