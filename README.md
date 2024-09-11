@@ -82,17 +82,17 @@ The output of the `extract_shapes` function is a `Vec<Vec<Vec<F64Point>>>`, wher
 
 <img src="readme/ab.svg" alt="AB" style="width:50%;">
 
-## Union, A or B
+### Union, A or B
 <img src="readme/union.svg" alt="Union" style="width:50%;">
 
-## Intersection, A and B
+### Intersection, A and B
 <img src="readme/intersection.svg" alt="Intersection" style="width:50%;">
 
-## Difference, A - B
+### Difference, A - B
 <img src="readme/difference_ab.svg" alt="Difference" style="width:50%;">
 
-## Inverse Difference, B - A
+### Inverse Difference, B - A
 <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:50%;">
 
-## Exclusion, A xor B
+### Exclusion, A xor B
 <img src="readme/exclusion.svg" alt="Exclusion" style="width:50%;">
