@@ -1,5 +1,5 @@
 # iOverlay
-![Balloons](Readme/balloons.svg)
+![Balloons](readme/balloons.svg)
 
 The iOverlay is a fast poly-bool library supporting main operations like union, intersection, difference, and xor, governed by either the even-odd or non-zero rule.  
 This library is optimized for different scenarios, ensuring high performance across various use cases. For detailed performance benchmarks, check out the [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance.html)
@@ -80,14 +80,19 @@ The output of the `extract_shapes` function is a `Vec<Vec<Vec<F64Point>>>`, wher
 
 # Overlay Rules
 
+<img src="readme/ab.svg" alt="AB" style="width:50%;">
+
 ## Union, A or B
-![Union](Readme/union.svg)
+<img src="readme/union.svg" alt="Union" style="width:50%;">
 
 ## Intersection, A and B
-![Intersection](Readme/intersection.svg)
+<img src="readme/intersection.svg" alt="Intersection" style="width:50%;">
 
-## Difference, B - A
-![Difference](Readme/difference.svg)
+## Difference, A - B
+<img src="readme/difference_ab.svg" alt="Difference" style="width:50%;">
+
+## Inverse Difference, B - A
+<img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:50%;">
 
 ## Exclusion, A xor B
-![Exclusion](Readme/exclusion.svg)
+<img src="readme/exclusion.svg" alt="Exclusion" style="width:50%;">
