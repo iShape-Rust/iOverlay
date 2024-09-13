@@ -58,8 +58,8 @@ impl OverlayGraph {
             let fill = unsafe { self.links.get_unchecked(i) }.fill;
             let is_hole = overlay_rule.is_fill_top(fill);
 
-            let mut path = self.get_path(overlay_rule, i, &mut visited);
-            if path.validate(min_area, is_hole) {
+            let mut path = self.get_path(i, is_hole, &mut visited);
+            if path.validate(min_area) {
                 if is_hole {
                     holes.push(path);
                 } else {
@@ -73,7 +73,9 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> IntPath {
+    fn get_path(&self, index: usize, is_hole: bool, visited: &mut Vec<bool>) -> IntPath {
+        let is_cw = is_hole;
+
         let mut path = IntPath::new();
         let mut next = index;
 
@@ -91,8 +93,6 @@ impl OverlayGraph {
             if node.indices.len() == 2 {
                 next = node.other(next);
             } else {
-                let is_fill_top = overlay_rule.is_fill_top(link.fill);
-                let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
                 next = self.find_nearest_link_to(&a, &b, next, is_cw, visited);
             }
             link = unsafe { self.links.get_unchecked(next) };
@@ -107,6 +107,10 @@ impl OverlayGraph {
         }
 
         *unsafe { visited.get_unchecked_mut(index) } = true;
+
+        if is_hole {
+            path.reverse()
+        }
 
         path
     }
@@ -202,11 +206,11 @@ impl JoinHoles for Vec<IntShape> {
 }
 
 trait Validate {
-    fn validate(&mut self, min_area: i64, is_hole: bool) -> bool;
+    fn validate(&mut self, min_area: i64) -> bool;
 }
 
 impl Validate for IntPath {
-    fn validate(&mut self, min_area: i64, is_hole: bool) -> bool {
+    fn validate(&mut self, min_area: i64) -> bool {
         let slice = self.as_slice();
         if !slice.is_simple() {
             let simple = slice.to_simple();
@@ -217,16 +221,13 @@ impl Validate for IntPath {
             return false;
         }
 
+        if min_area == 0 {
+            return true
+        }
+
         let area = self.unsafe_area();
         let abs_area = area.abs() >> 1;
 
-        if abs_area < min_area {
-            return false;
-        } else if is_hole && area > 0 || !is_hole && area < 0 {
-            // for holes must be negative and for contour must be positive
-            self.reverse();
-        }
-
-        true
+        abs_area < min_area
     }
 }

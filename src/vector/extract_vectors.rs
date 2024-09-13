@@ -35,7 +35,7 @@ impl OverlayGraph {
             let fill = unsafe { self.links.get_unchecked(i) }.fill;
             let is_hole = overlay_rule.is_fill_top(fill);
 
-            let mut path = self.get_vector_path(overlay_rule, i, &mut visited);
+            let mut path = self.get_vector_path(i, is_hole, &mut visited);
             path.validate(is_hole);
 
             if is_hole {
@@ -50,7 +50,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, overlay_rule: OverlayRule, index: usize, visited: &mut Vec<bool>) -> VectorPath {
+    fn get_vector_path(&self, index: usize, is_cw: bool, visited: &mut Vec<bool>) -> VectorPath {
         let mut path = VectorPath::new();
         let mut next = index;
 
@@ -67,8 +67,6 @@ impl OverlayGraph {
             if node.indices.len() == 2 {
                 next = node.other(next);
             } else {
-                let is_fill_top = overlay_rule.is_fill_top(link.fill);
-                let is_cw = Self::is_clockwise(a.point, b.point, is_fill_top);
                 next = self.find_nearest_link_to(&a, &b, next, is_cw, visited);
             }
 
