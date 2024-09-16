@@ -152,7 +152,6 @@ impl OverlayGraph {
         min_index
     }
 
-    #[inline(always)]
     pub(crate) fn find_nearest_counter_wise_link_to(
         &self,
         target_index: usize,
@@ -170,34 +169,40 @@ impl OverlayGraph {
         let mut b = a;
         let mut more_180 = true;
 
-        for &i in node.indices.iter() {
-            if i == target_index {
-                continue;
+        let mut it_index = 0;
+        while it_index < node.indices.len() {
+            let link_index = node.indices[it_index];
+            it_index += 1;
+            let &is_visited = unsafe { visited.get_unchecked(link_index) };
+            if !is_visited {
+                best_index = link_index;
+                b = self.link(best_index).other_by_node_id(node_id).point;
+                more_180 = Triangle::is_cw_or_line_point(c, a, b);
+                break;
             }
-            let &is_visited = unsafe { visited.get_unchecked(i) };
+        }
+
+        while it_index < node.indices.len() {
+            let link_index = node.indices[it_index];
+            it_index += 1;
+            let &is_visited = unsafe { visited.get_unchecked(link_index) };
             if is_visited {
                 continue;
             }
 
-            if best_index == usize::MAX {
-                best_index = i;
-                b = self.link(best_index).other_by_node_id(node_id).point;
-                more_180 = Triangle::is_cw_or_line_point(c, a, b);
-            } else {
-                let p = self.link(best_index).other_by_node_id(node_id).point;
-                let new_more_180 = Triangle::is_cw_or_line_point(c, a, p);
-                if new_more_180 == more_180 {
-                    // both more 180 or both less 180
-                    if Triangle::is_clockwise_point(c, b, p) {
-                        best_index = i;
-                        b = p;
-                    }
-                } else if more_180 {
-                    // new less 180
-                    more_180 = false;
-                    best_index = i;
+            let p = self.link(link_index).other_by_node_id(node_id).point;
+            let new_more_180 = Triangle::is_cw_or_line_point(c, a, p);
+            if new_more_180 == more_180 {
+                // both more 180 or both less 180
+                if Triangle::is_clockwise_point(c, b, p) {
+                    best_index = link_index;
                     b = p;
                 }
+            } else if more_180 {
+                // new less 180
+                more_180 = false;
+                best_index = link_index;
+                b = p;
             }
         }
 
