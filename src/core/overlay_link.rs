@@ -18,4 +18,15 @@ impl OverlayLink {
     pub(crate) fn other(&self, index: &IdPoint) -> IdPoint {
         if self.a.id == index.id { self.b } else { self.a }
     }
+
+    #[inline(always)]
+    pub(crate) fn other_by_node_id(&self, node_id: usize) -> IdPoint {
+        if self.a.id == node_id { self.b } else { self.a }
+    }
+
+    #[inline(always)]
+    pub(crate) fn is_direct(&self) -> bool {
+        self.a.point < self.b.point
+    }
+
 }

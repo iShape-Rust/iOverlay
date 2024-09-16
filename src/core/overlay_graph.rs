@@ -1,6 +1,6 @@
-use std::cmp::Ordering;
 use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
+use i_float::triangle::Triangle;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
@@ -151,6 +151,68 @@ impl OverlayGraph {
 
         min_index
     }
+
+    #[inline(always)]
+    pub(crate) fn find_nearest_counter_wise_link_to(
+        &self,
+        target_index: usize,
+        node_id: usize,
+        visited: &[bool],
+    ) -> usize {
+        let target = self.link(target_index);
+        let (c, a) = if target.a.id == node_id {
+            (target.a.point, target.b.point)
+        } else { (target.b.point, target.a.point) };
+
+        let node = self.node(node_id);
+
+        let mut best_index = usize::MAX;
+        let mut b = a;
+        let mut more_180 = true;
+
+        for &i in node.indices.iter() {
+            if i == target_index {
+                continue;
+            }
+            let &is_visited = unsafe { visited.get_unchecked(i) };
+            if is_visited {
+                continue;
+            }
+
+            if best_index == usize::MAX {
+                best_index = i;
+                b = self.link(best_index).other_by_node_id(node_id).point;
+                more_180 = Triangle::is_cw_or_line_point(c, a, b);
+            } else {
+                let p = self.link(best_index).other_by_node_id(node_id).point;
+                let new_more_180 = Triangle::is_cw_or_line_point(c, a, p);
+                if new_more_180 == more_180 {
+                    // both more 180 or both less 180
+                    if Triangle::is_clockwise_point(c, b, p) {
+                        best_index = i;
+                        b = p;
+                    }
+                } else if more_180 {
+                    // new less 180
+                    more_180 = false;
+                    best_index = i;
+                    b = p;
+                }
+            }
+        }
+
+        best_index
+    }
+
+    #[inline(always)]
+    pub(crate) fn link(&self, index: usize) -> &OverlayLink {
+        unsafe { self.links.get_unchecked(index) }
+    }
+
+    #[inline(always)]
+    pub(crate) fn node(&self, index: usize) -> &OverlayNode {
+        unsafe { self.nodes.get_unchecked(index) }
+    }
 }
 
 trait Size {
@@ -214,291 +276,3 @@ impl CloseInRotation for FixVec {
     }
 }
 
-trait ClockWiseSort {
-    fn sort_around(self) -> Vec<usize>;
-}
-
-impl ClockWiseSort for Vec<IdPoint> {
-    // all vectors start from point(0, 0)
-    // we are going to sort it in clock wise direction, where 12 O'clock will the minimum
-
-    fn sort_around(mut self) -> Vec<usize> {
-        self.sort_unstable_by(|a, b| {
-            if a.point.x == 0 || b.point.x == 0 {
-                if a.point.x == 0 && b.point.x == 0 {
-                    0.cmp(&a.point.y)
-                } else if a.point.x == 0 {
-                    if a.point.y > 0 || b.point.x < 0 {
-                        Ordering::Less
-                    } else {
-                        Ordering::Greater
-                    }
-                } else {
-                    if b.point.y > 0 || a.point.x < 0 {
-                        Ordering::Greater
-                    } else {
-                        Ordering::Less
-                    }
-                }
-            } else if a.point.x > 0 && b.point.x > 0 || a.point.x < 0 && b.point.x < 0 {
-                let cross = a.point.cross_product(b.point);
-                cross.cmp(&0)
-            } else {
-                0.cmp(&a.point.x)
-            }
-        });
-
-        self.into_iter().map(|ip| ip.id).collect()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use i_float::point::IntPoint;
-    use rand::Rng;
-    use rand::seq::SliceRandom;
-    use crate::core::overlay_graph::ClockWiseSort;
-    use crate::id_point::IdPoint;
-
-    #[test]
-    fn test_0() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: 1, y: -1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_1() {
-        let result = vec![
-            IdPoint { id: 1, point: IntPoint { x: 1, y: -1 } },
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_2() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_3() {
-        let result = vec![
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 1 } },
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_4() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: 0, y: -1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_5() {
-        let result = vec![
-            IdPoint { id: 1, point: IntPoint { x: 0, y: -1 } },
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_6() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: 1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_7() {
-        let result = vec![
-            IdPoint { id: 1, point: IntPoint { x: 1, y: 1 } },
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_8() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 0 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 0 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_9() {
-        let result = vec![
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 0 } },
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 0 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_10() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 0 } },
-            IdPoint { id: 1, point: IntPoint { x: 0, y: -1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_11() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: -1, y: -1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_12() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: -1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: -1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_13() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: -1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_14() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_15() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: 0 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1]);
-    }
-
-    #[test]
-    fn test_16() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 1, y: -1 } },
-            IdPoint { id: 1, point: IntPoint { x: -1, y: -1 } },
-            IdPoint { id: 2, point: IntPoint { x: -1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1, 2]);
-    }
-
-    #[test]
-    fn test_17() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: 1, y: 0 } },
-            IdPoint { id: 2, point: IntPoint { x: 0, y: -1 } },
-            IdPoint { id: 3, point: IntPoint { x: -1, y: 0 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1, 2, 3]);
-    }
-
-    #[test]
-    fn test_18() {
-        let result = vec![
-            IdPoint { id: 3, point: IntPoint { x: -1, y: 0 } },
-            IdPoint { id: 2, point: IntPoint { x: 0, y: -1 } },
-            IdPoint { id: 1, point: IntPoint { x: 1, y: 0 } },
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1, 2, 3]);
-    }
-
-    #[test]
-    fn test_110() {
-        let result = vec![
-            IdPoint { id: 0, point: IntPoint { x: 0, y: 1 } },
-            IdPoint { id: 1, point: IntPoint { x: 1, y: 1 } },
-            IdPoint { id: 2, point: IntPoint { x: 1, y: 0 } },
-            IdPoint { id: 3, point: IntPoint { x: 1, y: -1 } },
-            IdPoint { id: 4, point: IntPoint { x: 0, y: -1 } },
-            IdPoint { id: 5, point: IntPoint { x: -1, y: -1 } },
-            IdPoint { id: 6, point: IntPoint { x: -1, y: 0 } },
-            IdPoint { id: 7, point: IntPoint { x: -1, y: 1 } },
-        ].sort_around();
-
-        assert_eq!(result, vec![0, 1, 2, 3, 4, 5, 6, 7]);
-    }
-
-    #[test]
-    fn test_random() {
-        let mut rng = rand::thread_rng();
-        let mut indices = Vec::with_capacity(32);
-        for step in 2..200 {
-            for _ in 0..1000 {
-                let mut vecs = Vec::with_capacity(32);
-                let mut a = 90 - rng.gen_range(0..step);
-                let mut id = 0;
-                while a > -270 {
-                    let sc = (a as f64).to_radians().sin_cos();
-                    let x = (1000_000.0 * sc.1) as i32;
-                    let y = (1000_000.0 * sc.0) as i32;
-
-                    vecs.push(IdPoint { id, point: IntPoint { x, y } });
-                    indices.push(id);
-                    a -= rng.gen_range(1..step);
-                    id += 1;
-                }
-
-                vecs.shuffle(&mut rng);
-
-                let result = vecs.sort_around();
-
-                assert_eq!(result, indices);
-
-                indices.clear();
-            }
-        }
-    }
-}

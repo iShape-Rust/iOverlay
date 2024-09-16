@@ -1,3 +1,4 @@
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, IntShapes};
@@ -45,27 +46,25 @@ impl OverlayGraph {
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
-        let mut j = 0;
-        // nodes array is sorted by link.a
-        while j < self.nodes.len() {
-            let i = if let Some(index) = self.find_first_link(j, &visited) {
-                index
-            } else {
-                j += 1;
+        let mut link_index = 0;
+        while link_index < visited.len() {
+            let &is_visited = unsafe { visited.get_unchecked(link_index) };
+            if is_visited {
+                link_index += 1;
                 continue;
-            };
+            }
 
-            let fill = unsafe { self.links.get_unchecked(i) }.fill;
-            let is_hole = overlay_rule.is_fill_top(fill);
-
-            let mut path = self.get_path(i, is_hole, &mut visited);
+            let left_top_link = self.find_left_top_link(overlay_rule, link_index, &visited);
+            let mut path = self.get_path(&left_top_link, &mut visited);
             if path.validate(min_area) {
-                if is_hole {
+                if left_top_link.is_hole {
                     holes.push(path);
                 } else {
                     shapes.push(vec![path]);
                 }
             }
+
+            link_index += 1;
         }
 
         shapes.join(&self.solver, holes);
@@ -73,43 +72,33 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_path(&self, index: usize, is_hole: bool, visited: &mut Vec<bool>) -> IntPath {
-        let is_cw = is_hole;
+    fn get_path(&self, left_top_link: &StartPathData, visited: &mut [bool]) -> IntPath {
+        let mut node_id = left_top_link.next_node_id;
+        let mut link_id = left_top_link.link_id;
+
+        *unsafe { visited.get_unchecked_mut(link_id) } = true;
 
         let mut path = IntPath::new();
-        let mut next = index;
-
-        let mut link = unsafe { self.links.get_unchecked(index) };
-        let mut a = link.a;
-        let mut b = link.b;
+        path.push(left_top_link.point);
 
         // Find a closed tour
-        loop {
-            path.push(a.point);
-            let node = unsafe {
-                self.nodes.get_unchecked(b.id)
+        while node_id != left_top_link.last_node_id {
+            let node = self.node(node_id);
+            if node.indices.len() == 2 {
+                link_id = node.other(link_id);
+            } else {
+                link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
+            }
+            let link = self.link(link_id);
+            node_id = if link.a.id == node_id {
+                path.push(link.a.point);
+                link.b.id
+            } else {
+                path.push(link.b.point);
+                link.a.id
             };
 
-            if node.indices.len() == 2 {
-                next = node.other(next);
-            } else {
-                next = self.find_nearest_link_to(&a, &b, next, is_cw, visited);
-            }
-            link = unsafe { self.links.get_unchecked(next) };
-            a = b;
-            b = link.other(&b);
-
-            *unsafe { visited.get_unchecked_mut(next) } = true;
-
-            if next == index {
-                break;
-            }
-        }
-
-        *unsafe { visited.get_unchecked_mut(index) } = true;
-
-        if is_hole {
-            path.reverse()
+            *unsafe { visited.get_unchecked_mut(link_id) } = true;
         }
 
         path
@@ -150,6 +139,66 @@ impl OverlayGraph {
     }
 }
 
+pub(crate) struct StartPathData {
+    pub(crate) next_node_id: usize,
+    pub(crate) last_node_id: usize,
+    pub(crate) link_id: usize,
+    pub(crate) point: IntPoint,
+    pub(crate) is_hole: bool,
+}
+
+impl OverlayGraph {
+    #[inline(always)]
+    pub(crate) fn find_left_top_link(&self, overlay_rule: OverlayRule, link_index: usize, visited: &[bool]) -> StartPathData {
+        let mut top_index = link_index;
+        let mut top = self.link(link_index);
+        debug_assert!(top.is_direct());
+
+        let node = self.node(top.a.id);
+
+        // find most top link
+
+        for &i in node.indices.iter() {
+            if i == link_index {
+                continue;
+            }
+            let link = self.link(i);
+            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
+                continue;
+            }
+
+            let &is_visited = unsafe { visited.get_unchecked(i) };
+            if is_visited {
+                continue;
+            }
+
+            top_index = i;
+            top = link;
+        }
+
+        let is_hole = overlay_rule.is_fill_top(top.fill);
+
+        if is_hole {
+            StartPathData {
+                next_node_id: top.a.id,
+                last_node_id: top.b.id,
+                link_id: top_index,
+                point: top.b.point,
+                is_hole: true,
+
+            }
+        } else {
+            StartPathData {
+                next_node_id: top.b.id,
+                last_node_id: top.a.id,
+                link_id: top_index,
+                point: top.a.point,
+                is_hole: false,
+            }
+        }
+    }
+}
+
 trait JoinHoles {
     fn join(&mut self, solver: &Solver, holes: Vec<IntPath>);
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>);
@@ -181,7 +230,7 @@ impl JoinHoles for Vec<IntShape> {
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
 
-        let capacity = self.iter().fold(0, |s, it|s + it[0].len()) / 2;
+        let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
             shape[0].append_id_segments(&mut segments, i, x_min, x_max);
@@ -222,7 +271,7 @@ impl Validate for IntPath {
         }
 
         if min_area == 0 {
-            return true
+            return true;
         }
 
         let area = self.unsafe_area();
