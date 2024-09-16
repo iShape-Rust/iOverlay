@@ -1,4 +1,5 @@
 mod data;
+mod util;
 
 #[cfg(test)]
 mod tests {
@@ -8,6 +9,7 @@ mod tests {
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
     use crate::data::overlay::Test;
+    use crate::util::overlay::CircleCompare;
 
     const SOLVERS: [Solver; 3] = [
         Solver::LIST,
@@ -75,7 +77,7 @@ mod tests {
 
     fn test_result(result: &Vec<IntShape>, bank: &Vec<Vec<IntShape>>) -> bool {
         for item in bank.iter() {
-            if item == result {
+            if item.are_equal(result) {
                 return true;
             }
         }

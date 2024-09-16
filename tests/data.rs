@@ -1,3 +1,4 @@
+#[cfg(test)]
 pub mod overlay {
     use std::path::PathBuf;
     use i_shape::int::path::IntPath;
