@@ -1,4 +1,3 @@
-use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 
@@ -105,7 +104,7 @@ impl OverlayGraph {
 
         Self { solver, nodes, links }
     }
-
+/*
     pub(crate) fn find_nearest_link_to(
         &self,
         target: &IdPoint,
@@ -151,6 +150,7 @@ impl OverlayGraph {
 
         min_index
     }
+*/
 
     pub(crate) fn find_nearest_counter_wise_link_to(
         &self,
@@ -247,7 +247,7 @@ impl Size for Vec<End> {
         i - index
     }
 }
-
+/*
 trait CloseInRotation {
     fn is_closer_in_rotation_to(&self, a: FixVec, b: FixVec) -> bool;
 }
@@ -280,4 +280,4 @@ impl CloseInRotation for FixVec {
         cross_ab < 0
     }
 }
-
+*/

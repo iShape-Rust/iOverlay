@@ -54,10 +54,30 @@ impl OverlayGraph {
                 continue;
             }
 
-            let left_top_link = self.find_left_top_link(overlay_rule, link_index, &visited);
-            let mut path = self.get_path(&left_top_link, &mut visited);
+            let left_top_link = self.find_left_top_link(link_index, &visited);
+            let link = self.link(left_top_link);
+            let is_hole = overlay_rule.is_fill_top(link.fill);
+
+            let start_data = if is_hole {
+                StartPathData {
+                    begin: link.b.point,
+                    node_id: link.a.id,
+                    link_id: left_top_link,
+                    last_node_id: link.b.id,
+                }
+            } else {
+                StartPathData {
+                    begin: link.a.point,
+                    node_id: link.b.id,
+                    link_id: left_top_link,
+                    last_node_id: link.a.id,
+                }
+            };
+
+            let mut path = self.get_path(start_data, &mut visited);
+
             if path.validate(min_area) {
-                if left_top_link.is_hole {
+                if is_hole {
                     holes.push(path);
                 } else {
                     shapes.push(vec![path]);
@@ -72,17 +92,19 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_path(&self, left_top_link: &StartPathData, visited: &mut [bool]) -> IntPath {
-        let mut node_id = left_top_link.next_node_id;
-        let mut link_id = left_top_link.link_id;
+    #[inline]
+    fn get_path(&self, start_data: StartPathData, visited: &mut [bool]) -> IntPath {
+        let mut link_id = start_data.link_id;
+        let mut node_id = start_data.node_id;
+        let last_node_id = start_data.last_node_id;
 
         *unsafe { visited.get_unchecked_mut(link_id) } = true;
 
         let mut path = IntPath::new();
-        path.push(left_top_link.point);
+        path.push(start_data.begin);
 
         // Find a closed tour
-        while node_id != left_top_link.last_node_id {
+        while node_id != last_node_id {
             let node = self.node(node_id);
             if node.indices.len() == 2 {
                 link_id = node.other(link_id);
@@ -104,52 +126,8 @@ impl OverlayGraph {
         path
     }
 
-    pub(crate) fn find_first_link(&self, node_index: usize, visited: &Vec<bool>) -> Option<usize> {
-        let node = unsafe { self.nodes.get_unchecked(node_index) };
-
-        let mut iter = node.indices.iter();
-
-        let mut j = if let Some(index) = iter
-            .find(|&&i| {
-                let is_visited = unsafe { *visited.get_unchecked(i) };
-                !is_visited
-            }) {
-            *index
-        } else {
-            return None;
-        };
-
-        for &i in iter {
-            let is_visited = unsafe { *visited.get_unchecked(i) };
-            if is_visited {
-                continue;
-            }
-
-            let (a, bi, bj) = unsafe {
-                let link = self.links.get_unchecked(j);
-                let bi = self.links.get_unchecked(i).b.point;
-                (link.a.point, bi, link.b.point)
-            };
-            if Triangle::is_clockwise_point(a, bi, bj) {
-                j = i;
-            }
-        }
-
-        Some(j)
-    }
-}
-
-pub(crate) struct StartPathData {
-    pub(crate) next_node_id: usize,
-    pub(crate) last_node_id: usize,
-    pub(crate) link_id: usize,
-    pub(crate) point: IntPoint,
-    pub(crate) is_hole: bool,
-}
-
-impl OverlayGraph {
-    #[inline(always)]
-    pub(crate) fn find_left_top_link(&self, overlay_rule: OverlayRule, link_index: usize, visited: &[bool]) -> StartPathData {
+    #[inline]
+    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
         let mut top_index = link_index;
         let mut top = self.link(link_index);
         debug_assert!(top.is_direct());
@@ -176,27 +154,15 @@ impl OverlayGraph {
             top = link;
         }
 
-        let is_hole = overlay_rule.is_fill_top(top.fill);
-
-        if is_hole {
-            StartPathData {
-                next_node_id: top.a.id,
-                last_node_id: top.b.id,
-                link_id: top_index,
-                point: top.b.point,
-                is_hole: true,
-
-            }
-        } else {
-            StartPathData {
-                next_node_id: top.b.id,
-                last_node_id: top.a.id,
-                link_id: top_index,
-                point: top.a.point,
-                is_hole: false,
-            }
-        }
+        top_index
     }
+}
+
+struct StartPathData {
+    begin: IntPoint,
+    node_id: usize,
+    link_id: usize,
+    last_node_id: usize,
 }
 
 trait JoinHoles {

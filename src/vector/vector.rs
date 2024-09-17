@@ -42,13 +42,6 @@ impl VectorEdge {
 
         Self { a, b, fill }
     }
-
-    pub(crate) fn reverse(&mut self) {
-        let c = self.a;
-        self.a = self.b;
-        self.b = c;
-        self.fill = self.fill.reverse();
-    }
 }
 
 pub trait ToPath {

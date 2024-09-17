@@ -1,3 +1,4 @@
+use i_float::point::IntPoint;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
@@ -5,6 +6,7 @@ use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
 use crate::core::solver::Solver;
+use crate::segm::segment::SegmentFill;
 use crate::sort::SmartSort;
 use crate::vector::vector::{VectorEdge, VectorPath, VectorShape};
 
@@ -23,26 +25,43 @@ impl OverlayGraph {
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
-        let mut j = 0;
-        while j < self.nodes.len() {
-            let i = if let Some(index) = self.find_first_link(j, &visited) {
-                index
-            } else {
-                j += 1;
+        let mut link_index = 0;
+        while link_index < visited.len() {
+            let &is_visited = unsafe { visited.get_unchecked(link_index) };
+            if is_visited {
+                link_index += 1;
                 continue;
-            };
+            }
 
-            let fill = unsafe { self.links.get_unchecked(i) }.fill;
-            let is_hole = overlay_rule.is_fill_top(fill);
-
-            let mut path = self.get_vector_path(i, is_hole, &mut visited);
-            path.validate(is_hole);
+            let left_top_link = self.find_left_top_link(link_index, &visited);
+            let link = self.link(left_top_link);
+            let is_hole = overlay_rule.is_fill_top(link.fill);
 
             if is_hole {
+                let start_data = StartVectorPathData {
+                    a: link.b.point,
+                    b: link.a.point,
+                    node_id: link.a.id,
+                    link_id: left_top_link,
+                    last_node_id: link.b.id,
+                    fill: link.fill,
+                };
+                let path = self.get_vector_path(start_data, &mut visited);
                 holes.push(path);
             } else {
-                shapes.push([path].to_vec());
-            }
+                let start_data = StartVectorPathData {
+                    a: link.a.point,
+                    b: link.b.point,
+                    node_id: link.b.id,
+                    link_id: left_top_link,
+                    last_node_id: link.a.id,
+                    fill: link.fill,
+                };
+                let path = self.get_vector_path(start_data, &mut visited);
+                shapes.push(vec![path]);
+            };
+
+            link_index += 1;
         }
 
         shapes.join(&self.solver, holes);
@@ -50,41 +69,47 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, index: usize, is_cw: bool, visited: &mut Vec<bool>) -> VectorPath {
+    fn get_vector_path(&self, start_data: StartVectorPathData, visited: &mut [bool]) -> VectorPath {
+        let mut link_id = start_data.link_id;
+        let mut node_id = start_data.node_id;
+        let last_node_id = start_data.last_node_id;
+
+        *unsafe { visited.get_unchecked_mut(link_id) } = true;
+
         let mut path = VectorPath::new();
-        let mut next = index;
-
-        let mut link = self.links[index];
-
-        let mut a = link.a;
-        let mut b = link.b;
+        path.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
 
         // Find a closed tour
-        loop {
-            path.push(VectorEdge::new(link.fill, a.point, b.point));
-            let node = &self.nodes[b.id];
-
+        while node_id != last_node_id {
+            let node = self.node(node_id);
             if node.indices.len() == 2 {
-                next = node.other(next);
+                link_id = node.other(link_id);
             } else {
-                next = self.find_nearest_link_to(&a, &b, next, is_cw, visited);
+                link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
             }
+            let link = self.link(link_id);
+            node_id = if link.a.id == node_id {
+                path.push(VectorEdge::new(link.fill, link.a.point, link.b.point));
+                link.b.id
+            } else {
+                path.push(VectorEdge::new(link.fill, link.b.point, link.a.point));
+                link.a.id
+            };
 
-            link = self.links[next];
-            a = b;
-            b = link.other(&b);
-
-            visited[next] = true;
-
-            if next == index {
-                break;
-            }
+            *unsafe { visited.get_unchecked_mut(link_id) } = true;
         }
-
-        visited[index] = true;
 
         path
     }
+}
+
+struct StartVectorPathData {
+    a: IntPoint,
+    b: IntPoint,
+    node_id: usize,
+    link_id: usize,
+    last_node_id: usize,
+    fill: SegmentFill,
 }
 
 trait JoinHoles {
@@ -138,29 +163,5 @@ impl JoinHoles for Vec<VectorShape> {
             self[shape_index].push(hole);
             hole_index += 1;
         }
-    }
-}
-
-trait Validate {
-    fn validate(&mut self, is_hole: bool);
-    fn is_positive(&self) -> bool;
-}
-
-impl Validate for VectorPath {
-    fn validate(&mut self, is_hole: bool) {
-        let is_positive = self.is_positive();
-        if is_hole && !is_positive || !is_hole && is_positive {
-            for v in self.iter_mut() {
-                v.reverse();
-            }
-        }
-    }
-
-    fn is_positive(&self) -> bool {
-        let mut area: i64 = 0;
-        for v in self {
-            area += v.a.cross_product(v.b);
-        }
-        area >= 0
     }
 }
