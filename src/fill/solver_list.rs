@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::usize;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::core::fill_rule::FillRule;
@@ -57,7 +56,7 @@ impl ScanFillList {
 }
 
 impl FillSolver {
-    pub(super) fn list_fill(segments: &Vec<Segment>, fill_rule: FillRule) -> Vec<SegmentFill> {
+    pub(super) fn list_fill(segments: &[Segment], fill_rule: FillRule) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillList::new(segments.len());
         let mut buf = Vec::with_capacity(4);
@@ -83,7 +82,7 @@ impl FillSolver {
                 i += 1;
             }
 
-            buf.sort_unstable_by(|s0, s1|
+            buf.sort_by(|s0, s1|
             if Triangle::is_clockwise_point(p, s1.point, s0.point) {
                 Ordering::Less
             } else {

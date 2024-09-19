@@ -1,8 +1,9 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
+use i_key_sort::index::{BinKey, BinLayout};
 use i_shape::int::path::IntPath;
 use crate::segm::x_segment::XSegment;
-use crate::vector::vector::VectorPath;
+use crate::vector::edge::VectorPath;
 
 #[derive(Debug, Clone, Copy)]
 pub struct IdSegment {
@@ -70,5 +71,17 @@ impl IdSegments for VectorPath {
                 buffer.push(IdSegment::new(id, vec.a, vec.b));
             }
         }
+    }
+}
+
+impl BinKey for IdSegment {
+    #[inline(always)]
+    fn key(&self) -> i64 {
+        self.x_segment.a.x.into()
+    }
+
+    #[inline(always)]
+    fn bin(&self, layout: &BinLayout) -> usize {
+        layout.index(self.x_segment.a.x.into())
     }
 }

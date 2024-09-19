@@ -21,7 +21,7 @@ impl Filter for Vec<OverlayLink> {
     }
 }
 
-fn filter_subject(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_subject(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 
@@ -32,7 +32,7 @@ fn filter_subject(links: &Vec<OverlayLink>) -> Vec<bool> {
     }).collect()
 }
 
-fn filter_clip(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_clip(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 
@@ -43,7 +43,7 @@ fn filter_clip(links: &Vec<OverlayLink>) -> Vec<bool> {
     }).collect()
 }
 
-fn filter_intersect(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_intersect(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 
@@ -56,7 +56,7 @@ fn filter_intersect(links: &Vec<OverlayLink>) -> Vec<bool> {
     }).collect()
 }
 
-fn filter_union(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_union(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 
@@ -69,7 +69,7 @@ fn filter_union(links: &Vec<OverlayLink>) -> Vec<bool> {
     }).collect()
 }
 
-fn filter_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_difference(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 
@@ -84,7 +84,7 @@ fn filter_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
     }).collect()
 }
 
-fn filter_inverse_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_inverse_difference(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 
@@ -99,7 +99,7 @@ fn filter_inverse_difference(links: &Vec<OverlayLink>) -> Vec<bool> {
     }).collect()
 }
 
-fn filter_xor(links: &Vec<OverlayLink>) -> Vec<bool> {
+fn filter_xor(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| {
         let fill = link.fill;
 

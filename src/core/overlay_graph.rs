@@ -104,53 +104,6 @@ impl OverlayGraph {
 
         Self { solver, nodes, links }
     }
-/*
-    pub(crate) fn find_nearest_link_to(
-        &self,
-        target: &IdPoint,
-        center: &IdPoint,
-        ignore: usize,
-        in_clockwise: bool,
-        visited: &[bool],
-    ) -> usize {
-        let node = unsafe { self.nodes.get_unchecked(center.id) };
-
-        let mut iter = node.indices.iter();
-
-        let value = if let Some(result) = iter
-            .find(|&&val| {
-                let is_visited = unsafe { *visited.get_unchecked(val) };
-                val != ignore && !is_visited
-            }) {
-            *result
-        } else {
-            unreachable!("No one unvisited index is found");
-        };
-
-        let mut min_index = value;
-
-        let mut min_vec = unsafe { self.links.get_unchecked(min_index) }.other(center).point.subtract(center.point);
-        let v0 = target.point.subtract(center.point); // base vector
-
-        // compare minVec with the rest of the vectors
-
-        for &j in iter {
-            let is_visited = unsafe { *visited.get_unchecked(j) };
-            if is_visited || ignore == j {
-                continue;
-            }
-
-            let vj = unsafe { self.links.get_unchecked(j) }.other(center).point.subtract(center.point);
-
-            if v0.is_closer_in_rotation_to(vj, min_vec) == in_clockwise {
-                min_vec = vj;
-                min_index = j;
-            }
-        }
-
-        min_index
-    }
-*/
 
     pub(crate) fn find_nearest_counter_wise_link_to(
         &self,
@@ -247,37 +200,3 @@ impl Size for Vec<End> {
         i - index
     }
 }
-/*
-trait CloseInRotation {
-    fn is_closer_in_rotation_to(&self, a: FixVec, b: FixVec) -> bool;
-}
-
-impl CloseInRotation for FixVec {
-    // v, a, b vectors are multi-directional
-    fn is_closer_in_rotation_to(&self, a: FixVec, b: FixVec) -> bool {
-        let cross_a = self.cross_product(a);
-        let cross_b = self.cross_product(b);
-
-        if cross_a == 0 || cross_b == 0 {
-            // vectors are collinear
-            return if cross_a == 0 {
-                // a is opposite to self, so based on cross_b
-                cross_b > 0
-            } else {
-                // b is opposite to self, so based on cross_a
-                cross_a < 0
-            };
-        }
-
-        let same_side = (cross_a > 0 && cross_b > 0) || (cross_a < 0 && cross_b < 0);
-
-        if !same_side {
-            return cross_a < 0;
-        }
-
-        let cross_ab = a.cross_product(b);
-
-        cross_ab < 0
-    }
-}
-*/

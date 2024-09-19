@@ -146,7 +146,7 @@ impl CrossSolver {
     }
 
     fn middle_cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
-        let p = CrossSolver::cross_point(&target, &other);
+        let p = CrossSolver::cross_point(target, other);
 
         if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
             return Some(CrossResult {
@@ -275,11 +275,11 @@ impl CrossSolver {
             let sy = a1y.signum() * s;
 
             // use custom u128 bit math with rounding
-            let uxy_b = xy_b.abs() as u64;
-            let udiv = div.abs() as u64;
+            let uxy_b = xy_b.unsigned_abs();
+            let udiv = div.unsigned_abs();
 
-            let kx = UInt128::multiply(a1x.abs() as u64, uxy_b);
-            let ky = UInt128::multiply(a1y.abs() as u64, uxy_b);
+            let kx = UInt128::multiply(a1x.unsigned_abs(), uxy_b);
+            let ky = UInt128::multiply(a1y.unsigned_abs(), uxy_b);
 
             let ux = kx.divide_with_rounding(udiv);
             let uy = ky.divide_with_rounding(udiv);

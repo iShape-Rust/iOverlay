@@ -5,11 +5,11 @@ use crate::segm::segment::{Segment, SegmentFill};
 pub(crate) struct FillSolver {}
 
 impl FillSolver {
-    pub(crate) fn fill(fill_rule: FillRule, is_list: bool, segments: &Vec<Segment>) -> Vec<SegmentFill> {
+    pub(crate) fn fill(fill_rule: FillRule, is_list: bool, segments: &[Segment]) -> Vec<SegmentFill> {
         if is_list {
-            Self::list_fill(&segments, fill_rule)
+            Self::list_fill(segments, fill_rule)
         } else {
-            Self::tree_fill(&segments, fill_rule)
+            Self::tree_fill(segments, fill_rule)
         }
     }
 }

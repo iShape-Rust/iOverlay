@@ -43,7 +43,7 @@ impl SpaceLayout {
         let is_fragmentation_required = dx > self.min_size && dy > self.min_size;
 
         if !is_fragmentation_required {
-            buffer.push(Fragment::with_index_and_segment(index, x_segment.clone()));
+            buffer.push(Fragment::with_index_and_segment(index, x_segment));
             return;
         }
 
@@ -90,7 +90,7 @@ impl SpaceLayout {
                 (iy1, rect)
             };
 
-            buffer.push(Fragment { index, rect, x_segment: x_segment.clone() });
+            buffer.push(Fragment { index, rect, x_segment });
 
             x0 = x1;
 
@@ -121,7 +121,7 @@ impl SpaceLayout {
 
     fn is_fragmentation_required(&self, x_segment: XSegment) -> bool {
         let dx = (x_segment.b.x as i64 - x_segment.a.x as i64) as u64;
-        let dy = (x_segment.b.x as i64 - x_segment.a.x as i64).abs() as u64;
+        let dy = (x_segment.b.x as i64 - x_segment.a.x as i64).unsigned_abs();
 
         dx > self.min_size && dy > self.min_size
     }

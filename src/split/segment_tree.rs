@@ -22,7 +22,7 @@ pub(super) struct SegmentTree {
     pub(super) radius: i64
 }
 
-impl<'a> SegmentTree {
+impl SegmentTree {
     #[inline]
     pub(super) fn new(range: LineRange, power: usize, radius: i64) -> Self {
         let nodes = Self::create_nodes(range, power);
@@ -181,7 +181,7 @@ impl<'a> SegmentTree {
         let mut any_round = false;
 
         while s > 0 {
-            let is_round = self.cross_node(i, &this, marks);
+            let is_round = self.cross_node(i, this, marks);
             any_round = is_round || any_round;
             s >>= 1;
 
@@ -206,7 +206,7 @@ impl<'a> SegmentTree {
         let mut j = i - s;
         let mut sj = s;
         while sj > 1 {
-            let is_round = self.cross_node(j, &this, marks);
+            let is_round = self.cross_node(j, this, marks);
             any_round = is_round || any_round;
 
             let middle = self.nodes[j].range.middle();
@@ -231,7 +231,7 @@ impl<'a> SegmentTree {
         j = i + s;
         sj = s;
         while sj > 1 {
-            let is_round = self.cross_node(j, &this, marks);
+            let is_round = self.cross_node(j, this, marks);
             any_round = is_round || any_round;
 
             let middle = self.nodes[j].range.middle();
@@ -254,7 +254,7 @@ impl<'a> SegmentTree {
         i = i_lt;
 
         while i <= i_rt {
-            let is_round = self.cross_node(i, &this, marks);
+            let is_round = self.cross_node(i, this, marks);
             any_round = is_round || any_round;
             i += 1;
         }

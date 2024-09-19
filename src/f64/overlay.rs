@@ -118,3 +118,9 @@ impl F64Overlay {
         (overlay, adapter)
     }
 }
+
+impl Default for F64Overlay {
+    fn default() -> Self {
+        Self::new()
+    }
+}

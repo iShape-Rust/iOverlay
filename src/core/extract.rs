@@ -188,7 +188,7 @@ impl JoinHoles for Vec<IntShape> {
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>) {
         let mut i_points: Vec<_> = holes.iter().enumerate()
-            .map(|(i, path)| IdPoint::new(i, path.first().unwrap().clone()))
+            .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
             .collect();
 
         i_points.smart_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
@@ -206,16 +206,13 @@ impl JoinHoles for Vec<IntShape> {
 
         let solution = ShapeBinder::bind(self.len(), i_points, segments);
 
-        for shape_index in 0..solution.children_count_for_parent.len() {
-            let capacity = solution.children_count_for_parent[shape_index];
+        for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
             self[shape_index].reserve_exact(capacity);
         }
 
-        let mut hole_index = 0;
-        for hole in holes.into_iter() {
+        for (hole_index, hole) in holes.into_iter().enumerate() {
             let shape_index = solution.parent_for_child[hole_index];
             self[shape_index].push(hole);
-            hole_index += 1;
         }
     }
 }

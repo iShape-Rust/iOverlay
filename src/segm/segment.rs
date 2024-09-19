@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
+use i_key_sort::index::{BinKey, BinLayout};
 use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
 
@@ -73,7 +74,7 @@ impl ShapeEdgesMerge for Vec<Segment> {
         let mut prev = &self[0].x_segment;
         for i in 1..self.len() {
             let this = &self[i].x_segment;
-            if prev.eq(&this) {
+            if prev.eq(this) {
                 self.merge(i);
                 return;
             }
@@ -105,5 +106,17 @@ impl ShapeEdgesMerge for Vec<Segment> {
         }
 
         self.truncate(j);
+    }
+}
+
+impl BinKey for Segment {
+    #[inline(always)]
+    fn key(&self) -> i64 {
+        self.x_segment.key()
+    }
+
+    #[inline(always)]
+    fn bin(&self, layout: &BinLayout) -> usize {
+        self.x_segment.bin(layout)
     }
 }

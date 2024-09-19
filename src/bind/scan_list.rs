@@ -31,7 +31,7 @@ impl ScanHoleStore for ScanHoleList {
         while i < n {
             let item = unsafe { self.buffer.get_unchecked(i) };
             if item.x_segment.b.x <= p.x {
-                let last = unsafe { self.buffer.get_unchecked(n - 1) }.clone();
+                let last = *unsafe { self.buffer.get_unchecked(n - 1) };
                 *unsafe { self.buffer.get_unchecked_mut(i) } = last;
                 n -= 1;
                 continue;

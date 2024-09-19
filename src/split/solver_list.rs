@@ -17,8 +17,8 @@ impl SplitSolver {
             for i in 0..edges.len() - 1 {
                 let ei = &edges[i].x_segment;
                 let ri = ei.y_range();
-                for j in i + 1..edges.len() {
-                    let ej = &edges[j].x_segment;
+                for (j, s) in edges.iter().enumerate().skip(i + 1) {
+                    let ej = &s.x_segment;
                     if ei.b.x < ej.a.x {
                         break;
                     }

@@ -36,8 +36,8 @@ impl SplitSolver {
 
             tree.radius = self.solver.radius(iter);
 
-            for i in 0..edges.len() {
-                let fragment = Fragment::with_index_and_segment(i, edges[i].x_segment);
+            for (i, e) in edges.iter().enumerate() {
+                let fragment = Fragment::with_index_and_segment(i, e.x_segment);
                 let any_round = tree.intersect(&fragment, &mut marks);
                 need_to_fix = any_round || need_to_fix;
 
@@ -70,8 +70,8 @@ impl SplitSolver {
         while need_to_fix && edges.len() > 2 {
             need_to_fix = false;
 
-            for i in 0..edges.len() {
-                layout.break_into_fragments(i, edges[i].x_segment, &mut fragments);
+            for (i, &e) in edges.iter().enumerate() {
+                layout.break_into_fragments(i, e.x_segment, &mut fragments);
             }
 
             if 100 * fragments.len() <= 110 * edges.len() {

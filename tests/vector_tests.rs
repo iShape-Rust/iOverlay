@@ -5,7 +5,7 @@ mod tests {
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
-    use i_overlay::vector::vector::VectorEdge;
+    use i_overlay::vector::edge::VectorEdge;
 
     #[test]
     fn test_0() {

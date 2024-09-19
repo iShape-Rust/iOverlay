@@ -1,2 +1,2 @@
-pub mod vector;
+pub mod edge;
 pub mod extract_vectors;

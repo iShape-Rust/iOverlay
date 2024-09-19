@@ -14,7 +14,7 @@ use crate::segm::segment::Segment;
 use crate::segm::x_segment::XSegment;
 use crate::sort::SmartSort;
 use crate::split::solver::SplitSolver;
-use crate::vector::vector::{VectorEdge, VectorShape};
+use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::overlay_graph::OverlayGraph;
 
@@ -84,7 +84,7 @@ impl Overlay {
     /// - `shape`: A reference to a `IntShape` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
-        self.add_paths(&shape, shape_type);
+        self.add_paths(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
@@ -92,7 +92,7 @@ impl Overlay {
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
         for shape in shapes.iter() {
-            self.add_paths(&shape, shape_type);
+            self.add_paths(shape, shape_type);
         }
     }
 
@@ -119,9 +119,8 @@ impl Overlay {
             return Vec::new();
         }
         let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
-        let vectors = graph.extract_shape_vectors(overlay_rule);
 
-        vectors
+        graph.extract_shape_vectors(overlay_rule)
     }
 
     /// Convert into vectors from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.

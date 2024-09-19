@@ -91,13 +91,11 @@ impl ScanFillTree {
                 } else {
                     index = self.tree.root;
                 }
+            } else if node.value.x_segment.is_under_point(p) {
+                result = node.value.count;
+                index = node.right;
             } else {
-                if node.value.x_segment.is_under_point(p) {
-                    result = node.value.count;
-                    index = node.right;
-                } else {
-                    index = node.left;
-                }
+                index = node.left;
             }
         }
 
@@ -107,7 +105,7 @@ impl ScanFillTree {
 
 
 impl FillSolver {
-    pub(super) fn tree_fill(segments: &Vec<Segment>, fill_rule: FillRule) -> Vec<SegmentFill> {
+    pub(super) fn tree_fill(segments: &[Segment], fill_rule: FillRule) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillTree::new(segments.len());
         let mut buf = Vec::with_capacity(4);
@@ -127,7 +125,7 @@ impl FillSolver {
                 i += 1;
             }
 
-            buf.sort_unstable_by(|s0, s1|
+            buf.sort_by(|s0, s1|
             if Triangle::is_clockwise_point(p, s1.point, s0.point) {
                 Ordering::Less
             } else {

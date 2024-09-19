@@ -45,7 +45,7 @@ impl ShapeBinder {
             while j < segments.len() && segments[j].x_segment.a.x <= x {
                 let id_segment = &segments[j];
                 if id_segment.x_segment.b.x > x {
-                    scan_store.insert(id_segment.clone(), x);
+                    scan_store.insert(*id_segment, x);
                 }
                 j += 1
             }

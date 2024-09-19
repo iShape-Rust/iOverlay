@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
+use i_key_sort::index::{BinKey, BinLayout};
 use crate::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -80,5 +81,17 @@ impl Ord for XSegment {
         } else {
             a
         }
+    }
+}
+
+impl BinKey for XSegment {
+    #[inline(always)]
+    fn key(&self) -> i64 {
+        self.a.x.into()
+    }
+
+    #[inline(always)]
+    fn bin(&self, layout: &BinLayout) -> usize {
+        layout.index(self.a.x.into())
     }
 }

@@ -110,3 +110,9 @@ impl F32Overlay {
         F32OverlayGraph::new(graph, adapter)
     }
 }
+
+impl Default for F32Overlay {
+    fn default() -> Self {
+        Self::new()
+    }
+}

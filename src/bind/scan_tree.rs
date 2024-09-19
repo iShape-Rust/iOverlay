@@ -84,13 +84,11 @@ impl ScanHoleStore for ScanHoleTree {
                 } else {
                     index = self.tree.root;
                 }
+            } else if node.value.x_segment.is_under_point(p) {
+                result = index;
+                index = node.right;
             } else {
-                if node.value.x_segment.is_under_point(p) {
-                    result = index;
-                    index = node.right;
-                } else {
-                    index = node.left;
-                }
+                index = node.left;
             }
         }
 

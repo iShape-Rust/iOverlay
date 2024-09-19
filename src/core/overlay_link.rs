@@ -23,5 +23,4 @@ impl OverlayLink {
     pub(crate) fn is_direct(&self) -> bool {
         self.a.point < self.b.point
     }
-
 }
