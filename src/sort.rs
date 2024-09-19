@@ -28,7 +28,6 @@ impl<T: BinKey + Clone + Send> SmartSort for [T] {
             }
         }
 
-
         // Fallback to standard sort if multithreading is not enabled
         self.sort_with_bins(compare)
     }
@@ -83,20 +82,20 @@ mod tests {
     #[test]
     fn test_sort_by() {
         let mut data = vec![
-            Point {x: 5, y: 1},
-            Point {x: 3, y: 1},
-            Point {x: 1, y: 1},
-            Point {x: 4, y: 1},
-            Point {x: 2, y: 1}
+            Point { x: 5, y: 1 },
+            Point { x: 3, y: 1 },
+            Point { x: 1, y: 1 },
+            Point { x: 4, y: 1 },
+            Point { x: 2, y: 1 },
         ];
         data.smart_sort_by(&Solver::AUTO, |a, b| a.cmp(&b));
 
         assert_eq!(data, vec![
-            Point {x: 1, y: 1},
-            Point {x: 2, y: 1},
-            Point {x: 3, y: 1},
-            Point {x: 4, y: 1},
-            Point {x: 5, y: 1}
+            Point { x: 1, y: 1 },
+            Point { x: 2, y: 1 },
+            Point { x: 3, y: 1 },
+            Point { x: 4, y: 1 },
+            Point { x: 5, y: 1 },
         ]);
     }
 }
