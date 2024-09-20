@@ -7,6 +7,7 @@ use i_overlay::i_float::f64_point::F64Point;
 fn main() {
 
     let subj = [
+        // Define the subject polygon (a square)
         F64Point::new(-10.0, -10.0),
         F64Point::new(-10.0, 10.0),
         F64Point::new(10.0, 10.0),
@@ -14,6 +15,7 @@ fn main() {
     ].to_vec();
 
     let clip = [
+        // Define the clip polygon (a slightly shifted square)
         F64Point::new(-5.0, -5.0),
         F64Point::new(-5.0, 15.0),
         F64Point::new(15.0, 15.0),
