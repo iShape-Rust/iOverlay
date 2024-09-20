@@ -46,7 +46,7 @@ let subj = [
 ].to_vec();
 
 let clip = [
-    // Define the clip polygon (a slightly shifted)
+    // Define the clip polygon (a slightly shifted square)
     F64Point::new(-5.0, -5.0),
     F64Point::new(-5.0, 15.0),
     F64Point::new(15.0, 15.0),
@@ -96,7 +96,7 @@ let subj = [
 ].to_vec();
 
 let clip = [
-    // Define the clip polygon (a slightly shifted)
+    // Define the clip polygon (a slightly shifted square)
     IntPoint::new(-5, -5),
     IntPoint::new(-5, 15),
     IntPoint::new(15, 15),
@@ -135,9 +135,11 @@ The `extract_shapes` function for `i32` returns a `Vec<IntShapes>`:
 
 ### Union, A or B
 <img src="readme/union.svg" alt="Union" style="width:50%;">
+_Union represents the combined area of both polygons A and B._
 
 ### Intersection, A and B
 <img src="readme/intersection.svg" alt="Intersection" style="width:50%;">
+_Intersection represents the overlapping area between polygons A and B._
 
 ### Difference, A - B
 <img src="readme/difference_ab.svg" alt="Difference" style="width:50%;">
