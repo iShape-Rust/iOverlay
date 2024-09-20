@@ -135,11 +135,9 @@ The `extract_shapes` function for `i32` returns a `Vec<IntShapes>`:
 
 ### Union, A or B
 <img src="readme/union.svg" alt="Union" style="width:50%;">
-_Union represents the combined area of both polygons A and B._
 
 ### Intersection, A and B
 <img src="readme/intersection.svg" alt="Intersection" style="width:50%;">
-_Intersection represents the overlapping area between polygons A and B._
 
 ### Difference, A - B
 <img src="readme/difference_ab.svg" alt="Difference" style="width:50%;">
