@@ -76,26 +76,22 @@ if shapes.len() > 0 {
 
 ```rust
 let subj = [
-    F64Point::new(-10.0, -10.0),
-    F64Point::new(-10.0, 10.0),
-    F64Point::new(10.0, 10.0),
-    F64Point::new(10.0, -10.0),
+    IntPoint::new(-10, -10),
+    IntPoint::new(-10, 10),
+    IntPoint::new(10, 10),
+    IntPoint::new(10, -10),
 ].to_vec();
 
 let clip = [
-    F64Point::new(-5.0, -5.0),
-    F64Point::new(-5.0, 15.0),
-    F64Point::new(15.0, 15.0),
-    F64Point::new(15.0, -5.0),
+    IntPoint::new(-5, -5),
+    IntPoint::new(-5, 15),
+    IntPoint::new(15, 15),
+    IntPoint::new(15, -5),
 ].to_vec();
 
-let mut overlay = F64Overlay::new();
-
-overlay.add_path(subj, ShapeType::Subject);
-overlay.add_path(clip, ShapeType::Clip);
-
-let graph = overlay.into_graph(FillRule::NonZero);
-let shapes = graph.extract_shapes(OverlayRule::Union);
+let shapes = Overlay::with_paths(&[subj], &[clip])
+    .into_graph(FillRule::NonZero)
+    .extract_shapes(OverlayRule::Union);
 
 println!("shapes count: {}", shapes.len());
 
