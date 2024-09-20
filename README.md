@@ -34,10 +34,11 @@ i_overlay = "^1.6"
 
 Let's union two squares
 
-**f64 Example**
+### f64 Example ###
 
 ```rust
 let subj = [
+    // Define the subject polygon (a square)
     F64Point::new(-10.0, -10.0),
     F64Point::new(-10.0, 10.0),
     F64Point::new(10.0, 10.0),
@@ -45,6 +46,7 @@ let subj = [
 ].to_vec();
 
 let clip = [
+    // Define the clip polygon (a slightly shifted)
     F64Point::new(-5.0, -5.0),
     F64Point::new(-5.0, 15.0),
     F64Point::new(15.0, 15.0),
@@ -71,11 +73,22 @@ if shapes.len() > 0 {
     }
 }
 ```
+The result of the `extract_shapes` function for `f64` returns a `Vec<F64Shapes>`:
 
-**i32 Example**
+- `Vec<F64Shape>`: A collection of shapes.
+- `F64Shape`: Represents one shape, consisting of:
+  - `Vec<F64Path>`: A list of paths (contours).
+  - The first path is the outer boundary (clockwise), and subsequent paths represent holes (counterclockwise).
+- `F64Path`: A series of points (`Vec<F64Point>`) forming a closed contour.
+
+**Note**: _Outer boundary paths have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours._
+
+
+### i32 Example ###
 
 ```rust
 let subj = [
+    // Define the subject polygon (a square)
     IntPoint::new(-10, -10),
     IntPoint::new(-10, 10),
     IntPoint::new(10, 10),
@@ -83,6 +96,7 @@ let subj = [
 ].to_vec();
 
 let clip = [
+    // Define the clip polygon (a slightly shifted)
     IntPoint::new(-5, -5),
     IntPoint::new(-5, 15),
     IntPoint::new(15, 15),
@@ -105,15 +119,15 @@ if shapes.len() > 0 {
     }
 }
 ```
-### Shapes result
+The `extract_shapes` function for `i32` returns a `Vec<IntShapes>`:
 
-The output of the `extract_shapes` function is a `Vec<Vec<Vec<F64Point>>>`, where:
+- `Vec<IntShape>`: A collection of shapes.
+- `IntShape`: Represents a shape made up of:
+  - `Vec<IntPath>`: A list of paths (contours).
+  - The first path is the outer boundary (clockwise), and subsequent paths represent holes (counterclockwise).
+- `IntPath`: A sequence of points (`Vec<IntPoint>`) forming a closed contour.
 
-- The outer `Vec<F64Shape>` represents a set of shapes.
-- Each shape `Vec<F64Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
-- Each path `Vec<F64Point>` is a sequence of points, forming a closed path.
-
-**Note**: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+**Note**: _Outer boundary paths have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours._
 
 # Overlay Rules
 
