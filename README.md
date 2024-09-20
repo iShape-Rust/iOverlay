@@ -1,8 +1,9 @@
 # iOverlay
 ![Balloons](readme/balloons.svg)
 
-The iOverlay is a fast poly-bool library supporting main operations like union, intersection, difference, and xor, governed by either the even-odd or non-zero rule.  
-This library is optimized for different scenarios, ensuring high performance across various use cases. For detailed performance benchmarks, check out the [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
+The iOverlay library provides high-performance boolean operations on polygons, including union, intersection, difference, and xor. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (i32) and floating-point (f32, f64) APIs, iOverlay offers flexibility and precision across diverse use cases.  
+
+*For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
 
 
 ## [Documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
@@ -32,6 +33,9 @@ i_overlay = "^1.6"
 ### Hello world
 
 Let's union two squares
+
+**f64 Example**
+
 ```rust
 let subj = [
     F64Point::new(-10.0, -10.0),
@@ -68,6 +72,43 @@ if shapes.len() > 0 {
 }
 ```
 
+**i32 Example**
+
+```rust
+let subj = [
+    F64Point::new(-10.0, -10.0),
+    F64Point::new(-10.0, 10.0),
+    F64Point::new(10.0, 10.0),
+    F64Point::new(10.0, -10.0),
+].to_vec();
+
+let clip = [
+    F64Point::new(-5.0, -5.0),
+    F64Point::new(-5.0, 15.0),
+    F64Point::new(15.0, 15.0),
+    F64Point::new(15.0, -5.0),
+].to_vec();
+
+let mut overlay = F64Overlay::new();
+
+overlay.add_path(subj, ShapeType::Subject);
+overlay.add_path(clip, ShapeType::Clip);
+
+let graph = overlay.into_graph(FillRule::NonZero);
+let shapes = graph.extract_shapes(OverlayRule::Union);
+
+println!("shapes count: {}", shapes.len());
+
+if shapes.len() > 0 {
+    let contour = &shapes[0][0];
+    println!("shape 0 contour: ");
+    for p in contour {
+        let x = p.x;
+        let y = p.y;
+        println!("({}, {})", x, y);
+    }
+}
+```
 ### Shapes result
 
 The output of the `extract_shapes` function is a `Vec<Vec<Vec<F64Point>>>`, where:
