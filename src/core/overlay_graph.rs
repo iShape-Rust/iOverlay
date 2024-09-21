@@ -169,7 +169,7 @@ impl OverlayGraph {
 }
 
 impl OverlayNode {
-    #[inline]
+    #[inline(always)]
     fn first_not_visited(&self, visited: &[bool]) -> (usize, usize) {
         let mut it_index = 0;
         while it_index < self.indices.len() {
@@ -183,7 +183,7 @@ impl OverlayNode {
         unreachable!("The loop should always return");
     }
 
-    #[inline]
+    #[inline(always)]
     fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize {
         while *it_index < self.indices.len() {
             let link_index = self.indices[*it_index];
