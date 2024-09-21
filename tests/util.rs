@@ -38,27 +38,23 @@ pub mod overlay {
                 return false;
             }
 
-            let mut equal = true;
-            'shapes:
             for i in 0..self.len() {
                 let shape_0 = &self[i];
                 let shape_1 = &other[i];
                 if shape_0.len() != shape_1.len() {
-                    equal = false;
-                    break;
+                    return false;
                 }
 
                 for j in 0..shape_0.len() {
                     let path_0 = &shape_0[j];
                     let path_1 = &shape_1[j];
                     if !path_0.are_equal(path_1) {
-                        equal = false;
-                        break 'shapes;
+                        return false;
                     }
                 }
             }
 
-            equal
+            true
         }
     }
 }
