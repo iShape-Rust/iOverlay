@@ -127,13 +127,13 @@ impl OverlayGraph {
         }
 
         let va = a.subtract(c);
-        let b = self.link(best_index).other_by_node_id(node_id).point;
+        let b = self.link(best_index).other(node_id).point;
         let mut vb = b.subtract(c);
         let mut more_180 = va.cross_product(vb) <= 0;
 
         while link_index < self.links.len() {
             let link = &self.links[link_index];
-            let p = link.other_by_node_id(node_id).point;
+            let p = link.other(node_id).point;
             let vp = p.subtract(c);
             let new_more_180 = va.cross_product(vp) <= 0;
 
