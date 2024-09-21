@@ -1,5 +1,4 @@
 use i_float::point::IntPoint;
-use i_float::triangle::Triangle;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
@@ -118,45 +117,41 @@ impl OverlayGraph {
 
         let node = self.node(node_id);
 
-        let mut best_index = usize::MAX;
-        let mut b = a;
-        let mut more_180 = true;
+        let (mut it_index, mut best_index) = node.first_not_visited(visited);
 
-        let mut it_index = 0;
-        while it_index < node.indices.len() {
-            let link_index = node.indices[it_index];
-            it_index += 1;
-            let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if !is_visited {
-                best_index = link_index;
-                b = self.link(best_index).other_by_node_id(node_id).point;
-                more_180 = Triangle::is_cw_or_line_point(c, a, b);
-                break;
-            }
+        let mut link_index = node.next_link(&mut it_index, visited);
+
+        if link_index >= self.links.len() {
+            // no more links
+            return best_index;
         }
 
-        while it_index < node.indices.len() {
-            let link_index = node.indices[it_index];
-            it_index += 1;
-            let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited {
-                continue;
-            }
+        let va = a.subtract(c);
+        let b = self.link(best_index).other_by_node_id(node_id).point;
+        let mut vb = b.subtract(c);
+        let mut more_180 = va.cross_product(vb) <= 0;
 
-            let p = self.link(link_index).other_by_node_id(node_id).point;
-            let new_more_180 = Triangle::is_cw_or_line_point(c, a, p);
+        while link_index < self.links.len() {
+            let link = &self.links[link_index];
+            let p = link.other_by_node_id(node_id).point;
+            let vp = p.subtract(c);
+            let new_more_180 = va.cross_product(vp) <= 0;
+
             if new_more_180 == more_180 {
                 // both more 180 or both less 180
-                if Triangle::is_clockwise_point(c, b, p) {
+                let is_clock_wise = vp.cross_product(vb) > 0;
+                if is_clock_wise {
                     best_index = link_index;
-                    b = p;
+                    vb = vp;
                 }
             } else if more_180 {
                 // new less 180
                 more_180 = false;
                 best_index = link_index;
-                b = p;
+                vb = vp;
             }
+
+            link_index = node.next_link(&mut it_index, visited);
         }
 
         best_index
@@ -170,6 +165,36 @@ impl OverlayGraph {
     #[inline(always)]
     pub(crate) fn node(&self, index: usize) -> &OverlayNode {
         unsafe { self.nodes.get_unchecked(index) }
+    }
+}
+
+impl OverlayNode {
+    #[inline]
+    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize) {
+        let mut it_index = 0;
+        while it_index < self.indices.len() {
+            let link_index = self.indices[it_index];
+            it_index += 1;
+            let &is_visited = unsafe { visited.get_unchecked(link_index) };
+            if !is_visited {
+                return (it_index, link_index);
+            }
+        }
+        unreachable!("The loop should always return");
+    }
+
+    #[inline]
+    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize {
+        while *it_index < self.indices.len() {
+            let link_index = self.indices[*it_index];
+            *it_index += 1;
+            let &is_visited = unsafe { visited.get_unchecked(link_index) };
+            if !is_visited {
+                return link_index
+            }
+        }
+
+        usize::MAX
     }
 }
 
