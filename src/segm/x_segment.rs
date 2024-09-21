@@ -51,12 +51,16 @@ impl XSegment {
 
     #[inline(always)]
     pub fn is_under_segment(&self, other: &XSegment) -> bool {
-        if self.a == other.a {
-            Triangle::is_clockwise_point(self.a, other.b, self.b)
-        } else if self.a.x < other.a.x {
-            Triangle::is_clockwise_point(self.a, other.a, self.b)
-        } else {
-            Triangle::is_clockwise_point(other.a, other.b, self.a)
+        match self.a.cmp(&other.a) {
+            Ordering::Less => {
+                Triangle::is_clockwise_point(self.a, other.a, self.b)
+            }
+            Ordering::Equal => {
+                Triangle::is_clockwise_point(self.a, other.b, self.b)
+            }
+            Ordering::Greater => {
+                Triangle::is_clockwise_point(other.a, other.b, self.a)
+            }
         }
     }
 
