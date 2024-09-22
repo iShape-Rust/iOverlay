@@ -6,14 +6,14 @@ use crate::segm::x_segment::XSegment;
 use crate::vector::edge::VectorPath;
 
 #[derive(Debug, Clone, Copy)]
-pub struct IdSegment {
-    pub id: usize,
-    pub x_segment: XSegment,
+pub(crate) struct IdSegment {
+    pub(crate) id: usize,
+    pub(crate) x_segment: XSegment,
 }
 
 impl IdSegment {
     #[inline(always)]
-    pub fn new(id: usize, a: IntPoint, b: IntPoint) -> Self {
+    pub(crate) fn new(id: usize, a: IntPoint, b: IntPoint) -> Self {
         Self {
             id,
             x_segment: XSegment { a, b },

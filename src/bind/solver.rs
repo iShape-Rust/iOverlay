@@ -4,12 +4,12 @@ use crate::id_point::IdPoint;
 use crate::bind::scan_list::ScanHoleList;
 use crate::bind::scan_tree::ScanHoleTree;
 
-pub struct BindSolution {
-    pub parent_for_child: Vec<usize>,
-    pub children_count_for_parent: Vec<usize>,
+pub(crate) struct BindSolution {
+    pub(crate) parent_for_child: Vec<usize>,
+    pub(crate) children_count_for_parent: Vec<usize>,
 }
 
-pub struct ShapeBinder;
+pub(crate) struct ShapeBinder;
 
 pub(crate) trait ScanHoleStore {
     fn insert(&mut self, segment: IdSegment, stop: i32);
@@ -19,7 +19,7 @@ pub(crate) trait ScanHoleStore {
 
 impl ShapeBinder {
     #[inline]
-    pub fn bind(shape_count: usize, i_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
+    pub(crate) fn bind(shape_count: usize, i_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
         if i_points.len() < 128 {
             let scan_list = ScanHoleList::new(segments.len());
             Self::private_solve(scan_list, shape_count, i_points, segments)

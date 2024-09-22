@@ -1,4 +1,4 @@
-pub mod solver;
-pub mod segment;
+pub(crate) mod solver;
+pub(crate) mod segment;
 mod scan_list;
 mod scan_tree;

@@ -5,19 +5,14 @@ use i_key_sort::index::{BinKey, BinLayout};
 use crate::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct XSegment {
-    pub a: IntPoint,
-    pub b: IntPoint,
+pub(crate) struct XSegment {
+    pub(crate) a: IntPoint,
+    pub(crate) b: IntPoint,
 }
 
 impl XSegment {
     #[inline(always)]
-    pub fn new(a: IntPoint, b: IntPoint) -> Self {
-        Self { a, b }
-    }
-
-    #[inline(always)]
-    pub fn y_range(&self) -> LineRange {
+    pub(crate) fn y_range(&self) -> LineRange {
         if self.a.y < self.b.y {
             LineRange { min: self.a.y, max: self.b.y }
         } else {
@@ -26,31 +21,19 @@ impl XSegment {
     }
 
     #[inline(always)]
-    pub fn is_vertical(&self) -> bool {
-        self.a.x == self.b.x
-    }
-
-    #[inline(always)]
-    pub fn is_not_vertical(&self) -> bool {
+    pub(crate) fn is_not_vertical(&self) -> bool {
         self.a.x != self.b.x
     }
 
     #[inline(always)]
-    pub fn is_under_point(&self, p: IntPoint) -> bool {
+    pub(crate) fn is_under_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
         Triangle::area_two_point(self.a, p, self.b) > 0
     }
 
     #[inline(always)]
-    pub fn is_above_point(&self, p: IntPoint) -> bool {
-        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
-        debug_assert!(p != self.a && p != self.b);
-        Triangle::area_two_point(self.a, p, self.b) < 0
-    }
-
-    #[inline(always)]
-    pub fn is_under_segment(&self, other: &XSegment) -> bool {
+    pub(crate) fn is_under_segment(&self, other: &XSegment) -> bool {
         match self.a.cmp(&other.a) {
             Ordering::Less => {
                 Triangle::is_clockwise_point(self.a, other.a, self.b)
@@ -65,7 +48,7 @@ impl XSegment {
     }
 
     #[inline(always)]
-    pub fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
+    pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
         range.min > self.a.y && range.min > self.b.y || range.max < self.a.y && range.max < self.b.y
     }
 }
