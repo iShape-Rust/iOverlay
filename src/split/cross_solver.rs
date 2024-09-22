@@ -349,6 +349,12 @@ mod tests {
     use crate::split::cross_solver::{CrossSolver, CrossType};
     use crate::segm::x_segment::XSegment;
 
+    impl XSegment {
+        fn new(a: IntPoint, b: IntPoint) -> Self {
+            Self { a, b }
+        }
+    }
+
     #[test]
     fn test_simple_cross() {
         let s: i32 = 1024;
