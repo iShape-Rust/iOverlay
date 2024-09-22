@@ -13,6 +13,11 @@
 //! Here's an example of performing a union operation between two polygons:
 //!
 //! ```rust
+//!use i_overlay::core::fill_rule::FillRule;
+//!use i_overlay::core::overlay::Overlay;
+//!use i_overlay::core::overlay_rule::OverlayRule;
+//!use i_overlay::i_float::point::IntPoint;
+//!
 //!let subj = [
 //!    // Define the subject polygon (a square)
 //!    IntPoint::new(-10, -10),
@@ -58,7 +63,13 @@
 //! Same example but with float api:
 //!
 //! ```rust
-//!let subj = [
+//!use i_overlay::core::fill_rule::FillRule;
+//!use i_overlay::core::overlay::ShapeType;
+//!use i_overlay::core::overlay_rule::OverlayRule;
+//!use i_overlay::f64::overlay::F64Overlay;
+//!use i_overlay::i_float::f64_point::F64Point;
+//!
+//! let subj = [
 //!    // Define the subject polygon (a square)
 //!    F64Point::new(-10.0, -10.0),
 //!    F64Point::new(-10.0, 10.0),
