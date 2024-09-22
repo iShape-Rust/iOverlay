@@ -1,3 +1,6 @@
+//! This module provides methods to simplify paths and shapes by reducing complexity
+//! (e.g., removing small artifacts or shapes below a certain area threshold) based on a fill rule.
+
 use i_shape::f32::shape::{F32Path, F32Shape, F32Shapes};
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;

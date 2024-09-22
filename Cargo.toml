@@ -1,12 +1,13 @@
 [package]
 name = "i_overlay"
-version = "1.6.1"
+version = "1.6.2"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2021"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."
 license = "MIT"
 repository = "https://github.com/iShape-Rust/iOverlay"
-
+documentation = "https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html"
+readme = "README.md"
 
 [dependencies]
 i_float = { version = "~1.3.0" }

@@ -1,3 +1,7 @@
+//! This module contains functionality to construct and manage overlays, which are used to perform
+//! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
+//! manage subject and clip polygons and convert them into graphs for further operations.
+
 use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, PointsCount};

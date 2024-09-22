@@ -1,3 +1,7 @@
+//! This module defines the graph structure that represents the relationships between the paths in
+//! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
+//! based on the overlay rule applied.
+
 use i_float::point::IntPoint;
 
 use crate::core::solver::Solver;
@@ -14,6 +18,7 @@ use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
 /// `OverlayGraph` is a core structure designed to facilitate the execution of boolean operations on shapes, such as union, intersection, and difference. It organizes and preprocesses geometric data, making it optimized for these operations. This struct is the result of compiling shape data into a form where boolean operations can be applied directly, efficiently managing the complex relationships between different geometric entities.
 ///
 /// Use `OverlayGraph` to perform boolean operations on the geometric shapes you've added to an `Overlay`, after it has processed the shapes according to the specified fill and overlay rules.
+/// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
 pub struct OverlayGraph {
     pub(crate) solver: Solver,
     pub(crate) nodes: Vec<OverlayNode>,

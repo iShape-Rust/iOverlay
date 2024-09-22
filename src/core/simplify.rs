@@ -1,3 +1,6 @@
+//! This module provides methods to simplify paths and shapes by reducing complexity
+//! (e.g., removing small artifacts or shapes below a certain area threshold) based on a fill rule.
+
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, PointsCount};
 use crate::core::fill_rule::FillRule;

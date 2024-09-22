@@ -1,6 +1,6 @@
 use crate::segm::segment::{BOTH_BOTTOM, BOTH_TOP, CLIP_TOP, NONE, SegmentFill, SUBJ_TOP};
 
-/// Defines the types of overlay/boolean operations that can be applied to shapes. For a visual description, see [Overlay Rules](https://ishape-rust.github.io/iShape-js/overlay/overlay_rules.html).
+/// Defines the types of overlay/boolean operations that can be applied to shapes. For a visual description, see [Overlay Rules](https://ishape-rust.github.io/iShape-js/overlay/overlay_rules/overlay_rules.html).
 /// - `Subject`: Processes the subject shape, useful for resolving self-intersections and degenerate cases within the subject itself.
 /// - `Clip`: Similar to `Subject`, but for Clip shapes.
 /// - `Intersect`: Finds the common area between the subject and clip shapes, effectively identifying where they overlap.

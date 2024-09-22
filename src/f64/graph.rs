@@ -1,3 +1,7 @@
+//! This module defines the graph structure that represents the relationships between the paths in
+//! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
+//! based on the overlay rule applied.
+
 use i_float::f64_adapter::F64PointAdapter;
 use i_shape::f64::adapter::ShapesToFloat;
 use i_shape::f64::shape::F64Shapes;
@@ -6,6 +10,7 @@ use crate::core::overlay_rule::OverlayRule;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
+/// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
 pub struct F64OverlayGraph {
     pub graph: OverlayGraph,
     pub adapter: F64PointAdapter,

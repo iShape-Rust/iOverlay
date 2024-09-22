@@ -1,3 +1,7 @@
+//! This module contains functionality to construct and manage overlays, which are used to perform
+//! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
+//! manage subject and clip polygons and convert them into graphs for further operations.
+
 use i_float::f64_adapter::F64PointAdapter;
 use i_float::f64_rect::F64Rect;
 use i_shape::f64::adapter::ShapeToInt;
@@ -8,6 +12,7 @@ use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::solver::Solver;
 use crate::f64::graph::F64OverlayGraph;
 
+/// This struct is essential for describing and uploading the geometry or shapes required to construct an `F64OverlayGraph`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
 pub struct F64Overlay {
     subj_paths: Vec<F64Path>,
