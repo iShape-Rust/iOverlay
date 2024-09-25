@@ -3,6 +3,7 @@
 //! based on the overlay rule applied.
 
 use i_float::point::IntPoint;
+use i_float::triangle::Triangle;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
@@ -60,6 +61,7 @@ impl OverlayGraph {
         let mut b = end_bs[0].point;
         let mut next_a_cnt = links.size(a, ai);
         let mut next_b_cnt = end_bs.size(b, bi);
+        let mut indices = Vec::with_capacity(4);
         while next_a_cnt > 0 || next_b_cnt > 0 {
             let (a_cnt, b_cnt) = if a == b {
                 (next_a_cnt, next_b_cnt)
@@ -70,7 +72,6 @@ impl OverlayGraph {
             };
 
             let node_id = nodes.len();
-            let mut indices = Vec::with_capacity(a_cnt + b_cnt);
 
             if a_cnt > 0 {
                 next_a_cnt = 0;
@@ -101,7 +102,10 @@ impl OverlayGraph {
             }
 
             debug_assert!(indices.len() > 1, "indices: {}", indices.len());
-            nodes.push(OverlayNode { indices });
+            // nodes.push(OverlayNode { indices });
+
+            nodes.push(OverlayNode::new(indices.as_slice()));
+            indices.clear();
         }
 
         debug_assert!(nodes.len() <= n);
@@ -113,6 +117,7 @@ impl OverlayGraph {
         &self,
         target_index: usize,
         node_id: usize,
+        indices: &[usize],
         visited: &[bool],
     ) -> usize {
         let target = self.link(target_index);
@@ -120,11 +125,9 @@ impl OverlayGraph {
             (target.a.point, target.b.point)
         } else { (target.b.point, target.a.point) };
 
-        let node = self.node(node_id);
+        let (mut it_index, mut best_index) = indices.first_not_visited(visited);
 
-        let (mut it_index, mut best_index) = node.first_not_visited(visited);
-
-        let mut link_index = node.next_link(&mut it_index, visited);
+        let mut link_index = indices.next_link(&mut it_index, visited);
 
         if link_index >= self.links.len() {
             // no more links
@@ -156,10 +159,66 @@ impl OverlayGraph {
                 vb = vp;
             }
 
-            link_index = node.next_link(&mut it_index, visited);
+            link_index = indices.next_link(&mut it_index, visited);
         }
 
         best_index
+    }
+
+    #[inline]
+    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
+        let top = self.link(link_index);
+        debug_assert!(top.is_direct());
+
+        let node = self.node(top.a.id);
+
+        match node {
+            OverlayNode::Bridge(bridge) => {
+                self.find_left_top_link_on_bridge(bridge)
+            }
+            OverlayNode::Cross(indices) => {
+                self.find_left_top_link_on_indices(top, link_index, &indices, visited)
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn find_left_top_link_on_indices(&self, link: &OverlayLink, link_index: usize, indices: &[usize], visited: &[bool]) -> usize {
+        let mut top_index = link_index;
+        let mut top = link;
+
+        // find most top link
+
+        for &i in indices.iter() {
+            if i == link_index {
+                continue;
+            }
+            let link = self.link(i);
+            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
+                continue;
+            }
+
+            let &is_visited = unsafe { visited.get_unchecked(i) };
+            if is_visited {
+                continue;
+            }
+
+            top_index = i;
+            top = link;
+        }
+
+        top_index
+    }
+
+    #[inline(always)]
+    fn find_left_top_link_on_bridge(&self, bridge: &[usize; 2]) -> usize {
+        let l0 = self.link(bridge[0]);
+        let l1 = self.link(bridge[1]);
+        if Triangle::is_clockwise_point(l0.a.point, l0.b.point, l1.b.point) {
+            bridge[0]
+        } else {
+            bridge[1]
+        }
     }
 
     #[inline(always)]
@@ -173,12 +232,17 @@ impl OverlayGraph {
     }
 }
 
-impl OverlayNode {
+trait OverlayNodeIndices {
+    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize);
+    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize;
+}
+
+impl OverlayNodeIndices for [usize] {
     #[inline(always)]
     fn first_not_visited(&self, visited: &[bool]) -> (usize, usize) {
         let mut it_index = 0;
-        while it_index < self.indices.len() {
-            let link_index = self.indices[it_index];
+        while it_index < self.len() {
+            let link_index = self[it_index];
             it_index += 1;
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
             if !is_visited {
@@ -190,8 +254,8 @@ impl OverlayNode {
 
     #[inline(always)]
     fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize {
-        while *it_index < self.indices.len() {
-            let link_index = self.indices[*it_index];
+        while *it_index < self.len() {
+            let link_index = self[*it_index];
             *it_index += 1;
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
             if !is_visited {

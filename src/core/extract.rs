@@ -1,5 +1,4 @@
 use i_float::point::IntPoint;
-use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::int::simple::Simple;
@@ -7,6 +6,7 @@ use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
+use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::sort::SmartSort;
 
@@ -106,11 +106,15 @@ impl OverlayGraph {
         // Find a closed tour
         while node_id != last_node_id {
             let node = self.node(node_id);
-            if node.indices.len() == 2 {
-                link_id = node.other(link_id);
-            } else {
-                link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
-            }
+            link_id = match node {
+                OverlayNode::Bridge(bridge) => {
+                    if bridge[0] == link_id { bridge[1] } else { bridge[0] }
+                }
+                OverlayNode::Cross(indices) => {
+                    self.find_nearest_counter_wise_link_to(link_id, node_id, indices, visited)
+                }
+            };
+
             let link = self.link(link_id);
             node_id = if link.a.id == node_id {
                 path.push(link.a.point);
@@ -124,37 +128,6 @@ impl OverlayGraph {
         }
 
         path
-    }
-
-    #[inline]
-    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
-        let mut top_index = link_index;
-        let mut top = self.link(link_index);
-        debug_assert!(top.is_direct());
-
-        let node = self.node(top.a.id);
-
-        // find most top link
-
-        for &i in node.indices.iter() {
-            if i == link_index {
-                continue;
-            }
-            let link = self.link(i);
-            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
-                continue;
-            }
-
-            let &is_visited = unsafe { visited.get_unchecked(i) };
-            if is_visited {
-                continue;
-            }
-
-            top_index = i;
-            top = link;
-        }
-
-        top_index
     }
 }
 

@@ -1,17 +1,16 @@
 #[derive(Debug)]
-pub(crate) struct OverlayNode {
-    pub(crate) indices: Vec<usize>,
+pub(crate) enum OverlayNode {
+    Bridge([usize; 2]),
+    Cross(Vec<usize>),
 }
 
 impl OverlayNode {
     #[inline]
-    pub(crate) fn other(&self, index: usize) -> usize {
-        debug_assert_eq!(self.indices.len(), 2);
-        let i0 = unsafe { *self.indices.get_unchecked(0) };
-        if i0 == index {
-            unsafe { *self.indices.get_unchecked(1) }
+    pub(super) fn new(indices: &[usize]) -> Self {
+        if indices.len() > 2 {
+            Self::Cross(indices.to_vec())
         } else {
-            i0
+            Self::Bridge(unsafe { [*indices.get_unchecked(0), *indices.get_unchecked(1)] })
         }
     }
 }

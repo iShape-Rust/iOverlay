@@ -5,6 +5,7 @@ use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
+use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::segm::segment::SegmentFill;
 use crate::sort::SmartSort;
@@ -82,11 +83,15 @@ impl OverlayGraph {
         // Find a closed tour
         while node_id != last_node_id {
             let node = self.node(node_id);
-            if node.indices.len() == 2 {
-                link_id = node.other(link_id);
-            } else {
-                link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
-            }
+            link_id = match node {
+                OverlayNode::Bridge(bridge) => {
+                    if bridge[0] == link_id { bridge[1] } else { bridge[0] }
+                }
+                OverlayNode::Cross(indices) => {
+                    self.find_nearest_counter_wise_link_to(link_id, node_id, indices, visited)
+                }
+            };
+
             let link = self.link(link_id);
             node_id = if link.a.id == node_id {
                 path.push(VectorEdge::new(link.fill, link.a.point, link.b.point));
