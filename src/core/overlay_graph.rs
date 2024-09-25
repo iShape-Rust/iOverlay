@@ -177,7 +177,7 @@ impl OverlayGraph {
                 self.find_left_top_link_on_bridge(bridge)
             }
             OverlayNode::Cross(indices) => {
-                self.find_left_top_link_on_indices(top, link_index, &indices, visited)
+                self.find_left_top_link_on_indices(top, link_index, indices, visited)
             }
         }
     }
