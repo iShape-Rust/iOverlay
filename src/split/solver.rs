@@ -78,15 +78,24 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply(&self, marks: &mut Vec<LineMark>, edges: &mut Vec<Segment>) {
+    pub(super) fn apply(&self, marks: &mut Vec<LineMark>, edges: &mut Vec<Segment>, need_to_fix: bool) {
         marks.smart_sort_by(&self.solver, |a, b|
         if a.index < b.index || a.index == b.index && (a.length < b.length || a.length == b.length && a.point < b.point) {
             Ordering::Less
         } else {
             Ordering::Greater
         });
-
+        // println!("---------------");
+        // println!("before edges.capacity: {}", edges.capacity());
         edges.reserve(marks.len());
+        // if need_to_fix {
+        //     // println!("reserve");
+        //     edges.reserve(marks.len());
+        // } else {
+        //     // println!("reserve_exact");
+        //     edges.reserve_exact(marks.len());
+        // }
+        // println!("after edges.capacity: {}", edges.capacity());
 
         let mut i = 0;
         while i < marks.len() {
@@ -110,6 +119,8 @@ impl SplitSolver {
         }
 
         edges.smart_sort_by(&self.solver, |a, b| a.x_segment.cmp(&b.x_segment));
+
+        // println!("edges edges.len: {}", edges.len());
 
         edges.merge_if_needed();
     }

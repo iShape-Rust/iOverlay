@@ -36,7 +36,7 @@ impl SplitSolver {
                 return;
             }
 
-            self.apply(&mut marks, edges);
+            self.apply(&mut marks, edges, need_to_fix);
 
             if need_to_fix && !self.solver.is_list_split(edges) {
                 // finish with tree solver if edges is become large

@@ -50,7 +50,7 @@ impl SplitSolver {
 
             tree.clear();
 
-            self.apply(&mut marks, edges);
+            self.apply(&mut marks, edges, need_to_fix);
 
             marks.clear();
 
@@ -96,7 +96,7 @@ impl SplitSolver {
             fragments.clear();
             tree.clear();
 
-            self.apply(&mut marks, edges);
+            self.apply(&mut marks, edges, need_to_fix);
 
             marks.clear();
 
