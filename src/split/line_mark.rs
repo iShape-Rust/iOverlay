@@ -1,7 +1,7 @@
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub(super) struct LineMark {
     pub(super) index: usize,
     pub(super) length: i64,
