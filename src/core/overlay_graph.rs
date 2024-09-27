@@ -9,7 +9,7 @@ use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
 use crate::segm::end::End;
 use crate::segm::segment::{Segment, SegmentFill};
-use crate::sort::SmartSort;
+use crate::sort::SmartBinSort;
 
 use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
 
@@ -51,7 +51,7 @@ impl OverlayGraph {
             .map(|(i, link)| End { index: i, point: link.b.point })
             .collect();
 
-        end_bs.smart_sort_by(&solver, |a, b| a.point.cmp(&b.point));
+        end_bs.smart_bin_sort_by(&solver, |a, b| a.point.cmp(&b.point));
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
 

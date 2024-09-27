@@ -74,14 +74,14 @@ impl IdSegments for VectorPath {
     }
 }
 
-impl BinKey for IdSegment {
+impl BinKey<i32> for IdSegment {
     #[inline(always)]
-    fn key(&self) -> i64 {
-        self.x_segment.a.x.into()
+    fn bin_key(&self) -> i32 {
+        self.x_segment.a.x
     }
 
     #[inline(always)]
-    fn bin(&self, layout: &BinLayout) -> usize {
-        layout.index(self.x_segment.a.x.into())
+    fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
+        layout.index(self.x_segment.a.x)
     }
 }

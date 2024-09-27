@@ -8,7 +8,7 @@ use crate::core::filter::Filter;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::segm::segment::SegmentFill;
-use crate::sort::SmartSort;
+use crate::sort::SmartBinSort;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
@@ -143,7 +143,7 @@ impl JoinHoles for Vec<VectorShape> {
             let p = hole.first().unwrap().a;
             i_points.push(IdPoint::new(i, p));
         }
-        i_points.smart_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
+        i_points.smart_bin_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
@@ -153,7 +153,7 @@ impl JoinHoles for Vec<VectorShape> {
             shape[0].append_id_segments(&mut segments, i, x_min, x_max);
         }
 
-        segments.smart_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
+        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), i_points, segments);
 

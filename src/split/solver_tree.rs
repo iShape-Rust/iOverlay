@@ -7,36 +7,36 @@ use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split(&mut self, edges: &mut Vec<Segment>) {
-        let ver_range = edges.ver_range();
+    pub(super) fn tree_split(&mut self, segments: Vec<Segment>) -> Vec<Segment> {
+        let ver_range = segments.ver_range();
         let height = ver_range.width() as usize;
 
         if height < SpaceLayout::MIN_HEIGHT {
-            self.list_split(edges);
+            return self.list_split(segments);
         }
 
-        let layout = SpaceLayout::new(height, edges.len());
+        let layout = SpaceLayout::new(height, segments.len());
 
-        if layout.is_fragmentation_required_for_edges(edges) {
-            self.simple(ver_range, &layout, edges);
+        if layout.is_fragmentation_required_for_edges(&segments) {
+            self.simple(ver_range, &layout, segments)
         } else {
-            self.complex(ver_range, &layout, edges);
+            self.complex(ver_range, &layout, segments)
         }
     }
 
-    fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {
+    fn simple(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment>) -> Vec<Segment> {
         let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
         let mut iter = 0;
 
-        while need_to_fix && edges.len() > 2 {
+        while need_to_fix && segments.len() > 2 {
             need_to_fix = false;
 
             tree.radius = self.solver.radius(iter);
 
-            for (i, e) in edges.iter().enumerate() {
+            for (i, e) in segments.iter().enumerate() {
                 let fragment = Fragment::with_index_and_segment(i, e.x_segment);
                 let any_round = tree.intersect(&fragment, &mut marks);
                 need_to_fix = any_round || need_to_fix;
@@ -45,39 +45,41 @@ impl SplitSolver {
             }
 
             if marks.is_empty() {
-                return;
+                return segments;
             }
 
             tree.clear();
 
-            self.apply(&mut marks, edges, need_to_fix);
+            segments = self.apply(&mut marks, segments, need_to_fix);
 
             marks.clear();
 
             iter += 1;
         }
+
+        segments
     }
 
-    fn complex(&self, ver_range: LineRange, layout: &SpaceLayout, edges: &mut Vec<Segment>) {
+    fn complex(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment>) -> Vec<Segment> {
         let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
-        let mut fragments = Vec::with_capacity(2 * edges.len());
+        let mut fragments = Vec::with_capacity(2 * segments.len());
 
         let mut iter = 0;
 
-        while need_to_fix && edges.len() > 2 {
+        while need_to_fix && segments.len() > 2 {
             need_to_fix = false;
 
-            for (i, &e) in edges.iter().enumerate() {
+            for (i, &e) in segments.iter().enumerate() {
                 layout.break_into_fragments(i, e.x_segment, &mut fragments);
             }
 
-            if 100 * fragments.len() <= 110 * edges.len() {
+            if 100 * fragments.len() <= 110 * segments.len() {
                 // we can switch to simple solution
-                self.simple(ver_range, layout, edges);
-                return;
+                segments = self.simple(ver_range, layout, segments);
+                return segments;
             }
 
             tree.radius = self.solver.radius(iter);
@@ -90,18 +92,20 @@ impl SplitSolver {
             }
 
             if marks.is_empty() {
-                return;
+                return segments;
             }
 
             fragments.clear();
             tree.clear();
 
-            self.apply(&mut marks, edges, need_to_fix);
+            segments = self.apply(&mut marks, segments, need_to_fix);
 
             marks.clear();
 
             iter += 1;
         }
+
+        segments
     }
 }
 

@@ -71,14 +71,14 @@ impl Ord for XSegment {
     }
 }
 
-impl BinKey for XSegment {
+impl BinKey<i32> for XSegment {
     #[inline(always)]
-    fn key(&self) -> i64 {
-        self.a.x.into()
+    fn bin_key(&self) -> i32 {
+        self.a.x
     }
 
     #[inline(always)]
-    fn bin(&self, layout: &BinLayout) -> usize {
-        layout.index(self.a.x.into())
+    fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
+        layout.index(self.a.x)
     }
 }

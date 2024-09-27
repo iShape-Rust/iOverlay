@@ -1,20 +1,24 @@
 #[cfg(feature = "allow_multithreading")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
-use i_key_sort::index::BinKey;
+use i_key_sort::index::{BinKey, Offset};
 use crate::core::solver::Solver;
 use i_key_sort::key_sort::KeyBinSort;
 
-pub(crate) trait SmartSort {
-    fn smart_sort_by<F>(&mut self, solver: &Solver, compare: F)
+pub(crate) trait SmartBinSort<U> {
+    fn smart_bin_sort_by<F>(&mut self, solver: &Solver, compare: F)
     where
         F: Fn(&Self::Item, &Self::Item) -> Ordering + Sync;
 
     type Item: Send;
 }
 
-impl<T: BinKey + Clone + Send> SmartSort for [T] {
-    fn smart_sort_by<F>(&mut self, _solver: &Solver, compare: F)
+impl<T, U> SmartBinSort<U> for [T]
+where
+    T: BinKey<U> + Clone + Send,
+    U: Copy + Ord + Offset,
+{
+    fn smart_bin_sort_by<F>(&mut self, _solver: &Solver, compare: F)
     where
         F: Fn(&T, &T) -> Ordering + Sync,
     {
@@ -34,6 +38,40 @@ impl<T: BinKey + Clone + Send> SmartSort for [T] {
 
     type Item = T;
 }
+/*
+pub(crate) trait SmartUnstableSort {
+    fn smart_unstable_sort_by<F>(&mut self, solver: &Solver, compare: F)
+    where
+        F: Fn(&Self::Item, &Self::Item) -> Ordering + Sync;
+
+    type Item: Send;
+}
+
+impl<T> SmartUnstableSort for [T]
+where
+    T: Send,
+{
+    fn smart_unstable_sort_by<F>(&mut self, _solver: &Solver, compare: F)
+    where
+        F: Fn(&T, &T) -> Ordering + Sync,
+    {
+        #[cfg(feature = "allow_multithreading")]
+        {
+            if let Some(multithreading) = _solver.multithreading {
+                if self.len() > multithreading.par_sort_min_size {
+                    self.par_sort_unstable_by(compare);
+                    return;
+                }
+            }
+        }
+
+        // Fallback to standard sort if multithreading is not enabled
+        self.sort_unstable_by(compare)
+    }
+
+    type Item = T;
+}
+*/
 
 #[cfg(test)]
 mod tests {
@@ -67,14 +105,14 @@ mod tests {
         }
     }
 
-    impl BinKey for Point {
+    impl BinKey<i32> for Point {
         #[inline(always)]
-        fn key(&self) -> i64 {
-            self.x as i64
+        fn bin_key(&self) -> i32 {
+            self.x
         }
 
         #[inline(always)]
-        fn bin(&self, layout: &BinLayout) -> usize {
+        fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
             layout.index(self.x.into())
         }
     }
@@ -88,7 +126,7 @@ mod tests {
             Point { x: 4, y: 1 },
             Point { x: 2, y: 1 },
         ];
-        data.smart_sort_by(&Solver::AUTO, |a, b| a.cmp(&b));
+        data.smart_bin_sort_by(&Solver::AUTO, |a, b| a.cmp(&b));
 
         assert_eq!(data, vec![
             Point { x: 1, y: 1 },

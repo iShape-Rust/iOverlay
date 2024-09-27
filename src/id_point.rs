@@ -13,14 +13,14 @@ impl IdPoint {
     }
 }
 
-impl BinKey for IdPoint {
+impl BinKey<i32> for IdPoint {
     #[inline(always)]
-    fn key(&self) -> i64 {
-        self.point.x.into()
+    fn bin_key(&self) -> i32 {
+        self.point.x
     }
 
     #[inline(always)]
-    fn bin(&self, layout: &BinLayout) -> usize {
-        layout.index(self.point.x.into())
+    fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
+        layout.index(self.point.x)
     }
 }

@@ -109,14 +109,14 @@ impl ShapeEdgesMerge for Vec<Segment> {
     }
 }
 
-impl BinKey for Segment {
+impl BinKey<i32> for Segment {
     #[inline(always)]
-    fn key(&self) -> i64 {
-        self.x_segment.key()
+    fn bin_key(&self) -> i32 {
+        self.x_segment.bin_key()
     }
 
     #[inline(always)]
-    fn bin(&self, layout: &BinLayout) -> usize {
-        self.x_segment.bin(layout)
+    fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
+        self.x_segment.bin_index(layout)
     }
 }

@@ -12,12 +12,12 @@ readme = "README.md"
 i_float = { version = "~1.3.0" }
 i_shape = { version = "~1.3.0" }
 i_tree = { version = "~0.8.2" }
-i_key_sort = { version = "~0.1.0" }
+#i_key_sort = { version = "~0.1.0" }
 
 #i_float = { path = "../iFloat" }
 #i_shape = { path = "../iShape" }
 #i_tree = { path = "../iTree" }
-#i_key_sort = { path = "../iKeySort" }
+i_key_sort = { path = "../iKeySort" }
 
 [dependencies.rayon]
 version = "^1.5"

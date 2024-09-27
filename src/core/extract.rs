@@ -8,7 +8,7 @@ use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
-use crate::sort::SmartSort;
+use crate::sort::SmartBinSort;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
@@ -164,7 +164,7 @@ impl JoinHoles for Vec<IntShape> {
             .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
             .collect();
 
-        i_points.smart_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
+        i_points.smart_bin_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;
         let x_max = i_points[i_points.len() - 1].point.x;
@@ -175,7 +175,7 @@ impl JoinHoles for Vec<IntShape> {
             shape[0].append_id_segments(&mut segments, i, x_min, x_max);
         }
 
-        segments.smart_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
+        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), i_points, segments);
 

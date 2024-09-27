@@ -16,7 +16,7 @@ use crate::core::solver::Solver;
 use crate::fill::solver::FillSolver;
 use crate::segm::segment::Segment;
 use crate::segm::x_segment::XSegment;
-use crate::sort::SmartSort;
+use crate::sort::SmartBinSort;
 use crate::split::solver::SplitSolver;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
@@ -153,11 +153,11 @@ impl Overlay {
 
     fn prepare_segments_and_fills(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
         let mut segments = self.edges;
-        segments.smart_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
         segments.merge_if_needed();
 
-        SplitSolver::new(solver).split(&mut segments);
+        segments = SplitSolver::new(solver).split(segments);
 
         let is_list = solver.is_list_fill(&segments);
         let fills = FillSolver::fill(fill_rule, is_list, &segments);
