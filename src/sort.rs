@@ -38,41 +38,6 @@ where
 
     type Item = T;
 }
-/*
-pub(crate) trait SmartUnstableSort {
-    fn smart_unstable_sort_by<F>(&mut self, solver: &Solver, compare: F)
-    where
-        F: Fn(&Self::Item, &Self::Item) -> Ordering + Sync;
-
-    type Item: Send;
-}
-
-impl<T> SmartUnstableSort for [T]
-where
-    T: Send,
-{
-    fn smart_unstable_sort_by<F>(&mut self, _solver: &Solver, compare: F)
-    where
-        F: Fn(&T, &T) -> Ordering + Sync,
-    {
-        #[cfg(feature = "allow_multithreading")]
-        {
-            if let Some(multithreading) = _solver.multithreading {
-                if self.len() > multithreading.par_sort_min_size {
-                    self.par_sort_unstable_by(compare);
-                    return;
-                }
-            }
-        }
-
-        // Fallback to standard sort if multithreading is not enabled
-        self.sort_unstable_by(compare)
-    }
-
-    type Item = T;
-}
-*/
-
 #[cfg(test)]
 mod tests {
     use i_key_sort::index::BinLayout;
