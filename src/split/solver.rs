@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_key_sort::key_sort::Bin;
@@ -38,43 +37,33 @@ impl SplitSolver {
 
         match cross.cross_type {
             CrossType::Pure => {
-                let li = ei.a.sqr_distance(cross.point);
-                let lj = ej.a.sqr_distance(cross.point);
-
-                marks.push(LineMark { index: i, length: li, point: cross.point });
-                marks.push(LineMark { index: j, length: lj, point: cross.point });
+                marks.push(LineMark { index: i, point: cross.point });
+                marks.push(LineMark { index: j, point: cross.point });
             }
             CrossType::TargetEnd => {
-                let lj = ej.a.sqr_distance(cross.point);
-                marks.push(LineMark { index: j, length: lj, point: cross.point });
+                marks.push(LineMark { index: j, point: cross.point });
             }
             CrossType::OtherEnd => {
-                let li = ei.a.sqr_distance(cross.point);
-
-                marks.push(LineMark { index: i, length: li, point: cross.point });
+                marks.push(LineMark { index: i, point: cross.point });
             }
             CrossType::Overlay => {
                 let mask = CrossSolver::collinear(ei, ej);
                 if mask == 0 { return false; }
 
                 if mask.is_target_a() {
-                    let lj = ej.a.sqr_distance(ei.a);
-                    marks.push(LineMark { index: j, length: lj, point: ei.a });
+                    marks.push(LineMark { index: j, point: ei.a });
                 }
 
                 if mask.is_target_b() {
-                    let lj = ej.a.sqr_distance(ei.b);
-                    marks.push(LineMark { index: j, length: lj, point: ei.b });
+                    marks.push(LineMark { index: j, point: ei.b });
                 }
 
                 if mask.is_other_a() {
-                    let li = ei.a.sqr_distance(ej.a);
-                    marks.push(LineMark { index: i, length: li, point: ej.a });
+                    marks.push(LineMark { index: i, point: ej.a });
                 }
 
                 if mask.is_other_b() {
-                    let li = ei.a.sqr_distance(ej.b);
-                    marks.push(LineMark { index: i, length: li, point: ej.b });
+                    marks.push(LineMark { index: i, point: ej.b });
                 }
             }
         }
@@ -83,29 +72,20 @@ impl SplitSolver {
     }
 
     pub(super) fn apply(&self, marks: &mut Vec<LineMark>, segments: Vec<Segment>, need_to_fix: bool) -> Vec<Segment> {
-        marks.smart_bin_sort_by(&self.solver, |a, b|
-        if a.index < b.index || a.index == b.index && (a.length < b.length || a.length == b.length && a.point < b.point) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        });
-
+        self.sort_and_filter_marks(marks, &segments);
         let min = segments[0].x_segment.a.x;
-        let mut max = segments[segments.len() - 1].x_segment.a.x;
-        let mut mark_iter = marks.iter();
-        let mut m0 = mark_iter.next().unwrap();
-        let mut m_count = 0;
-        max = max.max(m0.point.x);
-        for mark in mark_iter {
-            if !mark.eq(m0) {
-                m_count += 1;
-                max = max.max(mark.point.x);
-                m0 = mark;
-            }
+        let mut max = segments[0].x_segment.b.x;
+
+        for m in marks.iter() {
+            max = max.max(m.point.x);
         }
 
-        let new_len = segments.len() + m_count;
-        if new_len <= 16 { // TODO up to equal
+        for s in segments.iter() {
+            max = max.max(s.x_segment.b.x);
+        }
+
+        let new_len = segments.len() + marks.len();
+        if new_len <= 16 {
             return Self::one_bin_merge(marks, segments, need_to_fix);
         };
 
@@ -122,28 +102,22 @@ impl SplitSolver {
             count: ShapeCount { subj: 0, clip: 0 },
         };
 
-        let new_len = segments.len() + marks.len();
-        let mut buffer = Vec::new();
-        buffer.reserve_exact(new_len);
-        for _ in 0..new_len {
-            buffer.push(empty);
-        }
-        let slice = buffer.as_mut_slice();
+        let mut buffer = vec![empty; new_len];
 
         // let mut buffer = vec![empty; new_len];
+        let slice = buffer.as_mut_slice();
 
         // split segments
 
         let mut j = 0;
-        let mut m0 = marks[0];
-        let mut mj = m0;
-        for (i, s) in segments.into_iter().enumerate() {
+        let mut mj = marks[0];
+        for (i, s) in segments.iter().enumerate() {
             // TODO early out
             if i != mj.index {
                 // not modified
                 let bin_index = s.bin_index(&layout);
                 let bin = unsafe { bins.get_unchecked_mut(bin_index) };
-                *unsafe { slice.get_unchecked_mut(bin.data) } = s;
+                *unsafe { slice.get_unchecked_mut(bin.data) } = s.clone();
                 bin.data += 1;
             } else {
                 let s0 = Segment::create_and_validate(s.x_segment.a, mj.point, s.count);
@@ -156,16 +130,12 @@ impl SplitSolver {
 
 
                 // add middle
+                let mut m0 = mj;
                 j += 1;
                 while j < marks.len() {
                     mj = marks[j];
                     if m0.index != mj.index {
                         break;
-                    }
-
-                    j += 1;
-                    if m0.point == mj.point {
-                        continue;
                     }
 
                     let sj = Segment::create_and_validate(m0.point, mj.point, s.count);
@@ -175,6 +145,7 @@ impl SplitSolver {
                     sj_bin.data += 1;
 
                     m0 = mj;
+                    j += 1;
                 }
 
                 // add last
@@ -208,18 +179,18 @@ impl SplitSolver {
         // move new
 
         let mut j = 0;
-        let mut m0 = marks[0];
-        let mut mj = m0;
+        let mut mj = marks[0];
         for (i, s) in segments.iter().enumerate() {
             if i != mj.index {
                 let bin_index = layout.index(s.x_segment.a.x);
                 unsafe { bins.get_unchecked_mut(bin_index) }.data += 1;
             } else {
                 // add first
-                let bin_index = layout.index(s.x_segment.a.x.min(mj.point.x));
-                unsafe { bins.get_unchecked_mut(bin_index) }.data += 1;
+                let min_x = s.x_segment.a.x.min(mj.point.x);
+                unsafe { bins.get_unchecked_mut(layout.index(min_x)) }.data += 1;
 
                 // add middle
+                let mut m0 = mj;
                 j += 1;
                 while j < marks.len() {
                     mj = marks[j];
@@ -227,23 +198,17 @@ impl SplitSolver {
                         break;
                     }
 
-                    j += 1;
-                    if m0.point == mj.point {
-                        continue;
-                    }
-
                     let min_x = m0.point.x.min(mj.point.x);
 
-                    let bin_index = layout.index(min_x);
-                    unsafe { bins.get_unchecked_mut(bin_index) }.data += 1;
+                    unsafe { bins.get_unchecked_mut(layout.index(min_x)) }.data += 1;
 
                     m0 = mj;
+                    j += 1;
                 }
 
                 // add last
                 let min_x = m0.point.x.min(s.x_segment.b.x);
-                let bin_index = layout.index(min_x);
-                unsafe { bins.get_unchecked_mut(bin_index) }.data += 1;
+                unsafe { bins.get_unchecked_mut(layout.index(min_x)) }.data += 1;
             }
         }
 
@@ -295,27 +260,100 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn multi_split_edge(marks: &[LineMark], edges: &mut Vec<Segment>) {
+    fn multi_split_edge(marks: &[LineMark], segments: &mut Vec<Segment>) {
         let mut iter = marks.iter();
         let m0 = iter.next().unwrap();
 
         let mut p = m0.point;
-        let mut l = m0.length;
 
-        let e0 = unsafe { edges.get_unchecked_mut(m0.index) };
+        let e0 = unsafe { segments.get_unchecked_mut(m0.index) };
 
         let b = e0.x_segment.b;
         let count = e0.count;
         *e0 = Segment::create_and_validate(e0.x_segment.a, p, count);
 
         for mj in iter {
-            if l != mj.length || p != mj.point {
-                edges.push(Segment::create_and_validate(p, mj.point, count));
-                p = mj.point;
-                l = mj.length;
-            }
+            segments.push(Segment::create_and_validate(p, mj.point, count));
+            p = mj.point;
         }
 
-        edges.push(Segment::create_and_validate(p, b, count));
+        segments.push(Segment::create_and_validate(p, b, count));
+    }
+
+    #[inline]
+    fn sort_and_filter_marks(&self, marks: &mut Vec<LineMark>, segments: &[Segment]) {
+        marks.smart_bin_sort_by(&self.solver, |a, b| a.index.cmp(&b.index).then(a.point.cmp(&b.point)));
+        marks.dedup();
+
+        let mut i = 1;
+        let mut i0 = 0;
+        let mut m0_index = marks[0].index;
+
+        while i < marks.len() {
+            let mi_index = marks[i].index;
+            if mi_index == m0_index {
+                i += 1;
+                continue;
+            }
+
+            if i0 + 1 < i {
+                Self::sort_sub_marks(&mut marks[i0..i], segments);
+            }
+
+            m0_index = mi_index;
+            i0 = i;
+            i += 1;
+        }
+
+        if i0 + 1 < i {
+            Self::sort_sub_marks(&mut marks[i0..i], segments);
+        }
+    }
+
+    fn sort_sub_marks(marks: &mut [LineMark], segments: &[Segment]) {
+        let mut j0 = 0;
+        let mut j = 1;
+
+        let m0 = marks[0];
+        let mut x0 = m0.point.x;
+        while j < marks.len() {
+            let xi = marks[j].point.x;
+            if x0 == xi {
+                j += 1;
+                continue;
+            }
+
+            if j0 + 1 < j {
+                let s = segments[m0.index].x_segment;
+                let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
+                let y1 = if j == marks.len() { s.b.y } else { marks[j].point.y };
+                Self::sort_sub_marks_by_y(y0, y1, &mut marks[j0..j]);
+            }
+
+            x0 = xi;
+            j0 = j;
+            j += 1;
+        }
+
+        if j0 + 1 < j {
+            let s = segments[m0.index].x_segment;
+            let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
+            let y1 = if j == marks.len() { s.b.y } else { marks[j].point.y };
+            Self::sort_sub_marks_by_y(y0, y1, &mut marks[j0..j]);
+        }
+    }
+
+    #[inline]
+    fn sort_sub_marks_by_y(y0: i32, y1: i32, marks: &mut [LineMark]) {
+        // the goal is to sort close to y0 and far from y1
+        let y0 = y0 as i64;
+        let y1 = y1 as i64;
+        marks.sort_unstable_by(|ma, mb| {
+            let ya = ma.point.y as i64;
+            let yb = mb.point.y as i64;
+            let sa = (y0 - ya).abs() - (y0 - yb).abs();
+            let sb = (y1 - ya).abs() - (y1 - yb).abs();
+            sa.cmp(&sb)
+        });
     }
 }

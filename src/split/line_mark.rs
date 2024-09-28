@@ -4,7 +4,6 @@ use i_key_sort::index::{BinKey, BinLayout};
 #[derive(Clone, Copy, PartialEq)]
 pub(super) struct LineMark {
     pub(super) index: usize,
-    pub(super) length: i64,
     pub(super) point: IntPoint,
 }
 
