@@ -80,7 +80,7 @@ impl SplitSolver {
             max = max.max(m.point.x);
         }
 
-        for s in segments.iter() {
+        for s in segments.iter().skip(1) {
             max = max.max(s.x_segment.b.x);
         }
 
@@ -117,7 +117,7 @@ impl SplitSolver {
                 // not modified
                 let bin_index = s.bin_index(&layout);
                 let bin = unsafe { bins.get_unchecked_mut(bin_index) };
-                *unsafe { slice.get_unchecked_mut(bin.data) } = s.clone();
+                *unsafe { slice.get_unchecked_mut(bin.data) } = *s;
                 bin.data += 1;
             } else {
                 let s0 = Segment::create_and_validate(s.x_segment.a, mj.point, s.count);
@@ -310,6 +310,7 @@ impl SplitSolver {
         }
     }
 
+    #[inline]
     fn sort_sub_marks(marks: &mut [LineMark], segments: &[Segment]) {
         let mut j0 = 0;
         let mut j = 1;
@@ -343,7 +344,6 @@ impl SplitSolver {
         }
     }
 
-    #[inline]
     fn sort_sub_marks_by_y(y0: i32, y1: i32, marks: &mut [LineMark]) {
         // the goal is to sort close to y0 and far from y1
         let y0 = y0 as i64;

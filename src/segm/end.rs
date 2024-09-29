@@ -1,7 +1,7 @@
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(crate) struct End {
     pub(crate) index: usize,
     pub(crate) point: IntPoint,
