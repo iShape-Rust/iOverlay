@@ -94,7 +94,7 @@ impl FillSolver {
 
             for se in buf.iter() {
                 let sid = unsafe { segments.get_unchecked(se.index) };
-                (sum_count, fill) = sid.add_and_fill(sum_count, fill_rule);
+                (sum_count, fill) = sid.count.add_and_fill(sum_count, fill_rule);
                 *unsafe { result.get_unchecked_mut(se.index) } = fill;
                 if sid.x_segment.is_not_vertical() {
                     scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
