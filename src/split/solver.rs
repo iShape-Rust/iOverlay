@@ -325,9 +325,7 @@ impl SplitSolver {
             }
 
             if j0 + 1 < j {
-                let s = segments[m0.index].x_segment;
-                let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
-                let y1 = if j == marks.len() { s.b.y } else { marks[j].point.y };
+                let (y0, y1) = Self::y_range(j0, j, segments[m0.index].x_segment, marks);
                 Self::sort_sub_marks_by_y(y0, y1, &mut marks[j0..j]);
             }
 
@@ -337,23 +335,25 @@ impl SplitSolver {
         }
 
         if j0 + 1 < j {
-            let s = segments[m0.index].x_segment;
-            let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
-            let y1 = if j == marks.len() { s.b.y } else { marks[j].point.y };
+            let (y0, y1) = Self::y_range(j0, j, segments[m0.index].x_segment, marks);
             Self::sort_sub_marks_by_y(y0, y1, &mut marks[j0..j]);
         }
     }
 
+    #[inline]
+    fn y_range(j0: usize, j1: usize, s: XSegment, marks: &[LineMark]) -> (i32, i32) {
+        let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
+        let y1 = if j1 == marks.len() { s.b.y } else { marks[j1].point.y };
+        (y0, y1)
+    }
+
+    #[inline]
     fn sort_sub_marks_by_y(y0: i32, y1: i32, marks: &mut [LineMark]) {
-        // the goal is to sort close to y0 and far from y1
-        let y0 = y0 as i64;
-        let y1 = y1 as i64;
-        marks.sort_unstable_by(|ma, mb| {
-            let ya = ma.point.y as i64;
-            let yb = mb.point.y as i64;
-            let sa = (y0 - ya).abs() - (y0 - yb).abs();
-            let sb = (y1 - ya).abs() - (y1 - yb).abs();
-            sa.cmp(&sb)
-        });
+        // The x-coordinate is the same for every point
+        // By default, the range should be sorted in ascending order by the y-coordinate.
+        if y0 > y1 {
+            // reverse the order to sort the range in descending order by the y-coordinate.
+            marks.reverse();
+        }
     }
 }
