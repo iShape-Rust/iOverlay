@@ -10,7 +10,7 @@ use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::sort::SmartBinSort;
 
-use super::overlay_rule::OverlayRule;
+use super::overlay_rule::{ClipStrategy, DifferenceStrategy, FillTopStrategy, IntersectStrategy, InverseDifferenceStrategy, OverlayRule, SubjectStrategy, UnionStrategy, XorStrategy};
 use super::filter::Filter;
 
 impl OverlayGraph {
@@ -40,23 +40,36 @@ impl OverlayGraph {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    #[inline]
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: i64) -> IntShapes {
         let mut visited = self.links.filter(overlay_rule);
+        match overlay_rule {
+            OverlayRule::Subject => self.extract_shapes_min_area_visited::<SubjectStrategy>(min_area, &mut visited),
+            OverlayRule::Clip => self.extract_shapes_min_area_visited::<ClipStrategy>(min_area, &mut visited),
+            OverlayRule::Intersect => self.extract_shapes_min_area_visited::<IntersectStrategy>(min_area, &mut visited),
+            OverlayRule::Union => self.extract_shapes_min_area_visited::<UnionStrategy>(min_area, &mut visited),
+            OverlayRule::Difference => self.extract_shapes_min_area_visited::<DifferenceStrategy>(min_area, &mut visited),
+            OverlayRule::InverseDifference => self.extract_shapes_min_area_visited::<InverseDifferenceStrategy>(min_area, &mut visited),
+            OverlayRule::Xor => self.extract_shapes_min_area_visited::<XorStrategy>(min_area, &mut visited),
+        }
+    }
 
+    #[inline(never)]
+    pub(crate) fn extract_shapes_min_area_visited<F: FillTopStrategy>(&self, min_area: i64, visited: &mut [u8]) -> IntShapes {
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
         let mut link_index = 0;
         while link_index < visited.len() {
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited {
+            if is_visited == 0 {
                 link_index += 1;
                 continue;
             }
 
             let left_top_link = self.find_left_top_link(link_index, &visited);
             let link = self.link(left_top_link);
-            let is_hole = overlay_rule.is_fill_top(link.fill);
+            let is_hole = F::is_fill_top(link.fill);
 
             let start_data = if is_hole {
                 StartPathData {
@@ -74,7 +87,7 @@ impl OverlayGraph {
                 }
             };
 
-            let mut path = self.get_path(start_data, &mut visited);
+            let mut path = self.get_path(start_data, visited);
 
             if path.validate(min_area) {
                 if is_hole {
@@ -93,12 +106,14 @@ impl OverlayGraph {
     }
 
     #[inline]
-    fn get_path(&self, start_data: StartPathData, visited: &mut [bool]) -> IntPath {
+    fn get_path(&self, start_data: StartPathData, visited: &mut [u8]) -> IntPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        *unsafe { visited.get_unchecked_mut(link_id) } = true;
+        unsafe {
+            *visited.get_unchecked_mut(link_id) -= 1;
+        };
 
         let mut path = IntPath::new();
         path.push(start_data.begin);
@@ -124,7 +139,9 @@ impl OverlayGraph {
                 link.a.id
             };
 
-            *unsafe { visited.get_unchecked_mut(link_id) } = true;
+            unsafe {
+                *visited.get_unchecked_mut(link_id) -= 1;
+            };
         }
 
         path

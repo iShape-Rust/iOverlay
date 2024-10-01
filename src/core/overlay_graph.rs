@@ -27,7 +27,7 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
-    pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
+    pub(crate) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
         let segments = bundle.0;
         let fills = bundle.1;
 
@@ -101,7 +101,7 @@ impl OverlayGraph {
                 }
             }
 
-            debug_assert!(indices.len() > 1, "indices: {}", indices.len());
+            // debug_assert!(indices.len() > 1, "indices: {}", indices.len());
             // nodes.push(OverlayNode { indices });
 
             nodes.push(OverlayNode::new(indices.as_slice()));
@@ -118,7 +118,7 @@ impl OverlayGraph {
         target_index: usize,
         node_id: usize,
         indices: &[usize],
-        visited: &[bool],
+        visited: &[u8],
     ) -> usize {
         let target = self.link(target_index);
         let (c, a) = if target.a.id == node_id {
@@ -166,7 +166,7 @@ impl OverlayGraph {
     }
 
     #[inline]
-    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
+    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[u8]) -> usize {
         let top = self.link(link_index);
         debug_assert!(top.is_direct());
 
@@ -183,7 +183,7 @@ impl OverlayGraph {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_indices(&self, link: &OverlayLink, link_index: usize, indices: &[usize], visited: &[bool]) -> usize {
+    fn find_left_top_link_on_indices(&self, link: &OverlayLink, link_index: usize, indices: &[usize], visited: &[u8]) -> usize {
         let mut top_index = link_index;
         let mut top = link;
 
@@ -199,7 +199,7 @@ impl OverlayGraph {
             }
 
             let &is_visited = unsafe { visited.get_unchecked(i) };
-            if is_visited {
+            if is_visited == 0 {
                 continue;
             }
 
@@ -233,19 +233,19 @@ impl OverlayGraph {
 }
 
 trait OverlayNodeIndices {
-    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize);
-    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize;
+    fn first_not_visited(&self, visited: &[u8]) -> (usize, usize);
+    fn next_link(&self, it_index: &mut usize, visited: &[u8]) -> usize;
 }
 
 impl OverlayNodeIndices for [usize] {
     #[inline(always)]
-    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize) {
+    fn first_not_visited(&self, visited: &[u8]) -> (usize, usize) {
         let mut it_index = 0;
         while it_index < self.len() {
             let link_index = self[it_index];
             it_index += 1;
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if !is_visited {
+            if is_visited != 0 {
                 return (it_index, link_index);
             }
         }
@@ -253,12 +253,12 @@ impl OverlayNodeIndices for [usize] {
     }
 
     #[inline(always)]
-    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize {
+    fn next_link(&self, it_index: &mut usize, visited: &[u8]) -> usize {
         while *it_index < self.len() {
             let link_index = self[*it_index];
             *it_index += 1;
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if !is_visited {
+            if is_visited != 0 {
                 return link_index
             }
         }
@@ -292,5 +292,16 @@ impl Size for Vec<End> {
         }
 
         i - index
+    }
+}
+
+#[cfg(test)]
+impl OverlayGraph {
+    pub fn validate(&self) {
+        for node in self.nodes.iter() {
+            if let OverlayNode::Cross(indices) = node {
+                debug_assert!(indices.len() % 2 == 0, "indices: {}", indices.len());
+            }
+        }
     }
 }

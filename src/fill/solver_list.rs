@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
-use crate::core::fill_rule::FillRule;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::solver::FillSolver;
+use crate::fill::strategy::FillStrategy;
 use crate::segm::end::End;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::shape_count::ShapeCount;
@@ -56,7 +56,7 @@ impl ScanFillList {
 }
 
 impl FillSolver {
-    pub(super) fn list_fill(segments: &[Segment], fill_rule: FillRule) -> Vec<SegmentFill> {
+    pub(super) fn list_fill<F: FillStrategy>(segments: &[Segment]) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillList::new(segments.len());
         let mut buf = Vec::with_capacity(4);
@@ -94,7 +94,7 @@ impl FillSolver {
 
             for se in buf.iter() {
                 let sid = unsafe { segments.get_unchecked(se.index) };
-                (sum_count, fill) = sid.count.add_and_fill(sum_count, fill_rule);
+                (sum_count, fill) = F::add_and_fill(sid.count, sum_count);
                 *unsafe { result.get_unchecked_mut(se.index) } = fill;
                 if sid.x_segment.is_not_vertical() {
                     scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });

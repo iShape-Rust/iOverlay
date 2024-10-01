@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
+use crate::core::overlay::ShapeType;
 use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
 
@@ -119,4 +120,8 @@ impl BinKey<i32> for Segment {
     fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
         self.x_segment.bin_index(layout)
     }
+}
+
+pub(crate) trait ToSegment {
+    fn to_segment(&self, shape_type: ShapeType) -> Segment;
 }

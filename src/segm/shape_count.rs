@@ -1,3 +1,5 @@
+use crate::core::overlay::ShapeType;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShapeCount {
     pub(crate) subj: i32,
@@ -11,6 +13,14 @@ impl ShapeCount {
 
     #[inline(always)]
     pub(crate) fn new(subj: i32, clip: i32) -> ShapeCount { ShapeCount { subj, clip } }
+
+    #[inline(always)]
+    pub(crate) fn with_shape_type(shape_type: ShapeType) -> ShapeCount {
+        match shape_type {
+            ShapeType::Subject => ShapeCount { subj: 1, clip: 0 },
+            ShapeType::Clip => ShapeCount { subj: 0, clip: 1 }
+        }
+    }
 
     #[inline(always)]
     pub(crate) fn add(self, count: ShapeCount) -> ShapeCount {

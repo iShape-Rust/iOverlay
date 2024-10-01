@@ -3,7 +3,7 @@ use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
-use crate::core::overlay_rule::OverlayRule;
+use crate::core::overlay_rule::{ClipStrategy, DifferenceStrategy, FillTopStrategy, IntersectStrategy, InverseDifferenceStrategy, OverlayRule, SubjectStrategy, UnionStrategy, XorStrategy};
 use crate::core::filter::Filter;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
@@ -22,21 +22,32 @@ impl OverlayGraph {
 
     pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
         let mut visited = self.links.filter(overlay_rule);
+        match overlay_rule {
+            OverlayRule::Subject => self.extract_shape_vectors_visited::<SubjectStrategy>(&mut visited),
+            OverlayRule::Clip => self.extract_shape_vectors_visited::<ClipStrategy>(&mut visited),
+            OverlayRule::Intersect => self.extract_shape_vectors_visited::<IntersectStrategy>(&mut visited),
+            OverlayRule::Union => self.extract_shape_vectors_visited::<UnionStrategy>(&mut visited),
+            OverlayRule::Difference => self.extract_shape_vectors_visited::<DifferenceStrategy>(&mut visited),
+            OverlayRule::InverseDifference => self.extract_shape_vectors_visited::<InverseDifferenceStrategy>(&mut visited),
+            OverlayRule::Xor => self.extract_shape_vectors_visited::<XorStrategy>(&mut visited),
+        }
+    }
 
+    fn extract_shape_vectors_visited<F: FillTopStrategy>(&self, visited: &mut [u8]) -> Vec<VectorShape> {
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
         let mut link_index = 0;
         while link_index < visited.len() {
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited {
+            if is_visited == 0 {
                 link_index += 1;
                 continue;
             }
 
             let left_top_link = self.find_left_top_link(link_index, &visited);
             let link = self.link(left_top_link);
-            let is_hole = overlay_rule.is_fill_top(link.fill);
+            let is_hole = F::is_fill_top(link.fill);
 
             if is_hole {
                 let start_data = StartVectorPathData {
@@ -47,7 +58,7 @@ impl OverlayGraph {
                     last_node_id: link.b.id,
                     fill: link.fill,
                 };
-                let path = self.get_vector_path(start_data, &mut visited);
+                let path = self.get_vector_path(start_data, visited);
                 holes.push(path);
             } else {
                 let start_data = StartVectorPathData {
@@ -58,7 +69,7 @@ impl OverlayGraph {
                     last_node_id: link.a.id,
                     fill: link.fill,
                 };
-                let path = self.get_vector_path(start_data, &mut visited);
+                let path = self.get_vector_path(start_data, visited);
                 shapes.push(vec![path]);
             };
 
@@ -70,12 +81,12 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, start_data: StartVectorPathData, visited: &mut [bool]) -> VectorPath {
+    fn get_vector_path(&self, start_data: StartVectorPathData, visited: &mut [u8]) -> VectorPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        *unsafe { visited.get_unchecked_mut(link_id) } = true;
+        unsafe { *visited.get_unchecked_mut(link_id) -= 1; };
 
         let mut path = VectorPath::new();
         path.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
@@ -101,7 +112,7 @@ impl OverlayGraph {
                 link.a.id
             };
 
-            *unsafe { visited.get_unchecked_mut(link_id) } = true;
+            unsafe { *visited.get_unchecked_mut(link_id) -= 1; };
         }
 
         path

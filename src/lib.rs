@@ -120,6 +120,7 @@ pub mod core;
 pub mod vector;
 pub mod f64;
 pub mod f32;
+pub mod extension;
 
 pub(crate) mod split;
 pub(crate) mod bind;

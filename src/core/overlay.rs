@@ -35,7 +35,7 @@ pub enum ShapeType {
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
 pub struct Overlay {
-    edges: Vec<Segment>,
+    pub(crate) segments: Vec<Segment>,
 }
 
 impl Overlay {
@@ -44,7 +44,7 @@ impl Overlay {
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
     pub fn new(capacity: usize) -> Self {
         Self {
-            edges: Vec::with_capacity(capacity),
+            segments: Vec::with_capacity(capacity),
         }
     }
 
@@ -72,7 +72,7 @@ impl Overlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        self.edges.append_edges(path, shape_type);
+        self.segments.append_segments(path, shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
@@ -104,7 +104,7 @@ impl Overlay {
     /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
     /// - `solver`: Type of solver to use.
     pub(crate) fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
-        if self.edges.is_empty() {
+        if self.segments.is_empty() {
             return (Vec::new(), Vec::new());
         }
 
@@ -119,7 +119,7 @@ impl Overlay {
     /// - `overlay_rule`: The overlay rule to apply.
     /// - `solver`: Type of solver to use.
     pub fn into_shape_vectors(self, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<VectorShape> {
-        if self.edges.is_empty() {
+        if self.segments.is_empty() {
             return Vec::new();
         }
         let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
@@ -131,7 +131,7 @@ impl Overlay {
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `solver`: Type of solver to use.
     pub fn into_separate_vectors(self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
-        if self.edges.is_empty() {
+        if self.segments.is_empty() {
             return Vec::new();
         }
         let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
@@ -152,7 +152,7 @@ impl Overlay {
     }
 
     fn prepare_segments_and_fills(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
-        let mut segments = self.edges;
+        let mut segments = self.segments;
         segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
         segments.merge_if_needed();
@@ -160,32 +160,32 @@ impl Overlay {
         segments = SplitSolver::new(solver).split(segments);
 
         let is_list = solver.is_list_fill(&segments);
-        let fills = FillSolver::fill(fill_rule, is_list, &segments);
+        let fills = FillSolver::fill_with_rule(fill_rule, is_list, &segments);
 
         (segments, fills)
     }
 }
 
-trait BuildEdges {
-    fn append_edges(&mut self, path: &[IntPoint], shape_type: ShapeType);
+pub(crate) trait BuildSegments {
+    fn append_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
 
-    fn append_private_edges(&mut self, path: &[IntPoint], shape_type: ShapeType);
+    fn append_private_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
 }
 
-impl BuildEdges for Vec<Segment> {
+impl BuildSegments for Vec<Segment> {
     #[inline]
-    fn append_edges(&mut self, path: &[IntPoint], shape_type: ShapeType) {
+    fn append_segments(&mut self, path: &[IntPoint], shape_type: ShapeType) {
         if path.is_simple() {
-            self.append_private_edges(path, shape_type);
+            self.append_private_segments(path, shape_type);
         } else {
             let path = path.to_simple();
             if path.len() > 2 {
-                self.append_private_edges(path.as_slice(), shape_type);
+                self.append_private_segments(path.as_slice(), shape_type);
             }
         }
     }
 
-    fn append_private_edges(&mut self, path: &[IntPoint], shape_type: ShapeType) {
+    fn append_private_segments(&mut self, path: &[IntPoint], shape_type: ShapeType) {
         let mut p0 = path[path.len() - 1];
 
         match shape_type {
