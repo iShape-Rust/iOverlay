@@ -3,7 +3,7 @@ use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
-use crate::core::overlay_rule::{ClipStrategy, DifferenceStrategy, FillTopStrategy, IntersectStrategy, InverseDifferenceStrategy, OverlayRule, SubjectStrategy, UnionStrategy, XorStrategy};
+use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
@@ -21,19 +21,8 @@ impl OverlayGraph {
     }
 
     pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
-        let mut visited = self.links.filter(overlay_rule);
-        match overlay_rule {
-            OverlayRule::Subject => self.extract_shape_vectors_visited::<SubjectStrategy>(&mut visited),
-            OverlayRule::Clip => self.extract_shape_vectors_visited::<ClipStrategy>(&mut visited),
-            OverlayRule::Intersect => self.extract_shape_vectors_visited::<IntersectStrategy>(&mut visited),
-            OverlayRule::Union => self.extract_shape_vectors_visited::<UnionStrategy>(&mut visited),
-            OverlayRule::Difference => self.extract_shape_vectors_visited::<DifferenceStrategy>(&mut visited),
-            OverlayRule::InverseDifference => self.extract_shape_vectors_visited::<InverseDifferenceStrategy>(&mut visited),
-            OverlayRule::Xor => self.extract_shape_vectors_visited::<XorStrategy>(&mut visited),
-        }
-    }
-
-    fn extract_shape_vectors_visited<F: FillTopStrategy>(&self, visited: &mut [u8]) -> Vec<VectorShape> {
+        let mut binding = self.links.filter(overlay_rule);
+        let visited = binding.as_mut_slice();
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
@@ -45,9 +34,9 @@ impl OverlayGraph {
                 continue;
             }
 
-            let left_top_link = self.find_left_top_link(link_index, &visited);
+            let left_top_link = self.find_left_top_link(link_index, visited);
             let link = self.link(left_top_link);
-            let is_hole = F::is_fill_top(link.fill);
+            let is_hole = overlay_rule.is_fill_top(link.fill);
 
             if is_hole {
                 let start_data = StartVectorPathData {
@@ -154,6 +143,8 @@ impl JoinHoles for Vec<VectorShape> {
             let p = hole.first().unwrap().a;
             i_points.push(IdPoint::new(i, p));
         }
+
+        // TODO this sort probably is not need because we take first point in path
         i_points.smart_bin_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
 
         let x_min = i_points[0].point.x;

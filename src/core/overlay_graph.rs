@@ -108,8 +108,6 @@ impl OverlayGraph {
             indices.clear();
         }
 
-        debug_assert!(nodes.len() <= n);
-
         Self { solver, nodes, links }
     }
 
@@ -198,8 +196,8 @@ impl OverlayGraph {
                 continue;
             }
 
-            let &is_visited = unsafe { visited.get_unchecked(i) };
-            if is_visited == 0 {
+            let &count_to_visit = unsafe { visited.get_unchecked(i) };
+            if count_to_visit == 0 {
                 continue;
             }
 
@@ -244,10 +242,11 @@ impl OverlayNodeIndices for [usize] {
         while it_index < self.len() {
             let link_index = self[it_index];
             it_index += 1;
-            let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited != 0 {
+            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
+            if count_to_visit != 0 {
                 return (it_index, link_index);
             }
+
         }
         unreachable!("The loop should always return");
     }
@@ -257,8 +256,8 @@ impl OverlayNodeIndices for [usize] {
         while *it_index < self.len() {
             let link_index = self[*it_index];
             *it_index += 1;
-            let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited != 0 {
+            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
+            if count_to_visit != 0 {
                 return link_index
             }
         }
@@ -295,12 +294,12 @@ impl Size for Vec<End> {
     }
 }
 
-#[cfg(test)]
 impl OverlayGraph {
     pub fn validate(&self) {
         for node in self.nodes.iter() {
             if let OverlayNode::Cross(indices) = node {
-                debug_assert!(indices.len() % 2 == 0, "indices: {}", indices.len());
+                debug_assert!(indices.len() > 1, "indices: {}", indices.len());
+                debug_assert!(self.nodes.len() <= self.links.len(), "nodes is more then links");
             }
         }
     }

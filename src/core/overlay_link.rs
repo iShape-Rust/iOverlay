@@ -10,7 +10,7 @@ pub(crate) struct OverlayLink {
 
 impl OverlayLink {
     #[inline(always)]
-    pub(super) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
+    pub(crate) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
         OverlayLink { a, b, fill }
     }
 

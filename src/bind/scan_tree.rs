@@ -1,6 +1,7 @@
 use i_float::point::IntPoint;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
+use crate::bind::hole_point::HolePoint;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
 use crate::util::Int;
@@ -71,9 +72,10 @@ impl ScanHoleStore for ScanHoleTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> usize {
+    fn find_under_and_nearest<P: HolePoint>(&mut self, path_point: &P) -> usize {
         let mut index = self.tree.root;
-        let mut result = EMPTY_REF;
+        let mut id = usize::MAX;
+        let p = path_point.point();
         while index != EMPTY_REF {
             let node = self.tree.node(index);
             if node.value.x_segment.b.x <= p.x {
@@ -85,13 +87,15 @@ impl ScanHoleStore for ScanHoleTree {
                     index = self.tree.root;
                 }
             } else if node.value.x_segment.is_under_point(p) {
-                result = index;
+                if path_point.filter(node.value.id) {
+                    id = node.value.id;
+                }
                 index = node.right;
             } else {
                 index = node.left;
             }
         }
 
-        self.tree.node(result).value.id
+        id
     }
 }

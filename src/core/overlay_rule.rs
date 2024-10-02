@@ -19,65 +19,21 @@ pub enum OverlayRule {
     Xor,
 }
 
-pub(crate) trait FillTopStrategy {
-    fn is_fill_top(fill: SegmentFill) -> bool;
-}
-
-pub(crate) struct SubjectStrategy;
-pub(crate) struct ClipStrategy;
-pub(crate) struct IntersectStrategy;
-pub(crate) struct UnionStrategy;
-pub(crate) struct DifferenceStrategy;
-pub(crate) struct InverseDifferenceStrategy;
-pub(crate) struct XorStrategy;
-
-impl FillTopStrategy for SubjectStrategy {
+impl OverlayRule {
     #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        fill & SUBJ_TOP == SUBJ_TOP
-    }
-}
-
-impl FillTopStrategy for ClipStrategy {
-    #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        fill & CLIP_TOP == CLIP_TOP
-    }
-}
-
-impl FillTopStrategy for IntersectStrategy {
-    #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        fill & BOTH_TOP == BOTH_TOP
-    }
-}
-
-impl FillTopStrategy for UnionStrategy {
-    #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        fill & BOTH_BOTTOM == NONE
-    }
-}
-
-impl FillTopStrategy for DifferenceStrategy {
-    #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        fill & BOTH_TOP == SUBJ_TOP
-    }
-}
-
-impl FillTopStrategy for InverseDifferenceStrategy {
-    #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        fill & BOTH_TOP == CLIP_TOP
-    }
-}
-
-impl FillTopStrategy for XorStrategy {
-    #[inline(always)]
-    fn is_fill_top(fill: SegmentFill) -> bool {
-        let is_subject = fill & BOTH_TOP == SUBJ_TOP;
-        let is_clip = fill & BOTH_TOP == CLIP_TOP;
-        is_subject || is_clip
+    pub(crate) fn is_fill_top(&self, fill: SegmentFill) -> bool {
+        match self {
+            OverlayRule::Subject => fill & SUBJ_TOP == SUBJ_TOP,
+            OverlayRule::Clip => fill & CLIP_TOP == CLIP_TOP,
+            OverlayRule::Intersect => fill & BOTH_TOP == BOTH_TOP,
+            OverlayRule::Union => fill & BOTH_BOTTOM == NONE,
+            OverlayRule::Difference => fill & BOTH_TOP == SUBJ_TOP,
+            OverlayRule::InverseDifference => fill & BOTH_TOP == CLIP_TOP,
+            OverlayRule::Xor => {
+                let is_subject = fill & BOTH_TOP == SUBJ_TOP;
+                let is_clip = fill & BOTH_TOP == CLIP_TOP;
+                is_subject || is_clip
+            }
+        }
     }
 }

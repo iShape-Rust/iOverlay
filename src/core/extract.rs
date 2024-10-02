@@ -2,15 +2,17 @@ use i_float::point::IntPoint;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::int::simple::Simple;
+use crate::bind::hole_point::HolePoint;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
+use crate::core::overlay_link::OverlayLink;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::sort::SmartBinSort;
 
-use super::overlay_rule::{ClipStrategy, DifferenceStrategy, FillTopStrategy, IntersectStrategy, InverseDifferenceStrategy, OverlayRule, SubjectStrategy, UnionStrategy, XorStrategy};
+use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
 
 impl OverlayGraph {
@@ -42,52 +44,26 @@ impl OverlayGraph {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: i64) -> IntShapes {
-        let mut visited = self.links.filter(overlay_rule);
-        match overlay_rule {
-            OverlayRule::Subject => self.extract_shapes_min_area_visited::<SubjectStrategy>(min_area, &mut visited),
-            OverlayRule::Clip => self.extract_shapes_min_area_visited::<ClipStrategy>(min_area, &mut visited),
-            OverlayRule::Intersect => self.extract_shapes_min_area_visited::<IntersectStrategy>(min_area, &mut visited),
-            OverlayRule::Union => self.extract_shapes_min_area_visited::<UnionStrategy>(min_area, &mut visited),
-            OverlayRule::Difference => self.extract_shapes_min_area_visited::<DifferenceStrategy>(min_area, &mut visited),
-            OverlayRule::InverseDifference => self.extract_shapes_min_area_visited::<InverseDifferenceStrategy>(min_area, &mut visited),
-            OverlayRule::Xor => self.extract_shapes_min_area_visited::<XorStrategy>(min_area, &mut visited),
-        }
-    }
-
-    #[inline(never)]
-    pub(crate) fn extract_shapes_min_area_visited<F: FillTopStrategy>(&self, min_area: i64, visited: &mut [u8]) -> IntShapes {
-        let mut holes = Vec::new();
+        let mut binding = self.links.filter(overlay_rule);
+        let visited = binding.as_mut_slice();
         let mut shapes = Vec::new();
+        let mut holes = Vec::new();
 
         let mut link_index = 0;
         while link_index < visited.len() {
-            let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited == 0 {
+            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
+            if count_to_visit == 0 {
                 link_index += 1;
                 continue;
             }
 
-            let left_top_link = self.find_left_top_link(link_index, &visited);
+            let left_top_link = self.find_left_top_link(link_index, visited);
             let link = self.link(left_top_link);
-            let is_hole = F::is_fill_top(link.fill);
+            let is_hole = overlay_rule.is_fill_top(link.fill);
 
-            let start_data = if is_hole {
-                StartPathData {
-                    begin: link.b.point,
-                    node_id: link.a.id,
-                    link_id: left_top_link,
-                    last_node_id: link.b.id,
-                }
-            } else {
-                StartPathData {
-                    begin: link.a.point,
-                    node_id: link.b.id,
-                    link_id: left_top_link,
-                    last_node_id: link.a.id,
-                }
-            };
+            let start_data = StartPathData::new(is_hole, link, left_top_link);
 
-            let mut path = self.get_path(start_data, visited);
+            let mut path = self.get_path(&start_data, visited);
 
             if path.validate(min_area) {
                 if is_hole {
@@ -96,17 +72,15 @@ impl OverlayGraph {
                     shapes.push(vec![path]);
                 }
             }
-
-            link_index += 1;
         }
 
-        shapes.join(&self.solver, holes);
+        shapes.join_holes(&self.solver, holes);
 
         shapes
     }
 
     #[inline]
-    fn get_path(&self, start_data: StartPathData, visited: &mut [u8]) -> IntPath {
+    pub(crate) fn get_path(&self, start_data: &StartPathData, visited: &mut [u8]) -> IntPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
@@ -148,21 +122,41 @@ impl OverlayGraph {
     }
 }
 
-struct StartPathData {
-    begin: IntPoint,
-    node_id: usize,
-    link_id: usize,
-    last_node_id: usize,
+pub(crate) struct StartPathData {
+    pub(crate) begin: IntPoint,
+    pub(crate) node_id: usize,
+    pub(crate) link_id: usize,
+    pub(crate) last_node_id: usize,
 }
 
-trait JoinHoles {
-    fn join(&mut self, solver: &Solver, holes: Vec<IntPath>);
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>);
+impl StartPathData {
+    #[inline(always)]
+    pub(crate) fn new(is_hole: bool, link: &OverlayLink, link_id: usize) -> Self {
+        if is_hole {
+            Self {
+                begin: link.b.point,
+                node_id: link.a.id,
+                link_id,
+                last_node_id: link.b.id,
+            }
+        } else {
+            Self {
+                begin: link.a.point,
+                node_id: link.b.id,
+                link_id,
+                last_node_id: link.a.id,
+            }
+        }
+    }
 }
 
-impl JoinHoles for Vec<IntShape> {
+trait JoinSortedHoles {
+    fn join_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
+}
+
+impl JoinSortedHoles for Vec<IntShape> {
     #[inline]
-    fn join(&mut self, solver: &Solver, holes: Vec<IntPath>) {
+    fn join_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -172,19 +166,32 @@ impl JoinHoles for Vec<IntShape> {
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
         } else {
-            self.scan_join(solver, holes);
+            // Mark: we take first point in the path, that why we get sorted array
+            let hole_points: Vec<_> = holes.iter().enumerate()
+                .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
+                .collect();
+            self.join_holes_by_points(solver, holes, hole_points);
         }
     }
+}
 
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>) {
-        let mut i_points: Vec<_> = holes.iter().enumerate()
-            .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
-            .collect();
+pub(crate) trait JoinHoles {
+    fn join_holes_by_points<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>);
+    fn scan_join<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>);
+}
 
-        i_points.smart_bin_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
+impl JoinHoles for Vec<IntShape> {
 
-        let x_min = i_points[0].point.x;
-        let x_max = i_points[i_points.len() - 1].point.x;
+    #[inline]
+    fn join_holes_by_points<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>) {
+        debug_assert!(self.len() > 1);
+        debug_assert!(!hole_points.is_empty());
+        self.scan_join(solver, holes, hole_points);
+    }
+
+    fn scan_join<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>) {
+        let x_min = hole_points[0].point().x;
+        let x_max = hole_points[hole_points.len() - 1].point().x;
 
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
@@ -194,7 +201,7 @@ impl JoinHoles for Vec<IntShape> {
 
         segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
-        let solution = ShapeBinder::bind(self.len(), i_points, segments);
+        let solution = ShapeBinder::bind(self.len(), hole_points, segments);
 
         for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
             self[shape_index].reserve_exact(capacity);
@@ -207,11 +214,12 @@ impl JoinHoles for Vec<IntShape> {
     }
 }
 
-trait Validate {
+pub(crate) trait Validate {
     fn validate(&mut self, min_area: i64) -> bool;
 }
 
 impl Validate for IntPath {
+    #[inline]
     fn validate(&mut self, min_area: i64) -> bool {
         let slice = self.as_slice();
         if !slice.is_simple() {

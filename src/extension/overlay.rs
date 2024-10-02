@@ -1,6 +1,6 @@
 use i_shape::int::path::IntPath;
 use crate::core::overlay::{Overlay, ShapeType};
-use crate::extension::line::IntLine;
+use crate::extension::line::{IntLine, LineGeometry};
 use crate::segm::segment::{Segment, ToSegment};
 use crate::segm::shape_count::ShapeCount;
 
@@ -8,12 +8,18 @@ impl Overlay {
 
     #[inline]
     pub(super) fn add_line(&mut self, line: &IntLine, shape_type: ShapeType) {
-        self.segments.push(line.to_segment(shape_type));
+        if line.sqr_length() > 0 {
+            self.segments.push(line.to_segment(shape_type));
+        }
     }
 
     #[inline]
     pub(super) fn add_lines(&mut self, lines: &[IntLine], shape_type: ShapeType) {
-        self.segments.extend(lines.iter().map(|line| line.to_segment(shape_type)));
+        for line in lines.iter() {
+            if line.sqr_length() > 0 {
+                self.segments.push(line.to_segment(shape_type));
+            }
+        }
     }
 
     #[inline]

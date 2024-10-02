@@ -1,7 +1,8 @@
-use i_float::point::IntPoint;
+use crate::bind::hole_point::HolePoint;
 use crate::util::Int;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
+use crate::segm::x_segment::XSegment;
 
 pub(crate) struct ScanHoleList {
     buffer: Vec<IdSegment>,
@@ -20,44 +21,40 @@ impl ScanHoleStore for ScanHoleList {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> usize {
+    fn find_under_and_nearest<P: HolePoint>(&mut self, path_point: &P) -> usize {
         if self.buffer.is_empty() {
-            return 0
+            return 0;
         }
 
         let mut i = 0;
-        let mut j = usize::MAX;
-        let mut n = self.buffer.len();
-        while i < n {
+        let p = path_point.point();
+        let mut best: Option<XSegment> = None;
+        let mut best_id = usize::MAX;
+        while i < self.buffer.len() {
             let item = unsafe { self.buffer.get_unchecked(i) };
             if item.x_segment.b.x <= p.x {
-                let last = *unsafe { self.buffer.get_unchecked(n - 1) };
-                *unsafe { self.buffer.get_unchecked_mut(i) } = last;
-                n -= 1;
-                continue;
+                if i + 1 < self.buffer.len() {
+                    self.buffer.swap_remove(i);
+                    continue;
+                } else {
+                    return best_id;
+                }
             }
 
-            if item.x_segment.is_under_point(p) {
-                if j == usize::MAX {
-                    j = i;
-                } else {
-                    let prev = unsafe { self.buffer.get_unchecked(j) };
-                    if prev.x_segment.is_under_segment(&item.x_segment) {
-                        j = i;
+            if item.x_segment.is_under_point(p) && path_point.filter(item.id) {
+                if let Some(prev) = best {
+                    if prev.is_under_segment(&item.x_segment) {
+                        best = Some(item.x_segment);
+                        best_id = item.id;
                     }
+                } else {
+                    best = Some(item.x_segment);
+                    best_id = item.id;
                 }
             }
             i += 1;
         }
 
-        if n != self.buffer.len() {
-            self.buffer.truncate(n);
-        }
-
-        if j == usize::MAX {
-            0
-        } else {
-            unsafe { self.buffer.get_unchecked(j) }.id
-        }
+        best_id
     }
 }

@@ -7,10 +7,10 @@ pub(crate) enum OverlayNode {
 impl OverlayNode {
     #[inline]
     pub(super) fn new(indices: &[usize]) -> Self {
-        if indices.len() > 2 {
-            Self::Cross(indices.to_vec())
-        } else {
+        if indices.len() == 2 {
             Self::Bridge(unsafe { [*indices.get_unchecked(0), *indices.get_unchecked(1)] })
+        } else {
+            Self::Cross(indices.to_vec())
         }
     }
 }

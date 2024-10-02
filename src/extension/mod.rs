@@ -1,4 +1,7 @@
-pub mod slice_solver;
+pub mod slice_extract;
 pub mod slice;
-pub(crate) mod line;
+pub mod line;
 mod overlay;
+mod hole_point;
+mod graph;
+mod node;
