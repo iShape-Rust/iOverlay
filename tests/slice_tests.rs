@@ -243,10 +243,62 @@ mod tests {
     }
 
     #[test]
-    fn test_random() {
-        for _ in 0..10000 {
+    fn test_1() {
+        let path = [
+            IntPoint::new(0, 2),
+            IntPoint::new(0, -1),
+            IntPoint::new(-1, -2)
+        ].to_vec();
+
+        let lines = [
+            [IntPoint::new(-1, -2), IntPoint::new(-1, -1)],
+            [IntPoint::new(1, -1), IntPoint::new(-2, -1)]
+        ].to_vec();
+        let result = path.slice_by_lines(&lines, FillRule::NonZero, 0);
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[2].len(), 1);
+    }
+
+    #[test]
+    fn test_random_0() {
+        for _ in 0..5000 {
             let path = random_polygon(5, 3);
             let lines = random_lines(5, 1);
+            let shapes = path.slice_by_lines(lines.as_slice(), FillRule::NonZero, 0);
+
+            for shape in shapes.iter() {
+                assert!(shape.len() >= 1);
+                for path in shape.iter() {
+                    assert!(path.len() > 2);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_1() {
+        for _ in 0..5000 {
+            let path = random_polygon(5, 3);
+            let lines = random_lines(5, 2);
+            let shapes = path.slice_by_lines(lines.as_slice(), FillRule::NonZero, 0);
+
+            for shape in shapes.iter() {
+                assert!(shape.len() >= 1);
+                for path in shape.iter() {
+                    assert!(path.len() > 2);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_2() {
+        for _ in 0..5000 {
+            let path = random_polygon(10, 8);
+            let lines = random_lines(10, 8);
             let shapes = path.slice_by_lines(lines.as_slice(), FillRule::NonZero, 0);
 
             for shape in shapes.iter() {

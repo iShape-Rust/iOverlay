@@ -123,9 +123,9 @@ impl OverlayGraph {
             (target.a.point, target.b.point)
         } else { (target.b.point, target.a.point) };
 
-        let (mut it_index, mut best_index) = indices.first_not_visited(visited);
+        let (mut it_index, mut best_index) = indices.first_not_visited(target_index, visited);
 
-        let mut link_index = indices.next_link(&mut it_index, visited);
+        let mut link_index = indices.next_link(target_index, &mut it_index, visited);
 
         if link_index >= self.links.len() {
             // no more links
@@ -157,7 +157,7 @@ impl OverlayGraph {
                 vb = vp;
             }
 
-            link_index = indices.next_link(&mut it_index, visited);
+            link_index = indices.next_link(target_index, &mut it_index, visited);
         }
 
         best_index
@@ -231,34 +231,39 @@ impl OverlayGraph {
 }
 
 trait OverlayNodeIndices {
-    fn first_not_visited(&self, visited: &[u8]) -> (usize, usize);
-    fn next_link(&self, it_index: &mut usize, visited: &[u8]) -> usize;
+    fn first_not_visited(&self, ignore: usize, visited: &[u8]) -> (usize, usize);
+    fn next_link(&self, ignore: usize, it_index: &mut usize, visited: &[u8]) -> usize;
 }
 
 impl OverlayNodeIndices for [usize] {
     #[inline(always)]
-    fn first_not_visited(&self, visited: &[u8]) -> (usize, usize) {
+    fn first_not_visited(&self, ignore: usize, visited: &[u8]) -> (usize, usize) {
         let mut it_index = 0;
         while it_index < self.len() {
             let link_index = self[it_index];
             it_index += 1;
+            if link_index == ignore {
+                continue;
+            }
             let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
             if count_to_visit != 0 {
                 return (it_index, link_index);
             }
-
         }
         unreachable!("The loop should always return");
     }
 
     #[inline(always)]
-    fn next_link(&self, it_index: &mut usize, visited: &[u8]) -> usize {
+    fn next_link(&self, ignore: usize, it_index: &mut usize, visited: &[u8]) -> usize {
         while *it_index < self.len() {
             let link_index = self[*it_index];
             *it_index += 1;
+            if link_index == ignore {
+                continue;
+            }
             let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
             if count_to_visit != 0 {
-                return link_index
+                return link_index;
             }
         }
 
