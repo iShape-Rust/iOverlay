@@ -1,8 +1,9 @@
 use std::mem;
-use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_node::OverlayNode;
+use crate::extension::unstable_graph::UnstableGraph;
 
-impl OverlayGraph {
+impl UnstableGraph {
+
     pub(super) fn remove_leaf_links(&mut self) {
         let mut buffer = Vec::new();
         for i in 0..self.links.len() {
@@ -24,7 +25,7 @@ impl OverlayGraph {
         let link = self.link(index);
         let a = self.node(link.a.id);
         let b = self.node(link.b.id);
-        if !(a.is_single() || b.is_single()) {
+        if a.is_not_leaf() && b.is_not_leaf() {
             return;
         }
         let a_id = link.a.id;
@@ -42,84 +43,38 @@ impl OverlayGraph {
     fn mut_node(&mut self, index: usize) -> &mut OverlayNode {
         unsafe { self.nodes.get_unchecked_mut(index) }
     }
-/*
-    #[inline(always)]
-    pub(super) fn sort_indices(&self, node_id: usize, sorted_buffer: &mut Vec<IdPoint>, visited: &[u8]) {
-        sorted_buffer.clear();
-        let node = self.node(node_id);
-        match node {
-            OverlayNode::Bridge([a, b]) => {
-                if visited[*a] > 0 {
-                    let point = self.link(*a).other(node_id).point;
-                    sorted_buffer.push(IdPoint { id: *a, point });
-                }
-                if visited[*b] > 0 {
-                    let point = self.link(*b).other(node_id).point;
-                    sorted_buffer.push(IdPoint { id: *b, point });
-                }
-            }
-            OverlayNode::Cross(array) => {
-                for a in array.iter() {
-                    if visited[*a] > 0 {
-                        let point = self.link(*a).other(node_id).point;
-                        sorted_buffer.push(IdPoint { id: *a, point });
-                    }
-                }
-            }
-        }
-        if sorted_buffer.len() <= 1 {
-            return;
-        }
-
-        let any_link_index = sorted_buffer[0].id;
-        let any_link = self.link(any_link_index);
-
-        // center
-        let c = if any_link.a.id == node_id { any_link.a.point } else { any_link.b.point };
-
-        sorted_buffer.sort_by(|a, b|{
-            let order = Triangle::area_two_point(c, a.point, b.point).cmp(&0);
-            match order {
-                Ordering::Equal => {
-                    // x are equal
-                    b.point.y.cmp(&a.point.y)
-                }
-                _ => {
-                    order
-                }
-            }
-        });
-    }
-
-    fn sort_in_clock_wise_direction
-*/
 }
 
 impl OverlayNode {
 
     #[inline(always)]
-    fn is_single(&self) -> bool {
+    fn is_not_leaf(&self) -> bool {
         match self {
-            OverlayNode::Bridge(_) => { false }
-            OverlayNode::Cross(indices) => { indices.len() == 1 }
+            OverlayNode::Bridge(_) => { true }
+            OverlayNode::Cross(indices) => { indices.len() > 1 }
         }
     }
 
     fn remove(&mut self, link: usize) -> Option<usize> {
         match self {
             OverlayNode::Bridge([a, b]) => {
-                let other = if *a == link {
-                    *b
+                let a = *a;
+                let b = *b;
+                if a == link {
+                    *self = OverlayNode::Cross([b].to_vec());
+                    Some(b)
+                } else if b == link {
+                    *self = OverlayNode::Cross([a].to_vec());
+                    Some(a)
                 } else {
-                    *a
-                };
-
-                *self = OverlayNode::Cross([other].to_vec());
-                Some(other)
+                    None
+                }
             }
             OverlayNode::Cross(indices) => {
                 if indices.len() == 1 {
-                    indices.clear();
+                    if indices[0] == link {
+                        indices.clear();
+                    }
                     return None;
                 }
 
@@ -178,7 +133,7 @@ mod tests {
             OverlayLink::test(0, 1),
         ];
 
-        let mut graph = OverlayGraph { solver: Default::default(), nodes, links };
+        let mut graph = UnstableGraph { solver: Default::default(), nodes, links };
 
         graph.remove_leaf_links();
 
@@ -202,7 +157,7 @@ mod tests {
             OverlayLink::test(0, 3),
         ];
 
-        let mut graph = OverlayGraph { solver: Default::default(), nodes, links };
+        let mut graph = UnstableGraph { solver: Default::default(), nodes, links };
         graph.remove_leaf_links();
 
         assert_eq!(graph.nodes[0], OverlayNode::Cross(vec![]));
@@ -220,7 +175,7 @@ mod tests {
             OverlayLink::test(1, 0),
         ];
 
-        let mut graph = OverlayGraph { solver: Default::default(), nodes, links };
+        let mut graph = UnstableGraph { solver: Default::default(), nodes, links };
         graph.remove_leaf_links();
 
         assert_eq!(graph.links.len(), 2);
@@ -250,7 +205,7 @@ mod tests {
             OverlayLink::test(6, 7), // 7
         ];
 
-        let mut graph = OverlayGraph { solver: Default::default(), nodes, links };
+        let mut graph = UnstableGraph { solver: Default::default(), nodes, links };
         graph.remove_leaf_links();
 
         assert_eq!(graph.nodes[0], OverlayNode::Bridge([0, 1]));

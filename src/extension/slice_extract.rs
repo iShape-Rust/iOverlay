@@ -1,11 +1,11 @@
+/*
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
-use crate::core::extract::{JoinHoles, StartPathData, Validate};
+use crate::core::extract::{StartPathData};
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::solver::Solver;
-use crate::extension::hole_point::ExclusionIdPoint;
 use crate::segm::segment::{CLIP_BOTH, NONE, Segment, SegmentFill, SUBJ_BOTH, SUBJ_BOTTOM};
 
 impl Overlay {
@@ -163,3 +163,4 @@ impl JoinExclusionHoles for Vec<IntShape> {
         }
     }
 }
+*/

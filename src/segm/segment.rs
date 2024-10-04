@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
-use crate::core::overlay::ShapeType;
 use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
 
@@ -62,12 +61,12 @@ impl Ord for Segment {
     }
 }
 
-pub(crate) trait ShapeEdgesMerge {
+pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self);
     fn merge(&mut self, after: usize);
 }
 
-impl ShapeEdgesMerge for Vec<Segment> {
+impl ShapeSegmentsMerge for Vec<Segment> {
     #[inline]
     fn merge_if_needed(&mut self) {
         if self.len() < 2 { return; }
@@ -123,5 +122,5 @@ impl BinKey<i32> for Segment {
 }
 
 pub(crate) trait ToSegment {
-    fn to_segment(&self, shape_type: ShapeType) -> Segment;
+    fn to_segment(&self, shape_count: ShapeCount) -> Segment;
 }

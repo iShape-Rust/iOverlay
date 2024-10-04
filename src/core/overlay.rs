@@ -10,7 +10,7 @@ use i_shape::int::simple::Simple;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::segm::shape_count::ShapeCount;
-use crate::segm::segment::{CLIP_BOTH, NONE, SegmentFill, ShapeEdgesMerge, SUBJ_BOTH};
+use crate::segm::segment::{CLIP_BOTH, NONE, SegmentFill, ShapeSegmentsMerge, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
 use crate::fill::solver::FillSolver;
@@ -108,7 +108,7 @@ impl Overlay {
             return (Vec::new(), Vec::new());
         }
 
-        let (mut segments, mut fills) = self.prepare_segments_and_fills(fill_rule, solver);
+        let (mut segments, mut fills) = self.segments.prepare_and_fill(fill_rule, solver);
 
         clean_if_needed(&mut segments, &mut fills);
         (segments, fills)
@@ -122,7 +122,7 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
+        let graph = OverlayGraph::new(solver, self.segments.prepare_and_fill(fill_rule, solver));
 
         graph.extract_shape_vectors(overlay_rule)
     }
@@ -134,7 +134,7 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(solver, self.prepare_segments_and_fills(fill_rule, solver));
+        let graph = OverlayGraph::new(solver, self.segments.prepare_and_fill(fill_rule, solver));
         graph.extract_separate_vectors()
     }
 
@@ -150,26 +150,12 @@ impl Overlay {
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
         OverlayGraph::new(solver, self.into_segments(fill_rule, solver))
     }
-
-    fn prepare_segments_and_fills(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
-        let mut segments = self.segments;
-        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
-
-        segments.merge_if_needed();
-
-        segments = SplitSolver::new(solver).split(segments);
-
-        let is_list = solver.is_list_fill(&segments);
-        let fills = FillSolver::fill_with_rule(fill_rule, is_list, &segments);
-
-        (segments, fills)
-    }
 }
 
 pub(crate) trait BuildSegments {
     fn append_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
-
     fn append_private_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
+    fn prepare_and_fill(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>);
 }
 
 impl BuildSegments for Vec<Segment> {
@@ -213,6 +199,20 @@ impl BuildSegments for Vec<Segment> {
             }
         }
     }
+
+    fn prepare_and_fill(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+        let mut segments = self;
+        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+
+        segments.merge_if_needed();
+
+        segments = SplitSolver::new(solver).split(segments);
+
+        let is_list = solver.is_list_fill(&segments);
+        let fills = FillSolver::fill_with_rule(fill_rule, is_list, &segments);
+
+        (segments, fills)
+    }
 }
 
 trait Fill {
@@ -247,3 +247,4 @@ fn clean(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>, after: usize
     fills.truncate(j);
     segments.truncate(j);
 }
+

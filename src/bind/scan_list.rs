@@ -1,7 +1,8 @@
-use crate::bind::hole_point::HolePoint;
+use crate::bind::point::PathPoint;
 use crate::util::Int;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
+use crate::id_point::IdPoint;
 use crate::segm::x_segment::XSegment;
 
 pub(crate) struct ScanHoleList {
@@ -21,7 +22,7 @@ impl ScanHoleStore for ScanHoleList {
         self.buffer.push(segment)
     }
 
-    fn find_under_and_nearest<P: HolePoint>(&mut self, path_point: &P) -> usize {
+    fn find_under_and_nearest<P: PathPoint>(&mut self, path_point: P) -> usize {
         if self.buffer.is_empty() {
             return 0;
         }
@@ -41,9 +42,9 @@ impl ScanHoleStore for ScanHoleList {
                 }
             }
 
-            if item.x_segment.is_under_point(p) && path_point.filter(item.id) {
+            if item.x_segment.is_under_point(p) {
                 if let Some(prev) = best {
-                    if prev.is_under_segment(&item.x_segment) {
+                    if prev.is_under_segment(&item.x_segment) && path_point.is_not_exclusion(item.id) {
                         best = Some(item.x_segment);
                         best_id = item.id;
                     }

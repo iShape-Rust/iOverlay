@@ -29,7 +29,7 @@ impl OverlayGraph {
         let mut link_index = 0;
         while link_index < visited.len() {
             let &is_visited = unsafe { visited.get_unchecked(link_index) };
-            if is_visited == 0 {
+            if is_visited {
                 link_index += 1;
                 continue;
             }
@@ -70,12 +70,12 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, start_data: StartVectorPathData, visited: &mut [u8]) -> VectorPath {
+    fn get_vector_path(&self, start_data: StartVectorPathData, visited: &mut [bool]) -> VectorPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        unsafe { *visited.get_unchecked_mut(link_id) -= 1; };
+        unsafe { *visited.get_unchecked_mut(link_id) = true; };
 
         let mut path = VectorPath::new();
         path.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
@@ -101,7 +101,7 @@ impl OverlayGraph {
                 link.a.id
             };
 
-            unsafe { *visited.get_unchecked_mut(link_id) -= 1; };
+            unsafe { *visited.get_unchecked_mut(link_id) = true; };
         }
 
         path

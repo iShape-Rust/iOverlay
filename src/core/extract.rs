@@ -1,8 +1,8 @@
 use i_float::point::IntPoint;
+use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::int::simple::Simple;
-use crate::bind::hole_point::HolePoint;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::id_point::IdPoint;
@@ -42,7 +42,6 @@ impl OverlayGraph {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
-    #[inline]
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: i64) -> IntShapes {
         let mut binding = self.links.filter(overlay_rule);
         let visited = binding.as_mut_slice();
@@ -51,8 +50,8 @@ impl OverlayGraph {
 
         let mut link_index = 0;
         while link_index < visited.len() {
-            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
-            if count_to_visit == 0 {
+            let &is_visit = unsafe { visited.get_unchecked(link_index) };
+            if is_visit {
                 link_index += 1;
                 continue;
             }
@@ -80,13 +79,13 @@ impl OverlayGraph {
     }
 
     #[inline]
-    pub(crate) fn get_path(&self, start_data: &StartPathData, visited: &mut [u8]) -> IntPath {
+    fn get_path(&self, start_data: &StartPathData, visited: &mut [bool]) -> IntPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
         unsafe {
-            *visited.get_unchecked_mut(link_id) -= 1;
+            *visited.get_unchecked_mut(link_id) = true;
         };
 
         let mut path = IntPath::new();
@@ -114,11 +113,129 @@ impl OverlayGraph {
             };
 
             unsafe {
-                *visited.get_unchecked_mut(link_id) -= 1;
+                *visited.get_unchecked_mut(link_id) = true;
             };
         }
 
         path
+    }
+
+    pub(crate) fn find_nearest_counter_wise_link_to(
+        &self,
+        target_index: usize,
+        node_id: usize,
+        indices: &[usize],
+        visited: &[bool],
+    ) -> usize {
+        let target = self.link(target_index);
+        let (c, a) = if target.a.id == node_id {
+            (target.a.point, target.b.point)
+        } else { (target.b.point, target.a.point) };
+
+        let (mut it_index, mut best_index) = indices.first_not_visited(visited);
+
+        let mut link_index = indices.next_link(&mut it_index, visited);
+
+        if link_index >= self.links.len() {
+            // no more links
+            return best_index;
+        }
+
+        let va = a.subtract(c);
+        let b = self.link(best_index).other(node_id).point;
+        let mut vb = b.subtract(c);
+        let mut more_180 = va.cross_product(vb) <= 0;
+
+        while link_index < self.links.len() {
+            let link = &self.links[link_index];
+            let p = link.other(node_id).point;
+            let vp = p.subtract(c);
+            let new_more_180 = va.cross_product(vp) <= 0;
+
+            if new_more_180 == more_180 {
+                // both more 180 or both less 180
+                let is_clock_wise = vp.cross_product(vb) > 0;
+                if is_clock_wise {
+                    best_index = link_index;
+                    vb = vp;
+                }
+            } else if more_180 {
+                // new less 180
+                more_180 = false;
+                best_index = link_index;
+                vb = vp;
+            }
+
+            link_index = indices.next_link(&mut it_index, visited);
+        }
+
+        best_index
+    }
+
+    #[inline]
+    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
+        let top = self.link(link_index);
+        debug_assert!(top.is_direct());
+
+        let node = self.node(top.a.id);
+
+        match node {
+            OverlayNode::Bridge(bridge) => {
+                self.find_left_top_link_on_bridge(bridge)
+            }
+            OverlayNode::Cross(indices) => {
+                self.find_left_top_link_on_indices(top, link_index, indices, visited)
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn find_left_top_link_on_indices(&self, link: &OverlayLink, link_index: usize, indices: &[usize], visited: &[bool]) -> usize {
+        let mut top_index = link_index;
+        let mut top = link;
+
+        // find most top link
+
+        for &i in indices.iter() {
+            if i == link_index {
+                continue;
+            }
+            let link = self.link(i);
+            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
+                continue;
+            }
+
+            let &is_visit = unsafe { visited.get_unchecked(i) };
+            if is_visit {
+                continue;
+            }
+
+            top_index = i;
+            top = link;
+        }
+
+        top_index
+    }
+
+    #[inline(always)]
+    fn find_left_top_link_on_bridge(&self, bridge: &[usize; 2]) -> usize {
+        let l0 = self.link(bridge[0]);
+        let l1 = self.link(bridge[1]);
+        if Triangle::is_clockwise_point(l0.a.point, l0.b.point, l1.b.point) {
+            bridge[0]
+        } else {
+            bridge[1]
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn link(&self, index: usize) -> &OverlayLink {
+        unsafe { self.links.get_unchecked(index) }
+    }
+
+    #[inline(always)]
+    pub(crate) fn node(&self, index: usize) -> &OverlayNode {
+        unsafe { self.nodes.get_unchecked(index) }
     }
 }
 
@@ -150,67 +267,38 @@ impl StartPathData {
     }
 }
 
-trait JoinSortedHoles {
-    fn join_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
+trait OverlayNodeIndices {
+    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize);
+    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize;
 }
 
-impl JoinSortedHoles for Vec<IntShape> {
-    #[inline]
-    fn join_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
-        if self.is_empty() || holes.is_empty() {
-            return;
+impl OverlayNodeIndices for [usize] {
+    #[inline(always)]
+    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize) {
+        let mut it_index = 0;
+        while it_index < self.len() {
+            let link_index = self[it_index];
+            it_index += 1;
+            let &is_visit = unsafe { visited.get_unchecked(link_index) };
+            if !is_visit {
+                return (it_index, link_index);
+            }
         }
-
-        if self.len() == 1 {
-            self[0].reserve_exact(holes.len());
-            let mut hole_paths = holes;
-            self[0].append(&mut hole_paths);
-        } else {
-            // Mark: we take first point in the path, that why we get sorted array
-            let hole_points: Vec<_> = holes.iter().enumerate()
-                .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
-                .collect();
-            self.join_holes_by_points(solver, holes, hole_points);
-        }
-    }
-}
-
-pub(crate) trait JoinHoles {
-    fn join_holes_by_points<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>);
-    fn scan_join<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>);
-}
-
-impl JoinHoles for Vec<IntShape> {
-
-    #[inline]
-    fn join_holes_by_points<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>) {
-        debug_assert!(self.len() > 1);
-        debug_assert!(!hole_points.is_empty());
-        self.scan_join(solver, holes, hole_points);
+        unreachable!("The loop should always return");
     }
 
-    fn scan_join<P: HolePoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>) {
-        let x_min = hole_points[0].point().x;
-        let x_max = hole_points[hole_points.len() - 1].point().x;
-
-        let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
-        let mut segments = Vec::with_capacity(capacity);
-        for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(&mut segments, i, x_min, x_max);
+    #[inline(always)]
+    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize {
+        while *it_index < self.len() {
+            let link_index = self[*it_index];
+            *it_index += 1;
+            let &is_visit = unsafe { visited.get_unchecked(link_index) };
+            if !is_visit {
+                return link_index;
+            }
         }
 
-        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
-
-        let solution = ShapeBinder::bind(self.len(), hole_points, segments);
-
-        for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
-            self[shape_index].reserve_exact(capacity);
-        }
-
-        for (hole_index, hole) in holes.into_iter().enumerate() {
-            let shape_index = solution.parent_for_child[hole_index];
-            self[shape_index].push(hole);
-        }
+        usize::MAX
     }
 }
 

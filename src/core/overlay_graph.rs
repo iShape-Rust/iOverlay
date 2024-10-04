@@ -27,12 +27,19 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
+
+    #[inline]
     pub(crate) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
+        let (nodes, links) = Self::build_nodes_and_links(&solver, bundle);
+        Self { solver, nodes, links }
+    }
+
+    pub(crate) fn build_nodes_and_links(solver: &Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> (Vec<OverlayNode>, Vec<OverlayLink>) {
         let segments = bundle.0;
         let fills = bundle.1;
 
         if segments.is_empty() {
-            return Self { solver: Default::default(), nodes: vec![], links: vec![] };
+            return (vec![], vec![]);
         }
 
         let n = segments.len();
@@ -51,7 +58,7 @@ impl OverlayGraph {
             .map(|(i, link)| End { index: i, point: link.b.point })
             .collect();
 
-        end_bs.smart_bin_sort_by(&solver, |a, b| a.point.cmp(&b.point));
+        end_bs.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
 
@@ -101,173 +108,11 @@ impl OverlayGraph {
                 }
             }
 
-            // debug_assert!(indices.len() > 1, "indices: {}", indices.len());
-            // nodes.push(OverlayNode { indices });
-
             nodes.push(OverlayNode::new(indices.as_slice()));
             indices.clear();
         }
 
-        Self { solver, nodes, links }
-    }
-
-    pub(crate) fn find_nearest_counter_wise_link_to(
-        &self,
-        target_index: usize,
-        node_id: usize,
-        indices: &[usize],
-        visited: &[u8],
-    ) -> usize {
-        let target = self.link(target_index);
-        let (c, a) = if target.a.id == node_id {
-            (target.a.point, target.b.point)
-        } else { (target.b.point, target.a.point) };
-
-        let (mut it_index, mut best_index) = indices.first_not_visited(target_index, visited);
-
-        let mut link_index = indices.next_link(target_index, &mut it_index, visited);
-
-        if link_index >= self.links.len() {
-            // no more links
-            return best_index;
-        }
-
-        let va = a.subtract(c);
-        let b = self.link(best_index).other(node_id).point;
-        let mut vb = b.subtract(c);
-        let mut more_180 = va.cross_product(vb) <= 0;
-
-        while link_index < self.links.len() {
-            let link = &self.links[link_index];
-            let p = link.other(node_id).point;
-            let vp = p.subtract(c);
-            let new_more_180 = va.cross_product(vp) <= 0;
-
-            if new_more_180 == more_180 {
-                // both more 180 or both less 180
-                let is_clock_wise = vp.cross_product(vb) > 0;
-                if is_clock_wise {
-                    best_index = link_index;
-                    vb = vp;
-                }
-            } else if more_180 {
-                // new less 180
-                more_180 = false;
-                best_index = link_index;
-                vb = vp;
-            }
-
-            link_index = indices.next_link(target_index, &mut it_index, visited);
-        }
-
-        best_index
-    }
-
-    #[inline]
-    pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[u8]) -> usize {
-        let top = self.link(link_index);
-        debug_assert!(top.is_direct());
-
-        let node = self.node(top.a.id);
-
-        match node {
-            OverlayNode::Bridge(bridge) => {
-                self.find_left_top_link_on_bridge(bridge)
-            }
-            OverlayNode::Cross(indices) => {
-                self.find_left_top_link_on_indices(top, link_index, indices, visited)
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn find_left_top_link_on_indices(&self, link: &OverlayLink, link_index: usize, indices: &[usize], visited: &[u8]) -> usize {
-        let mut top_index = link_index;
-        let mut top = link;
-
-        // find most top link
-
-        for &i in indices.iter() {
-            if i == link_index {
-                continue;
-            }
-            let link = self.link(i);
-            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
-                continue;
-            }
-
-            let &count_to_visit = unsafe { visited.get_unchecked(i) };
-            if count_to_visit == 0 {
-                continue;
-            }
-
-            top_index = i;
-            top = link;
-        }
-
-        top_index
-    }
-
-    #[inline(always)]
-    fn find_left_top_link_on_bridge(&self, bridge: &[usize; 2]) -> usize {
-        let l0 = self.link(bridge[0]);
-        let l1 = self.link(bridge[1]);
-        if Triangle::is_clockwise_point(l0.a.point, l0.b.point, l1.b.point) {
-            bridge[0]
-        } else {
-            bridge[1]
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn link(&self, index: usize) -> &OverlayLink {
-        unsafe { self.links.get_unchecked(index) }
-    }
-
-    #[inline(always)]
-    pub(crate) fn node(&self, index: usize) -> &OverlayNode {
-        unsafe { self.nodes.get_unchecked(index) }
-    }
-}
-
-trait OverlayNodeIndices {
-    fn first_not_visited(&self, ignore: usize, visited: &[u8]) -> (usize, usize);
-    fn next_link(&self, ignore: usize, it_index: &mut usize, visited: &[u8]) -> usize;
-}
-
-impl OverlayNodeIndices for [usize] {
-    #[inline(always)]
-    fn first_not_visited(&self, ignore: usize, visited: &[u8]) -> (usize, usize) {
-        let mut it_index = 0;
-        while it_index < self.len() {
-            let link_index = self[it_index];
-            it_index += 1;
-            if link_index == ignore {
-                continue;
-            }
-            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
-            if count_to_visit != 0 {
-                return (it_index, link_index);
-            }
-        }
-        unreachable!("The loop should always return");
-    }
-
-    #[inline(always)]
-    fn next_link(&self, ignore: usize, it_index: &mut usize, visited: &[u8]) -> usize {
-        while *it_index < self.len() {
-            let link_index = self[*it_index];
-            *it_index += 1;
-            if link_index == ignore {
-                continue;
-            }
-            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
-            if count_to_visit != 0 {
-                return link_index;
-            }
-        }
-
-        usize::MAX
+        (nodes, links)
     }
 }
 

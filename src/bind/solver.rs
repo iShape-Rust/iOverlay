@@ -1,7 +1,12 @@
-use crate::bind::hole_point::HolePoint;
-use crate::bind::segment::IdSegment;
+use i_shape::int::path::IntPath;
+use i_shape::int::shape::IntShape;
+use crate::bind::point::{ExclusionPathPoint, PathPoint};
+use crate::bind::segment::{IdSegment, IdSegments};
 use crate::bind::scan_list::ScanHoleList;
 use crate::bind::scan_tree::ScanHoleTree;
+use crate::core::solver::Solver;
+use crate::id_point::IdPoint;
+use crate::sort::SmartBinSort;
 
 pub(crate) struct BindSolution {
     pub(crate) parent_for_child: Vec<usize>,
@@ -12,12 +17,12 @@ pub(crate) struct ShapeBinder;
 
 pub(crate) trait ScanHoleStore {
     fn insert(&mut self, segment: IdSegment, stop: i32);
-    fn find_under_and_nearest<P: HolePoint>(&mut self, path_point: &P) -> usize;
+    fn find_under_and_nearest<P: PathPoint>(&mut self, path_point: P) -> usize;
 }
 
 impl ShapeBinder {
     #[inline]
-    pub(crate) fn bind<P: HolePoint>(shape_count: usize, hole_points: Vec<P>, segments: Vec<IdSegment>) -> BindSolution {
+    pub(crate) fn bind<P: PathPoint>(shape_count: usize, hole_points: Vec<P>, segments: Vec<IdSegment>) -> BindSolution {
         if shape_count < 128 {
             let scan_list = ScanHoleList::new(segments.len());
             Self::private_solve(scan_list, shape_count, hole_points, segments)
@@ -27,7 +32,7 @@ impl ShapeBinder {
         }
     }
 
-    fn private_solve<S: ScanHoleStore, P: HolePoint>(scan_store: S, shape_count: usize, hole_points: Vec<P>, segments: Vec<IdSegment>) -> BindSolution {
+    fn private_solve<S: ScanHoleStore, P: PathPoint>(scan_store: S, shape_count: usize, hole_points: Vec<P>, segments: Vec<IdSegment>) -> BindSolution {
         let children_count = hole_points.len();
         let mut scan_store = scan_store;
 
@@ -49,8 +54,8 @@ impl ShapeBinder {
             }
 
             while i < hole_points.len() && hole_points[i].point().x == x {
-                let parent_index = scan_store.find_under_and_nearest(&hole_points[i]);
-                let child_index = hole_points[i].hole_id();
+                let parent_index = scan_store.find_under_and_nearest(hole_points[i]);
+                let child_index = hole_points[i].id();
 
                 parent_for_child[child_index] = parent_index;
                 children_count_for_parent[parent_index] += 1;
@@ -60,5 +65,71 @@ impl ShapeBinder {
         }
 
         BindSolution { parent_for_child, children_count_for_parent }
+    }
+}
+
+pub(crate) trait JoinHoles {
+    fn join_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
+    fn join_exclusion_holes(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<ExclusionPathPoint>);
+    fn scan_join<P: PathPoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>);
+}
+
+impl JoinHoles for Vec<IntShape> {
+
+    #[inline]
+    fn join_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
+        if self.is_empty() || holes.is_empty() {
+            return;
+        }
+
+        if self.len() == 1 {
+            self[0].reserve_exact(holes.len());
+            let mut hole_paths = holes;
+            self[0].append(&mut hole_paths);
+        } else {
+            // Mark: we take first point in the path, that why we get sorted array
+            let hole_points: Vec<_> = holes.iter().enumerate()
+                .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
+                .collect();
+            self.scan_join(solver, holes, hole_points);
+        }
+    }
+
+    fn join_exclusion_holes(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<ExclusionPathPoint>) {
+        if self.is_empty() || holes.is_empty() {
+            return;
+        }
+
+        if self.len() == 1 {
+            self[0].reserve_exact(holes.len());
+            let mut hole_paths = holes;
+            self[0].append(&mut hole_paths);
+        } else {
+            self.scan_join(solver, holes, hole_points);
+        }
+    }
+
+    fn scan_join<P: PathPoint>(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<P>) {
+        let x_min = hole_points[0].point().x;
+        let x_max = hole_points[hole_points.len() - 1].point().x;
+
+        let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
+        let mut segments = Vec::with_capacity(capacity);
+        for (i, shape) in self.iter().enumerate() {
+            shape[0].append_id_segments(&mut segments, i, x_min, x_max);
+        }
+
+        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
+
+        let solution = ShapeBinder::bind(self.len(), hole_points, segments);
+
+        for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
+            self[shape_index].reserve_exact(capacity);
+        }
+
+        for (hole_index, hole) in holes.into_iter().enumerate() {
+            let shape_index = solution.parent_for_child[hole_index];
+            self[shape_index].push(hole);
+        }
     }
 }

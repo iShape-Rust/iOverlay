@@ -2,7 +2,7 @@ use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_key_sort::key_sort::Bin;
 use crate::core::solver::Solver;
-use crate::segm::segment::{Segment, ShapeEdgesMerge};
+use crate::segm::segment::{Segment, ShapeSegmentsMerge};
 use crate::segm::shape_count::ShapeCount;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
