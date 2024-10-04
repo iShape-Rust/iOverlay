@@ -55,24 +55,32 @@ impl UnstableGraph {
             } else {
                 // it's a hole and body at the same time
 
-                // extract hole
-                let hole_start_data = StartPathData::new(true, link, left_top_link);
-                hole_points.push(ExclusionPathPoint {
-                    id: holes.len(),
-                    point: hole_start_data.begin,
-                    exclusion_path: shapes.len(),
-                });
-
-                let mut hole_path = self.get_path(&hole_start_data, visited);
-                if hole_path.validate(min_area) {
-                    holes.push(hole_path);
-                }
+                let exclusion_path = shapes.len();
+                let hole_id = holes.len();
 
                 // extract body
                 let body_start_data = StartPathData::new(false, link, left_top_link);
                 let mut body_path = self.get_path(&body_start_data, visited);
                 if body_path.validate(min_area) {
                     shapes.push(vec![body_path]);
+                }
+
+                if visited[left_top_link] > 0 {
+                    // in some ca
+
+                }
+
+                // extract hole
+                let hole_start_data = StartPathData::new(true, link, left_top_link);
+                hole_points.push(ExclusionPathPoint {
+                    id: hole_id,
+                    point: hole_start_data.begin,
+                    exclusion_path,
+                });
+
+                let mut hole_path = self.get_path(&hole_start_data, visited);
+                if hole_path.validate(min_area) {
+                    holes.push(hole_path);
                 }
             }
         }
