@@ -7,12 +7,23 @@ use crate::bind::solver::JoinHoles;
 use crate::core::extract::{StartPathData, Validate};
 use crate::core::overlay_link::OverlayLink;
 use crate::core::overlay_node::OverlayNode;
+use crate::core::vector_rotation::NearestClockWiseVector;
 use crate::extension::rule::ExtRule;
 use crate::extension::unstable_graph::UnstableGraph;
 use crate::segm::segment::SUBJ_BOTTOM;
 
 impl UnstableGraph {
+    #[inline(always)]
+    pub fn extract_shapes(&self, ext_rule: ExtRule) -> IntShapes {
+        self.extract_shapes_min_area(ext_rule, 0)
+    }
 
+    pub fn extract_shapes_min_area(&self, ext_rule: ExtRule, min_area: i64) -> IntShapes {
+        [].to_vec()
+    }
+
+}
+/*
     #[inline(always)]
     pub fn extract_shapes(&self, ext_rule: ExtRule) -> IntShapes {
         self.extract_shapes_min_area(ext_rule, 0)
@@ -178,39 +189,28 @@ impl UnstableGraph {
         let mut iter = self.node(node_id).iter();
 
         let mut best_index = self.next_not_visited(&mut iter, visited)?;
-        let mut link_index = self.next_not_visited(&mut iter, visited)?;
+        let second_index = if let Some(index) = self.next_not_visited(&mut iter, visited) {
+            index
+        } else {
+            // only one link
+            return Some(best_index);
+        };
 
-        if link_index >= self.links.len() {
-            // no more links
-            return best_index;
+        // more the one vectors
+        let b = self.link(best_index).other(node_id).point;
+        let mut vector_solver = NearestCCWVector::new(c, a, b);
+
+        // check the second vector
+        if vector_solver.add(self.link(second_index).other(node_id).point) {
+            best_index = second_index;
         }
 
-        let va = a.subtract(c);
-        let b = self.link(best_index).other(node_id).point;
-        let mut vb = b.subtract(c);
-        let mut more_180 = va.cross_product(vb) <= 0;
-
-        while link_index < self.links.len() {
-            let link = &self.links[link_index];
-            let p = link.other(node_id).point;
-            let vp = p.subtract(c);
-            let new_more_180 = va.cross_product(vp) <= 0;
-
-            if new_more_180 == more_180 {
-                // both more 180 or both less 180
-                let is_clock_wise = vp.cross_product(vb) > 0;
-                if is_clock_wise {
-                    best_index = link_index;
-                    vb = vp;
-                }
-            } else if more_180 {
-                // new less 180
-                more_180 = false;
+        // check the rest vectors
+        for &link_index in self.next_not_visited(&mut iter, visited) {
+            let p = self.links[link_index].other(node_id).point;
+            if vector_solver.add(p) {
                 best_index = link_index;
-                vb = vp;
             }
-
-            link_index = indices.next_link(&mut it_index, visited);
         }
 
         Some(best_index)
@@ -221,31 +221,33 @@ impl UnstableGraph {
         for link_index in iter {}
         None
     }
-        /*
-        let mut it_index = 0;
-        while it_index < self.len() {
-            let link_index = self[it_index];
-            it_index += 1;
-            let &is_visit = unsafe { visited.get_unchecked(link_index) };
-            if !is_visit {
-                return (it_index, link_index);
-            }
-        }
-        unreachable!("The loop should always return");
 
+    //     let mut it_index = 0;
+    //     while it_index < self.len() {
+    //         let link_index = self[it_index];
+    //         it_index += 1;
+    //         let &is_visit = unsafe { visited.get_unchecked(link_index) };
+    //         if !is_visit {
+    //             return (it_index, link_index);
+    //         }
+    //     }
+    //     unreachable!("The loop should always return");
+    //
+    //
+    // #[inline(always)]
+    // fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> Option<usize> {
+    //     while *it_index < self.len() {
+    //         let link_index = self[*it_index];
+    //         *it_index += 1;
+    //         let &is_visit = unsafe { visited.get_unchecked(link_index) };
+    //         if !is_visit {
+    //             return link_index;
+    //         }
+    //     }
+    //
+    //     None
+    // }
 
-    #[inline(always)]
-    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> Option<usize> {
-        while *it_index < self.len() {
-            let link_index = self[*it_index];
-            *it_index += 1;
-            let &is_visit = unsafe { visited.get_unchecked(link_index) };
-            if !is_visit {
-                return link_index;
-            }
-        }
-
-        None
-    }
-    */
 }
+
+*/

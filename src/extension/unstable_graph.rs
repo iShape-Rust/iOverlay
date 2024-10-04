@@ -30,7 +30,7 @@ impl UnstableGraph {
     }
 
     #[inline(always)]
-    pub(super) fn node(&self, index: usize) -> &[usize] {
+    pub(super) fn node(&self, index: usize) -> &Vec<usize> {
         unsafe { self.nodes.get_unchecked(index) }
     }
 }

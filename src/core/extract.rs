@@ -1,16 +1,14 @@
+use std::slice::Iter;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
-use i_shape::int::shape::{IntShape, IntShapes};
+use i_shape::int::shape::IntShapes;
 use i_shape::int::simple::Simple;
-use crate::bind::segment::IdSegments;
-use crate::bind::solver::ShapeBinder;
-use crate::id_point::IdPoint;
+use crate::bind::solver::JoinHoles;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_link::OverlayLink;
 use crate::core::overlay_node::OverlayNode;
-use crate::core::solver::Solver;
-use crate::sort::SmartBinSort;
+use crate::core::vector_rotation::NearestClockWiseVector;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
@@ -120,6 +118,7 @@ impl OverlayGraph {
         path
     }
 
+    #[inline]
     pub(crate) fn find_nearest_counter_wise_link_to(
         &self,
         target_index: usize,
@@ -132,41 +131,31 @@ impl OverlayGraph {
             (target.a.point, target.b.point)
         } else { (target.b.point, target.a.point) };
 
-        let (mut it_index, mut best_index) = indices.first_not_visited(visited);
+        let mut iter = indices.iter();
+        let mut best_index = iter.first_not_visited(visited);
 
-        let mut link_index = indices.next_link(&mut it_index, visited);
-
-        if link_index >= self.links.len() {
-            // no more links
+        let second_index = if let Some(index) = iter.next_link(visited) {
+            index
+        } else {
+            // only one link
             return best_index;
+        };
+
+        // more the one vectors
+        let b = self.link(best_index).other(node_id).point;
+        let mut vector_solver = NearestClockWiseVector::new(c, a, b);
+
+        // check the second vector
+        if vector_solver.add(self.link(second_index).other(node_id).point) {
+            best_index = second_index;
         }
 
-        let va = a.subtract(c);
-        let b = self.link(best_index).other(node_id).point;
-        let mut vb = b.subtract(c);
-        let mut more_180 = va.cross_product(vb) <= 0;
-
-        while link_index < self.links.len() {
-            let link = &self.links[link_index];
-            let p = link.other(node_id).point;
-            let vp = p.subtract(c);
-            let new_more_180 = va.cross_product(vp) <= 0;
-
-            if new_more_180 == more_180 {
-                // both more 180 or both less 180
-                let is_clock_wise = vp.cross_product(vb) > 0;
-                if is_clock_wise {
-                    best_index = link_index;
-                    vb = vp;
-                }
-            } else if more_180 {
-                // new less 180
-                more_180 = false;
+        // check the rest vectors
+        while let Some(link_index) = iter.next_link(visited) {
+            let p = self.links[link_index].other(node_id).point;
+            if vector_solver.add(p) {
                 best_index = link_index;
-                vb = vp;
             }
-
-            link_index = indices.next_link(&mut it_index, visited);
         }
 
         best_index
@@ -205,8 +194,8 @@ impl OverlayGraph {
                 continue;
             }
 
-            let &is_visit = unsafe { visited.get_unchecked(i) };
-            if is_visit {
+            let &is_visited = unsafe { visited.get_unchecked(i) };
+            if is_visited {
                 continue;
             }
 
@@ -268,37 +257,33 @@ impl StartPathData {
 }
 
 trait OverlayNodeIndices {
-    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize);
-    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize;
+    fn first_not_visited(&mut self, visited: &[bool]) -> usize;
+    fn next_link(&mut self, visited: &[bool]) -> Option<usize>;
 }
 
-impl OverlayNodeIndices for [usize] {
+impl OverlayNodeIndices for Iter<'_, usize> {
     #[inline(always)]
-    fn first_not_visited(&self, visited: &[bool]) -> (usize, usize) {
-        let mut it_index = 0;
-        while it_index < self.len() {
-            let link_index = self[it_index];
-            it_index += 1;
-            let &is_visit = unsafe { visited.get_unchecked(link_index) };
-            if !is_visit {
-                return (it_index, link_index);
+    fn first_not_visited(&mut self, visited: &[bool]) -> usize {
+        self.find_map(|&link_index| {
+            let is_visited = unsafe { visited.get_unchecked(link_index)};
+            if !is_visited {
+                Some(link_index)
+            } else {
+                None
             }
-        }
-        unreachable!("The loop should always return");
+        }).unwrap_or_else(|| unreachable!("Element must always be found"))
     }
 
     #[inline(always)]
-    fn next_link(&self, it_index: &mut usize, visited: &[bool]) -> usize {
-        while *it_index < self.len() {
-            let link_index = self[*it_index];
-            *it_index += 1;
-            let &is_visit = unsafe { visited.get_unchecked(link_index) };
-            if !is_visit {
-                return link_index;
+    fn next_link(&mut self, visited: &[bool]) -> Option<usize> {
+        self.find_map(|&link_index| {
+            let is_visited = unsafe { *visited.get_unchecked(link_index) };
+            if !is_visited {
+                Some(link_index)
+            } else {
+                None
             }
-        }
-
-        usize::MAX
+        })
     }
 }
 
