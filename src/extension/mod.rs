@@ -4,7 +4,6 @@ pub mod line;
 pub mod rule;
 pub mod overlay;
 mod unstable_graph;
-mod node;
 mod extract;
 mod filter;
 mod clean;

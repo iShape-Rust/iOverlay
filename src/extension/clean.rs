@@ -1,5 +1,4 @@
 use std::mem;
-use crate::core::overlay_node::OverlayNode;
 use crate::extension::unstable_graph::UnstableGraph;
 
 impl UnstableGraph {
@@ -80,16 +79,6 @@ mod tests {
     use crate::core::overlay_link::OverlayLink;
     use crate::id_point::IdPoint;
     use super::*;
-
-    impl PartialEq for OverlayNode {
-        fn eq(&self, other: &Self) -> bool {
-            match (self, other) {
-                (OverlayNode::Bridge(a), OverlayNode::Bridge(b)) => a == b,
-                (OverlayNode::Cross(a), OverlayNode::Cross(b)) => a == b,
-                _ => false
-            }
-        }
-    }
 
     impl IdPoint {
         fn id(id: usize) -> Self {

@@ -3,7 +3,6 @@
 //! based on the overlay rule applied.
 
 use i_float::point::IntPoint;
-use i_float::triangle::Triangle;
 
 use crate::core::solver::Solver;
 use crate::id_point::IdPoint;

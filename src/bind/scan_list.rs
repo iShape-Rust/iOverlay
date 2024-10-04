@@ -2,7 +2,6 @@ use crate::bind::point::PathPoint;
 use crate::util::Int;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
-use crate::id_point::IdPoint;
 use crate::segm::x_segment::XSegment;
 
 pub(crate) struct ScanHoleList {

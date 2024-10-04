@@ -8,7 +8,7 @@ use crate::bind::solver::JoinHoles;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_link::OverlayLink;
 use crate::core::overlay_node::OverlayNode;
-use crate::core::vector_rotation::NearestClockWiseVector;
+use crate::core::vector_rotation::NearestCCWVector;
 
 use super::overlay_rule::OverlayRule;
 use super::filter::Filter;
@@ -143,7 +143,7 @@ impl OverlayGraph {
 
         // more the one vectors
         let b = self.link(best_index).other(node_id).point;
-        let mut vector_solver = NearestClockWiseVector::new(c, a, b);
+        let mut vector_solver = NearestCCWVector::new(c, a, b);
 
         // check the second vector
         if vector_solver.add(self.link(second_index).other(node_id).point) {

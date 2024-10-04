@@ -1,5 +1,3 @@
-use crate::core::overlay::ShapeType;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShapeCount {
     pub(crate) subj: i32,

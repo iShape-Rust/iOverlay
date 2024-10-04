@@ -13,13 +13,7 @@ impl UnstableGraph {
     }
 
     fn filter_slice(&self) -> Vec<u8> {
-        [].to_vec()
-        /*
-        self.links.iter().enumerate().map(|(index, link)| {
-            if !self.node(link.a.id).is_contain(index) {
-                // this link is a leaf and it is removed
-                return 0;
-            }
+        self.links.iter().map(|link| {
             let fill = link.fill;
             let subj = fill & SUBJ_BOTH;
             let one_side_subj = subj != 0 && subj != SUBJ_BOTH;
@@ -34,6 +28,5 @@ impl UnstableGraph {
                 0
             }
         }).collect()
-        */
     }
 }

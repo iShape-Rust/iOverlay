@@ -1,14 +1,14 @@
 use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
 
-pub(crate) struct NearestClockWiseVector {
+pub(crate) struct NearestCCWVector {
     c: IntPoint,        // center
     va: FixVec,         // our target vector
-    vb: FixVec,         // nearest vector to Va by clock wise rotation
+    vb: FixVec,         // nearest vector to Va by counter clock wise rotation
     ab_more_180: bool,  // is angle between Va and Vb more 180 degrees
 }
 
-impl NearestClockWiseVector {
+impl NearestCCWVector {
     #[inline(always)]
     pub(crate) fn new(c: IntPoint, a: IntPoint, b: IntPoint) -> Self {
         let va = a.subtract(c);
@@ -52,7 +52,7 @@ mod tests {
         let a = IntPoint::new(1, 0);
         let b = IntPoint::new(0, 1);
 
-        let nearest_ccw = NearestClockWiseVector::new(c, a, b);
+        let nearest_ccw = NearestCCWVector::new(c, a, b);
 
         assert_eq!(nearest_ccw.va, FixVec::new(1, 0));
         assert_eq!(nearest_ccw.vb, FixVec::new(0, 1));
@@ -65,7 +65,7 @@ mod tests {
         let a = IntPoint::new(1, 0);
         let b = IntPoint::new(0, 1);
 
-        let mut nearest_ccw = NearestClockWiseVector::new(c, a, b);
+        let mut nearest_ccw = NearestCCWVector::new(c, a, b);
         let p = IntPoint::new(-1, 0);
 
         let updated = nearest_ccw.add(p);
@@ -81,7 +81,7 @@ mod tests {
         let a = IntPoint::new(1, 0);
         let b = IntPoint::new(-1, 0);
 
-        let mut nearest_ccw = NearestClockWiseVector::new(c, a, b);
+        let mut nearest_ccw = NearestCCWVector::new(c, a, b);
         let p = IntPoint::new(0, 1);
 
         let updated = nearest_ccw.add(p);
@@ -97,7 +97,7 @@ mod tests {
         let a = IntPoint::new(1, 0);
         let b = IntPoint::new(0, 1);
 
-        let mut nearest_ccw = NearestClockWiseVector::new(c, a, b);
+        let mut nearest_ccw = NearestCCWVector::new(c, a, b);
         let p = IntPoint::new(1, 1);
 
         let updated = nearest_ccw.add(p);
