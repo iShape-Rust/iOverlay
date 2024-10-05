@@ -1,14 +1,12 @@
-use std::slice::Iter;
 use i_float::triangle::Triangle;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntShapes;
-use crate::bind::point::ExclusionPathPoint;
 use crate::bind::solver::JoinHoles;
-use crate::core::extract::{StartPathData, Validate};
+use crate::core::extract::StartPathData;
 use crate::core::vector_rotation::NearestCCWVector;
 use crate::extension::rule::ExtRule;
+use crate::extension::split::Split;
 use crate::extension::unstable_graph::UnstableGraph;
-use crate::segm::segment::SUBJ_BOTTOM;
 
 impl UnstableGraph {
     #[inline(always)]
@@ -16,96 +14,75 @@ impl UnstableGraph {
         self.extract_shapes_min_area(ext_rule, 0)
     }
 
-    pub fn extract_shapes_min_area(&self, ext_rule: ExtRule, min_area: i64) -> IntShapes {
+    pub fn extract_shapes_min_area(&self, ext_rule: ExtRule, min_area: usize) -> IntShapes {
         let mut binding = self.filter(ext_rule);
         let visited = binding.as_mut_slice();
-        let mut holes = Vec::new();
         let mut shapes = Vec::new();
-        let mut hole_points = Vec::new();
 
         let mut link_index = 0;
         while link_index < visited.len() {
-            let &count_to_visit = unsafe { visited.get_unchecked(link_index) };
-            if count_to_visit == 0 {
+            if visited.is_visited(link_index) {
                 link_index += 1;
                 continue;
             }
 
             let left_top_link = self.find_left_top_link(link_index, visited);
             let link = self.link(left_top_link);
-            let &top_link_visited = unsafe { visited.get_unchecked(left_top_link) };
 
-            if top_link_visited == 1 {
-                let is_hole = link.fill & SUBJ_BOTTOM != SUBJ_BOTTOM;
+            if visited.count(left_top_link) == 1 {
+                let is_hole = ext_rule.is_hole(link.fill);
                 let start_data = StartPathData::new(is_hole, link, left_top_link);
-                let mut path = self.get_path(&start_data, visited);
-
-                if path.validate(min_area) {
-                    if is_hole {
-                        hole_points.push(ExclusionPathPoint {
-                            id: holes.len(),
-                            point: start_data.begin,
-                            exclusion_path: usize::MAX,
-                        });
-                        holes.push(path);
-                    } else {
+                let paths = self.get_path(&start_data, visited).split_loops(min_area);
+                if is_hole {
+                    shapes.join_unsorted_holes(&self.solver, paths);
+                } else {
+                    for path in paths.into_iter() {
                         shapes.push(vec![path]);
                     }
                 }
             } else {
-                // it's a hole and body at the same time
-
-                let exclusion_path = shapes.len();
-                let hole_id = holes.len();
-
-                // extract body
-                let body_start_data = StartPathData::new(false, link, left_top_link);
-                let mut body_path = self.get_path(&body_start_data, visited);
-                if body_path.validate(min_area) {
-                    shapes.push(vec![body_path]);
+                let start_data = StartPathData::new(false, link, left_top_link);
+                let (paths, track) = self.get_path_and_track(&start_data, visited);
+                for index in track.into_iter() {
+                    visited.reset(index);
+                }
+                if paths.is_empty() {
+                    continue;
                 }
 
-                if visited[left_top_link] > 0 {
-                    // in some ca
-
+                let paths = paths.split_loops(min_area);
+                let mut holes = paths.clone();
+                for hole in holes.iter_mut() {
+                    hole.reverse();
                 }
 
-                // extract hole
-                let hole_start_data = StartPathData::new(true, link, left_top_link);
-                hole_points.push(ExclusionPathPoint {
-                    id: hole_id,
-                    point: hole_start_data.begin,
-                    exclusion_path,
-                });
+                // add as shapes
+                shapes.join_unsorted_holes(&self.solver, holes);
 
-                let mut hole_path = self.get_path(&hole_start_data, visited);
-                if hole_path.validate(min_area) {
-                    holes.push(hole_path);
+                // add as body
+                for path in paths.into_iter() {
+                    shapes.push(vec![path]);
                 }
             }
         }
-
-        shapes.join_exclusion_holes(&self.solver, holes, hole_points);
 
         shapes
     }
 
     #[inline]
     fn get_path(&self, start_data: &StartPathData, visited: &mut [u8]) -> IntPath {
-        let link_id = start_data.link_id;
+        let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        unsafe {
-            *visited.get_unchecked_mut(link_id) -= 1;
-        };
+        visited.visit(link_id);
 
         let mut path = IntPath::new();
         path.push(start_data.begin);
 
         // Find a closed tour
         while node_id != last_node_id {
-            let link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
+            link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
 
             let link = self.link(link_id);
             node_id = if link.a.id == node_id {
@@ -116,12 +93,42 @@ impl UnstableGraph {
                 link.a.id
             };
 
-            unsafe {
-                *visited.get_unchecked_mut(link_id) -= 1;
-            };
+            visited.visit(link_id);
         }
 
         path
+    }
+
+    #[inline]
+    fn get_path_and_track(&self, start_data: &StartPathData, visited: &mut [u8]) -> (IntPath, Vec<usize>) {
+        let mut link_id = start_data.link_id;
+        let mut node_id = start_data.node_id;
+        let last_node_id = start_data.last_node_id;
+        let mut track = Vec::new();
+        visited.visit(link_id);
+        track.push(link_id);
+
+        let mut path = IntPath::new();
+        path.push(start_data.begin);
+
+        // Find a closed tour
+        while node_id != last_node_id {
+            link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
+
+            let link = self.link(link_id);
+            node_id = if link.a.id == node_id {
+                path.push(link.a.point);
+                link.b.id
+            } else {
+                path.push(link.b.point);
+                link.a.id
+            };
+
+            visited.visit(link_id);
+            track.push(link_id);
+        }
+
+        (path, track)
     }
 
     #[inline]
@@ -143,8 +150,7 @@ impl UnstableGraph {
                 continue;
             }
 
-            let &count = unsafe { visited.get_unchecked(i) };
-            if count == 0 {
+            if visited.count(i) == 0 {
                 continue;
             }
 
@@ -161,51 +167,85 @@ impl UnstableGraph {
         node_id: usize,
         visited: &[u8],
     ) -> usize {
+        let indices = self.node(node_id);
+
+        let mut is_first = true;
+        let mut first_index = 0;
+        let mut second_index = usize::MAX;
+        let mut pos = 0;
+        for (i, &link_index) in indices.iter().enumerate() {
+            let is_target = link_index == target_index;
+            if visited.is_not_visited(link_index) {
+                if is_first {
+                    first_index = link_index;
+                    is_first = is_target; // skip target
+                } else if !is_target {
+                    second_index = link_index;
+                    pos = i;
+                    break;
+                }
+            }
+        }
+
+        if second_index == usize::MAX {
+            return first_index;
+        }
+
         let target = self.link(target_index);
         let (c, a) = if target.a.id == node_id {
             (target.a.point, target.b.point)
         } else { (target.b.point, target.a.point) };
 
-        let mut iter = self.node(node_id).iter();
-
-        let mut best_index = self.next_not_visited(&mut iter, visited).unwrap_or(usize::MAX);
-
-        let second_index = if let Some(index) = self.next_not_visited(&mut iter, visited) {
-            index
-        } else {
-            // only one link
-            return best_index;
-        };
-
         // more the one vectors
-        let b = self.link(best_index).other(node_id).point;
-        let mut vector_solver = NearestCCWVector::new(c, a, b);
+        let b = self.link(first_index).other(node_id).point;
+        let mut vector_solver = NearestCCWVector::new(c, a, b, first_index);
 
-        // check the second vector
-        if vector_solver.add(self.link(second_index).other(node_id).point) {
-            best_index = second_index;
-        }
+        // add second vector
+        vector_solver.add(self.link(second_index).other(node_id).point, second_index);
 
         // check the rest vectors
-        while let Some(link_index) = self.next_not_visited(&mut iter, visited) {
-            let p = self.links[link_index].other(node_id).point;
-            if vector_solver.add(p) {
-                best_index = link_index;
+        for &link_index in indices.iter().skip(pos + 1) {
+            if visited.is_not_visited(link_index) {
+                let p = self.link(link_index).other(node_id).point;
+                vector_solver.add(p, link_index);
             }
         }
 
-        best_index
+        vector_solver.best_id
+    }
+}
+
+trait Visit {
+    fn count(&self, index: usize) -> u8;
+    fn is_visited(&self, index: usize) -> bool;
+    fn is_not_visited(&self, index: usize) -> bool;
+    fn visit(&mut self, index: usize);
+    fn reset(&mut self, index: usize);
+}
+
+impl Visit for [u8] {
+    #[inline(always)]
+    fn count(&self, index: usize) -> u8 {
+        unsafe { *self.get_unchecked(index) }
     }
 
     #[inline(always)]
-    fn next_not_visited(&self, iter: &mut Iter<usize>, visited: &[u8]) -> Option<usize> {
-        iter.find_map(|&link_index| {
-            let count = unsafe { *visited.get_unchecked(link_index) };
-            if count > 0 {
-                Some(link_index)
-            } else {
-                None
-            }
-        })
+    fn is_visited(&self, index: usize) -> bool {
+        self.count(index) == 0
+    }
+
+    #[inline(always)]
+    fn is_not_visited(&self, index: usize) -> bool {
+        self.count(index) > 0
+    }
+
+    #[inline(always)]
+    fn visit(&mut self, index: usize) {
+        unsafe { *self.get_unchecked_mut(index) -= 1 }
+    }
+
+    #[inline(always)]
+    fn reset(&mut self, index: usize) {
+        unsafe { *self.get_unchecked_mut(index) = 0 }
     }
 }

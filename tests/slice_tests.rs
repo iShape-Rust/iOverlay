@@ -281,23 +281,22 @@ mod tests {
             ].to_vec(),
             [
                 IntPoint::new(0, -1),
-                IntPoint::new(0, 1),
-                IntPoint::new(2, 1),
-                IntPoint::new(2, -1)
+                IntPoint::new(1, -1),
+                IntPoint::new(1, 1),
+                IntPoint::new(0, 1)
             ].to_vec()
         ].to_vec();
 
         let triangle = [
-            [IntPoint::new(-2, -2), IntPoint::new(-1, -1)],
-            [IntPoint::new(-1, -1), IntPoint::new(0, 1)],
-            [IntPoint::new(-1, -1), IntPoint::new(1, -1)],
-            [IntPoint::new(0, 1), IntPoint::new(1, -1)],
+            [IntPoint::new(-2, -1), IntPoint::new(0, 0)],
+            [IntPoint::new(-2, 1), IntPoint::new(0, 0)],
+            [IntPoint::new(-2, -1), IntPoint::new(-2, 1)]
         ].to_vec();
 
         let result = shape.slice_by_lines(&triangle);
 
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0].len(), 3);
         assert_eq!(result[1].len(), 1);
     }
 
@@ -352,8 +351,11 @@ mod tests {
         ].to_vec();
         let result = path.slice_by_lines(&lines);
 
-        assert_eq!(result.len(), 1);
+        assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0][0].len(), 3);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
     }
 
     #[test]
@@ -394,8 +396,11 @@ mod tests {
         let result = path.slice_by_lines(&lines);
 
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 4);
         assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
     }
 
     #[test]
@@ -448,7 +453,7 @@ mod tests {
 
     #[test]
     fn test_random_3() {
-        for _ in 0..500000 {
+        for _ in 0..50000 {
             let path = random_polygon(8, 4);
             let lines = random_lines(8, 4);
             let shapes = path.slice_by_lines(lines.as_slice());

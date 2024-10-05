@@ -1,6 +1,6 @@
 use crate::extension::rule::ExtRule;
 use crate::extension::unstable_graph::UnstableGraph;
-use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH};
+use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 
 impl UnstableGraph {
     #[inline(always)]
@@ -16,7 +16,7 @@ impl UnstableGraph {
         self.links.iter().map(|link| {
             let fill = link.fill;
             let subj = fill & SUBJ_BOTH;
-            let one_side_subj = subj != 0 && subj != SUBJ_BOTH;
+            let one_side_subj = subj == SUBJ_TOP || subj == SUBJ_BOTTOM;
 
             if one_side_subj {
                 1

@@ -1,4 +1,3 @@
-use std::slice::Iter;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
@@ -48,8 +47,7 @@ impl OverlayGraph {
 
         let mut link_index = 0;
         while link_index < visited.len() {
-            let &is_visit = unsafe { visited.get_unchecked(link_index) };
-            if is_visit {
+            if visited.is_visited(link_index) {
                 link_index += 1;
                 continue;
             }
@@ -71,7 +69,7 @@ impl OverlayGraph {
             }
         }
 
-        shapes.join_holes(&self.solver, holes);
+        shapes.join_sorted_holes(&self.solver, holes);
 
         shapes
     }
@@ -82,9 +80,7 @@ impl OverlayGraph {
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        unsafe {
-            *visited.get_unchecked_mut(link_id) = true;
-        };
+        visited.visit(link_id);
 
         let mut path = IntPath::new();
         path.push(start_data.begin);
@@ -110,9 +106,7 @@ impl OverlayGraph {
                 link.a.id
             };
 
-            unsafe {
-                *visited.get_unchecked_mut(link_id) = true;
-            };
+            visited.visit(link_id);
         }
 
         path
@@ -126,39 +120,48 @@ impl OverlayGraph {
         indices: &[usize],
         visited: &[bool],
     ) -> usize {
+        let mut is_first = true;
+        let mut first_index = 0;
+        let mut second_index = usize::MAX;
+        let mut pos = 0;
+        for (i, &link_index) in indices.iter().enumerate() {
+            if visited.is_not_visited(link_index) {
+                if is_first {
+                    first_index = link_index;
+                    is_first = false;
+                } else {
+                    second_index = link_index;
+                    pos = i;
+                    break;
+                }
+            }
+        }
+
+        if second_index == usize::MAX {
+            return first_index;
+        }
+
         let target = self.link(target_index);
         let (c, a) = if target.a.id == node_id {
             (target.a.point, target.b.point)
         } else { (target.b.point, target.a.point) };
 
-        let mut iter = indices.iter();
-        let mut best_index = iter.first_not_visited(visited);
-
-        let second_index = if let Some(index) = iter.next_link(visited) {
-            index
-        } else {
-            // only one link
-            return best_index;
-        };
-
         // more the one vectors
-        let b = self.link(best_index).other(node_id).point;
-        let mut vector_solver = NearestCCWVector::new(c, a, b);
+        let b = self.link(first_index).other(node_id).point;
+        let mut vector_solver = NearestCCWVector::new(c, a, b, first_index);
 
-        // check the second vector
-        if vector_solver.add(self.link(second_index).other(node_id).point) {
-            best_index = second_index;
-        }
+        // add second vector
+        vector_solver.add(self.link(second_index).other(node_id).point, second_index);
 
         // check the rest vectors
-        while let Some(link_index) = iter.next_link(visited) {
-            let p = self.links[link_index].other(node_id).point;
-            if vector_solver.add(p) {
-                best_index = link_index;
+        for &link_index in indices.iter().skip(pos + 1) {
+            if visited.is_not_visited(link_index) {
+                let p = self.link(link_index).other(node_id).point;
+                vector_solver.add(p, link_index);
             }
         }
 
-        best_index
+        vector_solver.best_id
     }
 
     #[inline]
@@ -194,8 +197,7 @@ impl OverlayGraph {
                 continue;
             }
 
-            let &is_visited = unsafe { visited.get_unchecked(i) };
-            if is_visited {
+            if visited.is_visited(i) {
                 continue;
             }
 
@@ -256,36 +258,6 @@ impl StartPathData {
     }
 }
 
-trait OverlayNodeIndices {
-    fn first_not_visited(&mut self, visited: &[bool]) -> usize;
-    fn next_link(&mut self, visited: &[bool]) -> Option<usize>;
-}
-
-impl OverlayNodeIndices for Iter<'_, usize> {
-    #[inline(always)]
-    fn first_not_visited(&mut self, visited: &[bool]) -> usize {
-        self.find_map(|&link_index| {
-            let is_visited = unsafe { visited.get_unchecked(link_index)};
-            if !is_visited {
-                Some(link_index)
-            } else {
-                None
-            }
-        }).unwrap_or_else(|| unreachable!("Element must always be found"))
-    }
-
-    #[inline(always)]
-    fn next_link(&mut self, visited: &[bool]) -> Option<usize> {
-        self.find_map(|&link_index| {
-            let is_visited = unsafe { *visited.get_unchecked(link_index) };
-            if !is_visited {
-                Some(link_index)
-            } else {
-                None
-            }
-        })
-    }
-}
 
 pub(crate) trait Validate {
     fn validate(&mut self, min_area: i64) -> bool;
@@ -312,5 +284,28 @@ impl Validate for IntPath {
         let abs_area = area.abs() >> 1;
 
         abs_area < min_area
+    }
+}
+
+trait Visit {
+    fn is_visited(&self, index: usize) -> bool;
+    fn is_not_visited(&self, index: usize) -> bool;
+    fn visit(&mut self, index: usize);
+}
+
+impl Visit for [bool] {
+    #[inline(always)]
+    fn is_visited(&self, index: usize) -> bool {
+        unsafe { *self.get_unchecked(index) }
+    }
+
+    #[inline(always)]
+    fn is_not_visited(&self, index: usize) -> bool {
+        !unsafe { *self.get_unchecked(index) }
+    }
+
+    #[inline(always)]
+    fn visit(&mut self, index: usize) {
+        unsafe { *self.get_unchecked_mut(index) = true }
     }
 }
