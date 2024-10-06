@@ -6,6 +6,8 @@ mod tests {
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::f64::overlay::F64Overlay;
+    use i_overlay::f64::string::F64StringOverlay;
+    use i_overlay::string::rule::StringRule;
 
 
     #[test]
@@ -377,5 +379,112 @@ mod tests {
         let shapes = graph.extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 0);
+    }
+
+
+    #[test]
+    fn test_slice_0() {
+        let mut overlay = F64StringOverlay::new();
+        overlay.add_shape_path(vec![
+            F64Point::new(-10.0, -10.0),
+            F64Point::new(-10.0, 10.0),
+            F64Point::new(10.0, 10.0),
+            F64Point::new(10.0, -10.0),
+        ]);
+
+        overlay.add_string_line([F64Point::new(0.0, -15.0), F64Point::new(0.0, 15.0)]);
+
+        let graph = overlay.into_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_slice_1() {
+        let mut overlay = F64StringOverlay::new();
+        overlay.add_shape_path(vec![
+            F64Point::new(-10.0, -10.0),
+            F64Point::new(-10.0, 10.0),
+            F64Point::new(10.0, 10.0),
+            F64Point::new(10.0, -10.0),
+        ]);
+
+        overlay.add_string_line([F64Point::new(0.0, -5.0), F64Point::new(0.0, 5.0)]);
+
+        let graph = overlay.into_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_slice_2() {
+        let mut overlay = F64StringOverlay::new();
+        overlay.add_shape_path(vec![
+            F64Point::new(-10.0, -10.0),
+            F64Point::new(-10.0, 10.0),
+            F64Point::new(10.0, 10.0),
+            F64Point::new(10.0, -10.0),
+        ]);
+
+        overlay.add_string_path(
+            [
+                F64Point::new(-15.0, -15.0),
+                F64Point::new(0.0, 0.0),
+                F64Point::new(-15.0, 15.0)
+            ].to_vec(), true);
+
+        let graph = overlay.into_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_slice_3() {
+        let mut overlay = F64StringOverlay::new();
+        overlay.add_shape_path(vec![
+            F64Point::new(-10.0, -10.0),
+            F64Point::new(-10.0, 10.0),
+            F64Point::new(10.0, 10.0),
+            F64Point::new(10.0, -10.0),
+        ]);
+
+        overlay.add_string_path(
+            [
+                F64Point::new(0.0, -5.0),
+                F64Point::new(0.0, 5.0),
+                F64Point::new(15.0, 5.0),
+                F64Point::new(15.0, -5.0),
+            ].to_vec(), false);
+
+        let graph = overlay.into_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_slice_4() {
+        let mut overlay = F64StringOverlay::new();
+        overlay.add_shape_path(vec![
+            F64Point::new(-10.0, -10.0),
+            F64Point::new(-10.0, 10.0),
+            F64Point::new(10.0, 10.0),
+            F64Point::new(10.0, -10.0),
+        ]);
+
+        overlay.add_string_path(vec![
+            F64Point::new(-5.0, -5.0),
+            F64Point::new(-5.0, 5.0),
+            F64Point::new(5.0, 5.0),
+            F64Point::new(5.0, -5.0),
+        ], false);
+
+        let graph = overlay.into_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 2);
     }
 }
