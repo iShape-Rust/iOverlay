@@ -15,8 +15,8 @@ use crate::f32::graph::F32OverlayGraph;
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `F32OverlayGraph`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
 pub struct F32Overlay {
-    subj_paths: Vec<F32Path>,
-    clip_paths: Vec<F32Path>,
+    pub(super) subj_paths: Vec<F32Path>,
+    pub(super) clip_paths: Vec<F32Path>,
 }
 
 impl F32Overlay {

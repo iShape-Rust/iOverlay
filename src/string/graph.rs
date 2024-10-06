@@ -4,13 +4,13 @@ use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::segm::segment::{Segment, SegmentFill};
 
-pub struct UnstableGraph {
+pub struct StringGraph {
     pub(super) solver: Solver,
     pub(super) nodes: Vec<Vec<usize>>,
     pub(super) links: Vec<OverlayLink>,
 }
 
-impl UnstableGraph {
+impl StringGraph {
 
     #[inline]
     pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {

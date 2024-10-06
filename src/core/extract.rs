@@ -39,7 +39,7 @@ impl OverlayGraph {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
-    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: i64) -> IntShapes {
+    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: usize) -> IntShapes {
         let mut binding = self.links.filter(overlay_rule);
         let visited = binding.as_mut_slice();
         let mut shapes = Vec::new();
@@ -260,12 +260,12 @@ impl StartPathData {
 
 
 pub(crate) trait Validate {
-    fn validate(&mut self, min_area: i64) -> bool;
+    fn validate(&mut self, min_area: usize) -> bool;
 }
 
 impl Validate for IntPath {
     #[inline]
-    fn validate(&mut self, min_area: i64) -> bool {
+    fn validate(&mut self, min_area: usize) -> bool {
         let slice = self.as_slice();
         if !slice.is_simple() {
             let simple = slice.to_simple();
@@ -281,7 +281,7 @@ impl Validate for IntPath {
         }
 
         let area = self.unsafe_area();
-        let abs_area = area.abs() >> 1;
+        let abs_area = area.unsigned_abs() as usize >> 1;
 
         abs_area < min_area
     }

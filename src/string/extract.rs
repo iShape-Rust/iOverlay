@@ -4,18 +4,25 @@ use i_shape::int::shape::IntShapes;
 use crate::bind::solver::JoinHoles;
 use crate::core::extract::StartPathData;
 use crate::core::vector_rotation::NearestCCWVector;
-use crate::extension::rule::ExtRule;
-use crate::extension::split::Split;
-use crate::extension::unstable_graph::UnstableGraph;
+use crate::string::rule::StringRule;
+use crate::string::split::Split;
+use crate::string::graph::StringGraph;
 
-impl UnstableGraph {
+impl StringGraph {
+    /// Extracts shapes from the graph based on the specified `StringRule`.
+    /// - `string_rule`: The rule used to determine how shapes are extracted.
+    /// - Returns: A collection of shapes (`IntShapes`) extracted from the graph according to the rule.
     #[inline(always)]
-    pub fn extract_shapes(&self, ext_rule: ExtRule) -> IntShapes {
-        self.extract_shapes_min_area(ext_rule, 0)
+    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
+        self.extract_shapes_min_area(string_rule, 0)
     }
 
-    pub fn extract_shapes_min_area(&self, ext_rule: ExtRule, min_area: usize) -> IntShapes {
-        let mut binding = self.filter(ext_rule);
+    /// Extracts shapes from the graph with a minimum area constraint.
+    /// - `string_rule`: The rule used to determine how shapes are extracted.
+    /// - `min_area`: The minimum area that a shape must have to be included in the results. Shapes smaller than this will be excluded.
+    /// - Returns: A collection of shapes (`IntShapes`) that meet the specified area constraint.
+    pub fn extract_shapes_min_area(&self, string_rule: StringRule, min_area: usize) -> IntShapes {
+        let mut binding = self.filter(string_rule);
         let visited = binding.as_mut_slice();
         let mut shapes = Vec::new();
 
@@ -30,7 +37,7 @@ impl UnstableGraph {
             let link = self.link(left_top_link);
 
             if visited.count(left_top_link) == 1 {
-                let is_hole = ext_rule.is_hole(link.fill);
+                let is_hole = string_rule.is_hole(link.fill);
                 let start_data = StartPathData::new(is_hole, link, left_top_link);
                 let paths = self.get_path(&start_data, visited).split_loops(min_area);
                 if is_hole {

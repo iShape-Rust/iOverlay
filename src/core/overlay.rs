@@ -71,6 +71,7 @@ impl Overlay {
     /// Adds a single path to the overlay as either subject or clip paths.
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
         self.segments.append_segments(path, shape_type);
     }
@@ -78,6 +79,7 @@ impl Overlay {
     /// Adds multiple paths to the overlay as either subject or clip paths.
     /// - `paths`: An array of `IntPath` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
     pub fn add_paths(&mut self, paths: &[IntPath], shape_type: ShapeType) {
         for path in paths.iter() {
             self.add_path(path, shape_type);
@@ -87,6 +89,7 @@ impl Overlay {
     /// Adds a single shape to the overlay as either a subject or clip shape.
     /// - `shape`: A reference to a `IntShape` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
     pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
         self.add_paths(shape, shape_type);
     }

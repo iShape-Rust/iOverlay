@@ -5,7 +5,9 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::string::rule::StringRule;
     use i_overlay::f32::overlay::F32Overlay;
+    use i_overlay::f32::string::F32StringOverlay;
 
 
     #[test]
@@ -377,5 +379,23 @@ mod tests {
         let shapes = graph.extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_slice_0() {
+        let mut overlay = F32StringOverlay::new();
+        overlay.add_shape_path(vec![
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ]);
+
+        overlay.add_string_line([F32Point::new(0.0, -15.0), F32Point::new(0.0, 15.0)]);
+
+        let graph = overlay.into_graph(FillRule::NonZero);
+        let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 2);
     }
 }

@@ -30,13 +30,3 @@ impl ToSegment for [IntPoint] {
         }
     }
 }
-
-pub trait LineGeometry {
-    fn sqr_length(&self) -> i64;
-}
-
-impl LineGeometry for IntLine {
-    fn sqr_length(&self) -> i64 {
-        self[0].sqr_distance(self[1])
-    }
-}

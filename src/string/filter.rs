@@ -1,17 +1,18 @@
-use crate::extension::rule::ExtRule;
-use crate::extension::unstable_graph::UnstableGraph;
+use crate::string::rule::StringRule;
+use crate::string::graph::StringGraph;
 use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 
-impl UnstableGraph {
+impl StringGraph {
     #[inline(always)]
-    pub(super) fn filter(&self, ext_rule: ExtRule) -> Vec<u8> {
+    pub(super) fn filter(&self, ext_rule: StringRule) -> Vec<u8> {
         match ext_rule {
-            ExtRule::Slice => {
+            StringRule::Slice => {
                 self.filter_slice()
             }
         }
     }
 
+    #[inline]
     fn filter_slice(&self) -> Vec<u8> {
         self.links.iter().map(|link| {
             let fill = link.fill;

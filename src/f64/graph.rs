@@ -72,7 +72,7 @@ impl F64OverlayGraph {
     #[inline]
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: f64) -> F64Shapes {
         let sqr_scale = self.adapter.dir_scale * self.adapter.dir_scale;
-        let area = (sqr_scale * min_area) as i64;
+        let area = (sqr_scale * min_area) as usize;
         let shapes = self.graph.extract_shapes_min_area(overlay_rule, area);
 
         shapes.to_float(&self.adapter)
