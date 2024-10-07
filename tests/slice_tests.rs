@@ -471,6 +471,23 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_random_4() {
+        for _ in 0..10000 {
+            let path = random_polygon(8, 8);
+            let lines = random_lines(8, 8);
+
+            let shapes = path.slice_by_lines(&lines, FillRule::NonZero);
+
+            for shape in shapes.iter() {
+                assert!(shape.len() >= 1);
+                for path in shape.iter() {
+                    assert!(path.len() > 2);
+                }
+            }
+        }
+    }
+
     fn random_polygon(radius: i32, n: usize) -> IntPath {
         let a = radius / 2;
         let range = -a..=a;

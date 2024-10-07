@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod tests {
     use i_float::f32_point::F32Point;
+    use i_shape::f32::shape::F32Path;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::f32::clip::F32Clip;
     use i_overlay::string::rule::StringRule;
     use i_overlay::f32::overlay::F32Overlay;
     use i_overlay::f32::slice::F32Slice;
     use i_overlay::f32::string::F32StringOverlay;
+    use i_overlay::string::clip::ClipRule;
 
 
     #[test]
@@ -560,5 +563,72 @@ mod tests {
         ], false, FillRule::NonZero);
 
         assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_clip_empty_path() {
+        let path: F32Path = vec![];
+        let result_0 = path.clip_line(
+            [F32Point::new(0.0, 0.0), F32Point::new(1.0, 0.0)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = path.clip_line(
+            [F32Point::new(0.0, 0.0), F32Point::new(1.0, 0.0)],
+            FillRule::NonZero,
+            ClipRule { invert: true, boundary_included: false },
+        );
+
+        assert!(result_0.is_empty());
+        assert_eq!(result_1.len(), 1);
+    }
+
+    #[test]
+    fn test_clip_simple() {
+        let path: F32Path = vec![
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ];
+        let result_0 = path.clip_line(
+            [F32Point::new(0.0, -15.0), F32Point::new(0.0, 15.0)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = path.clip_line(
+            [F32Point::new(0.0, -15.0), F32Point::new(0.0, 15.0)],
+            FillRule::NonZero,
+            ClipRule { invert: true, boundary_included: false },
+        );
+
+        assert_eq!(result_0.len(), 1);
+        assert_eq!(result_1.len(), 2);
+    }
+
+    #[test]
+    fn test_clip_boundary() {
+        let path: F32Path = vec![
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ];
+        let result_0 = path.clip_line(
+            [F32Point::new(-10.0, -15.0), F32Point::new(-10.0, 15.0)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = path.clip_line(
+            [F32Point::new(-10.0, -15.0), F32Point::new(-10.0, 15.0)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: true },
+        );
+
+        assert_eq!(result_0.len(), 0);
+        assert_eq!(result_1.len(), 1);
     }
 }

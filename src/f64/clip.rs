@@ -17,7 +17,7 @@ impl F64StringGraph {
         let lines = self.graph.clip_string_lines(clip_rule);
         lines.into_iter().map(|line| {
             let a = self.adapter.convert_to_float(&line[0]);
-            let b = self.adapter.convert_to_float(&line[0]);
+            let b = self.adapter.convert_to_float(&line[1]);
             [a, b]
         }).collect()
     }
