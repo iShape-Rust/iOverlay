@@ -111,7 +111,7 @@ impl Overlay {
             return (Vec::new(), Vec::new());
         }
 
-        let (mut segments, mut fills) = self.segments.prepare_and_fill(fill_rule, solver);
+        let (mut segments, mut fills) = self.segments.prepare_and_fill(false, fill_rule, solver);
 
         clean_if_needed(&mut segments, &mut fills);
         (segments, fills)
@@ -125,7 +125,7 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(solver, self.segments.prepare_and_fill(fill_rule, solver));
+        let graph = OverlayGraph::new(solver, self.segments.prepare_and_fill(false, fill_rule, solver));
 
         graph.extract_shape_vectors(overlay_rule)
     }
@@ -137,7 +137,7 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let graph = OverlayGraph::new(solver, self.segments.prepare_and_fill(fill_rule, solver));
+        let graph = OverlayGraph::new(solver, self.segments.prepare_and_fill(false, fill_rule, solver));
         graph.extract_separate_vectors()
     }
 
@@ -158,7 +158,7 @@ impl Overlay {
 pub(crate) trait BuildSegments {
     fn append_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
     fn append_private_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
-    fn prepare_and_fill(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>);
+    fn prepare_and_fill(self, is_string: bool, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>);
 }
 
 impl BuildSegments for Vec<Segment> {
@@ -203,7 +203,7 @@ impl BuildSegments for Vec<Segment> {
         }
     }
 
-    fn prepare_and_fill(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+    fn prepare_and_fill(self, is_string: bool, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
         let mut segments = self;
         segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
 
@@ -212,7 +212,7 @@ impl BuildSegments for Vec<Segment> {
         segments = SplitSolver::new(solver).split(segments);
 
         let is_list = solver.is_list_fill(&segments);
-        let fills = FillSolver::fill_with_rule(fill_rule, is_list, &segments);
+        let fills = FillSolver::fill_with_rule(fill_rule, is_string, is_list, &segments);
 
         (segments, fills)
     }

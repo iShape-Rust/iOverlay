@@ -152,6 +152,6 @@ impl StringOverlay {
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> StringGraph {
-        StringGraph::new(solver, self.segments.prepare_and_fill(fill_rule, solver))
+        StringGraph::new(solver, self.segments.prepare_and_fill(true, fill_rule, solver))
     }
 }

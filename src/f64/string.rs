@@ -22,7 +22,6 @@ pub struct F64StringGraph {
 }
 
 impl F64StringOverlay {
-
     /// Creates a new `F64StringOverlay` instance, initializing the internal storage for paths and lines.
     /// This is useful for adding both closed shape paths and open line strings.
     #[inline]
@@ -40,6 +39,15 @@ impl F64StringOverlay {
     #[inline]
     pub fn add_shape_paths(&mut self, mut paths: Vec<F64Path>) {
         self.shape_paths.append(&mut paths);
+    }
+
+    /// Adds multiple shapes to the overlay.
+    /// - `shapes`: A vector of `F64Shape` instances.
+    #[inline]
+    pub fn add_shapes(&mut self, shapes: F64Shapes) {
+        for mut shape in shapes.into_iter() {
+            self.shape_paths.append(&mut shape);
+        }
     }
 
     /// Adds a single open line string to the overlay.
@@ -124,6 +132,13 @@ impl F64StringOverlay {
         F64StringGraph { graph, adapter }
     }
 }
+
+impl Default for F64StringOverlay {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 
 impl F64StringGraph {
     /// Extracts shapes from the overlay graph based on the specified string rule.

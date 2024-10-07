@@ -42,6 +42,15 @@ impl F32StringOverlay {
         self.shape_paths.append(&mut paths);
     }
 
+    /// Adds multiple shapes to the overlay.
+    /// - `shapes`: A vector of `F32Shape` instances.
+    #[inline]
+    pub fn add_shapes(&mut self, shapes: F32Shapes) {
+        for mut shape in shapes.into_iter() {
+            self.shape_paths.append(&mut shape);
+        }
+    }
+
     /// Adds a single open line string to the overlay.
     /// - `line`: A `F32Line` representing a line string with two points.
     #[inline]
@@ -122,6 +131,12 @@ impl F32StringOverlay {
         let graph = overlay.into_graph_with_solver(fill_rule, solver);
 
         F32StringGraph { graph, adapter }
+    }
+}
+
+impl Default for F32StringOverlay {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

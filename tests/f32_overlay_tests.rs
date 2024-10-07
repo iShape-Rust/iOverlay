@@ -7,6 +7,7 @@ mod tests {
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::string::rule::StringRule;
     use i_overlay::f32::overlay::F32Overlay;
+    use i_overlay::f32::slice::F32Slice;
     use i_overlay::f32::string::F32StringOverlay;
 
 
@@ -483,6 +484,80 @@ mod tests {
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let shapes = graph.extract_shapes(StringRule::Slice);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_ext_slice_0() {
+        let shapes = [
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ].slice_by_line([F32Point::new(0.0, -15.0), F32Point::new(0.0, 15.0)], FillRule::NonZero);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_ext_slice_1() {
+        let shapes = [
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ].slice_by_line([F32Point::new(0.0, -5.0), F32Point::new(0.0, 5.0)], FillRule::NonZero);
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_ext_slice_2() {
+        let shapes = [
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ].slice_by_path(&vec![
+            F32Point::new(-15.0, -15.0),
+            F32Point::new(0.0, 0.0),
+            F32Point::new(-15.0, 15.0),
+        ], true, FillRule::NonZero);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_ext_slice_3() {
+        let shapes = [
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ].slice_by_path(&vec![
+            F32Point::new(0.0, -5.0),
+            F32Point::new(0.0, 5.0),
+            F32Point::new(15.0, 5.0),
+            F32Point::new(15.0, -5.0),
+        ], false, FillRule::NonZero);
+
+        assert_eq!(shapes.len(), 2);
+    }
+
+    #[test]
+    fn test_ext_slice_4() {
+        let shapes = [
+            F32Point::new(-10.0, -10.0),
+            F32Point::new(-10.0, 10.0),
+            F32Point::new(10.0, 10.0),
+            F32Point::new(10.0, -10.0),
+        ].slice_by_path(&vec![
+            F32Point::new(-5.0, -5.0),
+            F32Point::new(-5.0, 5.0),
+            F32Point::new(5.0, 5.0),
+            F32Point::new(5.0, -5.0),
+        ], false, FillRule::NonZero);
 
         assert_eq!(shapes.len(), 2);
     }
