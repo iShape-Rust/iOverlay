@@ -5,9 +5,9 @@ use crate::core::solver::Solver;
 use crate::segm::segment::{Segment, SegmentFill};
 
 pub struct StringGraph {
-    pub(super) solver: Solver,
-    pub(super) nodes: Vec<Vec<usize>>,
-    pub(super) links: Vec<OverlayLink>,
+    pub(crate) solver: Solver,
+    pub(crate) nodes: Vec<Vec<usize>>,
+    pub(crate) links: Vec<OverlayLink>,
 }
 
 impl StringGraph {
