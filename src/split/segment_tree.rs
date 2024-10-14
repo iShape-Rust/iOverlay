@@ -11,6 +11,7 @@ struct IntervalNode {
 }
 
 impl IntervalNode {
+    #[inline(always)]
     fn new(range: LineRange) -> Self {
         Self { range, fragments: Vec::with_capacity(4) }
     }
@@ -19,7 +20,7 @@ impl IntervalNode {
 pub(super) struct SegmentTree {
     power: usize,
     nodes: Vec<IntervalNode>,
-    pub(super) radius: i64
+    pub(super) radius: i64,
 }
 
 impl SegmentTree {
@@ -298,7 +299,7 @@ impl SegmentTree {
                     &this.x_segment,
                     &scan.x_segment,
                     marks,
-                    self.radius
+                    self.radius,
                 )
             } else {
                 SplitSolver::cross(
@@ -307,7 +308,7 @@ impl SegmentTree {
                     &scan.x_segment,
                     &this.x_segment,
                     marks,
-                    self.radius
+                    self.radius,
                 )
             };
 

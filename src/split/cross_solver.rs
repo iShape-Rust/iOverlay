@@ -21,22 +21,28 @@ const OTHER_A: u8 = 0b0100;
 const OTHER_B: u8 = 0b1000;
 
 impl EndMask for CollinearMask {
+
+    #[inline(always)]
     fn is_target_a(&self) -> bool {
         self & TARGET_A == TARGET_A
     }
 
+    #[inline(always)]
     fn is_target_b(&self) -> bool {
         self & TARGET_B == TARGET_B
     }
 
+    #[inline(always)]
     fn is_other_a(&self) -> bool {
         self & OTHER_A == OTHER_A
     }
 
+    #[inline(always)]
     fn is_other_b(&self) -> bool {
         self & OTHER_B == OTHER_B
     }
 
+    #[inline(always)]
     fn new(target_a: bool, target_b: bool, other_a: bool, other_b: bool) -> Self {
         let a0 = target_a as u8;
         let b0 = (target_b as u8) << 1;

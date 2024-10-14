@@ -7,7 +7,6 @@ use crate::geom::x_segment::XSegment;
 
 pub(crate) trait BuildSegments {
     fn append_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
-    // fn append_private_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);
 }
 
 impl BuildSegments for Vec<Segment> {

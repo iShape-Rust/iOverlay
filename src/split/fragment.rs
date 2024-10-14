@@ -31,6 +31,7 @@ impl Fragment {
         }
     }
 
+    #[inline(always)]
     pub(super) fn y_range(&self) -> LineRange {
         LineRange { min: self.rect.min_y, max: self.rect.max_y }
     }

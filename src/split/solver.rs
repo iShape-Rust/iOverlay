@@ -29,10 +29,13 @@ pub(super) struct SplitSolver {
 }
 
 impl SplitSolver {
+
+    #[inline(always)]
     pub(crate) fn new(solver: Solver) -> Self {
         Self { solver }
     }
 
+    #[inline]
     pub(crate) fn split(&mut self, segments: Vec<Segment>) -> Vec<Segment> {
         let is_list = self.solver.is_list_split(&segments);
 

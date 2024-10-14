@@ -54,6 +54,7 @@ impl XSegment {
 }
 
 impl PartialOrd for XSegment {
+    #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }

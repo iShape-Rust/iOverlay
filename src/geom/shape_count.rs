@@ -5,7 +5,6 @@ pub struct ShapeCount {
 }
 
 impl ShapeCount {
-
     #[inline(always)]
     pub(crate) fn is_not_empty(self) -> bool { self.subj != 0 || self.clip != 0 }
 
