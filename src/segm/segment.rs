@@ -37,7 +37,6 @@ impl Segment {
     }
 }
 
-
 impl PartialEq<Self> for Segment {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {

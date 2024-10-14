@@ -1,12 +1,15 @@
 use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes, PointsCount};
+use crate::core::build::BuildSegments;
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::{BuildSegments, ShapeType};
+use crate::core::overlay::ShapeType;
 use crate::core::solver::Solver;
+use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::string::graph::StringGraph;
-use crate::segm::segment::{Segment, ToSegment};
+use crate::segm::segment::{Segment, SegmentFill, ToSegment};
 use crate::segm::shape_count::ShapeCount;
+use crate::split::solver::SplitSegments;
 use crate::string::line::IntLine;
 
 pub struct StringOverlay {
@@ -152,6 +155,98 @@ impl StringOverlay {
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> StringGraph {
-        StringGraph::new(solver, self.segments.prepare_and_fill(true, fill_rule, solver))
+        StringGraph::new(solver, self.into_segments(fill_rule, solver))
+    }
+
+    /// Convert into segments from the added paths or shapes according to the specified fill rule.
+    /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
+    /// - `filter`: Is need to clean empty segments
+    /// - `solver`: Type of solver to use.
+    fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+        if self.segments.is_empty() {
+            return (Vec::new(), Vec::new());
+        }
+
+        let segments = self.segments.split_segments(solver);
+
+        let is_list = solver.is_list_fill(&segments);
+
+        let fills = match fill_rule {
+            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategyString>(is_list, &segments),
+            FillRule::NonZero => FillSolver::fill::<NonZeroStrategyString>(is_list, &segments),
+            FillRule::Positive => FillSolver::fill::<PositiveStrategyString>(is_list, &segments),
+            FillRule::Negative => FillSolver::fill::<NegativeStrategyString>(is_list, &segments),
+        };
+
+        (segments, fills)
+    }
+}
+
+pub(crate) struct EvenOddStrategyString;
+pub(crate) struct NonZeroStrategyString;
+pub(crate) struct PositiveStrategyString;
+pub(crate) struct NegativeStrategyString;
+
+impl FillStrategy for EvenOddStrategyString {
+    #[inline(always)]
+    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
+        let subj = bot.subj + this.subj;
+        let clip = (this.clip != 0) as u8;
+        let top = ShapeCount { subj, clip: 0 };
+
+        let subj_top = 1 & top.subj as SegmentFill;
+        let subj_bot = 1 & bot.subj as SegmentFill;
+
+        let fill = subj_top | (subj_bot << 1) | clip << 2;
+
+        (top, fill)
+    }
+}
+
+impl FillStrategy for NonZeroStrategyString {
+    #[inline(always)]
+    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
+        let subj = bot.subj + this.subj;
+        let clip = (this.clip != 0) as u8;
+        let top = ShapeCount { subj, clip: 0 };
+
+        let subj_top = (top.subj != 0) as SegmentFill;
+        let subj_bot = (bot.subj != 0) as SegmentFill;
+
+        let fill = subj_top | (subj_bot << 1) | clip << 2;
+
+        (top, fill)
+    }
+}
+
+impl FillStrategy for PositiveStrategyString {
+    #[inline(always)]
+    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
+        let subj = bot.subj + this.subj;
+        let clip = (this.clip != 0) as u8;
+        let top = ShapeCount { subj, clip: 0 };
+
+        let subj_top = (top.subj < 0) as SegmentFill;
+        let subj_bot = (bot.subj < 0) as SegmentFill;
+
+        let fill = subj_top | (subj_bot << 1) | clip << 2;
+
+        (top, fill)
+    }
+}
+
+impl FillStrategy for NegativeStrategyString {
+    #[inline(always)]
+    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
+        let subj = bot.subj + this.subj;
+        let clip = (this.clip != 0) as u8;
+        let top = ShapeCount { subj, clip: 0 };
+
+        let subj_top = (top.subj > 0) as SegmentFill;
+        let subj_bot = (bot.subj > 0) as SegmentFill;
+
+        let fill = subj_top | (subj_bot << 1) | clip << 2;
+
+        (top, fill)
     }
 }

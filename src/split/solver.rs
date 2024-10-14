@@ -9,7 +9,22 @@ use crate::split::line_mark::LineMark;
 use crate::segm::x_segment::XSegment;
 use crate::sort::SmartBinSort;
 
-pub(crate) struct SplitSolver {
+pub(crate) trait SplitSegments {
+    fn split_segments(self, solver: Solver) -> Vec<Segment>;
+}
+
+impl SplitSegments for Vec<Segment> {
+    #[inline]
+    fn split_segments(self, solver: Solver) -> Vec<Segment> {
+        let mut segments = self;
+        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+        segments.merge_if_needed();
+
+        SplitSolver::new(solver).split(segments)
+    }
+}
+
+pub(super) struct SplitSolver {
     pub(super) solver: Solver,
 }
 

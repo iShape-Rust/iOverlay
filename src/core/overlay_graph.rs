@@ -29,6 +29,7 @@ impl OverlayGraph {
 
     #[inline]
     pub(crate) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
+
         let (nodes, links) = Self::build_nodes_and_links(&solver, bundle);
         Self { solver, nodes, links }
     }
