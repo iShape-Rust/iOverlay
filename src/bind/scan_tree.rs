@@ -4,8 +4,8 @@ use i_tree::tree::Tree;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
 use crate::id_point::IdPoint;
-use crate::util::Int;
 use crate::segm::x_segment::XSegment;
+use crate::util::log::Int;
 
 pub(crate) struct ScanHoleTree {
     tree: Tree<IdSegment>,

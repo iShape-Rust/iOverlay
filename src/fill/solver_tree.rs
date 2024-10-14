@@ -9,7 +9,7 @@ use crate::segm::end::End;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;
-use crate::util::Int;
+use crate::util::log::Int;
 
 pub(super) struct ScanFillTree {
     tree: Tree<CountSegment>,

@@ -1,8 +1,8 @@
-use crate::util::SwapRemoveIndex;
 use crate::line_range::LineRange;
 use crate::split::fragment::Fragment;
 use crate::split::line_mark::LineMark;
 use crate::split::solver::SplitSolver;
+use crate::util::remove::SwapRemoveIndex;
 
 #[derive(Debug, Clone)]
 struct IntervalNode {

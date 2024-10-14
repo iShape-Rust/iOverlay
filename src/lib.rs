@@ -127,9 +127,7 @@ pub(crate) mod bind;
 pub(crate) mod segm;
 pub(crate) mod line_range;
 pub(crate) mod id_point;
-
-mod util;
-mod sort;
+pub(crate) mod util;
 
 pub use i_float;
 pub use i_shape;

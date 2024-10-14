@@ -8,7 +8,7 @@ use crate::core::solver::Solver;
 use crate::id_point::IdPoint;
 use crate::segm::end::End;
 use crate::segm::segment::{Segment, SegmentFill};
-use crate::sort::SmartBinSort;
+use crate::util::sort::SmartBinSort;
 
 use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
 
@@ -26,10 +26,8 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
-
     #[inline]
     pub(crate) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
-
         let (nodes, links) = Self::build_nodes_and_links(&solver, bundle);
         Self { solver, nodes, links }
     }

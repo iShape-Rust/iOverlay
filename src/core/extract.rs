@@ -74,7 +74,6 @@ impl OverlayGraph {
         shapes
     }
 
-    #[inline]
     fn get_path(&self, start_data: &StartPathData, visited: &mut [bool]) -> IntPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
@@ -164,7 +163,7 @@ impl OverlayGraph {
         vector_solver.best_id
     }
 
-    #[inline]
+    #[inline(always)]
     pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
         let top = self.link(link_index);
         debug_assert!(top.is_direct());

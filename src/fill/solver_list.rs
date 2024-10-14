@@ -6,7 +6,7 @@ use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::segm::end::End;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::shape_count::ShapeCount;
-use crate::util::Int;
+use crate::util::log::Int;
 
 struct ScanFillList {
     buffer: Vec<CountSegment>,

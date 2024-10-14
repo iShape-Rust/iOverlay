@@ -7,7 +7,7 @@ use crate::segm::shape_count::ShapeCount;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
 use crate::segm::x_segment::XSegment;
-use crate::sort::SmartBinSort;
+use crate::util::sort::SmartBinSort;
 
 pub(crate) trait SplitSegments {
     fn split_segments(self, solver: Solver) -> Vec<Segment>;
