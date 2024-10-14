@@ -9,12 +9,12 @@ use crate::core::build::BuildSegments;
 
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
-use crate::segm::segment::{CLIP_BOTH, NONE, SegmentFill, SUBJ_BOTH};
+use crate::geom::segment::{CLIP_BOTH, NONE, SegmentFill, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
-use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
+use crate::geom::segment::Segment;
+use crate::geom::shape_count::ShapeCount;
 use crate::split::solver::SplitSegments;
 use crate::vector::edge::{VectorEdge, VectorShape};
 

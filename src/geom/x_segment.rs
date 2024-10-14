@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_key_sort::index::{BinKey, BinLayout};
-use crate::line_range::LineRange;
+use crate::geom::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct XSegment {

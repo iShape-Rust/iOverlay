@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
-use crate::segm::x_segment::XSegment;
-use crate::segm::shape_count::ShapeCount;
+use crate::geom::x_segment::XSegment;
+use crate::geom::shape_count::ShapeCount;
 
 pub type SegmentFill = u8;
 

@@ -2,7 +2,7 @@ use i_float::fix_vec::FixVec;
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_float::u128::UInt128;
-use crate::segm::x_segment::XSegment;
+use crate::geom::x_segment::XSegment;
 
 pub(super) type CollinearMask = u8;
 
@@ -347,7 +347,7 @@ impl RoundDivide for UInt128 {
 mod tests {
     use i_float::point::IntPoint;
     use crate::split::cross_solver::{CrossSolver, CrossType};
-    use crate::segm::x_segment::XSegment;
+    use crate::geom::x_segment::XSegment;
 
     impl XSegment {
         fn new(a: IntPoint, b: IntPoint) -> Self {

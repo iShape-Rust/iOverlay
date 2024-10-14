@@ -1,4 +1,4 @@
-use crate::segm::segment::{SegmentFill, SUBJ_BOTTOM};
+use crate::geom::segment::{SegmentFill, SUBJ_BOTTOM};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StringRule {

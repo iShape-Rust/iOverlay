@@ -1,6 +1,6 @@
 use crate::string::rule::StringRule;
 use crate::string::graph::StringGraph;
-use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::geom::segment::{CLIP_BOTH, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 
 impl StringGraph {
     #[inline(always)]

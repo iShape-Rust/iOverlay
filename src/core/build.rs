@@ -1,9 +1,9 @@
 use i_float::point::IntPoint;
 use i_shape::int::simple::Simple;
 use crate::core::overlay::ShapeType;
-use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
-use crate::segm::x_segment::XSegment;
+use crate::geom::segment::Segment;
+use crate::geom::shape_count::ShapeCount;
+use crate::geom::x_segment::XSegment;
 
 pub(crate) trait BuildSegments {
     fn append_segments(&mut self, path: &[IntPoint], shape_type: ShapeType);

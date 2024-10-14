@@ -3,9 +3,9 @@ use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::solver::{FillSolver, FillStrategy};
-use crate::segm::end::End;
-use crate::segm::segment::{NONE, Segment, SegmentFill};
-use crate::segm::shape_count::ShapeCount;
+use crate::geom::end::End;
+use crate::geom::segment::{NONE, Segment, SegmentFill};
+use crate::geom::shape_count::ShapeCount;
 use crate::util::log::Int;
 
 struct ScanFillList {

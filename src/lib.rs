@@ -124,9 +124,7 @@ pub mod string;
 
 pub(crate) mod split;
 pub(crate) mod bind;
-pub(crate) mod segm;
-pub(crate) mod line_range;
-pub(crate) mod id_point;
+pub(crate) mod geom;
 pub(crate) mod util;
 
 pub use i_float;

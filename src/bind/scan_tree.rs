@@ -3,8 +3,8 @@ use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
-use crate::id_point::IdPoint;
-use crate::segm::x_segment::XSegment;
+use crate::geom::id_point::IdPoint;
+use crate::geom::x_segment::XSegment;
 use crate::util::log::Int;
 
 pub(crate) struct ScanHoleTree {

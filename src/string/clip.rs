@@ -2,7 +2,7 @@ use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
-use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH};
+use crate::geom::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;

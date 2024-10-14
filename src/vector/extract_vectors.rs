@@ -1,13 +1,13 @@
 use i_float::point::IntPoint;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
-use crate::id_point::IdPoint;
+use crate::geom::id_point::IdPoint;
 use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::Filter;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
-use crate::segm::segment::SegmentFill;
+use crate::geom::segment::SegmentFill;
 use crate::util::sort::SmartBinSort;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
 

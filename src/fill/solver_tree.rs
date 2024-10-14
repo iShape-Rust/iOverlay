@@ -5,10 +5,10 @@ use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::solver::{FillSolver, FillStrategy};
-use crate::segm::end::End;
-use crate::segm::segment::{NONE, Segment, SegmentFill};
-use crate::segm::x_segment::XSegment;
-use crate::segm::shape_count::ShapeCount;
+use crate::geom::end::End;
+use crate::geom::segment::{NONE, Segment, SegmentFill};
+use crate::geom::x_segment::XSegment;
+use crate::geom::shape_count::ShapeCount;
 use crate::util::log::Int;
 
 pub(super) struct ScanFillTree {

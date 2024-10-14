@@ -1,7 +1,7 @@
 use i_float::rect::IntRect;
-use crate::segm::segment::Segment;
+use crate::geom::segment::Segment;
 use crate::split::fragment::Fragment;
-use crate::segm::x_segment::XSegment;
+use crate::geom::x_segment::XSegment;
 
 pub(super) struct SpaceLayout {
     pub(super) power: usize,

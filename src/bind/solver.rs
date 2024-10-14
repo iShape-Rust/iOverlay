@@ -4,7 +4,7 @@ use crate::bind::segment::{IdSegment, IdSegments};
 use crate::bind::scan_list::ScanHoleList;
 use crate::bind::scan_tree::ScanHoleTree;
 use crate::core::solver::Solver;
-use crate::id_point::IdPoint;
+use crate::geom::id_point::IdPoint;
 use crate::util::sort::SmartBinSort;
 
 pub(crate) struct BindSolution {

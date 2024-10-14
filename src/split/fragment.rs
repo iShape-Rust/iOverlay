@@ -1,6 +1,6 @@
 use i_float::rect::IntRect;
-use crate::line_range::LineRange;
-use crate::segm::x_segment::XSegment;
+use crate::geom::line_range::LineRange;
+use crate::geom::x_segment::XSegment;
 
 #[derive(Debug, Clone)]
 pub(super) struct Fragment {

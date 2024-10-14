@@ -1,5 +1,5 @@
-use crate::line_range::LineRange;
-use crate::segm::segment::Segment;
+use crate::geom::line_range::LineRange;
+use crate::geom::segment::Segment;
 use crate::split::fragment::Fragment;
 use crate::split::segment_tree::SegmentTree;
 use crate::split::solver::SplitSolver;

@@ -7,8 +7,8 @@ use crate::core::overlay::ShapeType;
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::string::graph::StringGraph;
-use crate::segm::segment::{Segment, SegmentFill, ToSegment};
-use crate::segm::shape_count::ShapeCount;
+use crate::geom::segment::{Segment, SegmentFill, ToSegment};
+use crate::geom::shape_count::ShapeCount;
 use crate::split::solver::SplitSegments;
 use crate::string::line::IntLine;
 

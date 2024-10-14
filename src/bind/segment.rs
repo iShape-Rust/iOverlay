@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_shape::int::path::IntPath;
-use crate::segm::x_segment::XSegment;
+use crate::geom::x_segment::XSegment;
 use crate::vector::edge::VectorPath;
 
 #[derive(Debug, Clone, Copy)]

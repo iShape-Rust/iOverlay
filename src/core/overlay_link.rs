@@ -1,5 +1,5 @@
-use crate::segm::segment::SegmentFill;
-use crate::id_point::IdPoint;
+use crate::geom::segment::SegmentFill;
+use crate::geom::id_point::IdPoint;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct OverlayLink {

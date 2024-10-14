@@ -1,4 +1,4 @@
-use crate::line_range::LineRange;
+use crate::geom::line_range::LineRange;
 use crate::split::fragment::Fragment;
 use crate::split::line_mark::LineMark;
 use crate::split::solver::SplitSolver;
@@ -335,8 +335,8 @@ impl SegmentTree {
 #[cfg(test)]
 mod tests {
     use i_float::point::IntPoint;
-    use crate::segm::x_segment::XSegment;
-    use crate::line_range::LineRange;
+    use crate::geom::x_segment::XSegment;
+    use crate::geom::line_range::LineRange;
     use crate::split::fragment::Fragment;
     use crate::split::segment_tree::SegmentTree;
 

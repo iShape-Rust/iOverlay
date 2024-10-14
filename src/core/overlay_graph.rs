@@ -5,9 +5,9 @@
 use i_float::point::IntPoint;
 
 use crate::core::solver::Solver;
-use crate::id_point::IdPoint;
-use crate::segm::end::End;
-use crate::segm::segment::{Segment, SegmentFill};
+use crate::geom::id_point::IdPoint;
+use crate::geom::end::End;
+use crate::geom::segment::{Segment, SegmentFill};
 use crate::util::sort::SmartBinSort;
 
 use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};

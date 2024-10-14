@@ -1,5 +1,5 @@
-use crate::segm::segment::{Segment, SegmentFill};
-use crate::segm::shape_count::ShapeCount;
+use crate::geom::segment::{Segment, SegmentFill};
+use crate::geom::shape_count::ShapeCount;
 
 pub(crate) trait FillStrategy {
     fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill);
