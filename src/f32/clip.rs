@@ -1,4 +1,5 @@
 use i_float::f32_point::F32Point;
+use i_shape::f32::adapter::PathToFloat;
 use i_shape::f32::shape::{F32Path, F32Shape, F32Shapes};
 use crate::core::fill_rule::FillRule;
 use crate::f32::line::F32Line;
@@ -11,15 +12,11 @@ impl F32StringGraph {
     /// - `clip_rule`: The clipping rule specifying whether to invert the selection and include boundaries.
     ///
     /// # Returns
-    /// A vector of `F32Line` containing the points of lines that meet the clipping conditions.
+    /// A vector of `F32Path` containing the points of lines that meet the clipping conditions.
     #[inline]
-    pub fn clip_string_lines(&self, clip_rule: ClipRule) -> Vec<F32Line> {
+    pub fn clip_string_lines(&self, clip_rule: ClipRule) -> Vec<F32Path> {
         let lines = self.graph.clip_string_lines(clip_rule);
-        lines.into_iter().map(|line| {
-            let a = self.adapter.convert_to_float(&line[0]);
-            let b = self.adapter.convert_to_float(&line[1]);
-            [a, b]
-        }).collect()
+        lines.into_iter().map(|path| path.to_float(&self.adapter)).collect()
     }
 }
 
@@ -30,8 +27,8 @@ pub trait F32Clip {
     /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
     ///
     /// # Returns
-    /// A vector of `F32Line` instances representing the clipped sections of the input line.
-    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line>;
+    /// A vector of `F32Path` instances representing the clipped sections of the input line.
+    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path>;
 
     /// Clips multiple lines according to the specified fill and clip rules.
     /// - `lines`: A slice of `F32Line` instances representing lines to be clipped.
@@ -39,8 +36,8 @@ pub trait F32Clip {
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the results.
     ///
     /// # Returns
-    /// A vector of `F32Line` instances containing the clipped portions of the input lines.
-    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line>;
+    /// A vector of `F32Path` instances containing the clipped portions of the input lines.
+    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path>;
 
     /// Clips a single path according to the specified fill and clip rules.
     /// - `path`: A reference to an `F32Path`, which is a sequence of points representing the path to be clipped.
@@ -49,8 +46,8 @@ pub trait F32Clip {
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
     ///
     /// # Returns
-    /// A vector of `F32Line` instances representing the clipped sections of the path.
-    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line>;
+    /// A vector of `F32Path` instances representing the clipped sections of the path.
+    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path>;
 
     /// Clips multiple paths according to the specified fill and clip rules.
     /// - `paths`: A slice of `F32Path` instances, each representing a path to be clipped.
@@ -59,13 +56,13 @@ pub trait F32Clip {
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
     ///
     /// # Returns
-    /// A vector of `F32Line` instances containing the clipped portions of the input paths.
-    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line>;
+    /// A vector of `F32Path` instances containing the clipped portions of the input paths.
+    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path>;
 }
 
 impl F32Clip for F32Shapes {
     #[inline]
-    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_line(line);
@@ -73,7 +70,7 @@ impl F32Clip for F32Shapes {
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_lines(lines.to_vec());
@@ -81,7 +78,7 @@ impl F32Clip for F32Shapes {
     }
 
     #[inline]
-    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_path(path.to_vec(), is_open);
@@ -89,7 +86,7 @@ impl F32Clip for F32Shapes {
     }
 
     #[inline]
-    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_paths(paths.to_vec(), is_open);
@@ -99,7 +96,7 @@ impl F32Clip for F32Shapes {
 
 impl F32Clip for F32Shape {
     #[inline]
-    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_line(line);
@@ -107,7 +104,7 @@ impl F32Clip for F32Shape {
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_lines(lines.to_vec());
@@ -115,7 +112,7 @@ impl F32Clip for F32Shape {
     }
 
     #[inline]
-    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_path(path.to_vec(), is_open);
@@ -123,7 +120,7 @@ impl F32Clip for F32Shape {
     }
 
     #[inline]
-    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_paths(paths.to_vec(), is_open);
@@ -133,7 +130,7 @@ impl F32Clip for F32Shape {
 
 impl F32Clip for [F32Point] {
     #[inline]
-    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_line(&self, line: F32Line, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_line(line);
@@ -141,7 +138,7 @@ impl F32Clip for [F32Point] {
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_lines(&self, lines: &[F32Line], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_lines(lines.to_vec());
@@ -149,7 +146,7 @@ impl F32Clip for [F32Point] {
     }
 
     #[inline]
-    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_path(&self, path: &F32Path, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_path(path.to_vec(), is_open);
@@ -157,7 +154,7 @@ impl F32Clip for [F32Point] {
     }
 
     #[inline]
-    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Line> {
+    fn clip_paths(&self, paths: &[F32Path], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<F32Path> {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_paths(paths.to_vec(), is_open);
