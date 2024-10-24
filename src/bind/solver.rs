@@ -68,31 +68,11 @@ impl ShapeBinder {
 }
 
 pub(crate) trait JoinHoles {
-    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<IdPoint>);
 }
 
 impl JoinHoles for Vec<IntShape> {
-
-    #[inline]
-    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
-        if self.is_empty() || holes.is_empty() {
-            return;
-        }
-
-        if self.len() == 1 {
-            self[0].reserve(holes.len());
-            let mut hole_paths = holes;
-            self[0].append(&mut hole_paths);
-        } else {
-            // Mark: we take first point in the path, that why we get sorted array
-            let hole_points: Vec<_> = holes.iter().enumerate()
-                .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
-                .collect();
-            self.scan_join(solver, holes, hole_points);
-        }
-    }
 
     #[inline]
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
@@ -105,7 +85,6 @@ impl JoinHoles for Vec<IntShape> {
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
         } else {
-            // Mark: we take first point in the path, that why we get sorted array
             let mut hole_points: Vec<_> = holes.iter().enumerate()
                 .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
                 .collect();
