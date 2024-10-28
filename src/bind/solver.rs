@@ -73,7 +73,6 @@ pub(crate) trait JoinHoles {
 }
 
 impl JoinHoles for Vec<IntShape> {
-
     #[inline]
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
         if self.is_empty() || holes.is_empty() {
@@ -90,7 +89,9 @@ impl JoinHoles for Vec<IntShape> {
                 .collect();
 
             // mostly sorted array!
-            hole_points.sort_by(|a, b| a.point.cmp(&b.point));
+            if is_not_sorted(&hole_points) {
+                hole_points.sort_by(|a, b| a.point.cmp(&b.point));
+            }
             self.scan_join(solver, holes, hole_points);
         }
     }
@@ -118,4 +119,14 @@ impl JoinHoles for Vec<IntShape> {
             self[shape_index].push(hole);
         }
     }
+}
+
+#[inline]
+fn is_not_sorted(points: &[IdPoint]) -> bool {
+    for slice in points.windows(2) {
+        if slice[0].point > slice[1].point {
+            return true;
+        }
+    }
+    false
 }
