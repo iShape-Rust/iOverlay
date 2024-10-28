@@ -67,7 +67,7 @@ impl StringOverlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     #[inline]
     pub fn add_shape_path(&mut self, path: &[IntPoint]) {
-        self.segments.append_iter(path.iter().copied(), ShapeType::Subject);
+        self.segments.append_path_iter(path.iter(), ShapeType::Subject);
     }
 
     /// Adds multiple paths to the overlay as shape paths.

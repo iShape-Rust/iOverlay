@@ -65,12 +65,22 @@ impl Overlay {
         overlay
     }
 
+    /// Adds a path to the overlay using an iterator, allowing for more flexible path input.
+    /// This function is particularly useful when working with dynamically generated paths or
+    /// when paths are not directly stored in a collection.
+    /// - `iter`: An iterator over references to `IntPoint` that defines the path.
+    /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_path_iter<'a, I: Iterator<Item = &'a IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+        self.segments.append_path_iter(iter, shape_type);
+    }
+
     /// Adds a single path to the overlay as either subject or clip paths.
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        self.segments.append_iter(path.iter().copied(), shape_type);
+        self.segments.append_paths(path, shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
@@ -98,35 +108,6 @@ impl Overlay {
         for shape in shapes.iter() {
             self.add_paths(shape, shape_type);
         }
-    }
-
-    /// Convert into segments from the added paths or shapes according to the specified fill rule.
-    /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
-    /// - `filter`: Is need to clean empty segments
-    /// - `solver`: Type of solver to use.
-    pub(crate) fn into_segments(self, fill_rule: FillRule, filter: bool, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
-        if self.segments.is_empty() {
-            return (Vec::new(), Vec::new());
-        }
-
-        let mut segments = self.segments.split_segments(solver);
-
-        let is_list = solver.is_list_fill(&segments);
-
-        let mut fills = match fill_rule {
-            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy>(is_list, &segments),
-            FillRule::NonZero => FillSolver::fill::<NonZeroStrategy>(is_list, &segments),
-            FillRule::Positive => FillSolver::fill::<PositiveStrategy>(is_list, &segments),
-            FillRule::Negative => FillSolver::fill::<NegativeStrategy>(is_list, &segments),
-        };
-
-        if filter {
-            if let Some(first_empty_index) = fills.iter().position(|fill| fill.is_empty()) {
-                filter_empties(&mut segments, &mut fills, first_empty_index);
-            }
-        }
-
-        (segments, fills)
     }
 
     /// Convert into vector shapes from the added paths or shapes, applying the specified fill and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
@@ -165,6 +146,35 @@ impl Overlay {
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
         OverlayGraph::new(solver, self.into_segments(fill_rule, true, solver))
+    }
+
+    /// Convert into segments from the added paths or shapes according to the specified fill rule.
+    /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
+    /// - `filter`: Is need to clean empty segments
+    /// - `solver`: Type of solver to use.
+    pub(crate) fn into_segments(self, fill_rule: FillRule, filter: bool, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+        if self.segments.is_empty() {
+            return (Vec::new(), Vec::new());
+        }
+
+        let mut segments = self.segments.split_segments(solver);
+
+        let is_list = solver.is_list_fill(&segments);
+
+        let mut fills = match fill_rule {
+            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy>(is_list, &segments),
+            FillRule::NonZero => FillSolver::fill::<NonZeroStrategy>(is_list, &segments),
+            FillRule::Positive => FillSolver::fill::<PositiveStrategy>(is_list, &segments),
+            FillRule::Negative => FillSolver::fill::<NegativeStrategy>(is_list, &segments),
+        };
+
+        if filter {
+            if let Some(first_empty_index) = fills.iter().position(|fill| fill.is_empty()) {
+                filter_empties(&mut segments, &mut fills, first_empty_index);
+            }
+        }
+
+        (segments, fills)
     }
 }
 

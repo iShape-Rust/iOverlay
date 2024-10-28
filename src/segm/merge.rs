@@ -5,7 +5,6 @@ pub(crate) trait ShapeSegmentsMerge {
 }
 
 impl ShapeSegmentsMerge for Vec<Segment> {
-    #[inline]
     fn merge_if_needed(&mut self) {
         if self.len() < 2 { return; }
 
@@ -13,7 +12,8 @@ impl ShapeSegmentsMerge for Vec<Segment> {
         for i in 1..self.len() {
             let this = &self[i].x_segment;
             if prev.eq(this) {
-                merge(self, i);
+                let new_len = merge(self, i);
+                self.truncate(new_len);
                 return;
             }
             prev = this;
@@ -21,7 +21,7 @@ impl ShapeSegmentsMerge for Vec<Segment> {
     }
 }
 
-fn merge(segments: &mut Vec<Segment>, after: usize) {
+fn merge(segments: &mut [Segment], after: usize) -> usize {
     let mut i = after;
     let mut j = i - 1;
     let mut prev = segments[j];
@@ -44,7 +44,7 @@ fn merge(segments: &mut Vec<Segment>, after: usize) {
         j += 1;
     }
 
-    segments.truncate(j);
+    j
 }
 
 #[cfg(test)]
