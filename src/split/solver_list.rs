@@ -1,4 +1,4 @@
-use crate::geom::segment::Segment;
+use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {

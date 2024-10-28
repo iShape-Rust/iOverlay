@@ -2,7 +2,7 @@ use crate::core::overlay_graph::OverlayGraph;
 use crate::core::overlay_link::OverlayLink;
 use crate::core::overlay_node::OverlayNode;
 use crate::core::solver::Solver;
-use crate::geom::segment::{Segment, SegmentFill};
+use crate::segm::segment::{Segment, SegmentFill};
 
 pub struct StringGraph {
     pub(super) solver: Solver,

@@ -5,16 +5,15 @@
 use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, PointsCount};
-use crate::core::build::BuildSegments;
 
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
-use crate::geom::segment::{CLIP_BOTH, NONE, SegmentFill, SUBJ_BOTH};
 
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
-use crate::geom::segment::Segment;
-use crate::geom::shape_count::ShapeCount;
+use crate::segm::build::BuildSegments;
+use crate::segm::segment::{Segment, SegmentFill, CLIP_BOTH, NONE, SUBJ_BOTH};
+use crate::segm::shape_count::ShapeCount;
 use crate::split::solver::SplitSegments;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
@@ -71,7 +70,7 @@ impl Overlay {
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        self.segments.append_segments(path, shape_type);
+        self.segments.append_iter(path.iter().copied(), shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.

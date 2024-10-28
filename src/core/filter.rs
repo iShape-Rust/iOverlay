@@ -1,5 +1,5 @@
 use crate::{core::overlay_link::OverlayLink};
-use crate::geom::segment::{ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::segm::segment::{ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use super::overlay_rule::OverlayRule;
 
 pub(crate) trait Filter {

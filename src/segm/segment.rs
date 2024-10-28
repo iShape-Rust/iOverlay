@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use crate::geom::x_segment::XSegment;
-use crate::geom::shape_count::ShapeCount;
+use crate::segm::shape_count::ShapeCount;
 
 pub type SegmentFill = u8;
 
@@ -57,54 +57,6 @@ impl Ord for Segment {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.x_segment.cmp(&other.x_segment)
-    }
-}
-
-pub(crate) trait ShapeSegmentsMerge {
-    fn merge_if_needed(&mut self);
-    fn merge(&mut self, after: usize);
-}
-
-impl ShapeSegmentsMerge for Vec<Segment> {
-    #[inline]
-    fn merge_if_needed(&mut self) {
-        if self.len() < 2 { return; }
-
-        let mut prev = &self[0].x_segment;
-        for i in 1..self.len() {
-            let this = &self[i].x_segment;
-            if prev.eq(this) {
-                self.merge(i);
-                return;
-            }
-            prev = this;
-        }
-    }
-
-    fn merge(&mut self, after: usize) {
-        let mut i = after;
-        let mut j = i - 1;
-        let mut prev = self[j];
-
-        while i < self.len() {
-            if prev.x_segment.eq(&self[i].x_segment) {
-                prev.count.apply(self[i].count);
-            } else {
-                if prev.count.is_not_empty() {
-                    self[j] = prev;
-                    j += 1;
-                }
-                prev = self[i];
-            }
-            i += 1;
-        }
-
-        if prev.count.is_not_empty() {
-            self[j] = prev;
-            j += 1;
-        }
-
-        self.truncate(j);
     }
 }
 

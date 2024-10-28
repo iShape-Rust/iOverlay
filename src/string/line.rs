@@ -1,7 +1,7 @@
 use i_float::point::IntPoint;
-use crate::geom::segment::{Segment, ToSegment};
-use crate::geom::shape_count::ShapeCount;
 use crate::geom::x_segment::XSegment;
+use crate::segm::segment::{Segment, ToSegment};
+use crate::segm::shape_count::ShapeCount;
 
 pub type IntLine = [IntPoint; 2];
 

@@ -1,8 +1,0 @@
-[package]
-name = "simple_f64"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-i_overlay = "^1.6.0"
-#i_overlay = { path = "../../../iOverlay" }

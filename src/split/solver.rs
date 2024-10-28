@@ -2,11 +2,12 @@ use i_float::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_key_sort::key_sort::Bin;
 use crate::core::solver::Solver;
-use crate::geom::segment::{Segment, ShapeSegmentsMerge};
-use crate::geom::shape_count::ShapeCount;
+use crate::segm::segment::Segment;
+use crate::segm::shape_count::ShapeCount;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
 use crate::geom::x_segment::XSegment;
+use crate::segm::merge::ShapeSegmentsMerge;
 use crate::util::sort::SmartBinSort;
 
 pub(crate) trait SplitSegments {

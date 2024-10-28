@@ -1,14 +1,14 @@
 use i_float::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes, PointsCount};
-use crate::core::build::BuildSegments;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
+use crate::segm::build::BuildSegments;
+use crate::segm::segment::{Segment, SegmentFill, ToSegment};
+use crate::segm::shape_count::ShapeCount;
 use crate::string::graph::StringGraph;
-use crate::geom::segment::{Segment, SegmentFill, ToSegment};
-use crate::geom::shape_count::ShapeCount;
 use crate::split::solver::SplitSegments;
 use crate::string::line::IntLine;
 
@@ -67,7 +67,7 @@ impl StringOverlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     #[inline]
     pub fn add_shape_path(&mut self, path: &[IntPoint]) {
-        self.segments.append_segments(path, ShapeType::Subject);
+        self.segments.append_iter(path.iter().copied(), ShapeType::Subject);
     }
 
     /// Adds multiple paths to the overlay as shape paths.

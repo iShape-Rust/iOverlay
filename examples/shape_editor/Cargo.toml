@@ -1,0 +1,17 @@
+[package]
+name = "shape_editor"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+nalgebra = "^0.33"
+iced = { version = "^0.13.1", features = ["wgpu", "advanced"] }
+rand = { version = "^0.8.5", features = [] }
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+
+i_triangle = "^0.26.0"
+
+
+#i_overlay = { path = "../../iOverlay" }

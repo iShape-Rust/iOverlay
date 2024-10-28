@@ -1,5 +1,5 @@
 use crate::core::solver::Strategy::{Auto, List, Tree};
-use crate::geom::segment::Segment;
+use crate::segm::segment::Segment;
 
 /// Represents the selection strategy or algorithm for processing geometric data, aimed at optimizing performance under various conditions.
 ///
