@@ -71,7 +71,7 @@ impl Overlay {
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_path_iter<'a, I: Iterator<Item = &'a IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
         self.segments.append_path_iter(iter, shape_type);
     }
 
@@ -80,7 +80,7 @@ impl Overlay {
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        self.segments.append_paths(path, shape_type);
+        self.segments.append_path_iter(path.iter().copied(), shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.

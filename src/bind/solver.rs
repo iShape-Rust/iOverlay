@@ -89,7 +89,8 @@ impl JoinHoles for Vec<IntShape> {
                 .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
                 .collect();
 
-            hole_points.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
+            // mostly sorted array!
+            hole_points.sort_by(|a, b| a.point.cmp(&b.point));
             self.scan_join(solver, holes, hole_points);
         }
     }

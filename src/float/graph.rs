@@ -79,7 +79,7 @@ impl<T: Float> FloatOverlayGraph<T> {
         shapes
             .into_iter()
             .map(|v| v.into_iter().map(|inner| inner.into_iter()
-                .map(|p| FloatPointCompatible::from_float_point(self.adapter.convert_to_float(&p)))
+                .map(|p| FloatPointCompatible::from_float_point(self.adapter.convert_to_float(p)))
                 .collect()).collect())
             .collect()
     }

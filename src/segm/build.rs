@@ -1,54 +1,28 @@
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::int::simple::Simple;
 use crate::core::overlay::ShapeType;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
 use crate::segm::shape_count::ShapeCount;
 
 pub(crate) trait BuildSegments {
-    fn append_path_iter<'a, I: Iterator<Item=&'a IntPoint>>(&mut self, iter: I, shape_type: ShapeType);
-    fn append_paths(&mut self, path: &[IntPoint], shape_type: ShapeType);
+    fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType);
 }
 
 impl BuildSegments for Vec<Segment> {
     #[inline]
-    fn append_path_iter<'a, I: Iterator<Item=&'a IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+    fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
         private_append_iter(self, iter, shape_type);
     }
-
-    #[inline]
-    fn append_paths(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        if path.is_simple() {
-            private_append_segments(self, path, shape_type);
-        } else {
-            private_append_iter(self, path.iter(), shape_type);
-        }
-    }
 }
 
-#[inline]
-fn private_append_segments(segments: &mut Vec<Segment>, path: &[IntPoint], shape_type: ShapeType) {
-    let (direct, invert) = shape_type.counts();
-    let mut p0 = path[path.len() - 1];
-    for &p1 in path {
-        let segment = if p0 < p1 {
-            Segment { x_segment: XSegment { a: p0, b: p1 }, count: direct }
-        } else {
-            Segment { x_segment: XSegment { a: p1, b: p0 }, count: invert }
-        };
-        segments.push(segment);
-        p0 = p1
-    }
-}
-
-fn private_append_iter<'a, I: Iterator<Item=&'a IntPoint>>(segments: &mut Vec<Segment>, mut iter: I, shape_type: ShapeType) {
+fn private_append_iter<I: Iterator<Item=IntPoint>>(segments: &mut Vec<Segment>, mut iter: I, shape_type: ShapeType) {
     // our goal add all not degenerate segments
-    let mut p0 = if let Some(&p) = iter.next() { p } else { return; };
-    let mut p1 = if let Some(&p) = iter.next() { p } else { return; };
+    let mut p0 = if let Some(p) = iter.next() { p } else { return; };
+    let mut p1 = if let Some(p) = iter.next() { p } else { return; };
 
     let q0 = p0;
-    while let Some(&p) = iter.next() {
+    while let Some(p) = iter.next() {
         if Triangle::is_not_line_point(p0, p1, p) {
             p0 = p1;
             p1 = p;
@@ -59,12 +33,9 @@ fn private_append_iter<'a, I: Iterator<Item=&'a IntPoint>>(segments: &mut Vec<Se
 
     let q1 = p0;
 
-    let (direct, invert) = match shape_type {
-        ShapeType::Subject => (ShapeCount::new(1, 0), ShapeCount::new(-1, 0)),
-        ShapeType::Clip => (ShapeCount::new(0, 1), ShapeCount::new(0, -1)),
-    };
+    let (direct, invert) = shape_type.counts();
 
-    while let Some(&p) = iter.next() {
+    while let Some(p) = iter.next() {
         if Triangle::is_line_point(p0, p1, p) {
             p1 = p;
             continue;
@@ -202,7 +173,7 @@ mod tests {
         let n = points.len();
         let mut segments: Vec<Segment> = Vec::with_capacity(n);
         for _ in 0..n {
-            segments.append_path_iter(points.iter(), ShapeType::Subject);
+            segments.append_path_iter(points.iter().copied(), ShapeType::Subject);
             segments.merge_if_needed();
 
             assert_eq!(segments.len(), count);
