@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::core::overlay::ShapeType;
 use crate::geom::x_segment::XSegment;
@@ -22,7 +22,7 @@ fn private_append_iter<I: Iterator<Item=IntPoint>>(segments: &mut Vec<Segment>, 
     let mut p1 = if let Some(p) = iter.next() { p } else { return; };
 
     let q0 = p0;
-    while let Some(p) = iter.next() {
+    for p in &mut iter {
         if Triangle::is_not_line_point(p0, p1, p) {
             p0 = p1;
             p1 = p;
@@ -35,7 +35,7 @@ fn private_append_iter<I: Iterator<Item=IntPoint>>(segments: &mut Vec<Segment>, 
 
     let (direct, invert) = shape_type.counts();
 
-    while let Some(p) = iter.next() {
+    for p in &mut iter {
         if Triangle::is_line_point(p0, p1, p) {
             p1 = p;
             continue;
@@ -102,7 +102,7 @@ impl Segment {
 
 #[cfg(test)]
 mod tests {
-    use i_float::point::IntPoint;
+    use i_float::int::point::IntPoint;
     use crate::core::overlay::ShapeType;
     use crate::segm::build::BuildSegments;
     use crate::segm::merge::ShapeSegmentsMerge;

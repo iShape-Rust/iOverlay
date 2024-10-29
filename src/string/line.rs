@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::{Segment, ToSegment};
 use crate::segm::shape_count::ShapeCount;

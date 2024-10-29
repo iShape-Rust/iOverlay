@@ -3,22 +3,23 @@
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
 use i_float::adapter::FloatPointAdapter;
-use i_float::float::Float;
-use i_float::float_point::FloatPointCompatible;
+use i_float::float::compatible::FloatPointCompatible;
+use i_float::float::number::FloatNumber;
+use i_shape::base::data::{Contour, Shape, Shapes};
+use i_shape::float::count::PointsCount;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
 
-/// This struct is essential for describing and uploading the geometry or shapes required to construct an `F32OverlayGraph`. It prepares the necessary data for boolean operations.
+/// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
-pub struct FloatOverlay<T: Float> {
+pub struct FloatOverlay<T: FloatNumber> {
     pub(super) overlay: Overlay,
     pub(super) adapter: FloatPointAdapter<T>,
 }
 
-impl<T: Float> FloatOverlay<T> {
-
+impl<T: FloatNumber> FloatOverlay<T> {
     #[inline]
     pub fn new(adapter: FloatPointAdapter<T>, capacity: usize) -> Self {
         Self { overlay: Overlay::new(capacity), adapter }
@@ -27,15 +28,13 @@ impl<T: Float> FloatOverlay<T> {
     /// Creates a new `Overlay` instance and initializes it with subject and clip paths.
     /// - `subj_shapes`: An array of shapes that together define the subject.
     /// - `clip_shapes`: An array of shapes that together define the clip.
-    pub fn with_shapes<P: FloatPointCompatible<T>>(subj_shapes: &Vec<Vec<Vec<P>>>, clip_shapes: &Vec<Vec<Vec<P>>>) -> Self {
-        let subj_iter = subj_shapes.iter().flatten().flatten().map(|p| p.to_float_point());
-        let clip_iter = clip_shapes.iter().flatten().flatten().map(|p| p.to_float_point());
+    pub fn with_shapes<P: FloatPointCompatible<T>>(subj_shapes: &Shapes<P>, clip_shapes: &Shapes<P>) -> Self {
+        let subj_iter = subj_shapes.iter().flatten().flatten();
+        let clip_iter = clip_shapes.iter().flatten().flatten();
         let iter = subj_iter.chain(clip_iter);
         let adapter = FloatPointAdapter::with_iter(iter);
 
-        let subj_count: usize = subj_shapes.iter().flatten().map(|path| path.len()).sum();
-        let clip_count: usize = clip_shapes.iter().flatten().map(|path| path.len()).sum();
-        let capacity = subj_count + clip_count;
+        let capacity = subj_shapes.points_count() + clip_shapes.points_count();
 
         Self::new(adapter, capacity)
             .unsafe_add_shapes(subj_shapes, ShapeType::Subject)
@@ -45,15 +44,13 @@ impl<T: Float> FloatOverlay<T> {
     /// Creates a new `Overlay` instance and initializes it with subject and clip paths.
     /// - `subj_paths`: An array of paths that together define the subject.
     /// - `clip_paths`: An array of paths that together define the clip.
-    pub fn with_paths<P: FloatPointCompatible<T>>(subj_paths: &Vec<Vec<P>>, clip_paths: &Vec<Vec<P>>) -> Self {
-        let subj_iter = subj_paths.iter().flatten().map(|p| p.to_float_point());
-        let clip_iter = clip_paths.iter().flatten().map(|p| p.to_float_point());
+    pub fn with_paths<P: FloatPointCompatible<T>>(subj_paths: &Shape<P>, clip_paths: &Shape<P>) -> Self {
+        let subj_iter = subj_paths.iter().flatten();
+        let clip_iter = clip_paths.iter().flatten();
         let iter = subj_iter.chain(clip_iter);
         let adapter = FloatPointAdapter::with_iter(iter);
 
-        let subj_count: usize = subj_paths.iter().map(|path| path.len()).sum();
-        let clip_count: usize = clip_paths.iter().map(|path| path.len()).sum();
-        let capacity = subj_count + clip_count;
+        let capacity = subj_paths.points_count() + clip_paths.points_count();
 
         Self::new(adapter, capacity)
             .unsafe_add_paths(subj_paths, ShapeType::Subject)
@@ -63,8 +60,8 @@ impl<T: Float> FloatOverlay<T> {
     /// Creates a new `Overlay` instance and initializes it with subject and clip path.
     /// - `subj_path`: A path that define the subject.
     /// - `clip_path`: A path that define the clip.
-    pub fn with_path<P: FloatPointCompatible<T>>(subj_path: &Vec<P>, clip_path: &Vec<P>) -> Self {
-        let iter = subj_path.iter().chain(clip_path.iter()).map(|p| p.to_float_point());
+    pub fn with_path<P: FloatPointCompatible<T>>(subj_path: &Contour<P>, clip_path: &Contour<P>) -> Self {
+        let iter = subj_path.iter().chain(clip_path.iter());
         let adapter = FloatPointAdapter::with_iter(iter);
 
         Self::new(adapter, subj_path.len() + clip_path.len())
@@ -72,20 +69,32 @@ impl<T: Float> FloatOverlay<T> {
             .unsafe_add_path(clip_path, ShapeType::Clip)
     }
 
+    /// Adds a single closed shape path to the overlay.
+    /// - `path`: An array of points that form a closed path.
+    /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_path<P: FloatPointCompatible<T>>(mut self, path: &Vec<P>, shape_type: ShapeType) -> Self {
-        self.overlay.add_path_iter(path.iter().map(|p| self.adapter.convert_to_int(p.to_float_point())), shape_type);
+    pub fn unsafe_add_path<P: FloatPointCompatible<T>>(mut self, path: &[P], shape_type: ShapeType) -> Self {
+        self.overlay.add_path_iter(path.iter().map(|&p|self.adapter.float_to_int(p)), shape_type);
         self
     }
 
-    pub fn unsafe_add_paths<P: FloatPointCompatible<T>>(mut self, paths: &Vec<Vec<P>>, shape_type: ShapeType) -> Self {
+    /// Adds multiple closed shape paths to the overlay.
+    /// - `paths`: An array of `Contour` instances, each representing a closed path.
+    /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
+    pub fn unsafe_add_paths<P: FloatPointCompatible<T>>(mut self, paths: &[Contour<P>], shape_type: ShapeType) -> Self {
         for path in paths.iter() {
             self = self.unsafe_add_path(path, shape_type);
         }
         self
     }
 
-    pub fn unsafe_add_shapes<P: FloatPointCompatible<T>>(mut self, shapes: &Vec<Vec<Vec<P>>>, shape_type: ShapeType) -> Self {
+    /// Adds multiple shapes to the overlay.
+    /// - `shapes`: An array of `Shape` instances.
+    /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
+    pub fn unsafe_add_shapes<P: FloatPointCompatible<T>>(mut self, shapes: &[Shape<P>], shape_type: ShapeType) -> Self {
         for shape in shapes.iter() {
             self = self.unsafe_add_paths(shape, shape_type);
         }

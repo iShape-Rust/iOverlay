@@ -2,8 +2,7 @@
 //! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
 //! based on the overlay rule applied.
 
-use i_float::point::IntPoint;
-
+use i_float::int::point::IntPoint;
 use crate::core::solver::Solver;
 use crate::geom::id_point::IdPoint;
 use crate::geom::end::End;

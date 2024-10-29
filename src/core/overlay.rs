@@ -2,9 +2,10 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
+use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntShape, PointsCount};
+use i_shape::int::shape::IntShape;
 
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;

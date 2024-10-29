@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::solver::{FillSolver, FillStrategy};

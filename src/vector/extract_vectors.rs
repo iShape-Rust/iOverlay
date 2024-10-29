@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use crate::bind::segment::IdSegments;
 use crate::bind::solver::ShapeBinder;
 use crate::geom::id_point::IdPoint;

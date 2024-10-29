@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use crate::geom::x_segment::XSegment;
 use crate::segm::shape_count::ShapeCount;

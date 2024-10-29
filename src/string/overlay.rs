@@ -1,6 +1,7 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
+use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntShape, IntShapes, PointsCount};
+use i_shape::int::shape::IntShape;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
 use crate::core::solver::Solver;
@@ -12,6 +13,7 @@ use crate::string::graph::StringGraph;
 use crate::split::solver::SplitSegments;
 use crate::string::line::IntLine;
 
+#[derive(Clone)]
 pub struct StringOverlay {
     pub(super) segments: Vec<Segment>,
 }
@@ -48,50 +50,51 @@ impl StringOverlay {
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
     /// - `shape`: A shape to be used in the overlay operation.
     #[inline]
-    pub fn with_shape(shape: &IntShape) -> Self {
+    pub fn with_shape(shape: &[IntPath]) -> Self {
         let mut overlay = Self::new(shape.points_count());
-        overlay.add_shape(shape);
+        overlay.add_shape_paths(shape);
         overlay
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
     /// - `shapes`: An array of shapes to be used in the overlay operation.
     #[inline]
-    pub fn with_shapes(shapes: &IntShapes) -> Self {
+    pub fn with_shapes(shapes: &[IntShape]) -> Self {
         let mut overlay = Self::new(shapes.points_count());
         overlay.add_shapes(shapes);
         overlay
+    }
+
+    /// Adds a path to the overlay using an iterator, allowing for more flexible path input.
+    /// This function is particularly useful when working with dynamically generated paths or
+    /// when paths are not directly stored in a collection.
+    /// - `iter`: An iterator over references to `IntPoint` that defines the path.
+    #[inline]
+    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I) {
+        self.segments.append_path_iter(iter, ShapeType::Subject);
     }
 
     /// Adds a single path to the overlay as a shape paths.
     /// - `path`: A reference to a `IntPath` instance to be added.
     #[inline]
     pub fn add_shape_path(&mut self, path: &[IntPoint]) {
-        self.segments.append_path_iter(path.iter().copied(), ShapeType::Subject);
+        self.add_path_iter(path.iter().copied());
     }
 
     /// Adds multiple paths to the overlay as shape paths.
     /// - `paths`: An array of `IntPath` instances to be added to the overlay.
-    #[inline]
     pub fn add_shape_paths(&mut self, paths: &[IntPath]) {
         for path in paths.iter() {
             self.add_shape_path(path);
         }
     }
 
-    /// Adds a single shape to the overlay.
-    /// - `shape`: A reference to a `IntShape` instance to be added.
-    #[inline]
-    pub fn add_shape(&mut self, shape: &IntShape) {
-        self.add_shape_paths(shape);
-    }
-
     /// Adds a list of shape to the overlay.
-    /// - `shapes`: A reference to a `IntShape` instance to be added.
+    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
     #[inline]
-    pub fn add_shapes(&mut self, shapes: &IntShapes) {
+    pub fn add_shapes(&mut self, shapes: &[IntShape]) {
         for shape in shapes {
-            self.add_shape(shape);
+            self.add_shape_paths(shape);
         }
     }
 

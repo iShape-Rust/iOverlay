@@ -49,9 +49,9 @@ fn merge(segments: &mut [Segment], after: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use i_float::int::point::IntPoint;
     use super::*;
     use crate::segm::shape_count::ShapeCount;
-    use i_float::point::IntPoint;
 
     #[test]
     fn test_merge_if_needed_empty() {

@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 
 pub type SideFill = u8;

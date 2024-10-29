@@ -1,4 +1,4 @@
-use i_float::rect::IntRect;
+use i_float::int::rect::IntRect;
 use crate::segm::segment::Segment;
 use crate::split::fragment::Fragment;
 use crate::geom::x_segment::XSegment;

@@ -11,7 +11,6 @@ pub struct StringGraph {
 }
 
 impl StringGraph {
-
     #[inline]
     pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
         let (old_nodes, links) = OverlayGraph::build_nodes_and_links(&solver, bundle);

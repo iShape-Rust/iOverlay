@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]

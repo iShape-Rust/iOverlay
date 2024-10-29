@@ -1,5 +1,5 @@
 use i_float::fix_vec::FixVec;
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 
 pub(crate) struct NearestCCWVector {
     c: IntPoint,        // center
@@ -41,8 +41,9 @@ impl NearestCCWVector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use i_float::point::IntPoint;
+    use i_float::fix_vec::FixVec;
+    use i_float::int::point::IntPoint;
+    use crate::core::vector_rotation::NearestCCWVector;
 
     #[test]
     fn test_nearest_ccw_vector_creation() {

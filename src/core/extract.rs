@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;

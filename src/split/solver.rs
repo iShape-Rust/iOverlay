@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_float::int::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_key_sort::key_sort::Bin;
 use crate::core::solver::Solver;
