@@ -13,10 +13,10 @@
 //! Here's an example of performing a union operation between two polygons:
 //!
 //! ```rust
+//!use i_float::int::point::IntPoint;
 //!use i_overlay::core::fill_rule::FillRule;
 //!use i_overlay::core::overlay::Overlay;
 //!use i_overlay::core::overlay_rule::OverlayRule;
-//!use i_overlay::i_float::point::IntPoint;
 //!
 //!let subj = [
 //!    // Define the subject polygon (a square)

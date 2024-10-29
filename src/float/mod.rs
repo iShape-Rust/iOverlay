@@ -4,3 +4,4 @@ pub mod simplify;
 pub mod string_overlay;
 pub mod string_graph;
 pub mod slice;
+pub mod clip;

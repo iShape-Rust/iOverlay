@@ -2,7 +2,7 @@
 mod tests {
     use std::f64::consts::PI;
     use i_float::f64_point::F64Point;
-    use i_float::point::IntPoint;
+    use i_float::int::point::IntPoint;
     use i_shape::f64::shape::F64Path;
     use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntShape;

@@ -9,43 +9,43 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::FloatOverlay;
 
 pub trait Simplify<P, T: FloatNumber> {
-    fn simplify(self, fill_rule: FillRule, min_area: T) -> Shapes<P>;
+    fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P>;
 }
 
-impl<P, T> Simplify<P, T> for Contour<P>
+impl<P, T> Simplify<P, T> for [P]
 where
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    fn simplify(self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
-        FloatOverlay::new(FloatPointAdapter::with_iter(self.iter()), self.len())
-            .unsafe_add_path(&self, ShapeType::Subject)
+    fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
+        FloatOverlay::with_adapter(FloatPointAdapter::with_iter(self.iter()), self.len())
+            .unsafe_add_contour(self, ShapeType::Subject)
             .into_graph(fill_rule)
             .extract_shapes_min_area(OverlayRule::Subject, min_area)
     }
 }
 
-impl<P, T> Simplify<P, T> for Shape<P>
+impl<P, T> Simplify<P, T> for [Contour<P>]
 where
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    fn simplify(self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
-        FloatOverlay::new(FloatPointAdapter::with_iter(self.iter().flatten()), self.points_count())
-            .unsafe_add_paths(&self, ShapeType::Subject)
+    fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
+        FloatOverlay::with_adapter(FloatPointAdapter::with_iter(self.iter().flatten()), self.points_count())
+            .unsafe_add_contours(self, ShapeType::Subject)
             .into_graph(fill_rule)
             .extract_shapes_min_area(OverlayRule::Subject, min_area)
     }
 }
 
-impl<P, T> Simplify<P, T> for Shapes<P>
+impl<P, T> Simplify<P, T> for [Shape<P>]
 where
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    fn simplify(self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
-        FloatOverlay::new(FloatPointAdapter::with_iter(self.iter().flatten().flatten()), self.points_count())
-            .unsafe_add_shapes(&self, ShapeType::Subject)
+    fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
+        FloatOverlay::with_adapter(FloatPointAdapter::with_iter(self.iter().flatten().flatten()), self.points_count())
+            .unsafe_add_shapes(self, ShapeType::Subject)
             .into_graph(fill_rule)
             .extract_shapes_min_area(OverlayRule::Subject, min_area)
     }

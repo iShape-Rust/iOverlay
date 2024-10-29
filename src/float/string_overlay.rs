@@ -1,8 +1,8 @@
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
 use i_shape::base::data::{Contour, Shape};
+use i_shape::float::count::PointsCount;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
 use crate::float::string_graph::FloatStringGraph;
@@ -12,50 +12,76 @@ use crate::string::overlay::StringOverlay;
 /// floating-point geometry to integer space. It provides methods for adding paths and shapes,
 /// as well as for converting the overlay into a `FloatStringGraph`.
 #[derive(Clone)]
-pub struct FloatStringOverlay<T: FloatNumber> {
+pub struct FloatStringOverlay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) overlay: StringOverlay,
-    pub(super) adapter: FloatPointAdapter<T>,
+    pub(super) adapter: FloatPointAdapter<P, T>,
 }
 
-impl<T: FloatNumber> FloatStringOverlay<T> {
+impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// Constructs a new `FloatStringOverlay`, a builder for overlaying geometric shapes
-    /// by converting float-based geometry to integer space.
+    /// by converting float-based geometry to integer space, using a pre-configured adapter.
     ///
-    /// - `rect`: A `FloatRect` bounding box around all geometry, used to ensure accurate scaling
-    ///   between float and integer coordinates.
+    /// - `adapter`: A `FloatPointAdapter` instance responsible for coordinate conversion between
+    ///   float and integer values, ensuring accuracy during geometric transformations.
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
-    ///   segments for efficient memory use.
+    ///   segments for efficient memory allocation.
     #[inline]
-    pub fn new(rect: FloatRect<T>, capacity: usize) -> Self {
-        Self { overlay: StringOverlay::new(capacity), adapter: FloatPointAdapter::new(rect) }
+    pub fn with_adapter(adapter: FloatPointAdapter<P, T>, capacity: usize) -> Self {
+        Self { overlay: StringOverlay::new(capacity), adapter }
     }
 
-    /// Adds a single closed shape path to the overlay.
-    /// - `path`: An array of points that form a closed path.
-    /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
-    #[inline]
-    pub fn unsafe_add_path<P: FloatPointCompatible<T>>(mut self, path: &[P]) -> Self {
-        self.overlay.add_path_iter(path.iter().map(|&p| self.adapter.float_to_int(p)));
-        self
+    /// Creates a new `FloatStringOverlay` instance and initializes it with the array of shapes.
+    /// - `shapes`: An array of `Shape` instances.
+    pub fn with_shapes(shapes: &[Shape<P>]) -> Self {
+        let adapter = FloatPointAdapter::with_iter(shapes.iter().flatten().flatten());
+        let capacity = shapes.points_count();
+
+        Self::with_adapter(adapter, capacity).unsafe_add_shapes(shapes)
     }
 
-    /// Adds multiple closed shape paths to the overlay.
-    /// - `paths`: An array of `Contour` instances, each representing a closed path.
-    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
-    pub fn unsafe_add_paths<P: FloatPointCompatible<T>>(mut self, paths: &[Contour<P>]) -> Self {
-        for path in paths.iter() {
-            self = self.unsafe_add_path(path);
-        }
-        self
+    /// Creates a new `FloatStringOverlay` instance and initializes it with the array of paths.
+    /// - `contours`: An array of `Contour` instances, each representing a closed path.
+    pub fn with_paths(contours: &[Contour<P>]) -> Self {
+        let adapter = FloatPointAdapter::with_iter(contours.iter().flatten());
+        let capacity = contours.points_count();
+
+        Self::with_adapter(adapter, capacity).unsafe_add_contours(contours)
+    }
+
+    /// Creates a new `FloatStringOverlay` instance and initializes it with a closed path.
+    /// - `contour`: An array of points that form a closed path.
+    pub fn with_contour(contour: &[P]) -> Self {
+        let adapter = FloatPointAdapter::with_iter(contour.iter());
+
+        Self::with_adapter(adapter, contour.len()).unsafe_add_contour(contour)
     }
 
     /// Adds multiple shapes to the overlay.
     /// - `shapes`: An array of `Shape` instances.
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
-    pub fn unsafe_add_shapes<P: FloatPointCompatible<T>>(mut self, shapes: &[Shape<P>]) -> Self {
+    pub fn unsafe_add_shapes(mut self, shapes: &[Shape<P>]) -> Self {
         for shape in shapes.iter() {
-            self = self.unsafe_add_paths(shape);
+            self = self.unsafe_add_contours(shape);
         }
+        self
+    }
+
+    /// Adds multiple closed shape paths to the overlay.
+    /// - `contours`: An array of `Contour` instances, each representing a closed path.
+    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
+    pub fn unsafe_add_contours(mut self, contours: &[Contour<P>]) -> Self {
+        for contour in contours.iter() {
+            self = self.unsafe_add_contour(contour);
+        }
+        self
+    }
+
+    /// Adds a single closed shape path to the overlay.
+    /// - `contour`: An array of points that form a closed path.
+    /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
+    #[inline]
+    pub fn unsafe_add_contour(mut self, contour: &[P]) -> Self {
+        self.overlay.add_path_iter(contour.iter().map(|&p| self.adapter.float_to_int(p)));
         self
     }
 
@@ -63,7 +89,7 @@ impl<T: FloatNumber> FloatStringOverlay<T> {
     /// - `line`: An array of two points representing a line.
     /// - **Safety**: Marked `unsafe` because it assumes the line lies inside the bounding box.
     #[inline]
-    pub fn unsafe_add_string_line<P: FloatPointCompatible<T>>(mut self, line: &[P; 2]) -> Self {
+    pub fn unsafe_add_string_line(mut self, line: &[P; 2]) -> Self {
         let a = self.adapter.float_to_int(line[0]);
         let b = self.adapter.float_to_int(line[1]);
         self.overlay.add_string_line([a, b]);
@@ -74,7 +100,7 @@ impl<T: FloatNumber> FloatStringOverlay<T> {
     /// - `lines`: An array of line strings, each represented by two points.
     /// - **Safety**: Marked `unsafe` because it assumes each line lies inside the bounding box.
     #[inline]
-    pub fn unsafe_add_string_lines<P: FloatPointCompatible<T>>(mut self, lines: &[[P; 2]]) -> Self {
+    pub fn unsafe_add_string_lines(mut self, lines: &[[P; 2]]) -> Self {
         for line in lines.iter() {
             self = self.unsafe_add_string_line(line);
         }
@@ -86,7 +112,7 @@ impl<T: FloatNumber> FloatStringOverlay<T> {
     /// - `is_open`: Indicates if the path is open (true) or closed (false).
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_string_path<P: FloatPointCompatible<T>>(mut self, path: &[P], is_open: bool) -> Self {
+    pub fn unsafe_add_string_path(mut self, path: &[P], is_open: bool) -> Self {
         for w in path.windows(2) {
             let a = self.adapter.float_to_int(w[0]);
             let b = self.adapter.float_to_int(w[1]);
@@ -106,7 +132,7 @@ impl<T: FloatNumber> FloatStringOverlay<T> {
     /// - `is_open`: Indicates if each path is open (`true`) or closed (`false`).
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_string_paths<P: FloatPointCompatible<T>>(mut self, paths: &[Contour<P>], is_open: bool) -> Self {
+    pub fn unsafe_add_string_paths(mut self, paths: &[Contour<P>], is_open: bool) -> Self {
         for path in paths.iter() {
             self = self.unsafe_add_string_path(path, is_open);
         }
@@ -118,7 +144,7 @@ impl<T: FloatNumber> FloatStringOverlay<T> {
     /// - `fill_rule`: Specifies the rule used to determine the filled areas within the shapes (e.g., non-zero or even-odd).
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn into_graph(self, fill_rule: FillRule) -> FloatStringGraph<T> {
+    pub fn into_graph(self, fill_rule: FillRule) -> FloatStringGraph<P, T> {
         self.into_graph_with_solver(fill_rule, Default::default())
     }
 
@@ -128,7 +154,7 @@ impl<T: FloatNumber> FloatStringOverlay<T> {
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> FloatStringGraph<T> {
+    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> FloatStringGraph<P, T> {
         let graph = self.overlay.into_graph_with_solver(fill_rule, solver);
         FloatStringGraph { graph, adapter: self.adapter }
     }

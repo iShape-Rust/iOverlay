@@ -1,18 +1,20 @@
 #[cfg(test)]
 mod tests {
     use i_float::adapter::FloatPointAdapter;
-    use i_float::float_point::{FloatPoint, FloatPointCompatible};
-    use i_float::float_rect::FloatRect;
+    use i_float::float::compatible::FloatPointCompatible;
+    use i_float::float::rect::FloatRect;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::float::clip::FloatClip;
     use i_overlay::float::overlay::FloatOverlay;
+    use i_overlay::float::slice::FloatSlice;
     use i_overlay::float::string_overlay::FloatStringOverlay;
     use i_overlay::string::rule::StringRule;
     use i_overlay::string::clip::ClipRule;
 
-    #[derive(Clone)]
+    #[derive(Clone, Copy)]
     struct FPoint {
         x: f32,
         y: f32,
@@ -25,14 +27,16 @@ mod tests {
     }
 
     impl FloatPointCompatible<f32> for FPoint {
-        #[inline(always)]
-        fn from_float_point(float_point: FloatPoint<f32>) -> Self {
-            Self { x: float_point.x, y: float_point.y }
+        fn from_xy(x: f32, y: f32) -> Self {
+            Self { x, y }
         }
 
-        #[inline(always)]
-        fn to_float_point(&self) -> FloatPoint<f32> {
-            FloatPoint::new(self.x, self.y)
+        fn x(&self) -> f32 {
+            self.x
+        }
+
+        fn y(&self) -> f32 {
+            self.y
         }
     }
 
@@ -56,7 +60,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -86,7 +90,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -117,7 +121,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -148,7 +152,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -178,7 +182,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -208,7 +212,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -238,7 +242,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -266,7 +270,7 @@ mod tests {
             ].to_vec()
         ];
 
-        let union = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let union = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Union);
 
@@ -297,7 +301,7 @@ mod tests {
             FPoint::new(-10.0, 10.0),
         ];
 
-        let shapes = FloatOverlay::new(FloatPointAdapter::with_iter(path.iter()), path.len())
+        let shapes = FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Subject);
 
@@ -315,11 +319,10 @@ mod tests {
             ].to_vec()
         ];
 
-        let mut overlay = FloatOverlay::new(FloatPointAdapter::with_iter(shape.iter().flatten()), shape.len());
-        overlay.add_paths(shape, ShapeType::Subject);
-
-        let graph = overlay.into_graph(FillRule::NonZero);
-        let shapes = graph.extract_shapes(OverlayRule::Subject);
+        let shapes = FloatOverlay::with_adapter(FloatPointAdapter::with_iter(shape.iter().flatten()), shape.len())
+            .unsafe_add_contours(&shape, ShapeType::Subject)
+            .into_graph(FillRule::NonZero)
+            .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -344,7 +347,7 @@ mod tests {
         ];
 
 
-        let shapes = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let shapes = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Subject);
 
@@ -371,7 +374,7 @@ mod tests {
             ].to_vec()
         ].to_vec();
 
-        let shapes = FloatOverlay::with_paths(&shape_0, &shape_1)
+        let shapes = FloatOverlay::with_contours(&shape_0, &shape_1)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Subject);
 
@@ -383,8 +386,8 @@ mod tests {
     #[test]
     fn test_empty_4() {
         let path = [FPoint::new(0.0, 0.0)];
-        let shapes = FloatOverlay::new(FloatPointAdapter::with_iter(path.iter()), path.len())
-            .unsafe_add_path(&path, ShapeType::Subject)
+        let shapes = FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
+            .unsafe_add_contour(&path, ShapeType::Subject)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Subject);
 
@@ -393,7 +396,7 @@ mod tests {
 
     #[test]
     fn test_empty_5() {
-        let shapes = FloatOverlay::with_path(&[FPoint::new(0.0, 0.0)], &[FPoint::new(1.0, 0.0)])
+        let shapes = FloatOverlay::with_contour(&[FPoint::new(0.0, 0.0)], &[FPoint::new(1.0, 0.0)])
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Subject);
 
@@ -403,8 +406,8 @@ mod tests {
     #[test]
     fn test_empty_6() {
         let path = [FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)];
-        let shapes = FloatOverlay::new(FloatPointAdapter::with_iter(path.iter()), path.len())
-            .unsafe_add_path(&path, ShapeType::Subject)
+        let shapes = FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
+            .unsafe_add_contour(&path, ShapeType::Subject)
             .into_graph(FillRule::NonZero)
             .extract_shapes(OverlayRule::Subject);
 
@@ -414,8 +417,8 @@ mod tests {
     #[test]
     fn test_slice_0() {
         let rect = FloatRect::new(-10.0, 10.0, -15.0, 15.0);
-        let shapes = FloatStringOverlay::new(FloatPointAdapter::new(rect), 5)
-            .unsafe_add_path(&[
+        let shapes = FloatStringOverlay::with_adapter(FloatPointAdapter::new(rect), 5)
+            .unsafe_add_contour(&[
                 FPoint::new(-10.0, -10.0),
                 FPoint::new(-10.0, 10.0),
                 FPoint::new(10.0, 10.0),
@@ -431,8 +434,8 @@ mod tests {
     #[test]
     fn test_slice_1() {
         let rect = FloatRect::new(-10.0, 10.0, -10.0, 10.0);
-        let shapes = FloatStringOverlay::new(FloatPointAdapter::new(rect), 5)
-            .unsafe_add_path(&[
+        let shapes = FloatStringOverlay::with_adapter(FloatPointAdapter::new(rect), 5)
+            .unsafe_add_contour(&[
                 FPoint::new(-10.0, -10.0),
                 FPoint::new(-10.0, 10.0),
                 FPoint::new(10.0, 10.0),
@@ -460,11 +463,11 @@ mod tests {
             FPoint::new(-15.0, 15.0)
         ];
 
-        let shapes = FloatStringOverlay::new(
+        let shapes = FloatStringOverlay::with_adapter(
             FloatPointAdapter::with_iter(path_0.iter().chain(path_1.iter())),
             6,
         )
-            .unsafe_add_path(&path_0)
+            .unsafe_add_contour(&path_0)
             .unsafe_add_string_path(&path_1, true)
             .into_graph(FillRule::NonZero)
             .extract_shapes(StringRule::Slice);
@@ -488,11 +491,11 @@ mod tests {
             FPoint::new(15.0, -5.0),
         ];
 
-        let shapes = FloatStringOverlay::new(
+        let shapes = FloatStringOverlay::with_adapter(
             FloatPointAdapter::with_iter(path_0.iter().chain(path_1.iter())),
             6,
         )
-            .unsafe_add_path(&path_0)
+            .unsafe_add_contour(&path_0)
             .unsafe_add_string_path(&path_1, false)
             .into_graph(FillRule::NonZero)
             .extract_shapes(StringRule::Slice);
@@ -516,11 +519,11 @@ mod tests {
             FPoint::new(5.0, -5.0),
         ];
 
-        let shapes = FloatStringOverlay::new(
+        let shapes = FloatStringOverlay::with_adapter(
             FloatPointAdapter::with_iter(path_0.iter().chain(path_1.iter())),
             6,
         )
-            .unsafe_add_path(&path_0)
+            .unsafe_add_contour(&path_0)
             .unsafe_add_string_path(&path_1, false)
             .into_graph(FillRule::NonZero)
             .extract_shapes(StringRule::Slice);
@@ -535,7 +538,7 @@ mod tests {
             FPoint::new(-10.0, 10.0),
             FPoint::new(10.0, 10.0),
             FPoint::new(10.0, -10.0),
-        ].slice_by_line([FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)], FillRule::NonZero);
+        ].slice_by_path(&[FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],false, FillRule::NonZero);
 
         assert_eq!(shapes.len(), 2);
     }
@@ -547,7 +550,7 @@ mod tests {
             FPoint::new(-10.0, 10.0),
             FPoint::new(10.0, 10.0),
             FPoint::new(10.0, -10.0),
-        ].slice_by_line([FPoint::new(0.0, -5.0), FPoint::new(0.0, 5.0)], FillRule::NonZero);
+        ].slice_by_path(&[FPoint::new(0.0, -5.0), FPoint::new(0.0, 5.0)], false, FillRule::NonZero);
 
         assert_eq!(shapes.len(), 1);
     }
@@ -604,15 +607,17 @@ mod tests {
 
     #[test]
     fn test_clip_empty_path() {
-        let path: F32Path = vec![];
-        let result_0 = path.clip_line(
-            [FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)],
+        let path = [FPoint::new(0.0, 0.0); 0];
+        let result_0 = path.clip_path(
+            &[FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)],
+            false,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = path.clip_line(
-            [FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)],
+        let result_1 = path.clip_path(
+            &[FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)],
+            false,
             FillRule::NonZero,
             ClipRule { invert: true, boundary_included: false },
         );
@@ -623,20 +628,22 @@ mod tests {
 
     #[test]
     fn test_clip_simple() {
-        let path: F32Path = vec![
+        let path = [
             FPoint::new(-10.0, -10.0),
             FPoint::new(-10.0, 10.0),
             FPoint::new(10.0, 10.0),
             FPoint::new(10.0, -10.0),
         ];
-        let result_0 = path.clip_line(
-            [FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],
+        let result_0 = path.clip_path(
+            &[FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],
+            false,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = path.clip_line(
-            [FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],
+        let result_1 = path.clip_path(
+            &[FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],
+            false,
             FillRule::NonZero,
             ClipRule { invert: true, boundary_included: false },
         );
@@ -647,20 +654,22 @@ mod tests {
 
     #[test]
     fn test_clip_boundary() {
-        let path: F32Path = vec![
+        let path = [
             FPoint::new(-10.0, -10.0),
             FPoint::new(-10.0, 10.0),
             FPoint::new(10.0, 10.0),
             FPoint::new(10.0, -10.0),
         ];
-        let result_0 = path.clip_line(
-            [FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)],
+        let result_0 = path.clip_path(
+            &[FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)],
+            false,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = path.clip_line(
-            [FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)],
+        let result_1 = path.clip_path(
+            &[FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)],
+            false,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: true },
         );

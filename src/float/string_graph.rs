@@ -8,12 +8,12 @@ use crate::string::rule::StringRule;
 
 /// The `FloatStringGraph` struct represents a graph structure with floating-point precision,
 /// providing methods to extract geometric shapes from the graph after applying string-based operations.
-pub struct FloatStringGraph<T: FloatNumber> {
+pub struct FloatStringGraph<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub graph: StringGraph,
-    pub adapter: FloatPointAdapter<T>,
+    pub adapter: FloatPointAdapter<P, T>,
 }
 
-impl<T: FloatNumber> FloatStringGraph<T> {
+impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
     /// Extracts shapes from the overlay graph based on the specified string rule.
     /// This method is used to retrieve the final geometric shapes after boolean operations have been applied.
     /// It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -32,7 +32,7 @@ impl<T: FloatNumber> FloatStringGraph<T> {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
-    pub fn extract_shapes<P: FloatPointCompatible<T>>(&self, string_rule: StringRule) -> Shapes<P> {
+    pub fn extract_shapes(&self, string_rule: StringRule) -> Shapes<P> {
         self.extract_shapes_min_area(string_rule, T::from_float(0.0))
     }
 
@@ -54,7 +54,7 @@ impl<T: FloatNumber> FloatStringGraph<T> {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
-    pub fn extract_shapes_min_area<P: FloatPointCompatible<T>>(&self, string_rule: StringRule, min_area: T) -> Shapes<P> {
+    pub fn extract_shapes_min_area(&self, string_rule: StringRule, min_area: T) -> Shapes<P> {
         let scale = self.adapter.dir_scale;
         let sqr_scale = scale * scale;
         let area = (sqr_scale * min_area).to_f64() as usize;

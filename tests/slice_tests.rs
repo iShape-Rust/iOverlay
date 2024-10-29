@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use i_float::point::IntPoint;
+    use i_float::int::point::IntPoint;
     use i_shape::int::path::IntPath;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
