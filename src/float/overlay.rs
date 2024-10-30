@@ -12,7 +12,6 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
-use crate::float::adapter::AdapterExt;
 use crate::float::graph::FloatOverlayGraph;
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
@@ -193,7 +192,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P> {
-        let area = self.adapter.convert_area(min_area);
+        let area = self.adapter.sqr_float_to_int(min_area);
         let shapes = self.overlay.overlay_with_min_area_and_solver(overlay_rule, fill_rule, area, solver);
         shapes.to_float(&self.adapter)
     }
