@@ -1,5 +1,5 @@
 use crate::{core::link::OverlayLink};
-use crate::segm::segment::{Segment, SegmentFill, ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::segm::segment::{SegmentFill, ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use super::overlay_rule::OverlayRule;
 
 /// Read how to apply filter mask [doc](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html)
@@ -22,76 +22,81 @@ impl MaskFilter for Vec<OverlayLink> {
     }
 }
 
-pub(super) struct SegmentFilter;
 
-impl SegmentFilter {
-    #[inline]
-    pub(super) fn filter(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>, overlay_rule: OverlayRule) {
-        match overlay_rule {
-            OverlayRule::Subject => Self::filter_subject(segments, fills),
-            OverlayRule::Clip => Self::filter_clip(segments, fills),
-            OverlayRule::Intersect => Self::filter_intersect(segments, fills),
-            OverlayRule::Union => Self::filter_union(segments, fills),
-            OverlayRule::Difference => Self::filter_difference(segments, fills),
-            OverlayRule::InverseDifference => Self::filter_inverse_difference(segments, fills),
-            OverlayRule::Xor => Self::filter_xor(segments, fills),
-        }
+pub(super) trait InclusionFilterStrategy {
+    fn is_included(fill: SegmentFill) -> bool;
+}
+
+pub(super) struct SubjectFilter;
+pub(super) struct ClipFilter;
+pub(super) struct IntersectFilter;
+pub(super) struct UnionFilter;
+pub(super) struct DifferenceFilter;
+pub(super) struct InverseDifferenceFilter;
+pub(super) struct XorFilter;
+pub(super) struct FillerFilter;
+pub(super) struct NoneFilter;
+
+impl InclusionFilterStrategy for SubjectFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_subject()
     }
+}
 
-    #[inline]
-    fn filter_subject(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_subject());
-        fills.retain(|fill| fill.is_subject())
+impl InclusionFilterStrategy for ClipFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_clip()
     }
+}
 
-    #[inline]
-    fn filter_clip(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_clip());
-        fills.retain(|fill| fill.is_clip())
+impl InclusionFilterStrategy for IntersectFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_intersect()
     }
+}
 
-    #[inline]
-    fn filter_intersect(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_intersect());
-        fills.retain(|fill| fill.is_intersect())
+impl InclusionFilterStrategy for UnionFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_union()
     }
+}
 
-    #[inline]
-    fn filter_union(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_union());
-        fills.retain(|fill| fill.is_union())
+impl InclusionFilterStrategy for DifferenceFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_difference()
     }
+}
 
-    #[inline]
-    fn filter_difference(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_difference());
-        fills.retain(|fill| fill.is_difference())
+impl InclusionFilterStrategy for InverseDifferenceFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_inverse_difference()
     }
+}
 
-    #[inline]
-    fn filter_inverse_difference(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_inverse_difference());
-        fills.retain(|fill| fill.is_inverse_difference())
+impl InclusionFilterStrategy for XorFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        fill.is_xor()
     }
+}
 
-    #[inline]
-    fn filter_xor(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| iter.next().unwrap().is_xor());
-        fills.retain(|fill| fill.is_xor())
+impl InclusionFilterStrategy for FillerFilter {
+    #[inline(always)]
+    fn is_included(fill: SegmentFill) -> bool {
+        !fill.is_filler()
     }
+}
 
-    #[inline]
-    pub(super) fn filter_filler(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>) {
-        let mut iter = fills.iter();
-        segments.retain(|_| !iter.next().unwrap().is_filler());
-        fills.retain(|fill| !fill.is_filler())
+impl InclusionFilterStrategy for NoneFilter {
+    #[inline(always)]
+    fn is_included(_: SegmentFill) -> bool {
+        true
     }
 }
 
@@ -204,6 +209,7 @@ impl FillFilter for SegmentFill {
         is_any_top != is_any_bottom
     }
 
+    #[inline(always)]
     fn is_filler(&self) -> bool {
         let fill = *self;
         fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH || fill == ALL

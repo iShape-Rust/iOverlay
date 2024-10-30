@@ -2,7 +2,6 @@ use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
 use crate::core::node::OverlayNode;
 use crate::core::solver::Solver;
-use crate::segm::segment::{Segment, SegmentFill};
 
 pub struct StringGraph {
     pub(super) solver: Solver,
@@ -12,15 +11,16 @@ pub struct StringGraph {
 
 impl StringGraph {
     #[inline]
-    pub(super) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
-        let (old_nodes, links) = OverlayGraph::build_nodes_and_links(&solver, bundle);
+    pub(super) fn new(solver: Solver, links: Vec<OverlayLink>) -> Self {
+        let mut m_links = links;
+        let old_nodes = OverlayGraph::build_nodes_and_connect_links(&solver, &mut m_links);
 
         let nodes = old_nodes.into_iter().map(|node| match node {
             OverlayNode::Bridge(data) => data.to_vec(),
             OverlayNode::Cross(indices) => indices
         }).collect();
 
-        Self { solver, nodes, links }
+        Self { solver, nodes, links: m_links }
     }
 
     #[inline(always)]

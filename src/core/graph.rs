@@ -4,9 +4,7 @@
 
 use i_float::int::point::IntPoint;
 use crate::core::solver::Solver;
-use crate::geom::id_point::IdPoint;
 use crate::geom::end::End;
-use crate::segm::segment::{Segment, SegmentFill};
 use crate::util::sort::SmartBinSort;
 
 use super::{link::OverlayLink, node::OverlayNode};
@@ -26,30 +24,17 @@ pub struct OverlayGraph {
 
 impl OverlayGraph {
     #[inline]
-    pub(crate) fn new(solver: Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> Self {
-        let (nodes, links) = Self::build_nodes_and_links(&solver, bundle);
-        Self { solver, nodes, links }
+    pub(crate) fn new(solver: Solver, links: Vec<OverlayLink>) -> Self {
+        let mut m_links = links;
+        let nodes = Self::build_nodes_and_connect_links(&solver, &mut m_links);
+        Self { solver, nodes, links: m_links }
     }
 
-    pub(crate) fn build_nodes_and_links(solver: &Solver, bundle: (Vec<Segment>, Vec<SegmentFill>)) -> (Vec<OverlayNode>, Vec<OverlayLink>) {
-        let segments = bundle.0;
-        let fills = bundle.1;
-
-        if segments.is_empty() {
-            return (vec![], vec![]);
+    pub(crate) fn build_nodes_and_connect_links(solver: &Solver, links: &mut [OverlayLink]) -> Vec<OverlayNode> {
+        let n = links.len();
+        if n == 0 {
+            return vec![];
         }
-
-        let n = segments.len();
-        let mut links: Vec<OverlayLink> = segments
-            .into_iter().enumerate()
-            .map(|(index, segment)| {
-                let fill = *unsafe { fills.get_unchecked(index) };
-                OverlayLink::new(
-                    IdPoint { id: 0, point: segment.x_segment.a },
-                    IdPoint { id: 0, point: segment.x_segment.b },
-                    fill,
-                )
-            }).collect();
 
         let mut end_bs: Vec<End> = links.iter().enumerate()
             .map(|(i, link)| End { index: i, point: link.b.point })
@@ -109,7 +94,7 @@ impl OverlayGraph {
             indices.clear();
         }
 
-        (nodes, links)
+        nodes
     }
 }
 
@@ -117,7 +102,7 @@ trait Size {
     fn size(&self, point: IntPoint, index: usize) -> usize;
 }
 
-impl Size for Vec<OverlayLink> {
+impl Size for [OverlayLink] {
     #[inline]
     fn size(&self, point: IntPoint, index: usize) -> usize {
         let mut i = index + 1;

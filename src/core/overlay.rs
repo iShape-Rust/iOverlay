@@ -8,15 +8,12 @@ use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 
 use crate::core::fill_rule::FillRule;
-use crate::core::filter::SegmentFilter;
+use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay_rule::OverlayRule;
 
 use crate::core::solver::Solver;
-use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::segm::build::BuildSegments;
-use crate::segm::segment::{Segment, SegmentFill};
-use crate::segm::shape_count::ShapeCount;
-use crate::split::solver::SplitSegments;
+use crate::segm::segment::Segment;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::graph::OverlayGraph;
@@ -73,7 +70,7 @@ impl Overlay {
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+    pub fn add_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
         self.segments.append_path_iter(iter, shape_type);
     }
 
@@ -117,22 +114,17 @@ impl Overlay {
     /// - `overlay_rule`: The overlay rule to apply.
     /// - `solver`: Type of solver to use.
     pub fn into_shape_vectors(self, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<VectorShape> {
-        if self.segments.is_empty() {
-            return Vec::new();
-        }
-
-        OverlayGraph::new(solver, self.into_segments(fill_rule, solver)).extract_shape_vectors(overlay_rule)
+        let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);
+        let graph = OverlayGraph::new(solver, links);
+        graph.extract_shape_vectors(overlay_rule)
     }
 
     /// Convert into vectors from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `solver`: Type of solver to use.
     pub fn into_separate_vectors(self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
-        if self.segments.is_empty() {
-            return Vec::new();
-        }
-
-        OverlayGraph::new(solver, self.into_segments(fill_rule, solver)).extract_separate_vectors()
+        let links = OverlayLinkBuilder::build_without_filter(self.segments, fill_rule, solver);
+        OverlayGraph::new(solver, links).extract_separate_vectors()
     }
 
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
@@ -147,7 +139,8 @@ impl Overlay {
     /// - `solver`: Type of solver to use.
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
-        OverlayGraph::new(solver, self.into_segments_and_filter_by_filler(fill_rule, solver))
+        let links = OverlayLinkBuilder::build_with_filler_filter(self.segments, fill_rule, solver);
+        OverlayGraph::new(solver, links)
     }
 
     #[inline]
@@ -157,110 +150,9 @@ impl Overlay {
 
     #[inline]
     pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: usize, solver: Solver) -> IntShapes {
-        let graph = OverlayGraph::new(solver, self.into_segments_and_filter_by_overlay_rule(fill_rule, solver, overlay_rule));
+        let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);
+        let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];
         graph.extract(filter, overlay_rule, min_area)
-    }
-
-    #[inline]
-    pub(crate) fn into_segments_and_filter_by_overlay_rule(self, fill_rule: FillRule, solver: Solver, overlay_rule: OverlayRule) -> (Vec<Segment>, Vec<SegmentFill>) {
-        let (mut segments, mut fills) = self.into_segments(fill_rule, solver);
-        SegmentFilter::filter(&mut segments, &mut fills, overlay_rule);
-        (segments, fills)
-    }
-
-    #[inline]
-    pub(crate) fn into_segments_and_filter_by_filler(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
-        let (mut segments, mut fills) = self.into_segments(fill_rule, solver);
-        SegmentFilter::filter_filler(&mut segments, &mut fills);
-        (segments, fills)
-    }
-
-    fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
-        if self.segments.is_empty() {
-            return (Vec::new(), Vec::new());
-        }
-
-        let segments = self.segments.split_segments(solver);
-
-        let is_list = solver.is_list_fill(&segments);
-
-        let fills = match fill_rule {
-            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy>(is_list, &segments),
-            FillRule::NonZero => FillSolver::fill::<NonZeroStrategy>(is_list, &segments),
-            FillRule::Positive => FillSolver::fill::<PositiveStrategy>(is_list, &segments),
-            FillRule::Negative => FillSolver::fill::<NegativeStrategy>(is_list, &segments),
-        };
-
-        (segments, fills)
-    }
-}
-
-pub(crate) struct EvenOddStrategy;
-
-pub(crate) struct NonZeroStrategy;
-
-pub(crate) struct PositiveStrategy;
-
-pub(crate) struct NegativeStrategy;
-
-
-impl FillStrategy for EvenOddStrategy {
-    #[inline(always)]
-    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
-        let top = bot.add(this);
-        let subj_top = 1 & top.subj as SegmentFill;
-        let subj_bot = 1 & bot.subj as SegmentFill;
-        let clip_top = 1 & top.clip as SegmentFill;
-        let clip_bot = 1 & bot.clip as SegmentFill;
-
-        let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
-
-        (top, fill)
-    }
-}
-
-impl FillStrategy for NonZeroStrategy {
-    #[inline(always)]
-    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
-        let top = bot.add(this);
-        let subj_top = (top.subj != 0) as SegmentFill;
-        let subj_bot = (bot.subj != 0) as SegmentFill;
-        let clip_top = (top.clip != 0) as SegmentFill;
-        let clip_bot = (bot.clip != 0) as SegmentFill;
-
-        let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
-
-        (top, fill)
-    }
-}
-
-impl FillStrategy for PositiveStrategy {
-    #[inline(always)]
-    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
-        let top = bot.add(this);
-        let subj_top = (top.subj < 0) as SegmentFill;
-        let subj_bot = (bot.subj < 0) as SegmentFill;
-        let clip_top = (top.clip < 0) as SegmentFill;
-        let clip_bot = (bot.clip < 0) as SegmentFill;
-
-        let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
-
-        (top, fill)
-    }
-}
-
-impl FillStrategy for NegativeStrategy {
-    #[inline(always)]
-    fn add_and_fill(this: ShapeCount, bot: ShapeCount) -> (ShapeCount, SegmentFill) {
-        let top = bot.add(this);
-        let subj_top = (top.subj > 0) as SegmentFill;
-        let subj_bot = (bot.subj > 0) as SegmentFill;
-        let clip_top = (top.clip > 0) as SegmentFill;
-        let clip_bot = (bot.clip > 0) as SegmentFill;
-
-        let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
-
-        (top, fill)
     }
 }
