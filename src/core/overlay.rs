@@ -174,15 +174,17 @@ impl Overlay {
     /// geometry. For example:
     ///
     /// ```rust
+    /// use i_float::int::point::IntPoint;
     /// use i_float::int_pnt;
     /// use i_overlay::core::fill_rule::FillRule;
     /// use i_overlay::core::overlay::Overlay;
     /// use i_overlay::core::overlay_rule::OverlayRule;
+    ///
     /// let left_rect = [int_pnt!(0, 0), int_pnt!(0, 10), int_pnt!(10, 10), int_pnt!(10, 0)];
     /// let right_rect = [int_pnt!(10, 0), int_pnt!(10, 10), int_pnt!(20, 10), int_pnt!(20, 0)];
     /// let overlay = Overlay::with_contour(&left_rect, &right_rect);
     ///
-    /// let result_shapes = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
+    /// let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
     /// ```
     ///
     /// This method is particularly useful in scenarios where the geometry only needs one overlay operation

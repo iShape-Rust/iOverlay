@@ -153,7 +153,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// geometry. For example:
     ///
     /// ```rust
-    /// use i_float::float::point::FloatPointCompatible;
+    /// use i_float::float::compatible::FloatPointCompatible;
     /// use i_overlay::float::overlay::FloatOverlay;
     /// use i_overlay::core::fill_rule::FillRule;
     /// use i_overlay::core::overlay_rule::OverlayRule;
