@@ -5,14 +5,21 @@
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_shape::base::data::{Contour, Shape};
+use i_shape::base::data::{Contour, Shape, Shapes};
+use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::count::PointsCount;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{Overlay, ShapeType};
+use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
+use crate::float::adapter::AdapterExt;
 use crate::float::graph::FloatOverlayGraph;
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
+// #[deprecated(
+//     since = "1.8.0",
+//     note = "Use FloatOverlay<P, T> instead, which provides a more flexible and efficient API"
+// )]
 #[derive(Clone)]
 pub struct FloatOverlay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) overlay: Overlay,
@@ -122,5 +129,17 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> FloatOverlayGraph<P, T> {
         let graph = self.overlay.into_graph_with_solver(fill_rule, solver);
         FloatOverlayGraph::new(graph, self.adapter)
+    }
+
+    #[inline]
+    pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
+        self.overlay_with_min_area_and_solver(overlay_rule, fill_rule, T::from_float(0.0), Default::default())
+    }
+
+    #[inline]
+    pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P> {
+        let area = self.adapter.convert_area(min_area);
+        let shapes = self.overlay.overlay_with_min_area_and_solver(overlay_rule, fill_rule, area, solver);
+        shapes.to_float(&self.adapter)
     }
 }

@@ -4,13 +4,13 @@ use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
 use i_shape::int::simple::Simple;
 use crate::bind::solver::JoinHoles;
-use crate::core::overlay_graph::OverlayGraph;
-use crate::core::overlay_link::OverlayLink;
-use crate::core::overlay_node::OverlayNode;
+use crate::core::graph::OverlayGraph;
+use crate::core::link::OverlayLink;
+use crate::core::node::OverlayNode;
 use crate::core::vector_rotation::NearestCCWVector;
 
 use super::overlay_rule::OverlayRule;
-use super::filter::Filter;
+use super::filter::MaskFilter;
 
 impl OverlayGraph {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -40,8 +40,13 @@ impl OverlayGraph {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: usize) -> IntShapes {
-        let mut binding = self.links.filter(overlay_rule);
-        let visited = binding.as_mut_slice();
+        let visited = self.links.filter(overlay_rule);
+        self.extract(visited, overlay_rule, min_area)
+    }
+
+    pub(crate) fn extract(&self, filter: Vec<bool>, overlay_rule: OverlayRule, min_area: usize) -> IntShapes {
+        let mut buffer = filter;
+        let visited = buffer.as_mut_slice();
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
 

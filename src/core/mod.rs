@@ -1,11 +1,11 @@
 pub mod overlay;
 pub mod solver;
-pub mod overlay_graph;
+pub mod graph;
 pub mod overlay_rule;
 pub mod extract;
 pub mod fill_rule;
 pub mod simplify;
-pub(crate) mod overlay_link;
-pub(crate) mod overlay_node;
+pub(crate) mod link;
+pub(crate) mod node;
 pub(crate) mod filter;
 pub(crate) mod vector_rotation;

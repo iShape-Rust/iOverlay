@@ -5,7 +5,7 @@
 use i_float::f32_adapter::F32PointAdapter;
 use i_shape::f32::adapter::ShapesToFloat;
 use i_shape::f32::shape::F32Shapes;
-use crate::core::overlay_graph::OverlayGraph;
+use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,

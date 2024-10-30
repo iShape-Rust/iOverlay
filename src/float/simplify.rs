@@ -20,8 +20,7 @@ where
     fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
         FloatOverlay::with_adapter(FloatPointAdapter::with_iter(self.iter()), self.len())
             .unsafe_add_contour(self, ShapeType::Subject)
-            .into_graph(fill_rule)
-            .extract_shapes_min_area(OverlayRule::Subject, min_area)
+            .overlay_with_min_area_and_solver(OverlayRule::Subject, fill_rule, min_area, Default::default())
     }
 }
 
@@ -33,8 +32,7 @@ where
     fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
         FloatOverlay::with_adapter(FloatPointAdapter::with_iter(self.iter().flatten()), self.points_count())
             .unsafe_add_contours(self, ShapeType::Subject)
-            .into_graph(fill_rule)
-            .extract_shapes_min_area(OverlayRule::Subject, min_area)
+            .overlay_with_min_area_and_solver(OverlayRule::Subject, fill_rule, min_area, Default::default())
     }
 }
 
@@ -46,7 +44,6 @@ where
     fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
         FloatOverlay::with_adapter(FloatPointAdapter::with_iter(self.iter().flatten().flatten()), self.points_count())
             .unsafe_add_shapes(self, ShapeType::Subject)
-            .into_graph(fill_rule)
-            .extract_shapes_min_area(OverlayRule::Subject, min_area)
+            .overlay_with_min_area_and_solver(OverlayRule::Subject, fill_rule, min_area, Default::default())
     }
 }

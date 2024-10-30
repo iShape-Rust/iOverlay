@@ -10,7 +10,7 @@ pub(crate) struct NearestCCWVector {
 }
 
 impl NearestCCWVector {
-    #[inline(always)]
+    #[inline]
     pub(crate) fn new(c: IntPoint, a: IntPoint, b: IntPoint, best_id: usize) -> Self {
         let va = a.subtract(c);
         let vb = b.subtract(c);
@@ -18,7 +18,7 @@ impl NearestCCWVector {
         Self { c, va, vb, ab_more_180, best_id }
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn add(&mut self, p: IntPoint, id: usize) {
         let vp = p.subtract(self.c);
         let ap_more_180 = self.va.cross_product(vp) <= 0;

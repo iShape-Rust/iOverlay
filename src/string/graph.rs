@@ -1,6 +1,6 @@
-use crate::core::overlay_graph::OverlayGraph;
-use crate::core::overlay_link::OverlayLink;
-use crate::core::overlay_node::OverlayNode;
+use crate::core::graph::OverlayGraph;
+use crate::core::link::OverlayLink;
+use crate::core::node::OverlayNode;
 use crate::core::solver::Solver;
 use crate::segm::segment::{Segment, SegmentFill};
 

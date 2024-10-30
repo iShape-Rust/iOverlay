@@ -10,6 +10,10 @@ use crate::string::rule::StringRule;
 use crate::f64::line::F64Line;
 use crate::string::overlay::StringOverlay;
 
+// #[deprecated(
+//     since = "1.8.0",
+//     note = "Use FloatStringOverlay<P, T> instead, which provides a more flexible and efficient API"
+// )]
 #[derive(Clone)]
 pub struct F64StringOverlay {
     shape_paths: Vec<F64Path>,

@@ -3,6 +3,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use crate::float::adapter::AdapterExt;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 
@@ -55,9 +56,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
     pub fn extract_shapes_min_area(&self, string_rule: StringRule, min_area: T) -> Shapes<P> {
-        let scale = self.adapter.dir_scale;
-        let sqr_scale = scale * scale;
-        let area = (sqr_scale * min_area).to_f64() as usize;
+        let area = self.adapter.convert_area(min_area);
         let shapes = self.graph.extract_shapes_min_area(string_rule, area);
         shapes.to_float(&self.adapter)
     }

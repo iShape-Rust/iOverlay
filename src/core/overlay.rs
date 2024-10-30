@@ -5,20 +5,21 @@
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::IntShape;
+use i_shape::int::shape::{IntShape, IntShapes};
 
 use crate::core::fill_rule::FillRule;
+use crate::core::filter::SegmentFilter;
 use crate::core::overlay_rule::OverlayRule;
 
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::segm::build::BuildSegments;
-use crate::segm::segment::{Segment, SegmentFill, CLIP_BOTH, NONE, SUBJ_BOTH};
+use crate::segm::segment::{Segment, SegmentFill};
 use crate::segm::shape_count::ShapeCount;
 use crate::split::solver::SplitSegments;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
-use super::overlay_graph::OverlayGraph;
+use super::graph::OverlayGraph;
 
 /// Specifies the type of shape being processed, influencing how the shape participates in Boolean operations.
 /// Note: All operations except for `Difference` are commutative, meaning the order of `Subject` and `Clip` shapes does not impact the outcome.
@@ -120,7 +121,7 @@ impl Overlay {
             return Vec::new();
         }
 
-        OverlayGraph::new(solver, self.into_segments(fill_rule, false, solver)).extract_shape_vectors(overlay_rule)
+        OverlayGraph::new(solver, self.into_segments(fill_rule, solver)).extract_shape_vectors(overlay_rule)
     }
 
     /// Convert into vectors from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
@@ -131,7 +132,7 @@ impl Overlay {
             return Vec::new();
         }
 
-        OverlayGraph::new(solver, self.into_segments(fill_rule, false, solver)).extract_separate_vectors()
+        OverlayGraph::new(solver, self.into_segments(fill_rule, solver)).extract_separate_vectors()
     }
 
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
@@ -146,63 +147,52 @@ impl Overlay {
     /// - `solver`: Type of solver to use.
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
-        OverlayGraph::new(solver, self.into_segments(fill_rule, true, solver))
+        OverlayGraph::new(solver, self.into_segments_and_filter_by_filler(fill_rule, solver))
     }
 
-    /// Convert into segments from the added paths or shapes according to the specified fill rule.
-    /// - `fill_rule`: The fill rule to use when determining the inside of shapes.
-    /// - `filter`: Is need to clean empty segments
-    /// - `solver`: Type of solver to use.
-    pub(crate) fn into_segments(self, fill_rule: FillRule, filter: bool, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+    #[inline]
+    pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
+        self.overlay_with_min_area_and_solver(overlay_rule, fill_rule, 0, Default::default())
+    }
+
+    #[inline]
+    pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: usize, solver: Solver) -> IntShapes {
+        let graph = OverlayGraph::new(solver, self.into_segments_and_filter_by_overlay_rule(fill_rule, solver, overlay_rule));
+        let filter = vec![false; graph.links.len()];
+        graph.extract(filter, overlay_rule, min_area)
+    }
+
+    #[inline]
+    pub(crate) fn into_segments_and_filter_by_overlay_rule(self, fill_rule: FillRule, solver: Solver, overlay_rule: OverlayRule) -> (Vec<Segment>, Vec<SegmentFill>) {
+        let (mut segments, mut fills) = self.into_segments(fill_rule, solver);
+        SegmentFilter::filter(&mut segments, &mut fills, overlay_rule);
+        (segments, fills)
+    }
+
+    #[inline]
+    pub(crate) fn into_segments_and_filter_by_filler(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
+        let (mut segments, mut fills) = self.into_segments(fill_rule, solver);
+        SegmentFilter::filter_filler(&mut segments, &mut fills);
+        (segments, fills)
+    }
+
+    fn into_segments(self, fill_rule: FillRule, solver: Solver) -> (Vec<Segment>, Vec<SegmentFill>) {
         if self.segments.is_empty() {
             return (Vec::new(), Vec::new());
         }
 
-        let mut segments = self.segments.split_segments(solver);
+        let segments = self.segments.split_segments(solver);
 
         let is_list = solver.is_list_fill(&segments);
 
-        let mut fills = match fill_rule {
+        let fills = match fill_rule {
             FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy>(is_list, &segments),
             FillRule::NonZero => FillSolver::fill::<NonZeroStrategy>(is_list, &segments),
             FillRule::Positive => FillSolver::fill::<PositiveStrategy>(is_list, &segments),
             FillRule::Negative => FillSolver::fill::<NegativeStrategy>(is_list, &segments),
         };
 
-        if filter {
-            if let Some(first_empty_index) = fills.iter().position(|fill| fill.is_empty()) {
-                filter_empties(&mut segments, &mut fills, first_empty_index);
-            }
-        }
-
         (segments, fills)
-    }
-}
-
-fn filter_empties(segments: &mut Vec<Segment>, fills: &mut Vec<SegmentFill>, after: usize) {
-    let mut j = after;
-    for i in (after + 1)..fills.len() {
-        let fill = fills[i];
-        if !fill.is_empty() {
-            fills[j] = fills[i];
-            segments[j] = segments[i];
-            j += 1;
-        }
-    }
-
-    fills.truncate(j);
-    segments.truncate(j);
-}
-
-trait Empty {
-    fn is_empty(&self) -> bool;
-}
-
-impl Empty for SegmentFill {
-    #[inline(always)]
-    fn is_empty(&self) -> bool {
-        let fill = *self;
-        fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH
     }
 }
 

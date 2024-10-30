@@ -5,6 +5,10 @@ use crate::f64::line::F64Line;
 use crate::f64::string::F64StringOverlay;
 use crate::string::rule::StringRule;
 
+// #[deprecated(
+//     since = "1.8.0",
+//     note = "Use FloatSlice<P, T> instead, which provides a more flexible and efficient API"
+// )]
 pub trait F64Slice {
     fn slice_by_line(&self, line: F64Line, fill_rule: FillRule) -> F64Shapes;
     fn slice_by_lines(&self, lines: &[F64Line], fill_rule: FillRule) -> F64Shapes;

@@ -20,6 +20,10 @@ impl F32StringGraph {
     }
 }
 
+// #[deprecated(
+//     since = "1.8.0",
+//     note = "Use FloatClip<P, T> instead, which provides a more flexible and efficient API"
+// )]
 pub trait F32Clip {
     /// Clips a single line according to the specified fill and clip rules.
     /// - `line`: The line to be clipped, represented by two points.

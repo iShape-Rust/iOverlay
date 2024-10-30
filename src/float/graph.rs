@@ -7,8 +7,9 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
-use crate::core::overlay_graph::OverlayGraph;
+use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
+use crate::float::adapter::AdapterExt;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
@@ -73,9 +74,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: T) -> Shapes<P> {
-        let scale = self.adapter.dir_scale;
-        let sqr_scale = scale * scale;
-        let area = (sqr_scale * min_area).to_f64() as usize;
+        let area = self.adapter.convert_area(min_area);
         let shapes = self.graph.extract_shapes_min_area(overlay_rule, area);
 
         shapes.to_float(&self.adapter)

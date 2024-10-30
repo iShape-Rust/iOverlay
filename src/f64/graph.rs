@@ -5,7 +5,7 @@
 use i_float::f64_adapter::F64PointAdapter;
 use i_shape::f64::adapter::ShapesToFloat;
 use i_shape::f64::shape::F64Shapes;
-use crate::core::overlay_graph::OverlayGraph;
+use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,

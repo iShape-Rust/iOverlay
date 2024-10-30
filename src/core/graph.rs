@@ -9,7 +9,7 @@ use crate::geom::end::End;
 use crate::segm::segment::{Segment, SegmentFill};
 use crate::util::sort::SmartBinSort;
 
-use super::{overlay_link::OverlayLink, overlay_node::OverlayNode};
+use super::{link::OverlayLink, node::OverlayNode};
 
 
 /// A representation of geometric shapes organized for efficient boolean operations.
