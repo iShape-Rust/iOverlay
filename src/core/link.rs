@@ -105,7 +105,7 @@ impl OverlayLinkBuilder {
         let mut links = vec![empty_link; n];
 
         let mut i = 0;
-        for (j, &fill) in fills.into_iter().enumerate() {
+        for (j, &fill) in fills.iter().enumerate() {
             if !F::is_included(fill) {
                 continue;
             }
