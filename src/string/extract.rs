@@ -11,7 +11,13 @@ use crate::string::graph::StringGraph;
 impl StringGraph {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
-    /// - Returns: A collection of shapes (`IntShapes`) extracted from the graph according to the rule.
+    /// # Shape Representation
+    /// The output is a `IntShapes`, where:
+    /// - The outer `Vec<IntShape>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
+    ///
+    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
         self.extract_shapes_min_area(string_rule, 0)
@@ -20,7 +26,13 @@ impl StringGraph {
     /// Extracts shapes from the graph with a minimum area constraint.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// - `min_area`: The minimum area that a shape must have to be included in the results. Shapes smaller than this will be excluded.
-    /// - Returns: A collection of shapes (`IntShapes`) that meet the specified area constraint.
+    /// # Shape Representation
+    /// The output is a `IntShapes`, where:
+    /// - The outer `Vec<IntShape>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
+    ///
+    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     pub fn extract_shapes_min_area(&self, string_rule: StringRule, min_area: usize) -> IntShapes {
         let mut binding = self.filter(string_rule);
         let visited = binding.as_mut_slice();

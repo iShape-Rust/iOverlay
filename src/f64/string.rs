@@ -124,7 +124,7 @@ impl F64StringOverlay {
 
         let int_shapes = self.shape_paths.to_int(&adapter);
 
-        let mut overlay = StringOverlay::with_shape_paths(&int_shapes);
+        let mut overlay = StringOverlay::with_shape_contours(&int_shapes);
         for line in self.string_lines.iter() {
             let a = adapter.convert_to_int(&line[0]);
             let b = adapter.convert_to_int(&line[1]);

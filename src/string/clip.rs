@@ -179,28 +179,28 @@ impl IntClip for IntShape {
 impl IntClip for [IntPoint] {
     #[inline]
     fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
-        let mut overlay = StringOverlay::with_shape_path(self);
+        let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_line(line);
         overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
     }
 
     #[inline]
     fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
-        let mut overlay = StringOverlay::with_shape_path(self);
+        let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_lines(lines);
         overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
     }
 
     #[inline]
     fn clip_path(&self, path: &IntPath, is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
-        let mut overlay = StringOverlay::with_shape_path(self);
+        let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_path(path, is_open);
         overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
     }
 
     #[inline]
     fn clip_paths(&self, paths: &[IntPath], is_open: bool, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
-        let mut overlay = StringOverlay::with_shape_path(self);
+        let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_paths(paths, is_open);
         overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
     }

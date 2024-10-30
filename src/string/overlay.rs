@@ -1,7 +1,7 @@
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::IntShape;
+use i_shape::int::shape::{IntContour, IntShape};
 use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay::ShapeType;
@@ -29,29 +29,29 @@ impl StringOverlay {
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with a single shape path.
-    /// - `path`: A path to be used in the overlay operation as a closed shape.
+    /// - `contour`: A path to be used in the overlay operation as a closed shape.
     #[inline]
-    pub fn with_shape_path(path: &[IntPoint]) -> Self {
-        let mut overlay = Self::new(path.len());
-        overlay.add_shape_path(path);
+    pub fn with_shape_contour(contour: &[IntPoint]) -> Self {
+        let mut overlay = Self::new(contour.len());
+        overlay.add_shape_contour(contour);
         overlay
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with multiple shape paths.
-    /// - `paths`: An array of paths that together define multiple shapes.
+    /// - `contours`: An array of paths that together define multiple shapes.
     #[inline]
-    pub fn with_shape_paths(paths: &[IntPath]) -> Self {
-        let mut overlay = Self::new(paths.points_count());
-        overlay.add_shape_paths(paths);
+    pub fn with_shape_contours(contours: &[IntContour]) -> Self {
+        let mut overlay = Self::new(contours.points_count());
+        overlay.add_shape_contours(contours);
         overlay
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
     /// - `shape`: A shape to be used in the overlay operation.
     #[inline]
-    pub fn with_shape(shape: &[IntPath]) -> Self {
+    pub fn with_shape(shape: &[IntContour]) -> Self {
         let mut overlay = Self::new(shape.points_count());
-        overlay.add_shape_paths(shape);
+        overlay.add_shape_contours(shape);
         overlay
     }
 
@@ -74,17 +74,17 @@ impl StringOverlay {
     }
 
     /// Adds a single path to the overlay as a shape paths.
-    /// - `path`: A reference to a `IntPath` instance to be added.
+    /// - `contour`: An array of points that form a closed path.
     #[inline]
-    pub fn add_shape_path(&mut self, path: &[IntPoint]) {
-        self.add_path_iter(path.iter().copied());
+    pub fn add_shape_contour(&mut self, contour: &[IntPoint]) {
+        self.add_path_iter(contour.iter().copied());
     }
 
     /// Adds multiple paths to the overlay as shape paths.
-    /// - `paths`: An array of `IntPath` instances to be added to the overlay.
-    pub fn add_shape_paths(&mut self, paths: &[IntPath]) {
-        for path in paths.iter() {
-            self.add_shape_path(path);
+    /// - `contours`: An array of `IntContour` instances to be added to the overlay.
+    pub fn add_shape_contours(&mut self, contours: &[IntContour]) {
+        for contour in contours.iter() {
+            self.add_shape_contour(contour);
         }
     }
 
@@ -93,7 +93,7 @@ impl StringOverlay {
     #[inline]
     pub fn add_shapes(&mut self, shapes: &[IntShape]) {
         for shape in shapes {
-            self.add_shape_paths(shape);
+            self.add_shape_contours(shape);
         }
     }
 

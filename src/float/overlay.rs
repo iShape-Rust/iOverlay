@@ -173,6 +173,28 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         self.overlay_with_min_area_and_solver(overlay_rule, fill_rule, T::from_float(0.0), Default::default())
     }
 
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// This method provides a streamlined approach for performing a Boolean operation without generating
+    /// an entire `FloatOverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
+    /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
+    /// compared to a full graph-based approach.
+    ///
+    /// ### Parameters:
+    /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
+    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - `solver`: Type of solver to use.
+    /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
+    /// # Shape Representation
+    /// The output is a `Shapes<P>`, where:
+    /// - The outer `Vec<Shape<P>>` represents a set of shapes.
+    /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
+    ///
+    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// This method is particularly useful in scenarios where the geometry only needs one overlay operation
+    /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
+    /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P> {
         let area = self.adapter.convert_area(min_area);
