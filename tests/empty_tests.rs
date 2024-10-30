@@ -18,7 +18,7 @@ mod tests {
     #[test]
     fn test_01() {
         let mut overlay = Overlay::new(1);
-        overlay.add_path(&[IntPoint::new(0, 0)], ShapeType::Subject);
+        overlay.add_contour(&[IntPoint::new(0, 0)], ShapeType::Subject);
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);
@@ -29,7 +29,7 @@ mod tests {
     #[test]
     fn test_02() {
         let mut overlay = Overlay::new(1);
-        overlay.add_path(&[IntPoint::new(0, 0), IntPoint::new(1, 0)], ShapeType::Subject);
+        overlay.add_contour(&[IntPoint::new(0, 0), IntPoint::new(1, 0)], ShapeType::Subject);
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let union = graph.extract_shapes(OverlayRule::Union);

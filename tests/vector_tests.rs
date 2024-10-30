@@ -24,8 +24,8 @@ mod tests {
         ];
 
         let mut overlay = Overlay::new(2);
-        overlay.add_path(&subj, ShapeType::Subject);
-        overlay.add_path(&clip, ShapeType::Clip);
+        overlay.add_contour(&subj, ShapeType::Subject);
+        overlay.add_contour(&clip, ShapeType::Clip);
 
         let shapes = overlay.into_shape_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
 
@@ -76,8 +76,8 @@ mod tests {
         ];
 
         let mut overlay = Overlay::new(2);
-        overlay.add_path(&subj, ShapeType::Subject);
-        overlay.add_path(&clip, ShapeType::Clip);
+        overlay.add_contour(&subj, ShapeType::Subject);
+        overlay.add_contour(&clip, ShapeType::Clip);
 
         let shapes = overlay.into_shape_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
 

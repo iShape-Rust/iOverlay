@@ -21,7 +21,7 @@ mod tests {
         let test = Test::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
         for solver in SOLVERS {
-            let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
+            let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
             let graph = overlay.into_graph_with_solver(fill_rule, solver);
 
             let clip = graph.extract_shapes(OverlayRule::Clip);
@@ -45,7 +45,7 @@ mod tests {
     fn debug_execute(index: usize, overlay_rule: OverlayRule, solver: Solver) {
         let test = Test::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::NonZero);
-        let overlay = Overlay::with_paths(&test.subj_paths, &test.clip_paths);
+        let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
         let graph = overlay.into_graph_with_solver(fill_rule, solver);
         let result = graph.extract_shapes(overlay_rule);
 

@@ -78,7 +78,7 @@ mod tests {
 
 
         let mut overlay = Overlay::new(4);
-        overlay.add_path(&path, ShapeType::Subject);
+        overlay.add_contour(&path, ShapeType::Subject);
 
         let mut solver = Solver::default();
         solver.precision = Precision::Absolute;

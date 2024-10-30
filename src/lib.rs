@@ -34,7 +34,7 @@
 //!    IntPoint::new(15, -5),
 //!].to_vec();
 //!
-//!let shapes = Overlay::with_paths(&[subj], &[clip])
+//!let shapes = Overlay::with_contours(&[subj], &[clip])
 //!    .into_graph(FillRule::NonZero)
 //!    .extract_shapes(OverlayRule::Union);
 //!

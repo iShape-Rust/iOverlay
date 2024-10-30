@@ -10,8 +10,8 @@ mod tests {
     fn test_both_clock_wise() {
         let mut overlay = Overlay::new(2);
 
-        overlay.add_path(&square(10, true), ShapeType::Subject);
-        overlay.add_path(&square(5, true), ShapeType::Subject);
+        overlay.add_contour(&square(10, true), ShapeType::Subject);
+        overlay.add_contour(&square(5, true), ShapeType::Subject);
 
         let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
         let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
@@ -34,8 +34,8 @@ mod tests {
     fn test_both_counter_clock_wise() {
         let mut overlay = Overlay::new(2);
 
-        overlay.add_path(&square(10, false), ShapeType::Subject);
-        overlay.add_path(&square(5, false), ShapeType::Subject);
+        overlay.add_contour(&square(10, false), ShapeType::Subject);
+        overlay.add_contour(&square(5, false), ShapeType::Subject);
 
         let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
         let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
@@ -58,8 +58,8 @@ mod tests {
     fn test_cw_and_ccw() {
         let mut overlay = Overlay::new(2);
 
-        overlay.add_path(&square(10, true), ShapeType::Subject);
-        overlay.add_path(&square(5, false), ShapeType::Subject);
+        overlay.add_contour(&square(10, true), ShapeType::Subject);
+        overlay.add_contour(&square(5, false), ShapeType::Subject);
 
         let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
         let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
@@ -82,8 +82,8 @@ mod tests {
     fn test_ccw_and_cw() {
         let mut overlay = Overlay::new(2);
 
-        overlay.add_path(&square(10, false), ShapeType::Subject);
-        overlay.add_path(&square(5, true), ShapeType::Subject);
+        overlay.add_contour(&square(10, false), ShapeType::Subject);
+        overlay.add_contour(&square(5, true), ShapeType::Subject);
 
         let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
         let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);

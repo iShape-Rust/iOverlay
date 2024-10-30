@@ -9,14 +9,14 @@ mod tests {
     #[test]
     fn test_clockwise_direct() {
         let mut overlay = Overlay::new(8);
-        overlay.add_path(&vec![
+        overlay.add_contour(&vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
             IntPoint::new(10, -10),
         ], ShapeType::Subject);
 
-        overlay.add_path(&vec![
+        overlay.add_contour(&vec![
             IntPoint::new(-5, -5),
             IntPoint::new(-5, 5),
             IntPoint::new(5, 5),

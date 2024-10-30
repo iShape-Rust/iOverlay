@@ -5,7 +5,7 @@
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntShape, IntShapes};
+use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLinkBuilder;
@@ -44,10 +44,20 @@ impl Overlay {
         }
     }
 
-    /// Creates a new `Overlay` instance and initializes it with subject and clip paths.
-    /// - `subject_paths`: An array of paths that together define the subject shape.
-    /// - `clip_paths`: An array of paths that together define the clip shape.
-    pub fn with_paths(subject_paths: &[IntPath], clip_paths: &[IntPath]) -> Self {
+    /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
+    /// - `subj`: An array of contours that together define the subject.
+    /// - `clip`: An array of contours that together define the clip.
+    pub fn with_contour(subj: &[IntPoint], clip: &[IntPoint]) -> Self {
+        let mut overlay = Self::new(subj.len() + clip.len());
+        overlay.add_contour(subj, ShapeType::Subject);
+        overlay.add_contour(clip, ShapeType::Clip);
+        overlay
+    }
+
+    /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
+    /// - `subj`: An array of contours that together define the subject shape.
+    /// - `clip`: An array of contours that together define the clip shape.
+    pub fn with_contours(subject_paths: &[IntContour], clip_paths: &[IntContour]) -> Self {
         let mut overlay = Self::new(subject_paths.points_count() + clip_paths.points_count());
         overlay.add_paths(subject_paths, ShapeType::Subject);
         overlay.add_paths(clip_paths, ShapeType::Clip);
@@ -78,7 +88,7 @@ impl Overlay {
     /// - `path`: A reference to a `IntPath` instance to be added.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_path(&mut self, path: &[IntPoint], shape_type: ShapeType) {
+    pub fn add_contour(&mut self, path: &[IntPoint], shape_type: ShapeType) {
         self.segments.append_path_iter(path.iter().copied(), shape_type);
     }
 
@@ -88,7 +98,7 @@ impl Overlay {
     #[inline]
     pub fn add_paths(&mut self, paths: &[IntPath], shape_type: ShapeType) {
         for path in paths.iter() {
-            self.add_path(path, shape_type);
+            self.add_contour(path, shape_type);
         }
     }
 
@@ -143,11 +153,69 @@ impl Overlay {
         OverlayGraph::new(solver, links)
     }
 
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// This method provides a streamlined approach for performing a Boolean operation without generating
+    /// an entire `OverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
+    /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
+    /// compared to a full graph-based approach.
+    ///
+    /// ### Parameters:
+    /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
+    /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
+    /// # Shape Representation
+    /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
+    /// - The outer `Vec<Shape>` represents a set of shapes.
+    /// - Each shape `Vec<Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
+    ///
+    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// ### Usage:
+    /// This function is suitable when a single, optimized Boolean operation is required on the provided
+    /// geometry. For example:
+    ///
+    /// ```rust
+    /// use i_float::float::point::FloatPoint;
+    /// use i_float::int_pnt;
+    /// use i_overlay::core::fill_rule::FillRule;
+    /// use i_overlay::core::overlay::Overlay;
+    /// use i_overlay::core::overlay_rule::OverlayRule;
+    /// let left_rect = [int_pnt!(0, 0), int_pnt!(0, 10), int_pnt!(10, 10), int_pnt!(10, 0)];
+    /// let right_rect = [int_pnt!(10, 0), int_pnt!(10, 10), int_pnt!(20, 10), int_pnt!(20, 0)];
+    /// let overlay = Overlay::with_contour(&left_rect, &right_rect);
+    ///
+    /// let result_shapes = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
+    /// ```
+    ///
+    /// This method is particularly useful in scenarios where the geometry only needs one overlay operation
+    /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
+    /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
         self.overlay_with_min_area_and_solver(overlay_rule, fill_rule, 0, Default::default())
     }
 
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// This method provides a streamlined approach for performing a Boolean operation without generating
+    /// an entire `OverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
+    /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
+    /// compared to a full graph-based approach.
+    ///
+    /// ### Parameters:
+    /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
+    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
+    /// # Shape Representation
+    /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
+    /// - The outer `Vec<Shape>` represents a set of shapes.
+    /// - Each shape `Vec<Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
+    ///
+    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// This method is particularly useful in scenarios where the geometry only needs one overlay operation
+    /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
+    /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: usize, solver: Solver) -> IntShapes {
         let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);

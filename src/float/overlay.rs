@@ -39,7 +39,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         Self { overlay: Overlay::new(capacity), adapter }
     }
 
-    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip paths.
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
     /// - `subj`: An array of shapes that together define the subject.
     /// - `clip`: An array of shapes that together define the clip.
     pub fn with_shapes(subj: &[Shape<P>], clip: &[Shape<P>]) -> Self {
@@ -55,7 +55,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
             .unsafe_add_shapes(clip, ShapeType::Clip)
     }
 
-    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip paths.
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip contours.
     /// - `subj`: An array of contours that together define the subject.
     /// - `clip`: An array of contours that together define the clip.
     pub fn with_contours(subj: &[Contour<P>], clip: &[Contour<P>]) -> Self {
@@ -71,7 +71,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
             .unsafe_add_contours(clip, ShapeType::Clip)
     }
 
-    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip path.
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip contour.
     /// - `subj`: An array of points that define the subject.
     /// - `clip`: An array of points that define the clip.
     pub fn with_contour(subj: &[P], clip: &[P]) -> Self {

@@ -123,7 +123,7 @@ impl F64Overlay {
         let int_subj = self.subj_paths.to_int(&adapter);
         let int_clip = self.clip_paths.to_int(&adapter);
 
-        let overlay = Overlay::with_paths(&int_subj, &int_clip);
+        let overlay = Overlay::with_contours(&int_subj, &int_clip);
 
         (overlay, adapter)
     }
