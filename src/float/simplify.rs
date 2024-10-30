@@ -8,7 +8,16 @@ use crate::core::overlay::ShapeType;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::FloatOverlay;
 
+/// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
+/// while preserving overall shape and topology. The method applies a minimum area threshold and a fill rule to
+/// determine which areas should be retained or excluded.
 pub trait Simplify<P, T: FloatNumber> {
+    /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
+    ///
+    /// - `fill_rule`: Determines how filled areas are computed for the geometry, influencing the retention of certain
+    ///   regions during simplification.
+    /// - `min_area`: The minimum area below which shapes or contours will be excluded from the result.
+    /// - Returns: A collection of `Shapes<P>` that represents the simplified geometry.
     fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P>;
 }
 

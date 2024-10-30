@@ -16,10 +16,6 @@ use crate::float::adapter::AdapterExt;
 use crate::float::graph::FloatOverlayGraph;
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
-// #[deprecated(
-//     since = "1.8.0",
-//     note = "Use FloatOverlay<P, T> instead, which provides a more flexible and efficient API"
-// )]
 #[derive(Clone)]
 pub struct FloatOverlay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) overlay: Overlay,
