@@ -41,8 +41,8 @@ mod tests {
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
         let mut overlay = Overlay::new(8 * n * n);
-        overlay.add_paths(&subj_paths, ShapeType::Subject);
-        overlay.add_paths(&clip_paths, ShapeType::Clip);
+        overlay.add_contours(&subj_paths, ShapeType::Subject);
+        overlay.add_contours(&clip_paths, ShapeType::Clip);
 
         let graph = overlay.into_graph(FillRule::NonZero);
         let result = graph.extract_shapes(rule);

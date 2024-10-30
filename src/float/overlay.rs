@@ -84,12 +84,12 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Adds a single closed shape path to the overlay.
-    /// - `path`: An array of points that form a closed path.
+    /// - `contour`: An array of points that form a closed path.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_contour(mut self, path: &[P], shape_type: ShapeType) -> Self {
-        self.overlay.add_path_iter(path.iter().map(|&p| self.adapter.float_to_int(p)), shape_type);
+    pub fn unsafe_add_contour(mut self, contour: &[P], shape_type: ShapeType) -> Self {
+        self.overlay.add_path_iter(contour.iter().map(|&p| self.adapter.float_to_int(p)), shape_type);
         self
     }
 
@@ -97,9 +97,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `contours`: An array of `Contour` instances, each representing a closed path.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
-    pub fn unsafe_add_contours(mut self, paths: &[Contour<P>], shape_type: ShapeType) -> Self {
-        for path in paths.iter() {
-            self = self.unsafe_add_contour(path, shape_type);
+    pub fn unsafe_add_contours(mut self, contours: &[Contour<P>], shape_type: ShapeType) -> Self {
+        for contour in contours.iter() {
+            self = self.unsafe_add_contour(contour, shape_type);
         }
         self
     }
@@ -131,6 +131,43 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         FloatOverlayGraph::new(graph, self.adapter)
     }
 
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// This method provides a streamlined approach for performing a Boolean operation without generating
+    /// an entire `FloatOverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
+    /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
+    /// compared to a full graph-based approach.
+    ///
+    /// ### Parameters:
+    /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
+    /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
+    /// # Shape Representation
+    /// The output is a `Shapes<P>`, where:
+    /// - The outer `Vec<Shape<P>>` represents a set of shapes.
+    /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
+    ///
+    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// ### Usage:
+    /// This function is suitable when a single, optimized Boolean operation is required on the provided
+    /// geometry. For example:
+    ///
+    /// ```rust
+    /// use i_float::float::point::FloatPointCompatible;
+    /// use i_overlay::float::overlay::FloatOverlay;
+    /// use i_overlay::core::fill_rule::FillRule;
+    /// use i_overlay::core::overlay_rule::OverlayRule;
+    ///
+    /// let left_rect = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+    /// let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+    /// let overlay = FloatOverlay::with_contour(&left_rect, &right_rect);
+    ///
+    /// let result_shapes = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
+    /// ```
+    ///
+    /// This method is particularly useful in scenarios where the geometry only needs one overlay operation
+    /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
+    /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
         self.overlay_with_min_area_and_solver(overlay_rule, fill_rule, T::from_float(0.0), Default::default())

@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn test_clockwise_reverse() {
         let mut overlay = Overlay::new(8);
-        overlay.add_paths(&[
+        overlay.add_contours(&[
             [
                 IntPoint::new(-10, -10),
                 IntPoint::new(10, -10),
@@ -48,7 +48,7 @@ mod tests {
                 IntPoint::new(-10, 10)
             ].to_vec()
         ].to_vec(), ShapeType::Subject);
-        overlay.add_paths(&[
+        overlay.add_contours(&[
             [
                 IntPoint::new(-5, -5),
                 IntPoint::new(5, -5),
@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn test_clockwise_all_opposite() {
         let mut overlay = Overlay::new(8);
-        overlay.add_paths(&[
+        overlay.add_contours(&[
             [
                 IntPoint::new(-10, -10),
                 IntPoint::new(10, -10),
@@ -82,7 +82,7 @@ mod tests {
                 IntPoint::new(-10, 10)
             ].to_vec()
         ].to_vec(), ShapeType::Subject);
-        overlay.add_paths(&[
+        overlay.add_contours(&[
             [
                 IntPoint::new(-5, -5),
                 IntPoint::new(-5, 5),

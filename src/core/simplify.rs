@@ -23,7 +23,7 @@ impl Simplify for IntPath {
 impl Simplify for [IntPath] {
     fn simplify(&self, fill_rule: FillRule, min_area: usize) -> Vec<IntShape> {
         let mut overlay = Overlay::new(self.points_count());
-        overlay.add_paths(self, ShapeType::Subject);
+        overlay.add_contours(self, ShapeType::Subject);
         overlay.overlay_with_min_area_and_solver(OverlayRule::Subject, fill_rule, min_area, Default::default())
     }
 }

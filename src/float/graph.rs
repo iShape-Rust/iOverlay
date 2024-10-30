@@ -45,9 +45,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// # Shape Representation
     /// The output is a `Shapes<P>`, where:
-    /// - The outer `Shapes<P>` represents a set of shapes.
-    /// - Each shape `Shape<P>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
-    /// - Each path `Contour<P>` is a sequence of points, forming a closed path.
+    /// - The outer `Vec<Shape<P>>` represents a set of shapes.
+    /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
@@ -67,9 +67,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// # Shape Representation
     /// The output is a `Shapes<P>`, where:
-    /// - The outer `Shapes<P>` represents a set of shapes.
-    /// - Each shape `Shape<P>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
-    /// - Each path `Contour<P>` is a sequence of points, forming a closed path.
+    /// - The outer `Vec<Shape<P>>` represents a set of shapes.
+    /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]

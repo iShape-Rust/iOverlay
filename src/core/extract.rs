@@ -17,9 +17,9 @@ impl OverlayGraph {
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
-    /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
-    /// - The outer `Vec<Shape>` represents a set of shapes.
-    /// - Each shape `Vec<Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// The output is a `IntShapes`, where:
+    /// - The outer `Vec<IntShape>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
@@ -33,9 +33,9 @@ impl OverlayGraph {
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
-    /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
-    /// - The outer `Vec<Shape>` represents a set of shapes.
-    /// - Each shape `Vec<Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// The output is a `IntShapes`, where:
+    /// - The outer `Vec<IntShape>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.

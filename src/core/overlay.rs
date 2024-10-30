@@ -4,7 +4,6 @@
 
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
-use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 use crate::core::fill_rule::FillRule;
@@ -57,20 +56,20 @@ impl Overlay {
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
     /// - `subj`: An array of contours that together define the subject shape.
     /// - `clip`: An array of contours that together define the clip shape.
-    pub fn with_contours(subject_paths: &[IntContour], clip_paths: &[IntContour]) -> Self {
-        let mut overlay = Self::new(subject_paths.points_count() + clip_paths.points_count());
-        overlay.add_paths(subject_paths, ShapeType::Subject);
-        overlay.add_paths(clip_paths, ShapeType::Clip);
+    pub fn with_contours(subj: &[IntContour], clip: &[IntContour]) -> Self {
+        let mut overlay = Self::new(subj.points_count() + clip.points_count());
+        overlay.add_contours(subj, ShapeType::Subject);
+        overlay.add_contours(clip, ShapeType::Clip);
         overlay
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip shapes.
-    /// - `subject_shapes`: An array of shapes to be used as the subject in the overlay operation.
-    /// - `clip_shapes`: An array of shapes to be used as the clip in the overlay operation.
-    pub fn with_shapes(subject_shapes: &[IntShape], clip_shapes: &[IntShape]) -> Self {
-        let mut overlay = Self::new(subject_shapes.points_count() + clip_shapes.points_count());
-        overlay.add_shapes(subject_shapes, ShapeType::Subject);
-        overlay.add_shapes(clip_shapes, ShapeType::Clip);
+    /// - `subj`: An array of shapes to be used as the subject in the overlay operation.
+    /// - `clip`: An array of shapes to be used as the clip in the overlay operation.
+    pub fn with_shapes(subj: &[IntShape], clip: &[IntShape]) -> Self {
+        let mut overlay = Self::new(subj.points_count() + clip.points_count());
+        overlay.add_shapes(subj, ShapeType::Subject);
+        overlay.add_shapes(clip, ShapeType::Clip);
         overlay
     }
 
@@ -85,20 +84,20 @@ impl Overlay {
     }
 
     /// Adds a single path to the overlay as either subject or clip paths.
-    /// - `path`: A reference to a `IntPath` instance to be added.
+    /// - `contour`: An array of points that form a closed path.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_contour(&mut self, path: &[IntPoint], shape_type: ShapeType) {
-        self.segments.append_path_iter(path.iter().copied(), shape_type);
+    pub fn add_contour(&mut self, contour: &[IntPoint], shape_type: ShapeType) {
+        self.segments.append_path_iter(contour.iter().copied(), shape_type);
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
-    /// - `paths`: An array of `IntPath` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_paths(&mut self, paths: &[IntPath], shape_type: ShapeType) {
-        for path in paths.iter() {
-            self.add_contour(path, shape_type);
+    pub fn add_contours(&mut self, contours: &[IntContour], shape_type: ShapeType) {
+        for contour in contours.iter() {
+            self.add_contour(contour, shape_type);
         }
     }
 
@@ -107,7 +106,7 @@ impl Overlay {
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
-        self.add_paths(shape, shape_type);
+        self.add_contours(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
@@ -115,7 +114,7 @@ impl Overlay {
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
         for shape in shapes.iter() {
-            self.add_paths(shape, shape_type);
+            self.add_contours(shape, shape_type);
         }
     }
 
@@ -164,9 +163,9 @@ impl Overlay {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
-    /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
-    /// - The outer `Vec<Shape>` represents a set of shapes.
-    /// - Each shape `Vec<Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// The output is a `IntShapes`, where:
+    /// - The outer `Vec<IntShape>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
@@ -175,7 +174,6 @@ impl Overlay {
     /// geometry. For example:
     ///
     /// ```rust
-    /// use i_float::float::point::FloatPoint;
     /// use i_float::int_pnt;
     /// use i_overlay::core::fill_rule::FillRule;
     /// use i_overlay::core::overlay::Overlay;
@@ -207,9 +205,9 @@ impl Overlay {
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
-    /// The output is a `Vec<Vec<Vec<IntPoint>>>`, where:
-    /// - The outer `Vec<Shape>` represents a set of shapes.
-    /// - Each shape `Vec<Path>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
+    /// The output is a `IntShapes`, where:
+    /// - The outer `Vec<IntShape>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
