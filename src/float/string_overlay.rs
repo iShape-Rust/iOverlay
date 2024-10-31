@@ -1,10 +1,9 @@
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_shape::base::data::{Contour, Shape};
-use i_shape::float::count::PointsCount;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
+use crate::float::source::ContourSource;
 use crate::float::string_graph::FloatStringGraph;
 use crate::string::overlay::StringOverlay;
 
@@ -30,112 +29,79 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         Self { overlay: StringOverlay::new(capacity), adapter }
     }
 
-    /// Creates a new `FloatStringOverlay` instance and initializes it with the array of shapes.
-    /// - `shapes`: An array of `Shape` instances.
-    pub fn with_shapes(shapes: &[Shape<P>]) -> Self {
-        let adapter = FloatPointAdapter::with_iter(shapes.iter().flatten().flatten());
-        let capacity = shapes.points_count();
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// - `shape`: A `ContourSource` define the shape.
+    /// - `string`: A `ContourSource` define the string paths.
+    ///   `ContourSource` can be one of the following:
+    ///     - `Contour`: A single contour or boundary path.
+    ///     - `Contours`: A collection of contours, each defining separate boundaries.
+    ///     - `Shapes`: A collection where each shape may contain multiple contours.
+    pub fn with_shape_and_string<S0, S1>(shape: &S0, string: &S1) -> Self
+    where
+        S0: ContourSource<P, T> + ?Sized,
+        S1: ContourSource<P, T> + ?Sized,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        let iter = shape.iter_contours().chain(string.iter_contours()).flatten();
+        let adapter = FloatPointAdapter::with_iter(iter);
+        let shape_capacity = shape.iter_contours().fold(0, |s, c| s + c.len());
+        let string_capacity = string.iter_contours().fold(0, |s, c| s + c.len());
 
-        Self::with_adapter(adapter, capacity).unsafe_add_shapes(shapes)
+        Self::with_adapter(adapter, shape_capacity + string_capacity)
+            .unsafe_add_shape_source(shape)
+            .unsafe_add_string_source(string)
     }
 
-    /// Creates a new `FloatStringOverlay` instance and initializes it with the array of paths.
-    /// - `contours`: An array of `Contour` instances, each representing a closed path.
-    pub fn with_paths(contours: &[Contour<P>]) -> Self {
-        let adapter = FloatPointAdapter::with_iter(contours.iter().flatten());
-        let capacity = contours.points_count();
-
-        Self::with_adapter(adapter, capacity).unsafe_add_contours(contours)
-    }
-
-    /// Creates a new `FloatStringOverlay` instance and initializes it with a closed path.
-    /// - `contour`: An array of points that form a closed path.
-    pub fn with_contour(contour: &[P]) -> Self {
-        let adapter = FloatPointAdapter::with_iter(contour.iter());
-
-        Self::with_adapter(adapter, contour.len()).unsafe_add_contour(contour)
-    }
-
-    /// Adds multiple shapes to the overlay.
-    /// - `shapes`: An array of `Shape` instances.
-    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
-    pub fn unsafe_add_shapes(mut self, shapes: &[Shape<P>]) -> Self {
-        for shape in shapes.iter() {
-            self = self.unsafe_add_contours(shape);
+    /// Adds a shapes to the overlay.
+    /// - `source`: A `ContourSource` that define shape.
+    ///   `ContourSource` can be one of the following:
+    ///     - `Contour`: A single contour representing a path or boundary.
+    ///     - `Contours`: A collection of contours, each defining separate boundaries.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn unsafe_add_shape_source<S: ContourSource<P, T> + ?Sized>(mut self, source: &S) -> Self {
+        for contour in source.iter_contours() {
+            self = self.unsafe_add_shape_contour(contour);
         }
         self
     }
 
-    /// Adds multiple closed shape paths to the overlay.
-    /// - `contours`: An array of `Contour` instances, each representing a closed path.
-    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
-    pub fn unsafe_add_contours(mut self, contours: &[Contour<P>]) -> Self {
-        for contour in contours.iter() {
-            self = self.unsafe_add_contour(contour);
+    /// Adds a string paths to the overlay.
+    /// - `source`: A `ContourSource` that define shape.
+    ///   `ContourSource` can be one of the following:
+    ///     - `Path`: A single open path.
+    ///     - `Paths`: An array of open paths.
+    ///     - `Shapes`: A two-dimensional array where each element defines a separate open path.
+    #[inline]
+    pub fn unsafe_add_string_source<S: ContourSource<P, T> + ?Sized>(mut self, source: &S) -> Self {
+        for path in source.iter_contours() {
+            self = self.unsafe_add_string_path(path);
         }
         self
     }
 
-    /// Adds a single closed shape path to the overlay.
+    /// Adds a closed shape path to the overlay.
     /// - `contour`: An array of points that form a closed path.
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_contour(mut self, contour: &[P]) -> Self {
-        self.overlay.add_path_iter(contour.iter().map(|&p| self.adapter.float_to_int(p)));
+    pub fn unsafe_add_shape_contour(mut self, contour: &[P]) -> Self {
+        self.overlay.add_shape_contour_iter(contour.iter().map(|&p| self.adapter.float_to_int(p)));
         self
     }
 
-    /// Adds a single open line string to the overlay.
-    /// - `line`: An array of two points representing a line.
-    /// - **Safety**: Marked `unsafe` because it assumes the line lies inside the bounding box.
-    #[inline]
-    pub fn unsafe_add_string_line(mut self, line: &[P; 2]) -> Self {
-        let a = self.adapter.float_to_int(line[0]);
-        let b = self.adapter.float_to_int(line[1]);
-        self.overlay.add_string_line([a, b]);
-        self
-    }
-
-    /// Adds multiple open line strings to the overlay.
-    /// - `lines`: An array of line strings, each represented by two points.
-    /// - **Safety**: Marked `unsafe` because it assumes each line lies inside the bounding box.
-    #[inline]
-    pub fn unsafe_add_string_lines(mut self, lines: &[[P; 2]]) -> Self {
-        for line in lines.iter() {
-            self = self.unsafe_add_string_line(line);
-        }
-        self
-    }
-
-    /// Adds a path to the overlay as an open or closed line string.
-    /// - `path`: An array of points forming the path.
-    /// - `is_open`: Indicates if the path is open (true) or closed (false).
+    /// Adds an open string path to the overlay.
+    /// - `path`: An array of points forming an open path.
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_string_path(mut self, path: &[P], is_open: bool) -> Self {
+    pub fn unsafe_add_string_path(mut self, path: &[P]) -> Self {
         for w in path.windows(2) {
             let a = self.adapter.float_to_int(w[0]);
             let b = self.adapter.float_to_int(w[1]);
             self.overlay.add_string_line([a, b]);
         }
-        if !is_open && path.len() > 2 {
-            let a = self.adapter.float_to_int(*path.first().unwrap());
-            let b = self.adapter.float_to_int(*path.last().unwrap());
-            self.overlay.add_string_line([b, a]);
-        }
 
-        self
-    }
-
-    /// Adds multiple paths to the overlay, either as open or closed line strings.
-    /// - `paths`: An array of paths, each a vector of points.
-    /// - `is_open`: Indicates if each path is open (`true`) or closed (`false`).
-    /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
-    #[inline]
-    pub fn unsafe_add_string_paths(mut self, paths: &[Contour<P>], is_open: bool) -> Self {
-        for path in paths.iter() {
-            self = self.unsafe_add_string_path(path, is_open);
-        }
         self
     }
 

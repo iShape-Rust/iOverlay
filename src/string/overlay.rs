@@ -69,7 +69,7 @@ impl StringOverlay {
     /// when paths are not directly stored in a collection.
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     #[inline]
-    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I) {
+    pub fn add_shape_contour_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I) {
         self.segments.append_path_iter(iter, ShapeType::Subject);
     }
 
@@ -77,7 +77,7 @@ impl StringOverlay {
     /// - `contour`: An array of points that form a closed path.
     #[inline]
     pub fn add_shape_contour(&mut self, contour: &[IntPoint]) {
-        self.add_path_iter(contour.iter().copied());
+        self.add_shape_contour_iter(contour.iter().copied());
     }
 
     /// Adds multiple paths to the overlay as shape paths.
