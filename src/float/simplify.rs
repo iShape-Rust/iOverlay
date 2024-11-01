@@ -14,8 +14,7 @@ use crate::float::source::resource::OverlayResource;
 pub trait Simplify<P, T: FloatNumber> {
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     ///
-    /// - `fill_rule`: Determines how filled areas are computed for the geometry, influencing the retention of certain
-    ///   regions during simplification.
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `min_area`: The minimum area below which shapes or contours will be excluded from the result.
     /// - Returns: A collection of `Shapes<P>` that represents the simplified geometry.
     fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P>;

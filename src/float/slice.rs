@@ -21,7 +21,7 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    /// - `fill_rule`: Fill rule to determine filled areas.
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     ///
     /// Returns a `Shapes<P>` collection representing the sliced geometry.
     fn slice_by(&self, source: &R, fill_rule: FillRule) -> Shapes<P>;

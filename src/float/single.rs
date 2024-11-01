@@ -21,8 +21,8 @@ where
     ///     - `Contour`: A single contour representing a path or boundary.
     ///     - `Contours`: A collection of contours, each defining separate boundaries.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    /// - `overlay_rule`: The boolean operation rule to apply.
-    /// - `fill_rule`: Specifies the rule for determining filled areas.
+    /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - Returns: A vector of `Shapes<P>` representing the cleaned-up geometric result.
     fn overlay(&self, source: &S, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P>;
 }

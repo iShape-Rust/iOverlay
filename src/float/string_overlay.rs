@@ -30,16 +30,20 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `shape`: A `ContourSource` define the shape.
-    /// - `string`: A `ContourSource` define the string paths.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Contour`: A single contour or boundary path.
-    ///     - `Contours`: A collection of contours, each defining separate boundaries.
-    ///     - `Shapes`: A collection where each shape may contain multiple contours.
-    pub fn with_shape_and_string<S0, S1>(shape: &S0, string: &S1) -> Self
+    /// - `shape`: A `OverlayResource` define the shape.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `string`: A `OverlayResource` define the string paths.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Path`: A path representing a string line.
+    ///     - `Paths`: A collection of paths, each representing a string line.
+    ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
+    pub fn with_shape_and_string<R0, R1>(shape: &R0, string: &R1) -> Self
     where
-        S0: OverlayResource<P, T>,
-        S1: OverlayResource<P, T>,
+        R0: OverlayResource<P, T>,
+        R1: OverlayResource<P, T>,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -49,19 +53,19 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
 
         Self::with_adapter(adapter, shape_capacity + string_capacity)
-            .unsafe_add_shape_source(shape)
-            .unsafe_add_string_source(string)
+            .unsafe_add_shapes(shape)
+            .unsafe_add_string_lines(string)
     }
 
     /// Adds a shapes to the overlay.
-    /// - `source`: A `ContourSource` that define shape.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Contour`: A single contour representing a path or boundary.
-    ///     - `Contours`: A collection of contours, each defining separate boundaries.
+    /// - `source`: A `OverlayResource` that define shape.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn unsafe_add_shape_source<S: OverlayResource<P, T>>(mut self, source: &S) -> Self {
+    pub fn unsafe_add_shapes<S: OverlayResource<P, T>>(mut self, source: &S) -> Self {
         for contour in source.iter_paths() {
             self = self.unsafe_add_shape_contour(contour);
         }
@@ -69,15 +73,15 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     }
 
     /// Adds a string paths to the overlay.
-    /// - `source`: A `ContourSource` that define shape.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Path`: A single open path.
-    ///     - `Paths`: An array of open paths.
-    ///     - `Shapes`: A two-dimensional array where each element defines a separate open path.
+    /// - `resource`: A `OverlayResource` that define shape.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Path`: A path representing a string line.
+    ///     - `Paths`: A collection of paths, each representing a string line.
+    ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
     #[inline]
-    pub fn unsafe_add_string_source<S: OverlayResource<P, T>>(mut self, source: &S) -> Self {
-        for path in source.iter_paths() {
-            self = self.unsafe_add_string_path(path);
+    pub fn unsafe_add_string_lines<S: OverlayResource<P, T>>(mut self, resource: &S) -> Self {
+        for path in resource.iter_paths() {
+            self = self.unsafe_add_string_line(path);
         }
         self
     }
@@ -92,10 +96,10 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     }
 
     /// Adds an open string path to the overlay.
-    /// - `path`: An array of points forming an open path.
+    /// - `path`: A path representing a string line.
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
     #[inline]
-    pub fn unsafe_add_string_path(mut self, path: &[P]) -> Self {
+    pub fn unsafe_add_string_line(mut self, path: &[P]) -> Self {
         for w in path.windows(2) {
             let a = self.adapter.float_to_int(w[0]);
             let b = self.adapter.float_to_int(w[1]);
@@ -107,7 +111,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
 
     /// Converts the current overlay into an `FloatStringGraph` based on the specified fill rule.
     /// The resulting graph is the foundation for performing boolean operations, and it's optimized for such operations based on the provided fill rule.
-    /// - `fill_rule`: Specifies the rule used to determine the filled areas within the shapes (e.g., non-zero or even-odd).
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
     pub fn into_graph(self, fill_rule: FillRule) -> FloatStringGraph<P, T> {
@@ -116,7 +120,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
 
     /// Converts the current overlay into an `FloatStringGraph` based on the specified fill rule and solver.
     /// This method allows for finer control over the boolean operation process by passing a custom solver.
-    /// - `fill_rule`: Specifies the rule used to determine the filled areas within the shapes (e.g., non-zero or even-odd).
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]

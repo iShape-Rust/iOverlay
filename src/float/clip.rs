@@ -38,7 +38,7 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    /// - `fill_rule`: Fill rule to determine filled areas.
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `clip_rule`: Clip rule to determine how boundary and inversion settings affect the result.
     ///
     /// # Returns
