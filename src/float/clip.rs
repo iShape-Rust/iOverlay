@@ -15,7 +15,7 @@ where
 {
     /// Clips the line strings in the graph based on the specified `ClipRule`.
     ///
-    /// - `clip_rule`: Specifies the clipping rule determining how boundary and inversion settings affect the result.
+    /// - `clip_rule`: Clip rule to determine how boundary and inversion settings affect the result.
     ///
     /// # Returns
     /// A `Paths<P>` collection of string lines that meet the clipping conditions.

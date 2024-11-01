@@ -2,7 +2,6 @@
 mod tests {
     use i_float::adapter::FloatPointAdapter;
     use i_float::float::compatible::FloatPointCompatible;
-    use i_float::float::rect::FloatRect;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ShapeType;
@@ -10,8 +9,6 @@ mod tests {
     use i_overlay::float::clip::FloatClip;
     use i_overlay::float::overlay::FloatOverlay;
     use i_overlay::float::slice::FloatSlice;
-    use i_overlay::float::string_overlay::FloatStringOverlay;
-    use i_overlay::string::rule::StringRule;
     use i_overlay::string::clip::ClipRule;
 
     #[derive(Clone, Copy)]
@@ -472,6 +469,7 @@ mod tests {
             FPoint::new(0.0, 5.0),
             FPoint::new(15.0, 5.0),
             FPoint::new(15.0, -5.0),
+            FPoint::new(0.0, -5.0), // close
         ];
 
         let shapes = path_0.slice_by(&path_1, FillRule::NonZero);
@@ -493,6 +491,7 @@ mod tests {
             FPoint::new(-5.0, 5.0),
             FPoint::new(5.0, 5.0),
             FPoint::new(5.0, -5.0),
+            FPoint::new(-5.0, -5.0), // close
         ];
 
         let shapes = path_0.slice_by(&path_1, FillRule::NonZero);
@@ -552,6 +551,7 @@ mod tests {
             FPoint::new(0.0, 5.0),
             FPoint::new(15.0, 5.0),
             FPoint::new(15.0, -5.0),
+            FPoint::new(0.0, -5.0), // close
         ], FillRule::NonZero);
 
         assert_eq!(shapes.len(), 2);
@@ -569,6 +569,7 @@ mod tests {
             FPoint::new(-5.0, 5.0),
             FPoint::new(5.0, 5.0),
             FPoint::new(5.0, -5.0),
+            FPoint::new(-5.0, -5.0), // close
         ], FillRule::NonZero);
 
         assert_eq!(shapes.len(), 2);
@@ -576,17 +577,15 @@ mod tests {
 
     #[test]
     fn test_clip_empty_path() {
-        let path = [FPoint::new(0.0, 0.0); 0];
-        let result_0 = path.clip_by(
-            &[FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)],
-            false,
+        let contour = [FPoint::new(0.0, 0.0); 0];
+        let result_0 = [FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)].clip_by(
+            &contour,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = path.clip_path(
-            &[FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)],
-            false,
+        let result_1 = [FPoint::new(0.0, 0.0), FPoint::new(1.0, 0.0)].clip_by(
+            &contour,
             FillRule::NonZero,
             ClipRule { invert: true, boundary_included: false },
         );
@@ -597,22 +596,20 @@ mod tests {
 
     #[test]
     fn test_clip_simple() {
-        let path = [
+        let contour = [
             FPoint::new(-10.0, -10.0),
             FPoint::new(-10.0, 10.0),
             FPoint::new(10.0, 10.0),
             FPoint::new(10.0, -10.0),
         ];
-        let result_0 = path.clip_path(
-            &[FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],
-            false,
+        let result_0 = [FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)].clip_by(
+            &contour,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = path.clip_path(
-            &[FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)],
-            false,
+        let result_1 = [FPoint::new(0.0, -15.0), FPoint::new(0.0, 15.0)].clip_by(
+            &contour,
             FillRule::NonZero,
             ClipRule { invert: true, boundary_included: false },
         );
@@ -623,22 +620,20 @@ mod tests {
 
     #[test]
     fn test_clip_boundary() {
-        let path = [
+        let contour = [
             FPoint::new(-10.0, -10.0),
             FPoint::new(-10.0, 10.0),
             FPoint::new(10.0, 10.0),
             FPoint::new(10.0, -10.0),
         ];
-        let result_0 = path.clip_path(
-            &[FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)],
-            false,
+        let result_0 = [FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)].clip_by(
+            &contour,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = path.clip_path(
-            &[FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)],
-            false,
+        let result_1 = [FPoint::new(-10.0, -15.0), FPoint::new(-10.0, 15.0)].clip_by(
+            &contour,
             FillRule::NonZero,
             ClipRule { invert: false, boundary_included: true },
         );

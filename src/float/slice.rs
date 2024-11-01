@@ -18,13 +18,13 @@ where
     ///
     /// - `resource`: A string lines.
     ///   `OverlayResource` can be one of the following:
-    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
-    ///     - `Contours`: A collection of contours, each representing a closed path.
-    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    ///     - `Path`: A path representing a string line.
+    ///     - `Paths`: A collection of paths, each representing a string line.
+    ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     ///
     /// Returns a `Shapes<P>` collection representing the sliced geometry.
-    fn slice_by(&self, source: &R, fill_rule: FillRule) -> Shapes<P>;
+    fn slice_by(&self, resource: &R, fill_rule: FillRule) -> Shapes<P>;
 }
 
 
@@ -36,8 +36,8 @@ impl<R0, R1, P, T> FloatSlice<R0, P, T> for R1
         T: FloatNumber,
     {
     #[inline]
-    fn slice_by(&self, source: &R0, fill_rule: FillRule) -> Shapes<P> {
-        FloatStringOverlay::with_shape_and_string(self, source)
+    fn slice_by(&self, resource: &R0, fill_rule: FillRule) -> Shapes<P> {
+        FloatStringOverlay::with_shape_and_string(self, resource)
             .into_graph(fill_rule)
             .extract_shapes(StringRule::Slice)
     }
