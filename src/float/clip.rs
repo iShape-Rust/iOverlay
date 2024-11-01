@@ -15,7 +15,7 @@ where
 {
     /// Clips the line strings in the graph based on the specified `ClipRule`.
     ///
-    /// - `clip_rule`: The clipping rule specifying whether to invert the selection and include boundaries.
+    /// - `clip_rule`: Specifies the clipping rule determining how boundary and inversion settings affect the result.
     ///
     /// # Returns
     /// A `Paths<P>` collection of string lines that meet the clipping conditions.
@@ -26,35 +26,36 @@ where
     }
 }
 
-pub trait FloatClip<S, P, T>
+pub trait FloatClip<R, P, T>
 where
-    S: OverlayResource<P, T>,
+    R: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    /// Clips a paths according to the specified fill and clip rules.
-    /// - `source`: A source for clipping shapes.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Path`: A single open path.
-    ///     - `Paths`: An array of open paths.
-    ///     - `Shapes`: A two-dimensional array where each element defines a separate open path.
-    /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of path segments.
-    /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
+    /// Clips paths according to the specified fill and clip rules.
+    /// - `resource`: A clipping shape.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `fill_rule`: Fill rule to determine filled areas.
+    /// - `clip_rule`: Clip rule to determine how boundary and inversion settings affect the result.
     ///
     /// # Returns
     /// A `Paths<P>` collection of string lines that meet the clipping conditions.
-    fn clip(&self, source: &S, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>;
+    fn clip_by(&self, source: &R, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>;
 }
 
-impl<S, P, T> FloatClip<S, P, T> for S
+impl<R0, R1, P, T> FloatClip<R0, P, T> for R1
 where
-    S: OverlayResource<P, T>,
+    R0: OverlayResource<P, T>,
+    R1: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
     #[inline]
-    fn clip(&self, source: &S, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P> {
-        FloatStringOverlay::with_shape_and_string(source, self)
+    fn clip_by(&self, resource: &R0, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P> {
+        FloatStringOverlay::with_shape_and_string(resource, self)
             .into_graph(fill_rule)
             .clip_string_lines(clip_rule)
     }

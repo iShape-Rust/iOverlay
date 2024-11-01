@@ -8,34 +8,35 @@ use crate::string::rule::StringRule;
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
 /// allowing for boolean operations based on the specified fill rule.
-pub trait FloatSlice<S, P, T: FloatNumber>
+pub trait FloatSlice<R, P, T: FloatNumber>
 where
-    S: OverlayResource<P, T>,
+    R: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    /// Slices the current shapes by paths.
+    /// Slices the current shapes by string lines.
     ///
-    /// - `source`: A source for string paths.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Path`: A single open path.
-    ///     - `Paths`: An array of open paths.
-    ///     - `Shapes`: A two-dimensional array where each element defines a separate open path.
-    /// - `fill_rule`: Fill rule to determine filled areas within shapes.
+    /// - `resource`: A string lines.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `fill_rule`: Fill rule to determine filled areas.
     ///
     /// Returns a `Shapes<P>` collection representing the sliced geometry.
-    fn slice(&self, source: &S, fill_rule: FillRule) -> Shapes<P>;
+    fn slice_by(&self, source: &R, fill_rule: FillRule) -> Shapes<P>;
 }
 
 
-impl<S, P, T> FloatSlice<S, P, T> for S
+impl<R0, R1, P, T> FloatSlice<R0, P, T> for R1
     where
-        S: OverlayResource<P, T>,
+        R0: OverlayResource<P, T>,
+        R1: OverlayResource<P, T>,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
     #[inline]
-    fn slice(&self, source: &S, fill_rule: FillRule) -> Shapes<P> {
+    fn slice_by(&self, source: &R0, fill_rule: FillRule) -> Shapes<P> {
         FloatStringOverlay::with_shape_and_string(self, source)
             .into_graph(fill_rule)
             .extract_shapes(StringRule::Slice)
