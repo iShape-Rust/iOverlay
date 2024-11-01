@@ -91,7 +91,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
     pub fn unsafe_add_shape_contour(mut self, contour: &[P]) -> Self {
-        self.overlay.add_shape_contour_iter(contour.iter().map(|&p| self.adapter.float_to_int(p)));
+        self.overlay.add_shape_contour_iter(contour.iter().map(|p| self.adapter.float_to_int(p)));
         self
     }
 
@@ -101,8 +101,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     #[inline]
     pub fn unsafe_add_string_line(mut self, path: &[P]) -> Self {
         for w in path.windows(2) {
-            let a = self.adapter.float_to_int(w[0]);
-            let b = self.adapter.float_to_int(w[1]);
+            let a = self.adapter.float_to_int(&w[0]);
+            let b = self.adapter.float_to_int(&w[1]);
             self.overlay.add_string_line([a, b]);
         }
 

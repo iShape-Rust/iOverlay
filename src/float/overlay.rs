@@ -79,7 +79,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
     pub fn unsafe_add_contour(mut self, contour: &[P], shape_type: ShapeType) -> Self {
-        self.overlay.add_path_iter(contour.iter().map(|&p| self.adapter.float_to_int(p)), shape_type);
+        self.overlay.add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         self
     }
 
