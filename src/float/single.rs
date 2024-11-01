@@ -4,19 +4,19 @@ use i_shape::base::data::Shapes;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::FloatOverlay;
-use crate::float::source::ContourSource;
+use crate::float::source::resource::OverlayResource;
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and fill rules.
 pub trait SingleFloatOverlay<S, P, T>
 where
-    S: ContourSource<P, T>,
+    S: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    /// General overlay method that takes a `ContourSource` enum to determine the input type.
+    /// General overlay method that takes an `OverlayResource` to determine the input type.
     ///
-    /// - `source`: A `ContourSource` specifying the type of geometric entity to overlay with.
+    /// - `resource`: A `OverlayResource` specifying the type of geometric entity to overlay with.
     ///   It can be one of the following:
     ///     - `Contour`: A single contour representing a path or boundary.
     ///     - `Contours`: A collection of contours, each defining separate boundaries.
@@ -27,15 +27,15 @@ where
     fn overlay(&self, source: &S, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P>;
 }
 
-impl<S, P, T> SingleFloatOverlay<S, P, T> for S
+impl<R, P, T> SingleFloatOverlay<R, P, T> for R
 where
-    S: ContourSource<P, T>,
+    R: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
     #[inline]
-    fn overlay(&self, source: &S, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        FloatOverlay::with_subj_and_clip(self, source).overlay(overlay_rule, fill_rule)
+    fn overlay(&self, resource: &R, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
+        FloatOverlay::with_subj_and_clip(self, resource).overlay(overlay_rule, fill_rule)
     }
 }
 

@@ -3,7 +3,7 @@ use i_float::float::number::FloatNumber;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::PathToFloat;
 use crate::core::fill_rule::FillRule;
-use crate::float::source::ContourSource;
+use crate::float::source::resource::OverlayResource;
 use crate::float::string_graph::FloatStringGraph;
 use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::clip::ClipRule;
@@ -28,7 +28,7 @@ where
 
 pub trait FloatClip<S, P, T>
 where
-    S: ContourSource<P, T>,
+    S: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
@@ -48,7 +48,7 @@ where
 
 impl<S, P, T> FloatClip<S, P, T> for S
 where
-    S: ContourSource<P, T>,
+    S: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {

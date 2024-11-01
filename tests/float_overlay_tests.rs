@@ -7,7 +7,6 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::float::clip::FloatClip;
     use i_overlay::float::overlay::FloatOverlay;
     use i_overlay::float::slice::FloatSlice;
     use i_overlay::float::string_overlay::FloatStringOverlay;

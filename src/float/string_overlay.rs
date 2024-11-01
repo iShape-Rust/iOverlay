@@ -3,7 +3,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
-use crate::float::source::ContourSource;
+use crate::float::source::resource::OverlayResource;
 use crate::float::string_graph::FloatStringGraph;
 use crate::string::overlay::StringOverlay;
 
@@ -38,15 +38,15 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///     - `Shapes`: A collection where each shape may contain multiple contours.
     pub fn with_shape_and_string<S0, S1>(shape: &S0, string: &S1) -> Self
     where
-        S0: ContourSource<P, T> + ?Sized,
-        S1: ContourSource<P, T> + ?Sized,
+        S0: OverlayResource<P, T>,
+        S1: OverlayResource<P, T>,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
-        let iter = shape.iter_contours().chain(string.iter_contours()).flatten();
+        let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
         let adapter = FloatPointAdapter::with_iter(iter);
-        let shape_capacity = shape.iter_contours().fold(0, |s, c| s + c.len());
-        let string_capacity = string.iter_contours().fold(0, |s, c| s + c.len());
+        let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
+        let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
 
         Self::with_adapter(adapter, shape_capacity + string_capacity)
             .unsafe_add_shape_source(shape)
@@ -61,8 +61,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn unsafe_add_shape_source<S: ContourSource<P, T> + ?Sized>(mut self, source: &S) -> Self {
-        for contour in source.iter_contours() {
+    pub fn unsafe_add_shape_source<S: OverlayResource<P, T>>(mut self, source: &S) -> Self {
+        for contour in source.iter_paths() {
             self = self.unsafe_add_shape_contour(contour);
         }
         self
@@ -75,8 +75,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///     - `Paths`: An array of open paths.
     ///     - `Shapes`: A two-dimensional array where each element defines a separate open path.
     #[inline]
-    pub fn unsafe_add_string_source<S: ContourSource<P, T> + ?Sized>(mut self, source: &S) -> Self {
-        for path in source.iter_contours() {
+    pub fn unsafe_add_string_source<S: OverlayResource<P, T>>(mut self, source: &S) -> Self {
+        for path in source.iter_paths() {
             self = self.unsafe_add_string_path(path);
         }
         self

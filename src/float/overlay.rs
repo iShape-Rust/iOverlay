@@ -12,7 +12,7 @@ use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
-use crate::float::source::ContourSource;
+use crate::float::source::resource::OverlayResource;
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
@@ -35,23 +35,23 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `subj`: A `ContourSource` that define the subject.
-    /// - `clip`: A `ContourSource` that define the clip.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Contour`: A single contour representing a path or boundary.
-    ///     - `Contours`: A collection of contours, each defining separate boundaries.
+    /// - `subj`: A `OverlayResource` that define the subject.
+    /// - `clip`: A `OverlayResource` that define the clip.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    pub fn with_subj_and_clip<S0, S1>(subj: &S0, clip: &S1) -> Self
+    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
-        S0: ContourSource<P, T> + ?Sized,
-        S1: ContourSource<P, T> + ?Sized,
+        R0: OverlayResource<P, T> +?Sized,
+        R1: OverlayResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
-        let iter = subj.iter_contours().chain(clip.iter_contours()).flatten();
+        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
         let adapter = FloatPointAdapter::with_iter(iter);
-        let subj_capacity = subj.iter_contours().fold(0, |s, c| s + c.len());
-        let clip_capacity = clip.iter_contours().fold(0, |s, c| s + c.len());
+        let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
+        let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
         Self::with_adapter(adapter, subj_capacity + clip_capacity)
             .unsafe_add_source(subj, ShapeType::Subject)
@@ -59,23 +59,23 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Adds a shapes to the overlay.
-    /// - `source`: A `ContourSource` that define subject or clip.
-    ///   `ContourSource` can be one of the following:
-    ///     - `Contour`: A single contour representing a path or boundary.
-    ///     - `Contours`: A collection of contours, each defining separate boundaries.
+    /// - `resource`: A `OverlayResource` that define subject or clip.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn unsafe_add_source<S: ContourSource<P, T> + ?Sized>(mut self, source: &S, shape_type: ShapeType) -> Self {
-        for contour in source.iter_contours() {
+    pub fn unsafe_add_source<R: OverlayResource<P, T> +?Sized>(mut self, resource: &R, shape_type: ShapeType) -> Self {
+        for contour in resource.iter_paths() {
             self = self.unsafe_add_contour(contour, shape_type);
         }
         self
     }
 
-    /// Adds a single closed shape path to the overlay.
-    /// - `contour`: An array of points that form a closed path.
-    /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    /// Adds a closed path to the overlay.
+    /// - `contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
     pub fn unsafe_add_contour(mut self, contour: &[P], shape_type: ShapeType) -> Self {
@@ -178,11 +178,11 @@ mod tests {
     use crate::float::overlay::FloatOverlay;
 
     #[test]
-    fn test_contour_slice() {
+    fn test_contour_fixed() {
         let left_rect = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let shapes = FloatOverlay::with_subj_and_clip(left_rect.as_slice(), right_rect.as_slice())
+        let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
@@ -194,7 +194,6 @@ mod tests {
     fn test_contour_vec() {
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
-
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
@@ -204,11 +203,11 @@ mod tests {
     }
 
     #[test]
-    fn test_contour() {
-        let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
-        let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+    fn test_contour_slice() {
+        let left_rect = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+        let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
+        let shapes = FloatOverlay::with_subj_and_clip(left_rect.as_slice(), right_rect.as_slice())
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
@@ -254,8 +253,7 @@ mod tests {
         ];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let slice = rects.as_slice();
-        let shapes = FloatOverlay::with_subj_and_clip(&slice, &right_bottom_rect)
+        let shapes = FloatOverlay::with_subj_and_clip(rects.as_slice(), right_bottom_rect.as_slice())
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
@@ -282,6 +280,33 @@ mod tests {
 
 
         let shapes = FloatOverlay::with_subj_and_clip(&shapes, &right_bottom_rect)
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_different_resource() {
+        let res_0 = vec![
+            vec![
+                vec![
+                    [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
+                ],
+                vec![
+                    [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
+                ],
+                vec![
+                    [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
+                ]
+            ]
+        ];
+
+        let res_1 = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+
+
+        let shapes = FloatOverlay::with_subj_and_clip(&res_0, &res_1.as_slice())
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
