@@ -28,11 +28,11 @@ where
         }
     }
 
-    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
+    fn layout(&self, _tree: &mut Tree, _renderer: &Renderer, limits: &Limits) -> Node {
         Node::new(limits.max())
     }
 
-    fn draw(&self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, style: &Style, layout: Layout<'_>, cursor: Cursor, viewport: &Rectangle) {
+    fn draw(&self, _tree: &Tree, renderer: &mut Renderer, _theme: &Theme, _style: &Style, layout: Layout<'_>, _cursor: Cursor, _viewport: &Rectangle) {
         renderer.fill_quad(
             renderer::Quad {
                 bounds: layout.bounds(),

@@ -1,10 +1,7 @@
 use iced::{Background, border, Color, Padding, Theme};
-use iced::theme::palette;
 use iced::widget::button::{Status, Style};
 use iced::widget::rule::{FillMode, Style as RuleStyle};
 use iced::widget::container::Style as ContainerStyle;
-use iced::window::Position::Default;
-use crate::app::main::EditorApp;
 
 pub(super) struct Design {
     pub(super) action_separator: f32,
@@ -97,16 +94,4 @@ pub(super) fn style_sheet_background(theme: &Theme) -> ContainerStyle {
         Color::new(1.0, 1.0, 1.0, 0.9)
     };
     ContainerStyle::default().background(color)
-}
-
-pub(super) fn style_red_background(theme: &Theme) -> ContainerStyle {
-    ContainerStyle::default().background(Color::new(1.0, 0.4, 0.4, 1.0))
-}
-
-pub(super) fn style_green_background(theme: &Theme) -> ContainerStyle {
-    ContainerStyle::default().background(Color::new(0.4, 1.0, 0.4, 1.0))
-}
-
-pub(super) fn style_blue_background(theme: &Theme) -> ContainerStyle {
-    ContainerStyle::default().background(Color::new(0.4, 0.4, 1.0, 1.0))
 }

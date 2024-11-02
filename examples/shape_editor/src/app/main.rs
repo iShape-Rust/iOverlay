@@ -1,12 +1,10 @@
-use crate::app::design::style_second_background;
 use crate::app::design::style_separator;
 use iced::widget::{Space, vertical_rule};
-use iced::widget::scrollable;
 use std::default::Default;
 use crate::app::boolean::content::BooleanMessage;
-use crate::app::boolean::content::PolygonState;
+use crate::app::boolean::content::BooleanState;
 use crate::data::resource::AppResource;
-use iced::{Alignment, Color, Element, Length, Padding};
+use iced::{Alignment, Color, Element, Length};
 use iced::widget::{Button, Column, Container, Row, Text};
 use crate::app::design::{style_action_button, style_action_button_selected, Design};
 use crate::fill_view::FillView;
@@ -20,11 +18,11 @@ pub(crate) struct EditorApp {
 
 pub(super) struct MainState {
     selected_action: MainAction,
-    pub(super) polygon: PolygonState,
+    pub(super) boolean: BooleanState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum MainAction {
+pub(crate) enum MainAction {
     Boolean,
     String,
 }
@@ -46,18 +44,19 @@ pub(crate) enum MainMessage {
 #[derive(Debug, Clone)]
 pub(crate) enum Message {
     Main(MainMessage),
-    Polygon(BooleanMessage),
+    Bool(BooleanMessage),
 }
 
 impl EditorApp {
     fn new() -> Self {
+        let mut app_resource = AppResource::new();
         Self {
             main_actions: vec![MainAction::Boolean, MainAction::String],
             state: MainState {
                 selected_action: MainAction::Boolean,
-                polygon: Default::default(),
+                boolean: BooleanState::new(&mut app_resource.boolean),
             },
-            app_resource: AppResource::new(),
+            app_resource,
             design: Design::new(),
         }
     }
@@ -65,7 +64,7 @@ impl EditorApp {
     pub(crate) fn update(&mut self, message: Message) {
         match message {
             Message::Main(msg) => self.update_main(msg),
-            Message::Polygon(msg) => self.boolean_update(msg)
+            Message::Bool(msg) => self.update_boolean(msg)
         }
     }
 

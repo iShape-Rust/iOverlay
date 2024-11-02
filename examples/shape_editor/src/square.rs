@@ -1,6 +1,6 @@
 use iced::Color as RGBColor;
 use iced::advanced::{Layout, renderer, Widget};
-use iced::{Element, Length, Pixels, Rectangle, Size};
+use iced::{Element, Length, Rectangle, Size};
 use iced::advanced::layout::{Limits, Node};
 use iced::advanced::renderer::Style;
 use iced::advanced::widget::Tree;
@@ -13,9 +13,7 @@ pub(crate) struct Square {
 }
 
 impl Square {
-    pub fn new(radius: f32, color: RGBColor) -> Self {
-        Self { color, radius }
-    }
+
 }
 
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Square
@@ -29,11 +27,11 @@ where
         }
     }
 
-    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
+    fn layout(&self, _tree: &mut Tree, _renderer: &Renderer, _limits: &Limits) -> Node {
         Node::new(Size::new(self.radius * 2.0, self.radius * 2.0))
     }
 
-    fn draw(&self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, style: &Style, layout: Layout<'_>, cursor: Cursor, viewport: &Rectangle) {
+    fn draw(&self, _tree: &Tree, renderer: &mut Renderer, _theme: &Theme, _style: &Style, layout: Layout<'_>, _cursor: Cursor, _viewport: &Rectangle) {
         let bounds = layout.bounds();
 
         renderer.fill_quad(

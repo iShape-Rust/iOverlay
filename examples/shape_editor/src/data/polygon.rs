@@ -62,13 +62,13 @@ impl PolygonTest {
     }
 }
 
-pub(crate) struct PolygonResource {
+pub(crate) struct BooleanResource {
     folder: String,
     pub(crate) count: usize,
     pub(crate) tests: HashMap<usize, PolygonTest>
 }
 
-impl PolygonResource {
+impl BooleanResource {
     pub(crate) fn new(folder: &str) -> Self {
         let count = PolygonTest::tests_count(folder);
         Self { count, folder: folder.to_string(), tests: Default::default() }

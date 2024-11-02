@@ -1,8 +1,6 @@
 use crate::app::boolean::content::BooleanMessage;
-use crate::app::boolean::editor::widget::PolygonEditorWidget;
-use iced::{Alignment, Length, Padding};
-use iced::widget::{Button, Column, Container, pick_list, Row, Space, Stack, Text};
-use crate::app::design::{style_action_button, style_action_button_selected, style_sheet_background};
+use iced::{Alignment, Length};
+use iced::widget::{Column, Container, pick_list, Row, Space, Text};
 use crate::app::main::{EditorApp, Message};
 
 impl EditorApp {
@@ -17,7 +15,7 @@ impl EditorApp {
                     Container::new(
                         pick_list(
                             &SolverOption::ALL[..],
-                            Some(self.state.polygon.solver),
+                            Some(self.state.boolean.solver),
                             on_select_solver,
                         ).width(Length::Fixed(160.0))
                     )
@@ -35,7 +33,7 @@ impl EditorApp {
                     Container::new(
                         pick_list(
                             &FillOption::ALL[..],
-                            Some(self.state.polygon.fill),
+                            Some(self.state.boolean.fill),
                             on_select_fill,
                         ).width(Length::Fixed(160.0))
                     )
@@ -53,7 +51,7 @@ impl EditorApp {
                     Container::new(
                         pick_list(
                             &ModeOption::ALL[..],
-                            Some(self.state.polygon.mode),
+                            Some(self.state.boolean.mode),
                             on_select_mode,
                         ).width(Length::Fixed(160.0))
                     )
@@ -71,15 +69,15 @@ impl EditorApp {
 }
 
 fn on_select_fill(option: FillOption) -> Message {
-    Message::Polygon(BooleanMessage::FillSelected(option))
+    Message::Bool(BooleanMessage::FillSelected(option))
 }
 
 fn on_select_mode(option: ModeOption) -> Message {
-    Message::Polygon(BooleanMessage::ModeSelected(option))
+    Message::Bool(BooleanMessage::ModeSelected(option))
 }
 
 fn on_select_solver(option: SolverOption) -> Message {
-    Message::Polygon(BooleanMessage::SolverSelected(option))
+    Message::Bool(BooleanMessage::SolverSelected(option))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

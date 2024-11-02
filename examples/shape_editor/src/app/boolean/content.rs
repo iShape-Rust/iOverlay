@@ -1,23 +1,25 @@
+use i_triangle::i_overlay::i_shape::int::count::PointsCount;
+use i_triangle::i_overlay::i_shape::int::path::IntPaths;
+use crate::app::boolean::workspace::WoerkspaceState;
 use crate::app::design::style_second_background;
 use iced::widget::scrollable;
 use crate::app::boolean::control::ModeOption;
 use crate::app::boolean::control::FillOption;
 use crate::app::boolean::control::SolverOption;
-use crate::app::boolean::editor::widget::PolygonEditorWidget;
 use iced::{Alignment, Length, Padding};
-use iced::widget::{Button, Column, Container, pick_list, Row, Space, Stack, Text};
-use crate::app::design::{style_action_button, style_action_button_selected, style_sheet_background};
+use iced::widget::{Button, Column, Container, Row, Space, Text};
+use crate::app::design::{style_action_button, style_action_button_selected};
 use crate::app::main::{EditorApp, Message};
+use crate::data::polygon::BooleanResource;
+use crate::util::point::PathsToEditorPoints;
 
-pub(crate) struct PolygonState {
+pub(crate) struct BooleanState {
     pub(crate) test: usize,
     pub(crate) fill: FillOption,
     pub(crate) mode: ModeOption,
     pub(crate) solver: SolverOption,
-    pub(crate) editor: PolygonEditorState,
+    pub(crate) workspace: WoerkspaceState,
 }
-
-pub(crate) struct PolygonEditorState {}
 
 #[derive(Debug, Clone)]
 pub(crate) enum BooleanMessage {
@@ -29,16 +31,16 @@ pub(crate) enum BooleanMessage {
 
 impl EditorApp {
     fn sidebar(&self) -> Column<Message> {
-        let count = self.app_resource.polygon.count;
+        let count = self.app_resource.boolean.count;
         let mut column = Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0)));
         for index in 0..count {
-            let is_selected = self.state.polygon.test == index;
+            let is_selected = self.state.boolean.test == index;
 
             column = column.push(
                 Container::new(
                     Button::new(Text::new(format!("test_{}", index)))
                         .width(Length::Fill)
-                        .on_press(Message::Polygon(BooleanMessage::TestSelected(index)))
+                        .on_press(Message::Bool(BooleanMessage::TestSelected(index)))
                         .style(if is_selected { style_action_button_selected } else { style_action_button })
                 ).padding(self.design.action_padding())
             );
@@ -68,31 +70,47 @@ impl EditorApp {
             .push(self.boolean_workspace())
     }
 
-    pub(crate) fn boolean_update(&mut self, message: BooleanMessage) {
+    pub(crate) fn update_boolean(&mut self, message: BooleanMessage) {
         match message {
-            BooleanMessage::TestSelected(index) => self.state.polygon.test = index,
-            BooleanMessage::SolverSelected(solver) => self.state.polygon.solver = solver,
-            BooleanMessage::FillSelected(fill) => self.state.polygon.fill = fill,
-            BooleanMessage::ModeSelected(mode) => self.state.polygon.mode = mode,
+            BooleanMessage::TestSelected(index) => self.set_test(index),
+            BooleanMessage::SolverSelected(solver) => self.state.boolean.solver = solver,
+            BooleanMessage::FillSelected(fill) => self.state.boolean.fill = fill,
+            BooleanMessage::ModeSelected(mode) => self.state.boolean.mode = mode,
         }
+    }
+
+    fn set_test(&mut self, index: usize) {
+        self.state.boolean.set_test(index, &mut self.app_resource.boolean);
     }
 }
 
-
-impl Default for PolygonState {
-    fn default() -> Self {
-        PolygonState {
-            test: 0,
+impl BooleanState {
+    pub(crate) fn new(resource: &mut BooleanResource) -> Self {
+        let mut state = BooleanState {
+            test: usize::MAX,
             fill: FillOption::NonZero,
             mode: ModeOption::Edit,
             solver: SolverOption::Auto,
-            editor: Default::default(),
-        }
-    }
-}
+            workspace: Default::default(),
+        };
 
-impl Default for PolygonEditorState {
-    fn default() -> Self {
-        PolygonEditorState {}
+        state.set_test(0, resource);
+        state
+    }
+
+    fn set_test(&mut self, index: usize, resource: &mut BooleanResource) {
+        if let Some(test) = resource.load(index) {
+            let editor_points = &mut self.workspace.stateless.editor_points;
+            if editor_points.is_empty() {
+                editor_points.reserve(test.clip_paths.points_count() + test.subj_paths.points_count())
+            } else {
+                editor_points.clear();
+            }
+
+            test.subj_paths.feed_edit_points(0, editor_points);
+            test.clip_paths.feed_edit_points(1, editor_points);
+
+            self.test = index;
+        }
     }
 }

@@ -1,14 +1,14 @@
-use crate::data::polygon::PolygonResource;
+use crate::data::polygon::BooleanResource;
 
 pub(crate) struct AppResource {
-    pub(crate) polygon: PolygonResource
+    pub(crate) boolean: BooleanResource
 }
 
 impl AppResource {
 
     pub(crate) fn new() -> Self {
         Self {
-            polygon: PolygonResource::new("../../tests/data")
+            boolean: BooleanResource::new("../../tests/data")
         }
     }
 

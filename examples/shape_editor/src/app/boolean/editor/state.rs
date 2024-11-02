@@ -1,59 +1,47 @@
+use crate::util::point::EditorPoint;
 use iced::Rectangle;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
-use i_triangle::i_overlay::i_float::float::rect::FloatRect;
+use i_triangle::i_overlay::i_float::int::rect::IntRect;
 
-#[derive(Debug, Clone)]
-pub(in crate::app) struct MultiIndex {
-    first: usize,   // point index
-    second: usize,  // path index
-    third: usize,   // shape index
-    forth: usize,   // subj or clip index
-}
-
-#[derive(Debug, Clone)]
-pub(in crate::app) struct EditorPoint {
-    pos: FloatPoint<f32>,
-    index: MultiIndex
-}
-
-#[derive(Debug, Clone)]
-pub(in crate::app) struct Camera {
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Camera {
     scale: f32,
     pos: FloatPoint<f32>
 }
 
-pub(in crate::app) struct PolygonEditorWidgetState {
-    pub(in crate::app) points: Vec<EditorPoint>,
-    pub(in crate::app) camera: Option<Camera>
+pub(super) struct SubjClipEditorState {
+    pub(super) camera: Option<Camera>
 }
 
 #[derive(Debug, Clone)]
-pub(in crate::app) enum PolygonEditorMessage {
+pub(crate) enum PolygonEditorMessage {
     CameraReady(Camera),
-    PointAdded(FloatPoint<f32>), // Example of a point addition
-    PointRemoved(usize),          // Example of point removal
+    PointAdded(FloatPoint<f32>),    // Example of a point addition
+    PointRemoved(usize),            // Example of point removal
 }
 
 impl Camera {
-
     fn transform_to_screen(&self, point: &FloatPoint<f32>) -> FloatPoint<f32> {
         let translated = *point - self.pos;
         let scaled = translated * self.scale;
         scaled
     }
-
 }
 
-impl PolygonEditorWidgetState {
-    pub(in crate::app) fn init_camera(&mut self, viewport: &Rectangle) -> Option<Camera> {
-        if !self.camera.is_none() || self.points.is_empty() {
+impl SubjClipEditorState {
+    pub(super) fn init_camera(&mut self, points: &[EditorPoint], viewport: &Rectangle) -> Option<Camera> {
+        if !self.camera.is_none() {
+            return self.camera;
+        }
+
+        if points.is_empty() {
             return None;
         }
 
-        let rect = FloatRect::with_iter(self.points.iter().map(|p|&p.pos))?;
+        let rect = IntRect::with_iter(points.iter().map(|p|&p.pos))?;
 
-        let w_pow = (rect.width().log2() + 0.5).round() as usize;
-        let h_pow = (rect.height().log2() + 0.5).round() as usize;
+        let w_pow = rect.width().ilog2() as usize;
+        let h_pow = rect.height().ilog2() as usize;
 
         let width = (1 << w_pow) as f32;
         let height = (1 << h_pow) as f32;
@@ -65,19 +53,20 @@ impl PolygonEditorWidgetState {
         let y = 0.5 * (rect.min_y + rect.max_y) as f32;
         let pos = FloatPoint::new(x, y);
 
-        Some(Camera { scale, pos })
+        self.camera = Some(Camera { scale, pos });
+
+        self.camera
     }
 
-    pub(in crate::app) fn update_camera(&mut self, viewport: &Rectangle) {
+    pub(super) fn update_camera(&mut self, _viewport: &Rectangle) {
 
     }
 }
 
-impl Default for PolygonEditorWidgetState {
+impl Default for SubjClipEditorState {
     fn default() -> Self {
         Self {
-            camera: None,
-            points: vec![],
+            camera: None
         }
     }
 }
