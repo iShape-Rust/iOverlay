@@ -1,4 +1,6 @@
-use i_triangle::i_overlay::i_float::point::IntPoint;
+use iced::advanced::widget::tree::State;
+use i_triangle::i_overlay::i_float::float::point::FloatPoint;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::shape::IntShape;
 use i_triangle::triangulation::int::Triangulation;
 use iced::advanced::graphics::{color, Mesh};
@@ -11,22 +13,10 @@ use iced::{
     Vector,
 };
 
-pub(super) struct DrawShape {
-    pub(super) shape: IntShape,
-    pub(super) triangulation: Triangulation,
-    pub(super) color: [f32; 4],
-}
-
-pub(super) struct EditorPoint {
-    position: IntPoint,
-    group_index: usize, // subj or clip
-    shape_index: usize,
-    paths_index: usize,
-    path_index: usize,
-}
-
-pub(super) struct PolygonEditorState {
-    points: Vec<EditorPoint>,
+pub(in crate::app) struct DrawShape {
+    pub(in crate::app) shape: IntShape,
+    pub(in crate::app) triangulation: Triangulation,
+    pub(in crate::app) color: [f32; 4],
 }
 
 enum OnPress<'a, Message> {
@@ -43,25 +33,30 @@ impl<'a, Message: Clone> OnPress<'a, Message> {
     }
 }
 
-pub(super) struct PolygonEditor<'a, Message> {
-    state: &'a PolygonEditorState,
+// pub(super) enum StateUpdateCategory {
+//     Move,
+//     All,
+//     None,
+// }
+//
+// pub(super) struct StateUpdate {
+//     category: StateUpdateCategory,
+//     timestamp: usize,
+// }
+
+pub(crate) struct PolygonEditorWidget<'a, Message> {
+    // state: &'a PolygonEditorState,
     on_press: Option<OnPress<'a, Message>>,
 }
 
-impl<'a, Message> PolygonEditor<'a, Message> {
-    pub(super) fn new(state: &'a PolygonEditorState) -> Self {
-        Self { state, on_press: None }
+impl<'a, Message> PolygonEditorWidget<'a, Message> {
+    pub(crate) fn new() -> Self {
+        Self { on_press: None }
     }
 }
 
-impl<'a, Message> PolygonEditor<'a, Message> {
-    pub(super) fn on_press(mut self, on_press: Message) -> Self {
-        self.on_press = Some(OnPress::Direct(on_press));
-        self
-    }
-}
 
-impl<Message> Widget<Message, Theme, Renderer> for PolygonEditor<'_, Message> {
+impl<Message> Widget<Message, Theme, Renderer> for PolygonEditorWidget<'_, Message> {
     fn size(&self) -> Size<Length> {
         Size {
             width: Length::Fill,
@@ -80,16 +75,21 @@ impl<Message> Widget<Message, Theme, Renderer> for PolygonEditor<'_, Message> {
 
     fn on_event(
         &mut self,
-        _state: &mut Tree,
+        state: &mut Tree,
         event: Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         _shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) -> event::Status {
         println!("on event {:?}", event);
+
+        // if let Some(camera) = self.state.init_camera(viewport) {
+        //     let msg = crate::app::main::Message::Polygon(PolygonEditorMessage::CameraReady(camera));
+        //     shell.publish(msg);
+        // }
 
         match event {
             Event::Mouse(mouse_event) => match mouse_event {
@@ -131,6 +131,10 @@ impl<Message> Widget<Message, Theme, Renderer> for PolygonEditor<'_, Message> {
         cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
+        // let camera = if let Some(camera) = &self.state.camera {
+        //     camera
+        // };
+
         use iced::advanced::graphics::mesh::{
             self, Mesh, Renderer as _, SolidVertex2D,
         };
@@ -229,16 +233,8 @@ impl<Message> Widget<Message, Theme, Renderer> for PolygonEditor<'_, Message> {
     }
 }
 
-impl<'a, Message: 'a> From<PolygonEditor<'a, Message>> for Element<'a, Message> {
-    fn from(editor: PolygonEditor<'a, Message>) -> Self {
+impl<'a, Message: 'a> From<PolygonEditorWidget<'a, Message>> for Element<'a, Message> {
+    fn from(editor: PolygonEditorWidget<'a, Message>) -> Self {
         Self::new(editor)
-    }
-}
-
-impl Default for PolygonEditorState {
-    fn default() -> Self {
-        Self {
-            points: vec![]
-        }
     }
 }

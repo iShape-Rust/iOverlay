@@ -8,7 +8,7 @@ impl AppResource {
 
     pub(crate) fn new() -> Self {
         Self {
-            polygon: PolygonResource::new("../tests/data")
+            polygon: PolygonResource::new("../../tests/data")
         }
     }
 

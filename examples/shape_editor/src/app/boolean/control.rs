@@ -1,46 +1,12 @@
+use crate::app::boolean::content::BooleanMessage;
+use crate::app::boolean::editor::widget::PolygonEditorWidget;
 use iced::{Alignment, Length, Padding};
 use iced::widget::{Button, Column, Container, pick_list, Row, Space, Stack, Text};
 use crate::app::design::{style_action_button, style_action_button_selected, style_sheet_background};
 use crate::app::main::{EditorApp, Message};
-use crate::app::polygon_editor::{PolygonEditor, PolygonEditorState};
-
-pub(super) struct PolygonState {
-    test: usize,
-    fill: FillOption,
-    mode: ModeOption,
-    solver: SolverOption,
-    editor: PolygonEditorState
-}
-
-#[derive(Debug, Clone)]
-pub(super) enum PolygonMessage {
-    TestSelected(usize),
-    FillSelected(FillOption),
-    ModeSelected(ModeOption),
-    SolverSelected(SolverOption),
-}
 
 impl EditorApp {
-    pub(super) fn polygon_tests_list(&self) -> Column<Message> {
-        let count = self.app_resource.polygon.count;
-        let mut column = Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0)));
-        for index in 0..count {
-            let is_selected = self.state.polygon.test == index;
-
-            column = column.push(
-                Container::new(
-                    Button::new(Text::new(format!("test_{}", index)))
-                        .width(Length::Fill)
-                        .on_press(Message::Polygon(PolygonMessage::TestSelected(index)))
-                        .style(if is_selected { style_action_button_selected } else { style_action_button })
-                ).padding(self.design.action_padding())
-            );
-        }
-
-        column
-    }
-
-    pub(super) fn polygon_test_view(&self) -> Container<Message> {
+    pub(crate) fn boolean_control(&self) -> Column<Message> {
         let solver_pick_list =
             Row::new()
                 .push(Text::new("Solver:")
@@ -95,62 +61,25 @@ impl EditorApp {
                         .align_y(Alignment::Center)
                 ).height(Length::Fixed(40.0));
 
-        Container::new(
-            Stack::new()
-                .push(
-                    Container::new(PolygonEditor::new(&self.state.polygon.editor))
-                        // Could you add here event handler for hover, drag, pressed
-                        .width(Length::Fill)
-                        .height(Length::Fill)
-                )
-                .push(
-                    Container::new(Column::new()
-                        .push(solver_pick_list)
-                        .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
-                        .push(fill_pick_list)
-                        .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
-                        .push(mode_pick_list)
-                    )
-                        .width(Length::Shrink)
-                        .height(Length::Shrink)
-                        .padding(Padding::new(8.0))
-                )
-        )
-            .style(style_sheet_background)
-    }
-
-    pub(super) fn update_polygon(&mut self, message: PolygonMessage) {
-        match message {
-            PolygonMessage::TestSelected(index) => self.state.polygon.test = index,
-            PolygonMessage::SolverSelected(solver) => self.state.polygon.solver = solver,
-            PolygonMessage::FillSelected(fill) => self.state.polygon.fill = fill,
-            PolygonMessage::ModeSelected(mode) => self.state.polygon.mode = mode,
-        }
+        Column::new()
+            .push(solver_pick_list)
+            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(fill_pick_list)
+            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(mode_pick_list)
     }
 }
 
 fn on_select_fill(option: FillOption) -> Message {
-    Message::Polygon(PolygonMessage::FillSelected(option))
+    Message::Polygon(BooleanMessage::FillSelected(option))
 }
 
 fn on_select_mode(option: ModeOption) -> Message {
-    Message::Polygon(PolygonMessage::ModeSelected(option))
+    Message::Polygon(BooleanMessage::ModeSelected(option))
 }
 
 fn on_select_solver(option: SolverOption) -> Message {
-    Message::Polygon(PolygonMessage::SolverSelected(option))
-}
-
-impl Default for PolygonState {
-    fn default() -> Self {
-        PolygonState {
-            test: 0,
-            fill: FillOption::NonZero,
-            mode: ModeOption::Edit,
-            solver: SolverOption::Auto,
-            editor: Default::default(),
-        }
-    }
+    Message::Polygon(BooleanMessage::SolverSelected(option))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
