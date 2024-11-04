@@ -42,7 +42,7 @@ pub(crate) enum MainMessage {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum Message {
+pub(crate) enum AppMessage {
     Main(MainMessage),
     Bool(BooleanMessage),
 }
@@ -61,10 +61,10 @@ impl EditorApp {
         }
     }
 
-    pub(crate) fn update(&mut self, message: Message) {
+    pub(crate) fn update(&mut self, message: AppMessage) {
         match message {
-            Message::Main(msg) => self.update_main(msg),
-            Message::Bool(msg) => self.update_boolean(msg)
+            AppMessage::Main(msg) => self.update_main(msg),
+            AppMessage::Bool(msg) => self.update_boolean(msg)
         }
     }
 
@@ -74,7 +74,7 @@ impl EditorApp {
         }
     }
 
-    pub(crate) fn view(&self) -> Element<Message> {
+    pub(crate) fn view(&self) -> Element<AppMessage> {
         let content = Row::new()
             .push(Container::new(self.main_navigation())
                 .width(Length::Fixed(160.0))
@@ -102,7 +102,7 @@ impl EditorApp {
         content.height(Length::Fill).into()
     }
 
-    fn main_navigation(&self) -> Column<Message> {
+    fn main_navigation(&self) -> Column<AppMessage> {
         self.main_actions.iter().fold(
             Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0))),
             |column, item| {
@@ -111,7 +111,7 @@ impl EditorApp {
                     Container::new(
                         Button::new(Text::new(item.title()))
                             .width(Length::Fill)
-                            .on_press(Message::Main(MainMessage::ActionSelected(item.clone())))
+                            .on_press(AppMessage::Main(MainMessage::ActionSelected(item.clone())))
                             .style(if is_selected { style_action_button_selected } else { style_action_button })
                     ).padding(self.design.action_padding())
                 )

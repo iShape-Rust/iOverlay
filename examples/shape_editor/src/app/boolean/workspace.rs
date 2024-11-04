@@ -1,26 +1,28 @@
-use crate::app::boolean::editor::data::StatelessData;
+use crate::point_editor::point::EditorPoint;
 use i_triangle::i_overlay::i_shape::int::count::IntShapes;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use iced::widget::Stack;
 use iced::widget::Container;
-use crate::app::boolean::editor::widget::SubjClipEditorWidget;
+use crate::point_editor::widget::{PointEditUpdate, PointsEditorWidget};
 use iced::{Length, Padding};
+use crate::app::boolean::content::BooleanMessage;
+use crate::app::boolean::control::FillOption;
 use crate::app::design::style_sheet_background;
-use crate::app::main::{EditorApp, Message};
+use crate::app::main::{EditorApp, AppMessage};
 
 pub(crate) struct WoerkspaceState {
     pub(crate) subj: IntPaths,
     pub(crate) clip: IntPaths,
     pub(crate) solution: IntShapes,
-    pub(crate) stateless: StatelessData,
+    pub(crate) points: Vec<EditorPoint>,
 }
 
 impl EditorApp {
-    pub(crate) fn boolean_workspace(&self) -> Container<Message> {
+    pub(crate) fn boolean_workspace(&self) -> Container<AppMessage> {
         Container::new(
             Stack::new()
                 .push(
-                    Container::new(SubjClipEditorWidget::new(&self.state.boolean.workspace.stateless))
+                    Container::new(PointsEditorWidget::new(&self.state.boolean.workspace.points, on_update_point))
                         .width(Length::Fill)
                         .height(Length::Fill)
                 )
@@ -35,9 +37,13 @@ impl EditorApp {
     }
 }
 
+fn on_update_point(event: PointEditUpdate) -> AppMessage {
+    AppMessage::Bool(BooleanMessage::PointEdited(event))
+}
+
 
 impl Default for WoerkspaceState {
     fn default() -> Self {
-        WoerkspaceState { subj: vec![], clip: vec![], solution: vec![], stateless: StatelessData::default() }
+        WoerkspaceState { subj: vec![], clip: vec![], solution: vec![], points: vec![] }
     }
 }

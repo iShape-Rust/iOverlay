@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-nalgebra = "^0.33"
+
 iced = { version = "^0.13.1", features = ["wgpu", "advanced"] }
 rand = { version = "^0.8.5", features = [] }
 serde = { version = "^1.0", features = ["derive"] }

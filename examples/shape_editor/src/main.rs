@@ -2,7 +2,8 @@ mod square;
 mod fill_view;
 mod data;
 mod app;
-mod util;
+mod shape;
+mod point_editor;
 
 use crate::app::main::EditorApp;
 

@@ -9,9 +9,10 @@ use crate::app::boolean::control::SolverOption;
 use iced::{Alignment, Length, Padding};
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use crate::app::design::{style_action_button, style_action_button_selected};
-use crate::app::main::{EditorApp, Message};
+use crate::app::main::{EditorApp, AppMessage};
 use crate::data::polygon::BooleanResource;
-use crate::util::point::PathsToEditorPoints;
+use crate::point_editor::point::PathsToEditorPoints;
+use crate::point_editor::widget::PointEditUpdate;
 
 pub(crate) struct BooleanState {
     pub(crate) test: usize,
@@ -27,10 +28,11 @@ pub(crate) enum BooleanMessage {
     FillSelected(FillOption),
     ModeSelected(ModeOption),
     SolverSelected(SolverOption),
+    PointEdited(PointEditUpdate),
 }
 
 impl EditorApp {
-    fn sidebar(&self) -> Column<Message> {
+    fn sidebar(&self) -> Column<AppMessage> {
         let count = self.app_resource.boolean.count;
         let mut column = Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0)));
         for index in 0..count {
@@ -40,7 +42,7 @@ impl EditorApp {
                 Container::new(
                     Button::new(Text::new(format!("test_{}", index)))
                         .width(Length::Fill)
-                        .on_press(Message::Bool(BooleanMessage::TestSelected(index)))
+                        .on_press(AppMessage::Bool(BooleanMessage::TestSelected(index)))
                         .style(if is_selected { style_action_button_selected } else { style_action_button })
                 ).padding(self.design.action_padding())
             );
@@ -49,7 +51,7 @@ impl EditorApp {
         column
     }
 
-    pub(crate) fn boolean_content(&self) -> Row<Message> {
+    pub(crate) fn boolean_content(&self) -> Row<AppMessage> {
         Row::new()
             .push(
                 scrollable(
@@ -76,6 +78,7 @@ impl EditorApp {
             BooleanMessage::SolverSelected(solver) => self.state.boolean.solver = solver,
             BooleanMessage::FillSelected(fill) => self.state.boolean.fill = fill,
             BooleanMessage::ModeSelected(mode) => self.state.boolean.mode = mode,
+            BooleanMessage::PointEdited(update) => self.state.boolean.workspace.points[update.index] = update.point,
         }
     }
 
@@ -100,7 +103,7 @@ impl BooleanState {
 
     fn set_test(&mut self, index: usize, resource: &mut BooleanResource) {
         if let Some(test) = resource.load(index) {
-            let editor_points = &mut self.workspace.stateless.editor_points;
+            let editor_points = &mut self.workspace.points;
             if editor_points.is_empty() {
                 editor_points.reserve(test.clip_paths.points_count() + test.subj_paths.points_count())
             } else {

@@ -1,10 +1,10 @@
 use crate::app::boolean::content::BooleanMessage;
 use iced::{Alignment, Length};
 use iced::widget::{Column, Container, pick_list, Row, Space, Text};
-use crate::app::main::{EditorApp, Message};
+use crate::app::main::{EditorApp, AppMessage};
 
 impl EditorApp {
-    pub(crate) fn boolean_control(&self) -> Column<Message> {
+    pub(crate) fn boolean_control(&self) -> Column<AppMessage> {
         let solver_pick_list =
             Row::new()
                 .push(Text::new("Solver:")
@@ -68,16 +68,16 @@ impl EditorApp {
     }
 }
 
-fn on_select_fill(option: FillOption) -> Message {
-    Message::Bool(BooleanMessage::FillSelected(option))
+fn on_select_fill(option: FillOption) -> AppMessage {
+    AppMessage::Bool(BooleanMessage::FillSelected(option))
 }
 
-fn on_select_mode(option: ModeOption) -> Message {
-    Message::Bool(BooleanMessage::ModeSelected(option))
+fn on_select_mode(option: ModeOption) -> AppMessage {
+    AppMessage::Bool(BooleanMessage::ModeSelected(option))
 }
 
-fn on_select_solver(option: SolverOption) -> Message {
-    Message::Bool(BooleanMessage::SolverSelected(option))
+fn on_select_solver(option: SolverOption) -> AppMessage {
+    AppMessage::Bool(BooleanMessage::SolverSelected(option))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
