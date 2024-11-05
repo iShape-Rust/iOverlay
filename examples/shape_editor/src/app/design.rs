@@ -83,15 +83,14 @@ pub(super) fn style_separator(theme: &Theme) -> RuleStyle {
     }
 }
 
-pub(super) fn style_second_background(theme: &Theme) -> ContainerStyle {
+pub(super) fn style_sidebar_background(theme: &Theme) -> ContainerStyle {
     ContainerStyle::default().background(theme.extended_palette().background.weak.color.scale_alpha(0.1))
 }
 
 pub(super) fn style_sheet_background(theme: &Theme) -> ContainerStyle {
-    let color = if theme.extended_palette().is_dark {
-        Color::new(0.2, 0.1, 0.1, 0.9)
+    if theme.extended_palette().is_dark {
+        ContainerStyle::default().background(Color::BLACK.scale_alpha(0.4))
     } else {
-        Color::new(1.0, 1.0, 1.0, 0.9)
-    };
-    ContainerStyle::default().background(color)
+        ContainerStyle::default().background(Color::WHITE.scale_alpha(0.4))
+    }
 }

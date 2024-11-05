@@ -97,7 +97,7 @@ impl PointsEditorState {
     }
 
     pub(super) fn mouse_press<'a, M>(&mut self, widget: &PointsEditorWidget<'a, M>, cursor: Vector<f32>, offset: Vector<f32>) -> bool {
-        let mut min_ds = widget.radius * widget.radius;
+        let mut min_ds = widget.hover_radius * widget.hover_radius;
         let mut min_index = usize::MAX;
         for (i, p) in widget.points.iter().enumerate() {
             let screen = widget.camera.point_to_screen_offset(offset, p.pos);
@@ -124,7 +124,7 @@ impl PointsEditorState {
     pub(super) fn mouse_release<'a, M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> bool {
         if let SelectState::Drag(_) = &self.select {
             self.select = SelectState::None;
-            self.mouse_hower(widget.camera, widget.radius, &widget.points, cursor, offset);
+            self.mouse_hower(widget.camera, widget.hover_radius, &widget.points, cursor, offset);
             true
         } else {
             false
@@ -143,7 +143,7 @@ impl PointsEditorState {
         if let SelectState::Drag(drag) = &self.select {
             Self::mouse_drag(drag, widget.camera, &widget.points, cursor)
         } else {
-            self.mouse_hower(widget.camera, widget.radius, &widget.points, cursor, offset);
+            self.mouse_hower(widget.camera, widget.hover_radius, &widget.points, cursor, offset);
             None
         }
     }

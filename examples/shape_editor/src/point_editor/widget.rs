@@ -20,22 +20,33 @@ pub(crate) struct PointEditUpdate {
 pub(crate) struct PointsEditorWidget<'a, Message> {
     pub(super) points: &'a Vec<EditorPoint>,
     pub(super) camera: Camera,
-    main_color: Option<Color>,
-    drag_color: Option<Color>,
-    hover_color: Option<Color>,
-    pub(super) radius: f32,
+    main_color: Color,
+    drag_color: Color,
+    hover_color: Color,
+    pub(super) mesh_radius: f32,
+    pub(super) hover_radius: f32,
     on_update: Box<dyn Fn(PointEditUpdate) -> Message + 'a>,
 }
 
 impl<'a, Message> PointsEditorWidget<'a, Message> {
     pub(crate) fn new(points: &'a Vec<EditorPoint>, camera: Camera, on_update: impl Fn(PointEditUpdate) -> Message + 'a) -> Self {
+        let binding = Theme::default();
+        let palette = binding.extended_palette();
+
+        let (main_color, hover_color, drag_color) = if palette.is_dark {
+            (Color::WHITE, palette.primary.base.color, palette.primary.weak.color)
+        } else {
+            (Color::BLACK, palette.primary.base.color, palette.primary.weak.color)
+        };
+
         Self {
             points,
             camera,
-            radius: 15.0,
-            main_color: None,
-            hover_color: None,
-            drag_color: None,
+            mesh_radius: 6.0,
+            hover_radius: 12.0,
+            main_color,
+            hover_color,
+            drag_color,
             on_update: Box::new(on_update),
         }
     }
@@ -66,10 +77,10 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         if let State::Some(stete_box) = &mut tree.state {
             stete_box.downcast_mut::<PointsEditorState>().unwrap()
                 .update_mesh(
-                    self.radius,
-                    self.main_color.unwrap_or(Color::BLACK),
-                    self.hover_color.unwrap_or(Color::from_rgb(1.0, 0.6, 0.4)),
-                    self.drag_color.unwrap_or(Color::from_rgb(1.0, 0.2, 0.2)),
+                    self.mesh_radius,
+                    self.main_color,
+                    self.hover_color,
+                    self.drag_color,
                 )
         };
 
@@ -159,7 +170,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         use iced::advanced::Renderer as _;
 
         let bounds = layout.bounds();
-        let offset = bounds.offset() - Vector::new(self.radius, self.radius);
+        let offset = bounds.offset() - Vector::new(self.mesh_radius, self.mesh_radius);
 
         for (index, p) in self.points.iter().enumerate() {
             let posistion = self.camera.point_to_screen_offset(offset, p.pos);

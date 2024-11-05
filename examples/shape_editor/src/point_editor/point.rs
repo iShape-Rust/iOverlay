@@ -20,8 +20,8 @@ pub(crate) trait PathsToEditorPoints {
 
 impl PathsToEditorPoints for IntPaths {
     fn feed_edit_points(&self, group_index: usize, edit_points: &mut Vec<EditorPoint>) {
-        for (point_index, path) in self.iter().enumerate() {
-            for (path_index, &pos) in path.iter().enumerate() {
+        for (path_index, path) in self.iter().enumerate() {
+            for (point_index, &pos) in path.iter().enumerate() {
                 let index = MultiIndex { point_index, path_index, group_index };
                 edit_points.push(EditorPoint { pos, index })
             }

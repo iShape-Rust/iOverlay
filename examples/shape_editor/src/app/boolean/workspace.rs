@@ -43,7 +43,7 @@ impl EditorApp {
                         Container::new(ShapeWidget::new(
                             self.state.boolean.workspace.camera,
                             &self.state.boolean.workspace.solution,
-                            Some(Color::from_rgb8(45, 214, 0).scale_alpha(0.13)),
+                            Some(Color::from_rgb8(45, 214, 0).scale_alpha(0.8)),
                             None, 0.0
                         ))
                             .width(Length::Fill)

@@ -31,7 +31,7 @@ impl Camera {
         let sw = size.width / width;
         let sh = size.height / height;
 
-        let scale = 0.5 * sw.min(sh);
+        let scale = 0.25 * sw.min(sh);
         let x = 0.5 * (rect.min_x + rect.max_x) as f32;
         let y = 0.5 * (rect.min_y + rect.max_y) as f32;
         let pos = Vector::new(x, y);

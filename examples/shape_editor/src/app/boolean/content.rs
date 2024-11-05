@@ -4,7 +4,7 @@ use i_triangle::i_overlay::core::overlay::Overlay;
 use i_triangle::i_overlay::i_shape::int::count::PointsCount;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use crate::app::boolean::workspace::WorkspaceState;
-use crate::app::design::style_second_background;
+use crate::app::design::style_sidebar_background;
 use iced::widget::scrollable;
 use crate::app::boolean::control::ModeOption;
 use crate::app::boolean::control::FillOption;
@@ -68,7 +68,7 @@ impl EditorApp {
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
                         .padding(Padding::new(0.0).right(8))
-                        .style(style_second_background)
+                        .style(style_sidebar_background)
                 ).direction(scrollable::Direction::Vertical(
                     scrollable::Scrollbar::new()
                         .width(4)
@@ -130,7 +130,7 @@ impl BooleanState {
         let mut state = BooleanState {
             test: usize::MAX,
             fill: FillOption::NonZero,
-            mode: ModeOption::Union,
+            mode: ModeOption::Xor,
             solver: SolverOption::Auto,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(resource.count),
