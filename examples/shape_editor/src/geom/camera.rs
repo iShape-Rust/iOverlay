@@ -51,21 +51,9 @@ impl Camera {
         Vector { x, y }
     }
 
-    // pub(super) fn point_to_world(&self, offset: Vector<f32>, point: Vector<f32>) -> IntPoint {
-    //     let x = ((point.x - offset.x) / self.scale + self.pos.x).round() as i32;
-    //     let y = ((point.y - offset.y) / self.scale + self.pos.y).round() as i32;
-    //     IntPoint::new(x, y)
-    // }
-
     pub(crate) fn distance_to_world(&self, distance: Vector<f32>) -> Vector<f32> {
         let x = distance.x / self.scale;
         let y = distance.y / self.scale;
         Vector { x, y }
     }
-
-    // pub(crate) fn is_equal(&self, camera: Camera) -> bool {
-    //     let same_scale = (camera.scale - self.scale).abs() < 0.000_0001;
-    //     let same_pos = (camera.pos.x - self.pos.x).abs() < 0.000_0001 && (camera.pos.y - self.pos.y).abs() < 0.000_0001;
-    //     same_scale && same_pos
-    // }
 }
