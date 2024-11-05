@@ -1,3 +1,7 @@
+## [1.7.3] - 2024-11-05
+### Fixed
+- Fixed bug min_area filter not work. (thx Azorlogh)
+
 ## [1.7.2] - 2024-10-24
 ### Fixed
 - Fixed bug joining holes to shapes when holes were unsorted.

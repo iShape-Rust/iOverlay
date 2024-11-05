@@ -386,6 +386,41 @@ mod tests {
     }
 
     #[test]
+    fn test_08() {
+        let shape_0 = [
+            [
+                F32Point::new(48.239437, -54.70892),
+                F32Point::new(47.195786, -55.457626),
+                F32Point::new(46.968903, -56.886974),
+                F32Point::new(36.532383, -55.07193),
+                F32Point::new(37.961735, -46.7454),
+                F32Point::new(40.02635, -47.085724),
+                F32Point::new(40.094414, -46.7454),
+                F32Point::new(44.51859, -47.516796),
+                F32Point::new(44.473213, -47.83443),
+                F32Point::new(48.398254, -48.51507),
+                F32Point::new(48.10331, -49.9898),
+                F32Point::new(48.874702, -50.965385),
+            ].to_vec()
+        ].to_vec();
+        let shape_1 = [
+            [
+                F32Point::new(48.398247, -48.515068),
+                F32Point::new(48.10331, -49.989796),
+                F32Point::new(44.473213, -47.834427),
+            ].to_vec()
+        ].to_vec();
+
+        let overlay = F32Overlay::with_paths(shape_0, shape_1);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
+        let result = graph.extract_shapes(OverlayRule::Intersect);
+        let result_min_area = graph.extract_shapes_min_area(OverlayRule::Intersect, 0.1);
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result_min_area.len(), 1);
+    }
+
+    #[test]
     fn test_slice_0() {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(vec![
