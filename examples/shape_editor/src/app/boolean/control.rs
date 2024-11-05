@@ -1,3 +1,5 @@
+use i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_triangle::i_overlay::core::overlay_rule::OverlayRule;
 use crate::app::boolean::content::BooleanMessage;
 use iced::{Alignment, Length};
 use iced::widget::{Column, Container, pick_list, Row, Space, Text};
@@ -112,6 +114,15 @@ impl FillOption {
         FillOption::Positive,
         FillOption::Negative,
     ];
+
+    pub(crate) fn to_fill_rule(&self) -> FillRule {
+        match self {
+            FillOption::NonZero => FillRule::NonZero,
+            FillOption::EvenOdd => FillRule::EvenOdd,
+            FillOption::Positive => FillRule::Positive,
+            FillOption::Negative => FillRule::Negative,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -140,6 +151,19 @@ impl ModeOption {
         ModeOption::InverseDifference,
         ModeOption::Xor,
     ];
+
+    pub(crate) fn to_overlay_rule(&self) -> Option<OverlayRule> {
+        match self {
+            ModeOption::Subject => Some(OverlayRule::Subject),
+            ModeOption::Clip => Some(OverlayRule::Clip),
+            ModeOption::Intersect => Some(OverlayRule::Intersect),
+            ModeOption::Union => Some(OverlayRule::Union),
+            ModeOption::Difference => Some(OverlayRule::Difference),
+            ModeOption::InverseDifference => Some(OverlayRule::InverseDifference),
+            ModeOption::Xor => Some(OverlayRule::Xor),
+            _ => None
+        }
+    }
 }
 
 impl std::fmt::Display for SolverOption {

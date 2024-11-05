@@ -1,5 +1,4 @@
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::count::PointsCount;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 
 #[derive(Debug, Clone)]

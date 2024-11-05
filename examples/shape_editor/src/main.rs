@@ -4,6 +4,8 @@ mod data;
 mod app;
 mod shape;
 mod point_editor;
+mod sheet;
+mod geom;
 
 use crate::app::main::EditorApp;
 
