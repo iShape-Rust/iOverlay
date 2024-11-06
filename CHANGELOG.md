@@ -1,3 +1,11 @@
+## [1.7.4] - 2024-11-06
+### Fixed
+- Fixed bug bind holes same hole point and contour x_segment.a.
+ 
+## [1.7.3] - 2024-11-05
+### Fixed
+- Fixed bug min_area filter not work. (thx Azorlogh)
+
 ## [1.7.2] - 2024-10-24
 ### Fixed
 - Fixed bug joining holes to shapes when holes were unsorted.

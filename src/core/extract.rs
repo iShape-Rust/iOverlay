@@ -287,7 +287,7 @@ impl Validate for IntPath {
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() as usize >> 1;
 
-        abs_area < min_area
+        abs_area >= min_area
     }
 }
 

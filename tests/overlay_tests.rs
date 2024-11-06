@@ -756,7 +756,12 @@ mod tests {
     }
 
     #[test]
+    fn test_134() {
+        execute(134);
+    }
+
+    #[test]
     fn test_debug() {
-        debug_execute(2, OverlayRule::Union, Solver::LIST);
+        debug_execute(134, OverlayRule::InverseDifference, Solver::LIST);
     }
 }
