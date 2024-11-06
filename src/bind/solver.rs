@@ -42,17 +42,21 @@ impl ShapeBinder {
         let mut j = 0;
 
         while i < hole_points.len() {
-            let x = hole_points[i].point.x;
+            let p = hole_points[i].point;
 
-            while j < segments.len() && segments[j].x_segment.a.x <= x {
+            while j < segments.len() {
                 let id_segment = &segments[j];
-                if id_segment.x_segment.b.x > x {
-                    scan_store.insert(*id_segment, x);
+                if id_segment.x_segment.a >= p {
+                    break;
+                }
+
+                if id_segment.x_segment.b.x > p.x {
+                    scan_store.insert(*id_segment, p.x);
                 }
                 j += 1
             }
 
-            while i < hole_points.len() && hole_points[i].point.x == x {
+            while i < hole_points.len() && hole_points[i].point.x == p.x {
                 let parent_index = scan_store.find_under_and_nearest(hole_points[i]);
                 let child_index = hole_points[i].id;
 
@@ -73,7 +77,6 @@ pub(crate) trait JoinHoles {
 }
 
 impl JoinHoles for Vec<IntShape> {
-
     #[inline]
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
         if self.is_empty() || holes.is_empty() {
@@ -84,14 +87,18 @@ impl JoinHoles for Vec<IntShape> {
             self[0].reserve(holes.len());
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
-        } else {
-            let mut hole_points: Vec<_> = holes.iter().enumerate()
-                .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
-                .collect();
-
-            hole_points.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
-            self.scan_join(solver, holes, hole_points);
+            return;
         }
+
+        let mut hole_points: Vec<_> = holes.iter().enumerate()
+            .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
+            .collect();
+
+        // mostly sorted array!
+        if !is_sorted(&hole_points) {
+            hole_points.sort_by(|a, b| a.point.cmp(&b.point));
+        }
+        self.scan_join(solver, holes, hole_points);
     }
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<IdPoint>) {
@@ -117,4 +124,9 @@ impl JoinHoles for Vec<IntShape> {
             self[shape_index].push(hole);
         }
     }
+}
+
+#[inline]
+fn is_sorted(points: &[IdPoint]) -> bool {
+    points.windows(2).all(|slice| slice[0].point <= slice[1].point)
 }
