@@ -1,6 +1,6 @@
-use crate::sheet::state::SheetState;
-use crate::geom::viewport::ViewPortExt;
 use crate::geom::vector::VectorExt;
+use crate::geom::camera::Camera;
+use crate::sheet::state::SheetState;
 use iced::Point;
 use iced::advanced::widget::tree;
 use iced::advanced::layout::{self, Layout};
@@ -8,8 +8,6 @@ use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
 use iced::{Event, event, mouse};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
-use iced::mouse::ScrollDelta;
-use crate::geom::camera::Camera;
 
 pub(crate) struct SheetWidget<'a, Message> {
     camera: Camera,
@@ -52,7 +50,7 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
 
     fn layout(
         &self,
-        tree: &mut Tree,
+        _tree: &mut Tree,
         _renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
@@ -98,8 +96,6 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                     }
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left) => {
-                    let cursor = Vector::point(cursor.position().unwrap_or(Point::ORIGIN));
-                    let offset = bounds.offset();
                     state.mouse_release();
                     return event::Status::Captured;
                 }
@@ -123,11 +119,11 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
 
     fn draw(
         &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
+        _tree: &Tree,
+        _renderer: &mut Renderer,
         _theme: &Theme,
         _style: &renderer::Style,
-        layout: Layout<'_>,
+        _layout: Layout<'_>,
         _cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {

@@ -1,3 +1,6 @@
+use iced::keyboard::Key::Named as NamedBox;
+use iced::Subscription;
+use iced::event::{self, Event as MainEvent};
 use crate::app::design::style_separator;
 use iced::widget::{Space, vertical_rule};
 use std::default::Default;
@@ -5,6 +8,9 @@ use crate::app::boolean::content::BooleanMessage;
 use crate::app::boolean::content::BooleanState;
 use crate::data::resource::AppResource;
 use iced::{Alignment, Color, Element, Length};
+use iced::advanced::graphics::core::keyboard;
+use iced::keyboard::Event as KeyboardEvent;
+use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
 use crate::app::design::{style_action_button, style_action_button_selected, Design};
 use crate::fill_view::FillView;
@@ -45,6 +51,7 @@ pub(crate) enum MainMessage {
 pub(crate) enum AppMessage {
     Main(MainMessage),
     Bool(BooleanMessage),
+    EventOccurred(MainEvent),
 }
 
 impl EditorApp {
@@ -64,8 +71,50 @@ impl EditorApp {
     pub(crate) fn update(&mut self, message: AppMessage) {
         match message {
             AppMessage::Main(msg) => self.update_main(msg),
-            AppMessage::Bool(msg) => self.update_boolean(msg)
+            AppMessage::Bool(msg) => self.update_boolean(msg),
+            AppMessage::EventOccurred(event) => {
+                if let MainEvent::Keyboard(keyboard) = event {
+                     if let KeyboardEvent::KeyPressed{
+                         /// The key pressed.
+                         key,
+                         /// The key pressed with all keyboard modifiers applied, except Ctrl.
+                         modified_key,
+                         /// The physical key pressed.
+                         physical_key,
+                         /// The location of the key.
+                         location,
+                         /// The state of the modifier keys.
+                         modifiers,
+                         /// The text produced by the key press, if any.
+                         text,
+                     } = keyboard  {
+                         if let NamedBox(named) = key {
+                            match named {
+                                Named::ArrowDown => {
+                                    match self.state.selected_action {
+                                        MainAction::Boolean => self.boolean_next_test(),
+                                        _ => {}
+                                    }
+                                },
+                                Named::ArrowUp => {
+                                    match self.state.selected_action {
+                                        MainAction::Boolean => self.boolean_prev_test(),
+                                        _ => {}
+                                    }
+                                },
+                                _ => {}
+                            }
+
+                             // println!("Key down: {:?}", named);
+                         }
+                     }
+                }
+            }
         }
+    }
+
+    pub(crate) fn subscription(&self) -> Subscription<AppMessage> {
+        event::listen().map(AppMessage::EventOccurred)
     }
 
     fn update_main(&mut self, message: MainMessage) {

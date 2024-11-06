@@ -96,7 +96,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-        viewport: &Rectangle,
+        _viewport: &Rectangle,
     ) -> event::Status {
         let state = tree.state.downcast_mut::<PointsEditorState>();
 

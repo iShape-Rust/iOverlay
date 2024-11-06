@@ -131,14 +131,6 @@ impl PointsEditorState {
         }
     }
 
-    pub(super) fn is_drag(&self) -> bool {
-        if let SelectState::Drag(drag) = &self.select {
-            true
-        } else {
-            false
-        }
-    }
-
     pub(super) fn mouse_move<'a, M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> Option<PointEditUpdate> {
         if let SelectState::Drag(drag) = &self.select {
             Self::mouse_drag(drag, widget.camera, &widget.points, cursor)

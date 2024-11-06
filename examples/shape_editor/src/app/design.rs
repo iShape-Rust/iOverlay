@@ -8,6 +8,23 @@ pub(super) struct Design {
 }
 
 impl Design {
+
+    pub(crate) fn solution_color() -> Color {
+        Color::from_rgb8(32, 199, 32)
+    }
+
+    pub(crate) fn subject_color() -> Color {
+        Color::from_rgb8(255, 51, 51)
+    }
+
+    pub(crate) fn clip_color() -> Color {
+        Color::from_rgb8(26, 142, 255)
+    }
+
+    pub(crate) fn accent_color() -> Color {
+        Color::from_rgb8(255, 140, 0)
+    }
+
     pub(super) fn new() -> Self {
         Self {
             action_separator: 3.0

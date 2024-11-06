@@ -7,9 +7,12 @@ mod point_editor;
 mod sheet;
 mod geom;
 
+use iced::application;
 use crate::app::main::EditorApp;
 
 
 fn main() -> iced::Result {
-    iced::run("iOverlay", EditorApp::update, EditorApp::view)
+    application("iOverlay", EditorApp::update, EditorApp::view)
+        .subscription(EditorApp::subscription)
+        .run()
 }

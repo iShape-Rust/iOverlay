@@ -1,8 +1,6 @@
-use iced::{Rectangle, Size, Vector};
+use iced::{Size, Vector};
 use iced::mouse::ScrollDelta;
 use crate::geom::camera::Camera;
-use crate::point_editor::point::EditorPoint;
-use crate::point_editor::widget::{PointEditUpdate, PointsEditorWidget};
 
 struct Drag {
     start_screen: Vector<f32>,
@@ -53,7 +51,7 @@ impl SheetState {
     }
 
     pub(super) fn mouse_wheel_scrolled(&mut self, camera: Camera, viewport_size: Size, delta: ScrollDelta) -> Option<f32> {
-        if let ScrollDelta::Pixels { x, y } = delta {
+        if let ScrollDelta::Pixels { x , y } = delta {
             let s = 1.0 + y / viewport_size.height;
             Some(s * camera.scale)
         } else {

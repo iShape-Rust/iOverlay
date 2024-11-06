@@ -98,6 +98,20 @@ impl EditorApp {
         self.state.boolean.update_boolean_solution();
     }
 
+    pub(crate) fn boolean_next_test(&mut self) {
+        let next_test = self.state.boolean.test + 1;
+        if next_test < self.app_resource.boolean.count {
+            self.set_test(next_test);
+        }
+    }
+
+    pub(crate) fn boolean_prev_test(&mut self) {
+        let test = self.state.boolean.test;
+        if test >= 1 {
+            self.set_test(test - 1);
+        }
+    }
+
     fn update_boolean_size(&mut self, size: Size) {
         self.state.boolean.size = size;
         let points = &self.state.boolean.workspace.points;
