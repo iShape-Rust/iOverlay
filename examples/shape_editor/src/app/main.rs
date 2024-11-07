@@ -115,7 +115,13 @@ impl EditorApp {
 
     fn update_main(&mut self, message: MainMessage) {
         match message {
-            MainMessage::ActionSelected(action) => self.state.selected_action = action
+            MainMessage::ActionSelected(action) => {
+                self.state.selected_action = action;
+                match self.state.selected_action {
+                    MainAction::Boolean => self.boolean_init(),
+                    MainAction::String => self.string_init(),
+                }
+            }
         }
     }
 

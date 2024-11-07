@@ -5,7 +5,7 @@ use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
 use i_triangle::triangulation::int::{IntTriangulate, Triangulation as IntTriangulation};
 use i_triangle::triangulation::float::Triangulation;
-use i_triangle::stroke::builder::ButtStrokeBuilder;
+use i_triangle::stroke::butt::ButtStrokeBuilder;
 use i_triangle::stroke::style::StrokeStyle;
 use i_triangle::triangulation::float::TriangulationBuilder;
 use iced::advanced::layout::{self, Layout};

@@ -1,7 +1,7 @@
 mod square;
 mod data;
 mod app;
-mod shape;
+mod draw;
 mod point_editor;
 mod sheet;
 mod geom;

@@ -30,6 +30,12 @@ impl<'a, Message: 'a> SheetWidget<'a, Message> {
             on_drag: Box::new(on_drag),
         }
     }
+
+    pub(super) fn is_size_changed(&self, size: Size) -> bool {
+        let w = (size.width - self.camera.size.width).abs();
+        let h = (size.height - self.camera.size.height).abs();
+        w > 0.01 || h > 0.01
+    }
 }
 
 impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
@@ -73,7 +79,7 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
         let bounds = layout.bounds();
 
         let size = bounds.size();
-        if state.is_size_changed(size) {
+        if self.is_size_changed(bounds.size()) {
             shell.publish((self.on_size)(size));
         }
 
@@ -99,7 +105,7 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                     state.mouse_release();
                     return event::Status::Captured;
                 }
-                mouse::Event::WheelScrolled { delta} => {
+                mouse::Event::WheelScrolled { delta } => {
                     let position = cursor.position().unwrap_or(Point::ORIGIN);
                     if bounds.contains(position) {
                         if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), delta) {
@@ -126,10 +132,7 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
         _layout: Layout<'_>,
         _cursor: mouse::Cursor,
         _viewport: &Rectangle,
-    ) {
-
-
-    }
+    ) {}
 }
 
 impl<'a, Message: 'a> From<SheetWidget<'a, Message>> for Element<'a, Message> {

@@ -101,6 +101,10 @@ impl EditorApp {
         self.state.boolean.update_solution();
     }
 
+    pub(crate) fn boolean_init(&mut self) {
+        self.boolean_set_test(self.state.boolean.test);
+    }
+
     pub(crate) fn boolean_next_test(&mut self) {
         let next_test = self.state.boolean.test + 1;
         if next_test < self.app_resource.boolean.count {

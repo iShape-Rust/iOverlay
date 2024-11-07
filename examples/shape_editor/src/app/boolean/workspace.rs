@@ -1,4 +1,4 @@
-use crate::shape::widget::ShapeWidget;
+use crate::draw::shape::ShapeWidget;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
 use crate::point_editor::point::EditorPoint;

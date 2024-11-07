@@ -13,21 +13,10 @@ enum DragState {
 }
 
 pub(super) struct SheetState {
-    size: Size,
     drag_state: DragState,
 }
 
 impl SheetState {
-    pub(super) fn is_size_changed(&mut self, size: Size) -> bool {
-        let w = (size.width - self.size.width).abs();
-        let h = (size.height - self.size.height).abs();
-        let is_changed = w > 0.01 || h > 0.01;
-        if is_changed {
-            self.size = size
-        }
-        is_changed
-    }
-
     pub(super) fn mouse_press(&mut self, camera: Camera, cursor: Vector<f32>) {
         self.drag_state = DragState::Drag(Drag { start_screen: cursor, start_world: camera.pos });
     }
@@ -63,7 +52,6 @@ impl SheetState {
 impl Default for SheetState {
     fn default() -> Self {
         Self {
-            size: Size::ZERO,
             drag_state: DragState::None,
         }
     }

@@ -1,4 +1,5 @@
-use crate::shape::widget::ShapeWidget;
+use crate::draw::path::PathWidget;
+use crate::draw::shape::ShapeWidget;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
 use crate::point_editor::point::EditorPoint;
@@ -64,13 +65,12 @@ impl EditorApp {
                             }
                         }
                         stack = stack.push(
-                            Container::new(ShapeWidget::with_paths(
+                            Container::new(PathWidget::with_paths(
                                 &self.state.string.workspace.string,
                                 self.state.string.workspace.camera,
-                                None,
-                                None,
-                                Some(Design::negative_color()),
+                                Design::negative_color(),
                                 4.0,
+                                true,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)
@@ -89,13 +89,12 @@ impl EditorApp {
                                 .width(Length::Fill)
                                 .height(Length::Fill)
                         ).push(
-                            Container::new(ShapeWidget::with_paths(
+                            Container::new(PathWidget::with_paths(
                                 &self.state.string.workspace.string,
                                 self.state.string.workspace.camera,
-                                None,
-                                None,
-                                Some(Design::negative_color()),
+                                Design::negative_color(),
                                 4.0,
+                                true,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)

@@ -101,6 +101,10 @@ impl EditorApp {
         self.state.string.update_solution();
     }
 
+    pub(crate) fn string_init(&mut self) {
+        self.string_set_test(self.state.string.test);
+    }
+
     pub(crate) fn string_next_test(&mut self) {
         let next_test = self.state.string.test + 1;
         if next_test < self.app_resource.string.count {
