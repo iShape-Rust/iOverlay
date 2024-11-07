@@ -10,8 +10,8 @@ use i_triangle::i_overlay::i_shape::int::count::IntShapes;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use iced::widget::Stack;
 use iced::widget::Container;
-use iced::{Color, Length, Padding, Size, Vector};
-use crate::app::boolean::control::ModeOption;
+use iced::{Length, Padding, Size, Vector};
+use crate::app::boolean::control::BooleanModeOption;
 
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
@@ -38,7 +38,7 @@ impl EditorApp {
 
             if self.state.boolean.workspace.camera.is_not_empty() {
                 match self.state.boolean.mode {
-                    ModeOption::Edit => {
+                    BooleanModeOption::Edit => {
                         stack = stack.push(
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.boolean.workspace.subj,
@@ -122,7 +122,7 @@ impl EditorApp {
     }
 
     pub(super) fn update_boolean_point(&mut self, update: PointEditUpdate) {
-        self.state.boolean.update_boolean_point(update);
+        self.state.boolean.boolean_update_point(update);
     }
 
     pub(super) fn update_boolean_zoom(&mut self, scale: f32) {

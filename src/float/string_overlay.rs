@@ -72,7 +72,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         self
     }
 
-    /// Adds a string paths to the overlay.
+    /// Adds a string line paths to the overlay.
     /// - `resource`: A `OverlayResource` that define shape.
     ///   `OverlayResource` can be one of the following:
     ///     - `Path`: A path representing a string line.
@@ -95,7 +95,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         self
     }
 
-    /// Adds an open string path to the overlay.
+    /// Adds an open string line path to the overlay.
     /// - `path`: A path representing a string line.
     /// - **Safety**: Marked `unsafe` because it assumes each path is fully contained within the bounding box.
     #[inline]

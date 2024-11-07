@@ -1,6 +1,8 @@
 #[cfg(test)]
 pub mod overlay {
     use i_float::int::point::IntPoint;
+    use i_shape::int::count::IntShapes;
+    use i_shape::int::path::{IntPath, IntPaths};
     use i_shape::int::shape::IntShape;
 
     pub trait CircleCompare {
@@ -55,6 +57,71 @@ pub mod overlay {
             }
 
             true
+        }
+    }
+
+    pub fn is_group_of_shapes_one_of(group: &Vec<IntShape>, groups: &Vec<Vec<IntShape>>) -> bool {
+        for item in groups.iter() {
+            if item.are_equal(group) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub trait JsonPrint {
+        fn json_print(&self) -> String;
+    }
+
+    impl JsonPrint for IntPoint {
+        fn json_print(&self) -> String {
+            format!("[{}, {}]", self.x, self.y)
+        }
+    }
+
+    impl JsonPrint for IntPath {
+        fn json_print(&self) -> String {
+            let mut s = String::with_capacity(16 * self.len());
+            s.push('[');
+            for (i, p) in self.iter().enumerate() {
+                s.push_str(&p.json_print());
+                if i + 1 < self.len() {
+                    s.push_str(", ");
+                }
+            }
+            s.push(']');
+            s
+        }
+    }
+
+    impl JsonPrint for IntPaths {
+        fn json_print(&self) -> String {
+            let mut s = String::with_capacity(100 * self.len());
+            s.push('[');
+            for (i, p) in self.iter().enumerate() {
+                s.push_str(&p.json_print());
+                if i + 1 < self.len() {
+                    s.push_str(", ");
+                }
+            }
+            s.push(']');
+            s
+        }
+    }
+
+    impl JsonPrint for IntShapes {
+        fn json_print(&self) -> String {
+            let mut s = String::with_capacity(200 * self.len());
+            s.push('[');
+            for (i, p) in self.iter().enumerate() {
+                s.push_str(&p.json_print());
+                if i + 1 < self.len() {
+                    s.push_str(", ");
+                }
+            }
+            s.push(']');
+            s
         }
     }
 }

@@ -28,8 +28,8 @@ impl StringOverlay {
         }
     }
 
-    /// Creates a new `StringOverlay` instance and initializes it with a single shape path.
-    /// - `contour`: A path to be used in the overlay operation as a closed shape.
+    /// Creates a new `StringOverlay` instance and initializes it with a single shape contour.
+    /// - `contour`: An array of points that form a closed path.
     #[inline]
     pub fn with_shape_contour(contour: &[IntPoint]) -> Self {
         let mut overlay = Self::new(contour.len());
@@ -37,8 +37,8 @@ impl StringOverlay {
         overlay
     }
 
-    /// Creates a new `StringOverlay` instance and initializes it with multiple shape paths.
-    /// - `contours`: An array of paths that together define multiple shapes.
+    /// Creates a new `StringOverlay` instance and initializes it with multiple shape contours.
+    /// - `contours`: An array of `IntContour` instances to be added to the overlay.
     #[inline]
     pub fn with_shape_contours(contours: &[IntContour]) -> Self {
         let mut overlay = Self::new(contours.points_count());
@@ -46,8 +46,8 @@ impl StringOverlay {
         overlay
     }
 
-    /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
-    /// - `shape`: A shape to be used in the overlay operation.
+    /// Creates a new `StringOverlay` instance and initializes it with s shape.
+    /// - `shape`: An `IntShape` instances to be added to the overlay.
     #[inline]
     pub fn with_shape(shape: &[IntContour]) -> Self {
         let mut overlay = Self::new(shape.points_count());
@@ -56,7 +56,7 @@ impl StringOverlay {
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
-    /// - `shapes`: An array of shapes to be used in the overlay operation.
+    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
     #[inline]
     pub fn with_shapes(shapes: &[IntShape]) -> Self {
         let mut overlay = Self::new(shapes.points_count());
@@ -115,31 +115,49 @@ impl StringOverlay {
         }
     }
 
-    /// Adds a path (a sequence of points) as an open or closed string to the overlay.
-    /// - `path`: A reference to an array of `IntPoint` representing the path.
-    /// - `is_open`: A boolean flag indicating whether the path is open (true) or closed (false).
+    /// Adds a string path to the overlay.
+    /// - `path`: A path representing a string line.
     #[inline]
-    pub fn add_string_path(&mut self, path: &[IntPoint], is_open: bool) {
+    pub fn add_string_path(&mut self, path: &[IntPoint]) {
+        if path.len() < 2 {
+            return;
+        }
         let mut a = if let Some(&p) = path.first() { p } else { return; };
         for &b in path.iter().skip(1) {
             self.add_string_line([a, b]);
             a = b;
         }
+    }
 
-        if !is_open && path.len() > 2 {
-            let &a = path.first().unwrap();
-            let &b = path.last().unwrap();
-            self.add_string_line([b, a])
+    /// Adds a string line contour to the overlay.
+    /// - `contour`: A contour representing a string line closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    #[inline]
+    pub fn add_string_contour(&mut self, contour: &[IntPoint]) {
+        if contour.len() < 2 {
+            return;
+        }
+        let mut a = if let Some(&p) = contour.last() { p } else { return; };
+        for &b in contour.iter() {
+            self.add_string_line([a, b]);
+            a = b;
         }
     }
 
-    /// Adds multiple paths as open or closed strings to the overlay.
-    /// - `paths`: An array of `IntPath` instances (each a sequence of points).
-    /// - `is_open`: A boolean flag indicating whether the paths are open (true) or closed (false).
+    /// Adds a string line paths to the overlay.
+    /// - `paths`: A collection of paths, each representing a string line.
     #[inline]
-    pub fn add_string_paths(&mut self, paths: &[IntPath], is_open: bool) {
+    pub fn add_string_paths(&mut self, paths: &[IntPath]) {
         for path in paths {
-            self.add_string_path(path, is_open);
+            self.add_string_path(path);
+        }
+    }
+
+    /// Adds a string line contours to the overlay.
+    /// - `contours`: A collection of contours, each representing a string line closed path.
+    #[inline]
+    pub fn add_string_contours(&mut self, contours: &[IntContour]) {
+        for contour in contours {
+            self.add_string_contour(contour);
         }
     }
 

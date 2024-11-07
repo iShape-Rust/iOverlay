@@ -1,6 +1,4 @@
-use std::ops::Mul;
 use i_triangle::i_overlay::core::fill_rule::FillRule;
-use i_triangle::i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
@@ -110,7 +108,7 @@ impl ShapeWidget {
 
         let triangulation = builder.build();
 
-        Self::stroke_mesh_for_triangulation(triangulation, camera, offset, color)
+        Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
     fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Option<Color>, width: f32) -> Option<Mesh> {
@@ -137,10 +135,10 @@ impl ShapeWidget {
 
         let triangulation = builder.build();
 
-        Self::stroke_mesh_for_triangulation(triangulation, camera, offset, color)
+        Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>>, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }

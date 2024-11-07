@@ -1,9 +1,10 @@
-use i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_triangle::i_overlay::core::overlay_rule::OverlayRule;
 use crate::app::boolean::content::BooleanMessage;
+use crate::app::fill_option::FillOption;
+use crate::app::main::{EditorApp, AppMessage};
+use crate::app::solver_option::SolverOption;
 use iced::{Alignment, Length};
 use iced::widget::{Column, Container, pick_list, Row, Space, Text};
-use crate::app::main::{EditorApp, AppMessage};
 
 impl EditorApp {
     pub(crate) fn boolean_control(&self) -> Column<AppMessage> {
@@ -52,7 +53,7 @@ impl EditorApp {
                 .push(
                     Container::new(
                         pick_list(
-                            &ModeOption::ALL[..],
+                            &BooleanModeOption::ALL[..],
                             Some(self.state.boolean.mode),
                             on_select_mode,
                         ).width(Length::Fixed(160.0))
@@ -74,7 +75,7 @@ fn on_select_fill(option: FillOption) -> AppMessage {
     AppMessage::Bool(BooleanMessage::FillSelected(option))
 }
 
-fn on_select_mode(option: ModeOption) -> AppMessage {
+fn on_select_mode(option: BooleanModeOption) -> AppMessage {
     AppMessage::Bool(BooleanMessage::ModeSelected(option))
 }
 
@@ -83,50 +84,7 @@ fn on_select_solver(option: SolverOption) -> AppMessage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum SolverOption {
-    #[default]
-    Auto,
-    Average,
-    Precise,
-}
-
-impl SolverOption {
-    const ALL: [SolverOption; 3] = [
-        SolverOption::Auto,
-        SolverOption::Average,
-        SolverOption::Precise
-    ];
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum FillOption {
-    #[default]
-    NonZero,
-    EvenOdd,
-    Positive,
-    Negative,
-}
-
-impl FillOption {
-    const ALL: [FillOption; 4] = [
-        FillOption::NonZero,
-        FillOption::EvenOdd,
-        FillOption::Positive,
-        FillOption::Negative,
-    ];
-
-    pub(crate) fn to_fill_rule(&self) -> FillRule {
-        match self {
-            FillOption::NonZero => FillRule::NonZero,
-            FillOption::EvenOdd => FillRule::EvenOdd,
-            FillOption::Positive => FillRule::Positive,
-            FillOption::Negative => FillRule::Negative,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ModeOption {
+pub enum BooleanModeOption {
     #[default]
     Edit,
     Debug,
@@ -139,77 +97,48 @@ pub enum ModeOption {
     Xor,
 }
 
-impl ModeOption {
-    const ALL: [ModeOption; 9] = [
-        ModeOption::Edit,
-        ModeOption::Debug,
-        ModeOption::Subject,
-        ModeOption::Clip,
-        ModeOption::Intersect,
-        ModeOption::Union,
-        ModeOption::Difference,
-        ModeOption::InverseDifference,
-        ModeOption::Xor,
+impl BooleanModeOption {
+    const ALL: [BooleanModeOption; 9] = [
+        BooleanModeOption::Edit,
+        BooleanModeOption::Debug,
+        BooleanModeOption::Subject,
+        BooleanModeOption::Clip,
+        BooleanModeOption::Intersect,
+        BooleanModeOption::Union,
+        BooleanModeOption::Difference,
+        BooleanModeOption::InverseDifference,
+        BooleanModeOption::Xor,
     ];
 
     pub(crate) fn to_overlay_rule(&self) -> Option<OverlayRule> {
         match self {
-            ModeOption::Subject => Some(OverlayRule::Subject),
-            ModeOption::Clip => Some(OverlayRule::Clip),
-            ModeOption::Intersect => Some(OverlayRule::Intersect),
-            ModeOption::Union => Some(OverlayRule::Union),
-            ModeOption::Difference => Some(OverlayRule::Difference),
-            ModeOption::InverseDifference => Some(OverlayRule::InverseDifference),
-            ModeOption::Xor => Some(OverlayRule::Xor),
+            BooleanModeOption::Subject => Some(OverlayRule::Subject),
+            BooleanModeOption::Clip => Some(OverlayRule::Clip),
+            BooleanModeOption::Intersect => Some(OverlayRule::Intersect),
+            BooleanModeOption::Union => Some(OverlayRule::Union),
+            BooleanModeOption::Difference => Some(OverlayRule::Difference),
+            BooleanModeOption::InverseDifference => Some(OverlayRule::InverseDifference),
+            BooleanModeOption::Xor => Some(OverlayRule::Xor),
             _ => None
         }
     }
 }
 
-impl std::fmt::Display for SolverOption {
+impl std::fmt::Display for BooleanModeOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                SolverOption::Auto => "Auto",
-                SolverOption::Average => "Average",
-                SolverOption::Precise => "Precise",
-            }
-        )
-    }
-}
-
-impl std::fmt::Display for FillOption {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                FillOption::NonZero => "NonZero",
-                FillOption::EvenOdd => "EvenOdd",
-                FillOption::Positive => "Positive",
-                FillOption::Negative => "Negative",
-            }
-        )
-    }
-}
-
-impl std::fmt::Display for ModeOption {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                ModeOption::Edit => "Edit",
-                ModeOption::Debug => "Debug",
-                ModeOption::Subject => "Subject",
-                ModeOption::Clip => "Clip",
-                ModeOption::Intersect => "Intersect",
-                ModeOption::Union => "Union",
-                ModeOption::Difference => "Difference",
-                ModeOption::InverseDifference => "InverseDifference",
-                ModeOption::Xor => "Xor",
+                BooleanModeOption::Edit => "Edit",
+                BooleanModeOption::Debug => "Debug",
+                BooleanModeOption::Subject => "Subject",
+                BooleanModeOption::Clip => "Clip",
+                BooleanModeOption::Intersect => "Intersect",
+                BooleanModeOption::Union => "Union",
+                BooleanModeOption::Difference => "Difference",
+                BooleanModeOption::InverseDifference => "InverseDifference",
+                BooleanModeOption::Xor => "Xor",
             }
         )
     }

@@ -1,25 +1,25 @@
-use crate::geom::camera::Camera;
 use std::collections::HashMap;
 use i_triangle::i_overlay::core::overlay::Overlay;
 use i_triangle::i_overlay::i_shape::int::count::PointsCount;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
-use crate::app::boolean::workspace::WorkspaceState;
 use iced::widget::scrollable;
-use crate::app::boolean::control::ModeOption;
-use crate::app::boolean::control::FillOption;
-use crate::app::boolean::control::SolverOption;
 use iced::{Alignment, Length, Padding, Size, Vector};
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use crate::app::design;
+use crate::app::boolean::control::BooleanModeOption;
+use crate::app::boolean::workspace::WorkspaceState;
+use crate::app::fill_option::FillOption;
 use crate::app::main::{EditorApp, AppMessage};
-use crate::data::polygon::BooleanResource;
+use crate::app::solver_option::SolverOption;
+use crate::geom::camera::Camera;
+use crate::data::boolean::BooleanResource;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
 
 pub(crate) struct BooleanState {
     pub(crate) test: usize,
     pub(crate) fill: FillOption,
-    pub(crate) mode: ModeOption,
+    pub(crate) mode: BooleanModeOption,
     pub(crate) solver: SolverOption,
     pub(crate) workspace: WorkspaceState,
     pub(crate) size: Size,
@@ -30,7 +30,7 @@ pub(crate) struct BooleanState {
 pub(crate) enum BooleanMessage {
     TestSelected(usize),
     FillSelected(FillOption),
-    ModeSelected(ModeOption),
+    ModeSelected(BooleanModeOption),
     SolverSelected(SolverOption),
     PointEdited(PointEditUpdate),
     WorkspaceSized(Size),
@@ -39,7 +39,7 @@ pub(crate) enum BooleanMessage {
 }
 
 impl EditorApp {
-    fn sidebar(&self) -> Column<AppMessage> {
+    fn boolean_sidebar(&self) -> Column<AppMessage> {
         let count = self.app_resource.boolean.count;
         let mut column = Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0)));
         for index in 0..count {
@@ -66,7 +66,7 @@ impl EditorApp {
         Row::new()
             .push(
                 scrollable(
-                    Container::new(self.sidebar())
+                    Container::new(self.boolean_sidebar())
                         .width(Length::Fixed(160.0))
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
@@ -83,14 +83,14 @@ impl EditorApp {
             .push(self.boolean_workspace())
     }
 
-    pub(crate) fn update_boolean(&mut self, message: BooleanMessage) {
+    pub(crate) fn boolean_update(&mut self, message: BooleanMessage) {
         match message {
             BooleanMessage::TestSelected(index) => self.set_test(index),
-            BooleanMessage::SolverSelected(solver) => self.update_boolean_solver(solver),
-            BooleanMessage::FillSelected(fill) => self.update_boolean_fill(fill),
-            BooleanMessage::ModeSelected(mode) => self.update_boolean_mode(mode),
+            BooleanMessage::SolverSelected(solver) => self.update_solver(solver),
+            BooleanMessage::FillSelected(fill) => self.update_fill(fill),
+            BooleanMessage::ModeSelected(mode) => self.update_mode(mode),
             BooleanMessage::PointEdited(update) => self.update_boolean_point(update),
-            BooleanMessage::WorkspaceSized(size) => self.update_boolean_size(size),
+            BooleanMessage::WorkspaceSized(size) => self.update_size(size),
             BooleanMessage::WorkspaceZoomed(zoom) => self.update_boolean_zoom(zoom),
             BooleanMessage::WorkspaceDraged(drag) => self.update_boolean_drag(drag),
         }
@@ -98,7 +98,7 @@ impl EditorApp {
 
     fn set_test(&mut self, index: usize) {
         self.state.boolean.set_test(index, &mut self.app_resource.boolean);
-        self.state.boolean.update_boolean_solution();
+        self.state.boolean.update_solution();
     }
 
     pub(crate) fn boolean_next_test(&mut self) {
@@ -115,7 +115,7 @@ impl EditorApp {
         }
     }
 
-    fn update_boolean_size(&mut self, size: Size) {
+    fn update_size(&mut self, size: Size) {
         self.state.boolean.size = size;
         let points = &self.state.boolean.workspace.points;
         if self.state.boolean.workspace.camera.is_empty() && !points.is_empty() {
@@ -128,19 +128,19 @@ impl EditorApp {
         }
     }
 
-    fn update_boolean_solver(&mut self, solver: SolverOption) {
+    fn update_solver(&mut self, solver: SolverOption) {
         self.state.boolean.solver = solver;
-        self.state.boolean.update_boolean_solution();
+        self.state.boolean.update_solution();
     }
 
-    fn update_boolean_fill(&mut self, fill: FillOption) {
+    fn update_fill(&mut self, fill: FillOption) {
         self.state.boolean.fill = fill;
-        self.state.boolean.update_boolean_solution();
+        self.state.boolean.update_solution();
     }
 
-    fn update_boolean_mode(&mut self, mode: ModeOption) {
+    fn update_mode(&mut self, mode: BooleanModeOption) {
         self.state.boolean.mode = mode;
-        self.state.boolean.update_boolean_solution();
+        self.state.boolean.update_solution();
     }
 }
 
@@ -149,7 +149,7 @@ impl BooleanState {
         let mut state = BooleanState {
             test: usize::MAX,
             fill: FillOption::NonZero,
-            mode: ModeOption::Xor,
+            mode: BooleanModeOption::Xor,
             solver: SolverOption::Auto,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(resource.count),
@@ -157,7 +157,7 @@ impl BooleanState {
         };
 
         state.set_test(0, resource);
-        state.update_boolean_solution();
+        state.update_solution();
         state
     }
 
@@ -191,7 +191,7 @@ impl BooleanState {
         }
     }
 
-    fn update_boolean_solution(&mut self) {
+    fn update_solution(&mut self) {
         let subj = &self.workspace.subj;
         let clip = &self.workspace.clip;
         let fill_rule = self.fill.to_fill_rule();
@@ -203,7 +203,7 @@ impl BooleanState {
         }
     }
 
-    pub(super) fn update_boolean_point(&mut self, update: PointEditUpdate) {
+    pub(super) fn boolean_update_point(&mut self, update: PointEditUpdate) {
         self.workspace.points[update.index] = update.point.clone();
         let m_index = update.point.index;
         if m_index.group_index == 0 {
@@ -211,7 +211,7 @@ impl BooleanState {
         } else {
             self.workspace.clip[m_index.path_index][m_index.point_index] = update.point.pos;
         }
-        self.update_boolean_solution();
+        self.update_solution();
     }
 }
 

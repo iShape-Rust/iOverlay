@@ -8,7 +8,6 @@ use crate::app::boolean::content::BooleanMessage;
 use crate::app::boolean::content::BooleanState;
 use crate::data::resource::AppResource;
 use iced::{Alignment, Color, Element, Length};
-use iced::advanced::graphics::core::keyboard;
 use iced::keyboard::Event as KeyboardEvent;
 use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
@@ -71,22 +70,16 @@ impl EditorApp {
     pub(crate) fn update(&mut self, message: AppMessage) {
         match message {
             AppMessage::Main(msg) => self.update_main(msg),
-            AppMessage::Bool(msg) => self.update_boolean(msg),
+            AppMessage::Bool(msg) => self.boolean_update(msg),
             AppMessage::EventOccurred(event) => {
                 if let MainEvent::Keyboard(keyboard) = event {
                      if let KeyboardEvent::KeyPressed{
-                         /// The key pressed.
                          key,
-                         /// The key pressed with all keyboard modifiers applied, except Ctrl.
-                         modified_key,
-                         /// The physical key pressed.
-                         physical_key,
-                         /// The location of the key.
-                         location,
-                         /// The state of the modifier keys.
-                         modifiers,
-                         /// The text produced by the key press, if any.
-                         text,
+                         modified_key: _,
+                         physical_key: _,
+                         location: _,
+                         modifiers: _,
+                         text: _,
                      } = keyboard  {
                          if let NamedBox(named) = key {
                             match named {

@@ -135,10 +135,11 @@ mod tests {
             IntPoint::new(-5, -5),
             IntPoint::new(-5, 5),
             IntPoint::new(5, 5),
-            IntPoint::new(5, -5)
+            IntPoint::new(5, -5),
+            IntPoint::new(-5, -5), // close
         ].to_vec();
 
-        let result = path.slice_by_path(&window, false, FillRule::NonZero);
+        let result = path.slice_by_path(&window, FillRule::NonZero);
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 2);
@@ -158,17 +159,19 @@ mod tests {
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
+            IntPoint::new(10, -10),
+            IntPoint::new(-10, -10), // close
         ].to_vec();
 
         let win_1 = [
             IntPoint::new(-5, -5),
             IntPoint::new(-5, 5),
             IntPoint::new(5, 5),
-            IntPoint::new(5, -5)
+            IntPoint::new(5, -5),
+            IntPoint::new(-5, -5), // close
         ].to_vec();
 
-        let result = path.slice_by_paths(&[win_0, win_1], false, FillRule::NonZero);
+        let result = path.slice_by_paths(&[win_0, win_1], FillRule::NonZero);
 
         assert_eq!(result.len(), 3);
         assert_eq!(result[0].len(), 2);

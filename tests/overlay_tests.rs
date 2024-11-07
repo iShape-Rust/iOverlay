@@ -3,13 +3,12 @@ mod util;
 
 #[cfg(test)]
 mod tests {
-    use i_shape::int::shape::IntShape;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::Overlay;
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
-    use crate::data::overlay::Test;
-    use crate::util::overlay::CircleCompare;
+    use crate::data::overlay::BooleanTest;
+    use crate::util::overlay;
 
     const SOLVERS: [Solver; 3] = [
         Solver::LIST,
@@ -18,7 +17,7 @@ mod tests {
     ];
 
     fn execute(index: usize) {
-        let test = Test::load(index);
+        let test = BooleanTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
         for solver in SOLVERS {
             let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
@@ -32,18 +31,18 @@ mod tests {
             let union = graph.extract_shapes(OverlayRule::Union);
             let xor = graph.extract_shapes(OverlayRule::Xor);
 
-            assert_eq!(true, test_result(&clip, &test.clip));
-            assert_eq!(true, test_result(&subject, &test.subject));
-            assert_eq!(true, test_result(&difference, &test.difference));
-            assert_eq!(true, test_result(&inverse_difference, &test.inverse_difference));
-            assert_eq!(true, test_result(&intersect, &test.intersect));
-            assert_eq!(true, test_result(&union, &test.union));
-            assert_eq!(true, test_result(&xor, &test.xor));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&clip, &test.clip));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&subject, &test.subject));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&difference, &test.difference));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&inverse_difference, &test.inverse_difference));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&intersect, &test.intersect));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&union, &test.union));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&xor, &test.xor));
         }
     }
 
     fn debug_execute(index: usize, overlay_rule: OverlayRule, solver: Solver) {
-        let test = Test::load(index);
+        let test = BooleanTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::NonZero);
         let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
         let graph = overlay.into_graph_with_solver(fill_rule, solver);
@@ -52,37 +51,27 @@ mod tests {
         print!("result: {:?}", result);
         match overlay_rule {
             OverlayRule::Subject => {
-                assert_eq!(true, test_result(&result, &test.subject));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject));
             }
             OverlayRule::Clip => {
-                assert_eq!(true, test_result(&result, &test.clip));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.clip));
             }
             OverlayRule::Intersect => {
-                assert_eq!(true, test_result(&result, &test.intersect));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.intersect));
             }
             OverlayRule::Union => {
-                assert_eq!(true, test_result(&result, &test.union));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.union));
             }
             OverlayRule::Difference => {
-                assert_eq!(true, test_result(&result, &test.difference));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.difference));
             }
             OverlayRule::InverseDifference => {
-                assert_eq!(true, test_result(&result, &test.inverse_difference));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.inverse_difference));
             }
             OverlayRule::Xor => {
-                assert_eq!(true, test_result(&result, &test.xor));
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.xor));
             }
         }
-    }
-
-    fn test_result(result: &Vec<IntShape>, bank: &Vec<Vec<IntShape>>) -> bool {
-        for item in bank.iter() {
-            if item.are_equal(result) {
-                return true;
-            }
-        }
-
-        false
     }
 
     #[test]
