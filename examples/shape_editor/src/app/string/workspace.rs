@@ -13,6 +13,7 @@ use iced::widget::Stack;
 use iced::widget::Container;
 use iced::{Length, Padding, Size, Vector};
 use crate::app::string::control::ModeOption;
+use crate::draw::varicolored::VaricoloredWidget;
 
 pub(crate) enum Solution {
     Shapes(IntShapes),
@@ -48,21 +49,16 @@ impl EditorApp {
                 match self.state.string.mode {
                     ModeOption::Slice => {
                         if let Solution::Shapes(shapes) = &self.state.string.workspace.solution {
-                            for (index, shape) in shapes.iter().enumerate() {
-                                let color = Design::color_by_index(index);
-                                stack = stack.push(
-                                    Container::new(ShapeWidget::with_paths(
-                                        shape,
-                                        self.state.string.workspace.camera,
-                                        None,
-                                        Some(color.scale_alpha(0.2)),
-                                        Some(color),
-                                        4.0,
-                                    ))
-                                        .width(Length::Fill)
-                                        .height(Length::Fill)
-                                );
-                            }
+                            stack = stack.push(
+                                Container::new(VaricoloredWidget::with_shapes(
+                                    shapes,
+                                    self.state.string.workspace.camera,
+                                    None,
+                                    4.0,
+                                ))
+                                    .width(Length::Fill)
+                                    .height(Length::Fill)
+                            );
                         }
                         stack = stack.push(
                             Container::new(PathWidget::with_paths(
