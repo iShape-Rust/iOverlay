@@ -12,7 +12,7 @@ use iced::advanced::graphics::core::keyboard;
 use iced::keyboard::Event as KeyboardEvent;
 use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
-use crate::app::design::{style_action_button, style_action_button_selected, Design};
+use crate::app::design::{style_sidebar_button, style_sidebar_button_selected, Design};
 use crate::fill_view::FillView;
 
 pub(crate) struct EditorApp {
@@ -161,7 +161,7 @@ impl EditorApp {
                         Button::new(Text::new(item.title()))
                             .width(Length::Fill)
                             .on_press(AppMessage::Main(MainMessage::ActionSelected(item.clone())))
-                            .style(if is_selected { style_action_button_selected } else { style_action_button })
+                            .style(if is_selected { style_sidebar_button_selected } else { style_sidebar_button })
                     ).padding(self.design.action_padding())
                 )
             },

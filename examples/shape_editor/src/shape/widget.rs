@@ -1,3 +1,4 @@
+use std::ops::Mul;
 use i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_triangle::i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
@@ -163,14 +164,14 @@ impl ShapeWidget {
         }
 
         let mut min_x = i32::MAX;
-        let mut min_y = i32::MAX;
+        let mut max_y = i32::MIN;
 
         for p in shapes.iter().flatten().flatten() {
             min_x = min_x.min(p.x);
-            min_y = min_y.min(p.y);
+            max_y = max_y.max(p.y);
         }
 
-        camera.point_to_screen(IntPoint::new(min_x, min_y))
+        camera.point_to_screen(IntPoint::new(min_x, max_y))
     }
 
     fn offset_for_paths(paths: &IntPaths, camera: Camera) -> Vector<f32> {
@@ -179,14 +180,14 @@ impl ShapeWidget {
         }
 
         let mut min_x = i32::MAX;
-        let mut min_y = i32::MAX;
+        let mut max_y = i32::MIN;
 
         for p in paths.iter().flatten() {
             min_x = min_x.min(p.x);
-            min_y = min_y.min(p.y);
+            max_y = max_y.max(p.y);
         }
 
-        camera.point_to_screen(IntPoint::new(min_x, min_y))
+        camera.point_to_screen(IntPoint::new(min_x, max_y))
     }
 }
 

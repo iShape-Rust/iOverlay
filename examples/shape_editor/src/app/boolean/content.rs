@@ -4,14 +4,13 @@ use i_triangle::i_overlay::core::overlay::Overlay;
 use i_triangle::i_overlay::i_shape::int::count::PointsCount;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use crate::app::boolean::workspace::WorkspaceState;
-use crate::app::design::style_sidebar_background;
 use iced::widget::scrollable;
 use crate::app::boolean::control::ModeOption;
 use crate::app::boolean::control::FillOption;
 use crate::app::boolean::control::SolverOption;
 use iced::{Alignment, Length, Padding, Size, Vector};
 use iced::widget::{Button, Column, Container, Row, Space, Text};
-use crate::app::design::{style_action_button, style_action_button_selected};
+use crate::app::design;
 use crate::app::main::{EditorApp, AppMessage};
 use crate::data::polygon::BooleanResource;
 use crate::point_editor::point::PathsToEditorPoints;
@@ -48,10 +47,14 @@ impl EditorApp {
 
             column = column.push(
                 Container::new(
-                    Button::new(Text::new(format!("test_{}", index)))
+                    Button::new(
+                        Text::new(format!("test_{}", index))
+                            .style(if is_selected { design::style_sidebar_text_selected } else { design::style_sidebar_text })
+                            .size(14)
+                    )
                         .width(Length::Fill)
                         .on_press(AppMessage::Bool(BooleanMessage::TestSelected(index)))
-                        .style(if is_selected { style_action_button_selected } else { style_action_button })
+                        .style(if is_selected { design::style_sidebar_button_selected } else { design::style_sidebar_button })
                 ).padding(self.design.action_padding())
             );
         }
@@ -68,7 +71,7 @@ impl EditorApp {
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
                         .padding(Padding::new(0.0).right(8))
-                        .style(style_sidebar_background)
+                        .style(design::style_sidebar_background)
                 ).direction(scrollable::Direction::Vertical(
                     scrollable::Scrollbar::new()
                         .width(4)
@@ -120,6 +123,8 @@ impl EditorApp {
                 .unwrap_or(IntRect::new(-10_000, 10_000, -10_000, 10_000));
             let camera = Camera::new(rect, size);
             self.state.boolean.workspace.camera = camera;
+        } else {
+            self.state.boolean.workspace.camera.size = size;
         }
     }
 

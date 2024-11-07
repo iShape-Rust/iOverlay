@@ -50,6 +50,13 @@ impl<'a, Message> PointsEditorWidget<'a, Message> {
             on_update: Box::new(on_update),
         }
     }
+
+    pub(crate) fn set_accent_color(mut self, color: Color) -> Self {
+        self.hover_color = color.scale_alpha(0.6);
+        self.drag_color = color;
+        self
+    }
+
 }
 
 impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Message> {

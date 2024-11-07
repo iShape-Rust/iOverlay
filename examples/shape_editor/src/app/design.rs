@@ -1,7 +1,10 @@
+use iced::Length;
+use iced::widget::button;
+use iced::widget::container;
+use iced::widget::rule;
+use iced::widget::text;
 use iced::{Background, border, Color, Padding, Theme};
-use iced::widget::button::{Status, Style};
-use iced::widget::rule::{FillMode, Style as RuleStyle};
-use iced::widget::container::Style as ContainerStyle;
+
 
 pub(super) struct Design {
     pub(super) action_separator: f32,
@@ -41,73 +44,97 @@ impl Design {
     }
 }
 
-pub(super) fn style_action_button(theme: &Theme, status: Status) -> Style {
+// Sidebar
+
+pub(super) fn style_sidebar_button(theme: &Theme, status: button::Status) -> button::Style {
     let palette = theme.extended_palette();
-    let base = Style {
+    let base = button::Style {
         background: Some(Background::Color(palette.primary.strong.color)),
         text_color: palette.primary.strong.text,
         border: border::rounded(6),
-        ..Style::default()
+        ..button::Style::default()
     };
 
     match status {
-        Status::Pressed => base,
-        Status::Hovered => Style {
+        button::Status::Pressed => base,
+        button::Status::Hovered => button::Style {
             background: Some(Background::Color(palette.background.weak.color.scale_alpha(0.2))),
             ..base
         },
-        Status::Disabled | Status::Active => Style {
+        button::Status::Disabled | button::Status::Active => button::Style {
             background: Some(Background::Color(Color::TRANSPARENT)),
             ..base
         },
     }
 }
 
-pub(super) fn style_action_button_selected(theme: &Theme, status: Status) -> Style {
+pub(super) fn style_sidebar_button_selected(theme: &Theme, status: button::Status) ->button:: Style {
     let palette = theme.extended_palette();
-    let base = Style {
+    let base = button::Style {
         background: Some(Background::Color(palette.primary.strong.color)),
         text_color: palette.primary.strong.text,
         border: border::rounded(6),
-        ..Style::default()
+        ..button::Style::default()
     };
 
     match status {
-        Status::Pressed | Status::Active => base,
-        Status::Hovered => Style {
+        button::Status::Pressed | button::Status::Active => base,
+        button::Status::Hovered => button::Style {
             background: Some(Background::Color(palette.primary.base.color)),
             ..base
         },
-        Status::Disabled => Style {
+        button::Status::Disabled => button::Style {
             background: Some(Background::Color(Color::TRANSPARENT)),
             ..base
         },
     }
 }
 
-pub(super) fn style_separator(theme: &Theme) -> RuleStyle {
+pub(super) fn style_sidebar_text(theme: &Theme) -> text::Style {
+    let palette = theme.palette();
+
+    // text_size: (default_style.text_size as f32 * 0.7) as u16,
+    // height: Length::Fixed(32.0),
+
+    text::Style {
+        color: Some(palette.text.scale_alpha(0.7))
+    }
+}
+
+pub(super) fn style_sidebar_text_selected(theme: &Theme) -> text::Style {
+    let palette = theme.palette();
+
+    // text_size: (default_style.text_size as f32 * 0.7) as u16,
+    // height: Length::Fixed(32.0),
+
+    text::Style {
+        color: Some(palette.text)
+    }
+}
+
+pub(super) fn style_sidebar_background(theme: &Theme) -> container::Style {
+    container::Style::default().background(theme.extended_palette().background.weak.color.scale_alpha(0.1))
+}
+
+pub(super) fn style_separator(theme: &Theme) -> rule::Style {
     let color = if theme.extended_palette().is_dark {
         Color::new(0.0, 0.0, 0.0, 0.8)
     } else {
         Color::new(1.0, 1.0, 1.0, 0.8)
     };
 
-    RuleStyle {
+    rule::Style {
         color: color,
         width: 1,
         radius: border::Radius::new(0),
-        fill_mode: FillMode::Padded(0),
+        fill_mode: rule::FillMode::Padded(0),
     }
 }
 
-pub(super) fn style_sidebar_background(theme: &Theme) -> ContainerStyle {
-    ContainerStyle::default().background(theme.extended_palette().background.weak.color.scale_alpha(0.1))
-}
-
-pub(super) fn style_sheet_background(theme: &Theme) -> ContainerStyle {
+pub(super) fn style_sheet_background(theme: &Theme) -> container::Style {
     if theme.extended_palette().is_dark {
-        ContainerStyle::default().background(Color::BLACK.scale_alpha(0.4))
+        container::Style::default().background(Color::BLACK.scale_alpha(0.4))
     } else {
-        ContainerStyle::default().background(Color::WHITE.scale_alpha(0.4))
+        container::Style::default().background(Color::WHITE.scale_alpha(0.4))
     }
 }

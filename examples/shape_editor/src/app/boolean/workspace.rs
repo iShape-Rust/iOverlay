@@ -65,24 +65,46 @@ impl EditorApp {
                     }
                     _ => {
                         stack = stack.push(
-                            Container::new(ShapeWidget::with_shapes(
-                                &self.state.boolean.workspace.solution,
+                            Container::new(ShapeWidget::with_paths(
+                                &self.state.boolean.workspace.subj,
                                 self.state.boolean.workspace.camera,
+                                Some(self.state.boolean.fill.to_fill_rule()),
                                 None,
-                                Some(Design::solution_color().scale_alpha(0.2)),
-                                Some(Design::solution_color()),
-                                4.0,
+                                Some(Design::subject_color()),
+                                1.0,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)
-                        )
+                        ).push(
+                            Container::new(ShapeWidget::with_paths(
+                                &self.state.boolean.workspace.clip,
+                                self.state.boolean.workspace.camera,
+                                Some(self.state.boolean.fill.to_fill_rule()),
+                                None,
+                                Some(Design::clip_color()),
+                                1.0,
+                            ))
+                                .width(Length::Fill)
+                                .height(Length::Fill)
+                        ).push(
+                                Container::new(ShapeWidget::with_shapes(
+                                    &self.state.boolean.workspace.solution,
+                                    self.state.boolean.workspace.camera,
+                                    None,
+                                    Some(Design::solution_color().scale_alpha(0.2)),
+                                    Some(Design::solution_color()),
+                                    4.0,
+                                ))
+                                    .width(Length::Fill)
+                                    .height(Length::Fill)
+                            )
                     }
                 }
                 stack = stack.push(
                     Container::new(PointsEditorWidget::new(
                         &self.state.boolean.workspace.points,
                         self.state.boolean.workspace.camera,
-                        on_update_point)
+                        on_update_point).set_accent_color(Design::accent_color())
                     )
                         .width(Length::Fill)
                         .height(Length::Fill)
