@@ -53,7 +53,7 @@ impl EditorApp {
                 .push(
                     Container::new(
                         pick_list(
-                            &BooleanModeOption::ALL[..],
+                            &ModeOption::ALL[..],
                             Some(self.state.boolean.mode),
                             on_select_mode,
                         ).width(Length::Fixed(160.0))
@@ -75,7 +75,7 @@ fn on_select_fill(option: FillOption) -> AppMessage {
     AppMessage::Bool(BooleanMessage::FillSelected(option))
 }
 
-fn on_select_mode(option: BooleanModeOption) -> AppMessage {
+fn on_select_mode(option: ModeOption) -> AppMessage {
     AppMessage::Bool(BooleanMessage::ModeSelected(option))
 }
 
@@ -84,7 +84,7 @@ fn on_select_solver(option: SolverOption) -> AppMessage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum BooleanModeOption {
+pub(crate) enum ModeOption {
     #[default]
     Edit,
     Debug,
@@ -97,48 +97,48 @@ pub enum BooleanModeOption {
     Xor,
 }
 
-impl BooleanModeOption {
-    const ALL: [BooleanModeOption; 9] = [
-        BooleanModeOption::Edit,
-        BooleanModeOption::Debug,
-        BooleanModeOption::Subject,
-        BooleanModeOption::Clip,
-        BooleanModeOption::Intersect,
-        BooleanModeOption::Union,
-        BooleanModeOption::Difference,
-        BooleanModeOption::InverseDifference,
-        BooleanModeOption::Xor,
+impl ModeOption {
+    const ALL: [ModeOption; 9] = [
+        ModeOption::Edit,
+        ModeOption::Debug,
+        ModeOption::Subject,
+        ModeOption::Clip,
+        ModeOption::Intersect,
+        ModeOption::Union,
+        ModeOption::Difference,
+        ModeOption::InverseDifference,
+        ModeOption::Xor,
     ];
 
     pub(crate) fn to_overlay_rule(&self) -> Option<OverlayRule> {
         match self {
-            BooleanModeOption::Subject => Some(OverlayRule::Subject),
-            BooleanModeOption::Clip => Some(OverlayRule::Clip),
-            BooleanModeOption::Intersect => Some(OverlayRule::Intersect),
-            BooleanModeOption::Union => Some(OverlayRule::Union),
-            BooleanModeOption::Difference => Some(OverlayRule::Difference),
-            BooleanModeOption::InverseDifference => Some(OverlayRule::InverseDifference),
-            BooleanModeOption::Xor => Some(OverlayRule::Xor),
+            ModeOption::Subject => Some(OverlayRule::Subject),
+            ModeOption::Clip => Some(OverlayRule::Clip),
+            ModeOption::Intersect => Some(OverlayRule::Intersect),
+            ModeOption::Union => Some(OverlayRule::Union),
+            ModeOption::Difference => Some(OverlayRule::Difference),
+            ModeOption::InverseDifference => Some(OverlayRule::InverseDifference),
+            ModeOption::Xor => Some(OverlayRule::Xor),
             _ => None
         }
     }
 }
 
-impl std::fmt::Display for BooleanModeOption {
+impl std::fmt::Display for ModeOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                BooleanModeOption::Edit => "Edit",
-                BooleanModeOption::Debug => "Debug",
-                BooleanModeOption::Subject => "Subject",
-                BooleanModeOption::Clip => "Clip",
-                BooleanModeOption::Intersect => "Intersect",
-                BooleanModeOption::Union => "Union",
-                BooleanModeOption::Difference => "Difference",
-                BooleanModeOption::InverseDifference => "InverseDifference",
-                BooleanModeOption::Xor => "Xor",
+                ModeOption::Edit => "Edit",
+                ModeOption::Debug => "Debug",
+                ModeOption::Subject => "Subject",
+                ModeOption::Clip => "Clip",
+                ModeOption::Intersect => "Intersect",
+                ModeOption::Union => "Union",
+                ModeOption::Difference => "Difference",
+                ModeOption::InverseDifference => "InverseDifference",
+                ModeOption::Xor => "Xor",
             }
         )
     }

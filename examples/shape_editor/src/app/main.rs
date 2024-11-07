@@ -1,18 +1,19 @@
-use iced::keyboard::Key::Named as NamedBox;
-use iced::Subscription;
-use iced::event::{self, Event as MainEvent};
-use crate::app::design::style_separator;
-use iced::widget::{Space, vertical_rule};
 use std::default::Default;
-use crate::app::boolean::content::BooleanMessage;
-use crate::app::boolean::content::BooleanState;
-use crate::data::resource::AppResource;
-use iced::{Alignment, Color, Element, Length};
+use iced::Subscription;
+use iced::keyboard::Key::Named as NamedBox;
+use iced::event::{self, Event as MainEvent};
+use iced::widget::{Space, vertical_rule};
+use iced::{Alignment, Element, Length};
 use iced::keyboard::Event as KeyboardEvent;
 use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
+use crate::app::string::content::StringMessage;
+use crate::app::string::content::StringState;
+use crate::app::boolean::content::BooleanMessage;
+use crate::app::boolean::content::BooleanState;
+use crate::app::design::style_separator;
 use crate::app::design::{style_sidebar_button, style_sidebar_button_selected, Design};
-use crate::fill_view::FillView;
+use crate::data::resource::AppResource;
 
 pub(crate) struct EditorApp {
     main_actions: Vec<MainAction>,
@@ -24,6 +25,7 @@ pub(crate) struct EditorApp {
 pub(super) struct MainState {
     selected_action: MainAction,
     pub(super) boolean: BooleanState,
+    pub(super) string: StringState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -50,6 +52,7 @@ pub(crate) enum MainMessage {
 pub(crate) enum AppMessage {
     Main(MainMessage),
     Bool(BooleanMessage),
+    String(StringMessage),
     EventOccurred(MainEvent),
 }
 
@@ -61,6 +64,7 @@ impl EditorApp {
             state: MainState {
                 selected_action: MainAction::Boolean,
                 boolean: BooleanState::new(&mut app_resource.boolean),
+                string: StringState::new(&mut app_resource.string),
             },
             app_resource,
             design: Design::new(),
@@ -71,6 +75,7 @@ impl EditorApp {
         match message {
             AppMessage::Main(msg) => self.update_main(msg),
             AppMessage::Bool(msg) => self.boolean_update(msg),
+            AppMessage::String(msg) => self.string_update(msg),
             AppMessage::EventOccurred(event) => {
                 if let MainEvent::Keyboard(keyboard) = event {
                      if let KeyboardEvent::KeyPressed{
@@ -86,19 +91,17 @@ impl EditorApp {
                                 Named::ArrowDown => {
                                     match self.state.selected_action {
                                         MainAction::Boolean => self.boolean_next_test(),
-                                        _ => {}
+                                        MainAction::String => self.string_next_test(),
                                     }
                                 },
                                 Named::ArrowUp => {
                                     match self.state.selected_action {
                                         MainAction::Boolean => self.boolean_prev_test(),
-                                        _ => {}
+                                        MainAction::String => self.string_prev_test(),
                                     }
                                 },
                                 _ => {}
                             }
-
-                             // println!("Key down: {:?}", named);
                          }
                      }
                 }
@@ -132,12 +135,11 @@ impl EditorApp {
                     .push(self.boolean_content())
             }
             MainAction::String => {
-                content.push(FillView::new(Color {
-                    r: 1.0,
-                    g: 1.0,
-                    b: 0.0,
-                    a: 1.0,
-                }))
+                content
+                    .push(
+                        vertical_rule(1).style(style_separator)
+                    )
+                    .push(self.string_content())
             }
         };
 

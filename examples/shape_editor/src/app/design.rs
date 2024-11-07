@@ -10,6 +10,20 @@ pub(super) struct Design {
 }
 
 impl Design {
+    const SHAPE_COLOR_STORE: [[u8; 3]; 12] = [
+        [255, 149, 0],    // Orange
+        [88, 86, 214],    // Purple
+        [255, 45, 85],    // Pink
+        [90, 200, 250],   // Blue
+        [76, 217, 100],   // Green
+        [255, 204, 0],    // Yellow
+        [142, 142, 147],  // Gray
+        [255, 59, 48],    // Red
+        [52, 199, 89],    // Green
+        [0, 122, 255],    // Blue
+        [175, 82, 222],   // Indigo
+        [255, 214, 10],   // Teal
+    ];
 
     pub(crate) fn solution_color() -> Color {
         Color::from_rgb8(32, 199, 32)
@@ -21,6 +35,19 @@ impl Design {
 
     pub(crate) fn clip_color() -> Color {
         Color::from_rgb8(26, 142, 255)
+    }
+
+    pub(crate) fn color_by_index(index: usize) -> Color {
+        let data = Self::SHAPE_COLOR_STORE[index % Self::SHAPE_COLOR_STORE.len()];
+        Color::from_rgb8(data[0], data[1], data[2])
+    }
+
+    pub(crate) fn negative_color() -> Color {
+        if iced::Theme::default().extended_palette().is_dark {
+            Color::from_rgb8(224, 224, 224)
+        } else {
+            Color::from_rgb8(32, 32, 32)
+        }
     }
 
     pub(crate) fn accent_color() -> Color {
@@ -67,7 +94,7 @@ pub(super) fn style_sidebar_button(theme: &Theme, status: button::Status) -> but
     }
 }
 
-pub(super) fn style_sidebar_button_selected(theme: &Theme, status: button::Status) ->button:: Style {
+pub(super) fn style_sidebar_button_selected(theme: &Theme, status: button::Status) -> button::Style {
     let palette = theme.extended_palette();
     let base = button::Style {
         background: Some(Background::Color(palette.primary.strong.color)),
@@ -91,10 +118,6 @@ pub(super) fn style_sidebar_button_selected(theme: &Theme, status: button::Statu
 
 pub(super) fn style_sidebar_text(theme: &Theme) -> text::Style {
     let palette = theme.palette();
-
-    // text_size: (default_style.text_size as f32 * 0.7) as u16,
-    // height: Length::Fixed(32.0),
-
     text::Style {
         color: Some(palette.text.scale_alpha(0.7))
     }
@@ -102,10 +125,6 @@ pub(super) fn style_sidebar_text(theme: &Theme) -> text::Style {
 
 pub(super) fn style_sidebar_text_selected(theme: &Theme) -> text::Style {
     let palette = theme.palette();
-
-    // text_size: (default_style.text_size as f32 * 0.7) as u16,
-    // height: Length::Fixed(32.0),
-
     text::Style {
         color: Some(palette.text)
     }
