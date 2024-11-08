@@ -76,10 +76,10 @@ impl OverlayLinkBuilder {
         let fills = Self::fill_string(&segments, fill_rule, solver);
 
         match clip_rule {
-            ClipRule { invert: true, boundary_included: true } => Self::build_string_links::<StringClipOutsideBoundaryIncludedFilter>(&segments, &fills),
-            ClipRule { invert: true, boundary_included: false } => Self::build_string_links::<StringClipOutsideBoundaryExcludedFilter>(&segments, &fills),
-            ClipRule { invert: false, boundary_included: true } => Self::build_string_links::<StringClipInsideBoundaryIncludedFilter>(&segments, &fills),
-            ClipRule { invert: false, boundary_included: false } => Self::build_string_links::<StringClipInsideBoundaryExcludedFilter>(&segments, &fills),
+            ClipRule { invert: true, boundary_included: true } => Self::build_clip_string_links::<StringClipOutsideBoundaryIncludedFilter>(&segments, &fills),
+            ClipRule { invert: true, boundary_included: false } => Self::build_clip_string_links::<StringClipOutsideBoundaryExcludedFilter>(&segments, &fills),
+            ClipRule { invert: false, boundary_included: true } => Self::build_clip_string_links::<StringClipInsideBoundaryIncludedFilter>(&segments, &fills),
+            ClipRule { invert: false, boundary_included: false } => Self::build_clip_string_links::<StringClipInsideBoundaryExcludedFilter>(&segments, &fills),
         }
     }
 
@@ -140,7 +140,7 @@ impl OverlayLinkBuilder {
         links
     }
 
-    fn build_string_links<F: InclusionStringFilterStrategy>(segments: &[Segment], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+    fn build_clip_string_links<F: InclusionStringFilterStrategy>(segments: &[Segment], fills: &[SegmentFill]) -> Vec<OverlayLink> {
         let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
 
         let empty_id = IdPoint::new(0, IntPoint::ZERO);

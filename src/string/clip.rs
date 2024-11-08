@@ -2,6 +2,7 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
+use crate::core::link::OverlayLink;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -15,36 +16,57 @@ pub struct ClipRule {
     pub boundary_included: bool,
 }
 
-impl StringGraph {
+#[derive(Debug, Clone, Copy)]
+enum Direction {
+    Forward,
+    Back,
+    Both,
+    None,
+}
 
+impl StringGraph {
     #[inline]
     pub(super) fn clip_string_lines(&self) -> Vec<IntPath> {
-        let mut visited = vec![false; self.links.len()];
+        let mut moves: Vec<_> = self.links.iter()
+            .map(|link|
+                match link.fill {
+                    0 => Direction::Back,
+                    1 => Direction::Both,
+                    _ => Direction::Forward,
+                })
+            .collect();
 
         let mut link_index = 0;
         let mut paths = Vec::new();
-        while link_index < visited.len() {
-            if visited[link_index] {
+        while link_index < moves.len() {
+            let this_move = unsafe { moves.get_unchecked_mut(link_index) };
+            let mut link = self.link(link_index);
+            let is_move_possible = Self::visit_if_possible(this_move, link);
+
+            if !is_move_possible {
                 link_index += 1;
                 continue;
             }
 
-            visited[link_index] = true;
-
             let mut sub_path = Vec::new();
-            let mut link = self.link(link_index);
             let mut a = link.a;
             sub_path.push(a.point);
             loop {
                 let b = link.other(a.id);
                 sub_path.push(b.point);
                 let node = self.node(b.id);
-                let next_index = if let Some(&not_visited_index) = node.iter().find(|&&index| !visited[index]) {
+                let next_index = if let Some(&not_visited_index) = node.iter()
+                    .find(|&&index| {
+                        let index_move = unsafe { moves.get_unchecked_mut(index) };
+                        let index_link = self.link(index);
+                        let is_move_possible = Self::visit_if_possible(index_move, index_link);
+                        is_move_possible
+                    }) {
                     not_visited_index
                 } else {
                     break;
                 };
-                visited[next_index] = true;
+
                 link = self.link(next_index);
                 a = b;
             }
@@ -53,6 +75,34 @@ impl StringGraph {
         }
 
         paths
+    }
+
+    fn visit_if_possible(dir: &mut Direction, link: &OverlayLink) -> bool {
+        if link.is_direct() {
+            match dir {
+                Direction::Forward => {
+                    *dir = Direction::None;
+                    true
+                }
+                Direction::Both => {
+                    *dir = Direction::Back;
+                    true
+                }
+                Direction::Back | Direction::None => false,
+            }
+        } else {
+            match dir {
+                Direction::Back => {
+                    *dir = Direction::None;
+                    true
+                }
+                Direction::Both => {
+                    *dir = Direction::Forward;
+                    true
+                }
+                Direction::Forward | Direction::None => false,
+            }
+        }
     }
 }
 
@@ -284,11 +334,11 @@ mod tests {
         ];
 
         let result_0 = rect.clip_path(&path, FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+                                      ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = rect.clip_path(&path,FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: true },
+        let result_1 = rect.clip_path(&path, FillRule::NonZero,
+                                      ClipRule { invert: false, boundary_included: true },
         );
 
         assert_eq!(result_0.len(), 3);
