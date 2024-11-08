@@ -1,6 +1,6 @@
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::IntPaths;
+use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
 use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
 use i_triangle::triangulation::float::Triangulation;
 use i_triangle::stroke::butt::ButtStrokeBuilder;
@@ -24,7 +24,7 @@ pub(crate) struct PathWidget {
 impl PathWidget {
     pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
         let offset = Self::offset_for_shapes(shapes, camera);
-        let stroke = Self::stroke_mesh_for_shapes(shapes, camera, offset, stroke_color, stroke_width);
+        let stroke = Self::stroke_mesh_for_shapes(shapes, camera, offset, stroke_color, stroke_width, arrows);
         Self {
             stroke,
         }
@@ -32,13 +32,13 @@ impl PathWidget {
 
     pub(crate) fn with_paths(paths: &IntPaths, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
         let offset = Self::offset_for_paths(paths, camera);
-        let stroke = Self::stroke_mesh_for_paths(paths, camera, offset, stroke_color, stroke_width);
+        let stroke = Self::stroke_mesh_for_paths(paths, camera, offset, stroke_color, stroke_width, arrows);
         Self {
             stroke,
         }
     }
 
-    fn stroke_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, color: Color, width: f32) -> Option<Mesh> {
+    fn stroke_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
         if shapes.is_empty() {
             return None;
         }
@@ -47,13 +47,7 @@ impl PathWidget {
         let mut builder = TriangulationBuilder::new();
         for shape in shapes.iter() {
             for path in shape.iter() {
-                let world_path: Vec<_> = path.iter().map(|&p| {
-                    let v = camera.point_to_screen(p);
-                    FloatPoint::new(v.x, v.y)
-                }).collect();
-
-                let sub_triangulation = stroke_builder.build_open_path_mesh(&world_path);
-                builder.append(sub_triangulation);
+                Self::append_path(&mut builder, camera, path, width, arrows);
             }
         }
         let r = 0.5 * width;
@@ -64,22 +58,15 @@ impl PathWidget {
         Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color, width: f32) -> Option<Mesh> {
+    fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
         if paths.is_empty() {
             return None;
         }
-        let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
 
         let mut builder = TriangulationBuilder::new();
 
         for path in paths.iter() {
-            let world_path: Vec<_> = path.iter().map(|&p| {
-                let v = camera.point_to_screen(p);
-                FloatPoint::new(v.x, v.y)
-            }).collect();
-
-            let sub_triangulation = stroke_builder.build_open_path_mesh(&world_path);
-            builder.append(sub_triangulation);
+            Self::append_path(&mut builder, camera, path, width, arrows);
         }
 
         let r = 0.5 * width;
@@ -138,6 +125,38 @@ impl PathWidget {
         }
 
         camera.point_to_screen(IntPoint::new(min_x, max_y))
+    }
+
+    fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
+        let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
+        let screen_path: Vec<_> = path.iter().map(|&p| {
+            let v = camera.point_to_screen(p);
+            FloatPoint::new(v.x, v.y)
+        }).collect();
+
+        let sub_triangulation = stroke_builder.build_open_path_mesh(&screen_path);
+        builder.append(sub_triangulation);
+
+        let r2 = 2.0 * width;
+        let r4 = 4.0 * width;
+
+        if arrows {
+            let mut a = screen_path[0];
+            for &b in screen_path.iter().skip(1) {
+                let m = (a + b) * 0.5;
+                let n = (b - a).normalize();
+                let m0 = m - n * r4;
+                let t0 = FloatPoint::new(-n.y, n.x) * r2;
+                let t1 = FloatPoint::new(n.y, -n.x) * r2;
+                let v0 = m0 + t0;
+                let v1 = m0 + t1;
+
+                let arrow_triangulation = stroke_builder.build_open_path_mesh(&[v0, m, v1]);
+                builder.append(arrow_triangulation);
+
+                a = b;
+            }
+        }
     }
 }
 
