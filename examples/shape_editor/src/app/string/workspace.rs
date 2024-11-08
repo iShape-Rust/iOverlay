@@ -12,6 +12,7 @@ use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use iced::widget::Stack;
 use iced::widget::Container;
 use iced::{Length, Padding, Size, Vector};
+use iced::advanced::text::Difference::Shape;
 use crate::app::string::control::ModeOption;
 use crate::draw::varicolored::VaricoloredWidget;
 
@@ -71,6 +72,43 @@ impl EditorApp {
                                 .width(Length::Fill)
                                 .height(Length::Fill)
                         )
+                    }
+                    ModeOption::ClipDirect | ModeOption::ClipInvert => {
+                        stack = stack.push(
+                            Container::new(ShapeWidget::with_paths(
+                                &self.state.string.workspace.body,
+                                self.state.string.workspace.camera,
+                                Some(self.state.string.fill.to_fill_rule()),
+                                Some(Design::clip_color().scale_alpha(0.3)),
+                                Some(Design::clip_color()),
+                                4.0,
+                            ))
+                                .width(Length::Fill)
+                                .height(Length::Fill)
+                        ).push(
+                            Container::new(PathWidget::with_paths(
+                                &self.state.string.workspace.string,
+                                self.state.string.workspace.camera,
+                                Design::negative_color(),
+                                4.0,
+                                true,
+                            ))
+                                .width(Length::Fill)
+                                .height(Length::Fill)
+                        );
+                        if let Solution::Paths(paths) = &self.state.string.workspace.solution {
+                            stack = stack.push(
+                                Container::new(PathWidget::with_paths(
+                                    paths,
+                                    self.state.string.workspace.camera,
+                                    Design::subject_color(),
+                                    4.0,
+                                    true,
+                                ))
+                                    .width(Length::Fill)
+                                    .height(Length::Fill)
+                            );
+                        }
                     }
                     _ => {
                         stack = stack.push(
