@@ -33,7 +33,7 @@ impl StringTest {
             Ok(test) => Some(test),
             Err(e) => {
                 eprintln!("Failed to parse JSON: {}", e);
-                return None;
+                None
             }
         }
     }

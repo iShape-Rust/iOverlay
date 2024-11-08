@@ -17,7 +17,7 @@ impl Camera {
     }
 
     pub(crate) fn is_empty(&self) -> bool {
-        self.scale < 0.000_000_0001
+        self.scale < 0.000_000_000_1
     }
 
     pub(crate) fn is_not_empty(&self) -> bool {

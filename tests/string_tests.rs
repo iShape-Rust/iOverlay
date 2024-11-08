@@ -4,6 +4,7 @@ mod util;
 #[cfg(test)]
 mod tests {
     use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::string::clip::{ClipRule, IntClip};
     use i_overlay::string::slice::IntSlice;
     use crate::data::overlay::StringTest;
     use crate::util::overlay;
@@ -43,13 +44,23 @@ mod tests {
         print!("slice: {}", slice.json_print());
     }
 
-    #[test]
-    fn test_0() {
-        execute(0);
+    fn debug_execute_clip(index: usize, invert: bool) {
+        let test = StringTest::load(index);
+        let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
+
+        let clip = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert, boundary_included: false });
+
+        print!("clip: {}", clip.json_print());
     }
 
-    #[test]
-    fn test_debug() {
-        debug_execute_slice(0);
-    }
+    // #[test]
+    // fn test_0() {
+    //     execute(0);
+    // }
+    //
+    // #[test]
+    // fn test_debug() {
+    //     // debug_execute_slice(0);
+    //     debug_execute_clip(0, false);
+    // }
 }

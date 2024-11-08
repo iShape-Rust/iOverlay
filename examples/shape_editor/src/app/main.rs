@@ -76,36 +76,16 @@ impl EditorApp {
             AppMessage::Main(msg) => self.update_main(msg),
             AppMessage::Bool(msg) => self.boolean_update(msg),
             AppMessage::String(msg) => self.string_update(msg),
-            AppMessage::EventOccurred(event) => {
-                if let MainEvent::Keyboard(keyboard) = event {
-                     if let KeyboardEvent::KeyPressed{
-                         key,
-                         modified_key: _,
-                         physical_key: _,
-                         location: _,
-                         modifiers: _,
-                         text: _,
-                     } = keyboard  {
-                         if let NamedBox(named) = key {
-                            match named {
-                                Named::ArrowDown => {
-                                    match self.state.selected_action {
-                                        MainAction::Boolean => self.boolean_next_test(),
-                                        MainAction::String => self.string_next_test(),
-                                    }
-                                },
-                                Named::ArrowUp => {
-                                    match self.state.selected_action {
-                                        MainAction::Boolean => self.boolean_prev_test(),
-                                        MainAction::String => self.string_prev_test(),
-                                    }
-                                },
-                                _ => {}
-                            }
-                         }
-                     }
+            AppMessage::EventOccurred(MainEvent::Keyboard(KeyboardEvent::KeyPressed { key: NamedBox(named @ (Named::ArrowDown | Named::ArrowUp)), .. })) => {
+                match (named, self.state.selected_action.clone()) {
+                    (Named::ArrowDown, MainAction::Boolean) => self.boolean_next_test(),
+                    (Named::ArrowDown, MainAction::String) => self.string_next_test(),
+                    (Named::ArrowUp, MainAction::Boolean) => self.boolean_prev_test(),
+                    (Named::ArrowUp, MainAction::String) => self.string_prev_test(),
+                    _ => {}
                 }
             }
+            _ => {}
         }
     }
 
@@ -168,7 +148,6 @@ impl EditorApp {
             },
         )
     }
-
 }
 
 impl Default for EditorApp {

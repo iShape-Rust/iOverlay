@@ -198,8 +198,8 @@ impl BooleanState {
     fn update_solution(&mut self) {
         let subj = &self.workspace.subj;
         let clip = &self.workspace.clip;
-        let fill_rule = self.fill.to_fill_rule();
-        if let Some(overlay_rule) = self.mode.to_overlay_rule() {
+        let fill_rule = self.fill.fill_rule();
+        if let Some(overlay_rule) = self.mode.overlay_rule() {
             let solution = Overlay::with_contours(subj, clip)
                 .into_graph(fill_rule)
                 .extract_shapes_min_area(overlay_rule, 0);

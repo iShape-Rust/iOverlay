@@ -17,7 +17,7 @@ impl FillOption {
         FillOption::Negative,
     ];
 
-    pub(crate) fn to_fill_rule(&self) -> FillRule {
+    pub(crate) fn fill_rule(&self) -> FillRule {
         match self {
             FillOption::NonZero => FillRule::NonZero,
             FillOption::EvenOdd => FillRule::EvenOdd,

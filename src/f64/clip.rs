@@ -1,24 +1,9 @@
 use i_float::f64_point::F64Point;
-use i_shape::f64::adapter::PathToFloat;
 use i_shape::f64::shape::{F64Path, F64Shape, F64Shapes};
 use crate::core::fill_rule::FillRule;
 use crate::f64::line::F64Line;
-use crate::f64::string::{F64StringGraph, F64StringOverlay};
+use crate::f64::string::F64StringOverlay;
 use crate::string::clip::ClipRule;
-
-impl F64StringGraph {
-    /// Clips the line strings in the graph based on the specified `ClipRule`, adapting integer-based lines to `F64Line`.
-    ///
-    /// - `clip_rule`: The clipping rule specifying whether to invert the selection and include boundaries.
-    ///
-    /// # Returns
-    /// A vector of `F64Path` containing the points of lines that meet the clipping conditions.
-    #[inline]
-    pub fn clip_string_lines(&self, clip_rule: ClipRule) -> Vec<F64Path> {
-        let lines = self.graph.clip_string_lines(clip_rule);
-        lines.into_iter().map(|path| path.to_float(&self.adapter)).collect()
-    }
-}
 
 // #[deprecated(
 //     since = "1.8.0",
@@ -70,7 +55,7 @@ impl F64Clip for F64Shapes {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -78,7 +63,8 @@ impl F64Clip for F64Shapes {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_lines(lines.to_vec());
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
+
     }
 
     #[inline]
@@ -86,7 +72,7 @@ impl F64Clip for F64Shapes {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_path(path.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -94,7 +80,7 @@ impl F64Clip for F64Shapes {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_paths(paths.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }
 
@@ -104,7 +90,7 @@ impl F64Clip for F64Shape {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -112,7 +98,7 @@ impl F64Clip for F64Shape {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_lines(lines.to_vec());
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -120,7 +106,7 @@ impl F64Clip for F64Shape {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_path(path.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -128,7 +114,7 @@ impl F64Clip for F64Shape {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_paths(paths.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }
 
@@ -138,7 +124,7 @@ impl F64Clip for [F64Point] {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -146,7 +132,7 @@ impl F64Clip for [F64Point] {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_lines(lines.to_vec());
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -154,7 +140,7 @@ impl F64Clip for [F64Point] {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_path(path.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -162,6 +148,6 @@ impl F64Clip for [F64Point] {
         let mut overlay = F64StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_paths(paths.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }

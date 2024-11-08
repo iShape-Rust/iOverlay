@@ -89,14 +89,14 @@ impl PointsEditorState {
                 clip_bounds: Rectangle::INFINITE,
             },
             drag: Mesh::Solid {
-                buffers: Indexed { vertices: drag_vertices, indices: indices },
+                buffers: Indexed { vertices: drag_vertices, indices },
                 transformation: Transformation::IDENTITY,
                 clip_bounds: Rectangle::INFINITE,
             },
         });
     }
 
-    pub(super) fn mouse_press<'a, M>(&mut self, widget: &PointsEditorWidget<'a, M>, cursor: Vector<f32>, offset: Vector<f32>) -> bool {
+    pub(super) fn mouse_press<M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> bool {
         let mut min_ds = widget.hover_radius * widget.hover_radius;
         let mut min_index = usize::MAX;
         for (i, p) in widget.points.iter().enumerate() {
@@ -121,26 +121,26 @@ impl PointsEditorState {
         is_catch
     }
 
-    pub(super) fn mouse_release<'a, M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> bool {
+    pub(super) fn mouse_release<M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> bool {
         if let SelectState::Drag(_) = &self.select {
             self.select = SelectState::None;
-            self.mouse_hower(widget.camera, widget.hover_radius, &widget.points, cursor, offset);
+            self.mouse_hower(widget.camera, widget.hover_radius, widget.points, cursor, offset);
             true
         } else {
             false
         }
     }
 
-    pub(super) fn mouse_move<'a, M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> Option<PointEditUpdate> {
+    pub(super) fn mouse_move<M>(&mut self, widget: &PointsEditorWidget<M>, cursor: Vector<f32>, offset: Vector<f32>) -> Option<PointEditUpdate> {
         if let SelectState::Drag(drag) = &self.select {
-            Self::mouse_drag(drag, widget.camera, &widget.points, cursor)
+            Self::mouse_drag(drag, widget.camera, widget.points, cursor)
         } else {
-            self.mouse_hower(widget.camera, widget.hover_radius, &widget.points, cursor, offset);
+            self.mouse_hower(widget.camera, widget.hover_radius, widget.points, cursor, offset);
             None
         }
     }
 
-    fn mouse_drag(drag: &Drag, camera: Camera, points: &Vec<EditorPoint>, cursor: Vector<f32>) -> Option<PointEditUpdate> {
+    fn mouse_drag(drag: &Drag, camera: Camera, points: &[EditorPoint], cursor: Vector<f32>) -> Option<PointEditUpdate> {
         let translate = cursor - drag.start_float;
         let world_dist = camera.distance_to_world(translate).round();
         let world_point = world_dist + drag.editor_point.pos;
@@ -155,7 +155,7 @@ impl PointsEditorState {
         None
     }
 
-    fn mouse_hower(&mut self, camera: Camera, radius: f32, points: &Vec<EditorPoint>, cursor: Vector<f32>, offset: Vector<f32>) {
+    fn mouse_hower(&mut self, camera: Camera, radius: f32, points: &[EditorPoint], cursor: Vector<f32>, offset: Vector<f32>) {
         let mut min_ds = radius * radius;
         let mut min_index = usize::MAX;
         for (i, p) in points.iter().enumerate() {

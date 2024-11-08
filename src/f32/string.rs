@@ -1,6 +1,6 @@
 use i_float::f32_adapter::F32PointAdapter;
 use i_float::f32_rect::F32Rect;
-use i_shape::f32::adapter::{ShapesToFloat, ShapeToInt};
+use i_shape::f32::adapter::{ShapesToFloat, ShapeToInt, ShapeToFloat};
 use i_shape::f32::rect::RectInit;
 use i_shape::f32::shape::{F32Path, F32Shapes};
 use crate::core::fill_rule::FillRule;
@@ -8,6 +8,7 @@ use crate::core::solver::Solver;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use crate::f32::line::F32Line;
+use crate::string::clip::ClipRule;
 use crate::string::overlay::StringOverlay;
 
 // #[deprecated(
@@ -109,6 +110,26 @@ impl F32StringOverlay {
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: An `F32StringGraph` containing the graph representation of the overlay.
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> F32StringGraph {
+        let (overlay, adapter) = self.into_overlay_and_adapter();
+        let graph = overlay.into_graph_with_solver(fill_rule, solver);
+        F32StringGraph { graph, adapter }
+    }
+
+    /// Clips lines according to the specified fill and clip rules.
+    /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
+    /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
+    /// - `solver`: A solver type to be used for advanced control over the graph building process.
+    ///
+    /// # Returns
+    /// A vector of `F32Path` instances representing the clipped sections of the input lines.
+    #[inline]
+    pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<F32Path> {
+        let (overlay, adapter) = self.into_overlay_and_adapter();
+        let paths = overlay.clip_string_lines_with_solver(fill_rule, clip_rule, solver);
+        paths.to_float(&adapter)
+    }
+
+    fn into_overlay_and_adapter(self) -> (StringOverlay, F32PointAdapter) {
         let mut rect = F32Rect::with_shape(&self.shape_paths).unwrap_or(F32Rect {
             min_x: -1.0,
             max_x: 1.0,
@@ -132,9 +153,7 @@ impl F32StringOverlay {
             overlay.add_string_line([a, b]);
         }
 
-        let graph = overlay.into_graph_with_solver(fill_rule, solver);
-
-        F32StringGraph { graph, adapter }
+        (overlay, adapter)
     }
 }
 

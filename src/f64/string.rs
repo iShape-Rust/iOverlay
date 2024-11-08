@@ -3,11 +3,13 @@ use i_float::f64_rect::F64Rect;
 use i_shape::f64::adapter::{ShapesToFloat, ShapeToInt};
 use i_shape::f64::rect::RectInit;
 use i_shape::f64::shape::{F64Path, F64Shapes};
+use i_shape::f64::adapter::ShapeToFloat;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use crate::f64::line::F64Line;
+use crate::string::clip::ClipRule;
 use crate::string::overlay::StringOverlay;
 
 // #[deprecated(
@@ -108,6 +110,27 @@ impl F64StringOverlay {
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: An `F64StringGraph` containing the graph representation of the overlay.
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> F64StringGraph {
+        let (overlay, adapter) = self.into_overlay_and_adapter();
+        let graph = overlay.into_graph_with_solver(fill_rule, solver);
+
+        F64StringGraph { graph, adapter }
+    }
+
+    /// Clips lines according to the specified fill and clip rules.
+    /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
+    /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
+    /// - `solver`: A solver type to be used for advanced control over the graph building process.
+    ///
+    /// # Returns
+    /// A vector of `F64Path` instances representing the clipped sections of the input lines.
+    #[inline]
+    pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<F64Path> {
+        let (overlay, adapter) = self.into_overlay_and_adapter();
+        let paths = overlay.clip_string_lines_with_solver(fill_rule, clip_rule, solver);
+        paths.to_float(&adapter)
+    }
+
+    fn into_overlay_and_adapter(self) -> (StringOverlay, F64PointAdapter) {
         let mut rect = F64Rect::with_shape(&self.shape_paths).unwrap_or(F64Rect {
             min_x: -1.0,
             max_x: 1.0,
@@ -131,9 +154,7 @@ impl F64StringOverlay {
             overlay.add_string_line([a, b]);
         }
 
-        let graph = overlay.into_graph_with_solver(fill_rule, solver);
-
-        F64StringGraph { graph, adapter }
+        (overlay, adapter)
     }
 }
 

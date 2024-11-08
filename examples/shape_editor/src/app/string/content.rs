@@ -198,7 +198,7 @@ impl StringState {
     fn update_solution(&mut self) {
         let body = &self.workspace.body;
         let string = &self.workspace.string;
-        let fill_rule = self.fill.to_fill_rule();
+        let fill_rule = self.fill.fill_rule();
         match self.mode {
             ModeOption::Edit => {
                 self.workspace.solution = Solution::None;

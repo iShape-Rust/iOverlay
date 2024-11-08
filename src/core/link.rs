@@ -1,6 +1,6 @@
 use i_float::int::point::IntPoint;
 use crate::core::fill_rule::FillRule;
-use crate::core::filter::{ClipFilter, DifferenceFilter, FillerFilter, InclusionFilterStrategy, IntersectFilter, InverseDifferenceFilter, NoneFilter, SubjectFilter, UnionFilter, XorFilter};
+use crate::core::filter::{ClipFilter, DifferenceFilter, StringClipInsideBoundaryExcludedFilter, StringClipInsideBoundaryIncludedFilter, FillerFilter, InclusionBooleanFilterStrategy, IntersectFilter, InverseDifferenceFilter, StringClipOutsideBoundaryExcludedFilter, StringClipOutsideBoundaryIncludedFilter, SubjectFilter, UnionFilter, XorFilter, InclusionStringFilterStrategy};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
@@ -8,6 +8,7 @@ use crate::geom::id_point::IdPoint;
 use crate::segm::segment::{Segment, SegmentFill};
 use crate::segm::shape_count::ShapeCount;
 use crate::split::solver::SplitSegments;
+use crate::string::clip::ClipRule;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct OverlayLink {
@@ -38,66 +39,87 @@ pub(crate) struct OverlayLinkBuilder;
 impl OverlayLinkBuilder {
     #[inline]
     pub(crate) fn build_without_filter(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        Self::build_base::<NoneFilter>(segments, fill_rule, solver)
+        Self::build_boolean_all(segments, fill_rule, solver)
     }
 
     #[inline]
     pub(super) fn build_with_filler_filter(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        Self::build_base::<FillerFilter>(segments, fill_rule, solver)
+        Self::build_boolean::<FillerFilter>(segments, fill_rule, solver)
     }
 
     #[inline]
     pub(super) fn build_with_overlay_filter(segments: Vec<Segment>, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<OverlayLink> {
         match overlay_rule {
-            OverlayRule::Subject => Self::build_base::<SubjectFilter>(segments, fill_rule, solver),
-            OverlayRule::Clip => Self::build_base::<ClipFilter>(segments, fill_rule, solver),
-            OverlayRule::Intersect => Self::build_base::<IntersectFilter>(segments, fill_rule, solver),
-            OverlayRule::Union => Self::build_base::<UnionFilter>(segments, fill_rule, solver),
-            OverlayRule::Difference => Self::build_base::<DifferenceFilter>(segments, fill_rule, solver),
-            OverlayRule::InverseDifference => Self::build_base::<InverseDifferenceFilter>(segments, fill_rule, solver),
-            OverlayRule::Xor => Self::build_base::<XorFilter>(segments, fill_rule, solver),
+            OverlayRule::Subject => Self::build_boolean::<SubjectFilter>(segments, fill_rule, solver),
+            OverlayRule::Clip => Self::build_boolean::<ClipFilter>(segments, fill_rule, solver),
+            OverlayRule::Intersect => Self::build_boolean::<IntersectFilter>(segments, fill_rule, solver),
+            OverlayRule::Union => Self::build_boolean::<UnionFilter>(segments, fill_rule, solver),
+            OverlayRule::Difference => Self::build_boolean::<DifferenceFilter>(segments, fill_rule, solver),
+            OverlayRule::InverseDifference => Self::build_boolean::<InverseDifferenceFilter>(segments, fill_rule, solver),
+            OverlayRule::Xor => Self::build_boolean::<XorFilter>(segments, fill_rule, solver),
         }
     }
 
-    pub(crate) fn build_string(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() {
-            return vec![];
-        }
-
+    pub(crate) fn build_string_all(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
         let segments = segments.split_segments(solver);
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_string(&segments, fill_rule, solver);
 
-        let is_list = solver.is_list_fill(&segments);
+        Self::build_all_links(&segments, &fills)
+    }
 
-        let fills = match fill_rule {
+    pub(crate) fn build_string_with_clip_rule(segments: Vec<Segment>, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let segments = segments.split_segments(solver);
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_string(&segments, fill_rule, solver);
+
+        match clip_rule {
+            ClipRule { invert: true, boundary_included: true } => Self::build_string_links::<StringClipOutsideBoundaryIncludedFilter>(&segments, &fills),
+            ClipRule { invert: true, boundary_included: false } => Self::build_string_links::<StringClipOutsideBoundaryExcludedFilter>(&segments, &fills),
+            ClipRule { invert: false, boundary_included: true } => Self::build_string_links::<StringClipInsideBoundaryIncludedFilter>(&segments, &fills),
+            ClipRule { invert: false, boundary_included: false } => Self::build_string_links::<StringClipInsideBoundaryExcludedFilter>(&segments, &fills),
+        }
+    }
+
+    fn fill_string(segments: &[Segment], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
+        let is_list = solver.is_list_fill(segments);
+        match fill_rule {
             FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategyString>(is_list, &segments),
             FillRule::NonZero => FillSolver::fill::<NonZeroStrategyString>(is_list, &segments),
             FillRule::Positive => FillSolver::fill::<PositiveStrategyString>(is_list, &segments),
             FillRule::Negative => FillSolver::fill::<NegativeStrategyString>(is_list, &segments),
-        };
-
-        Self::build_links::<NoneFilter>(&segments, &fills)
-    }
-
-    fn build_base<F: InclusionFilterStrategy>(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() {
-            return vec![];
         }
-
-        let segments = segments.split_segments(solver);
-
-        let is_list = solver.is_list_fill(&segments);
-
-        let fills = match fill_rule {
-            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy>(is_list, &segments),
-            FillRule::NonZero => FillSolver::fill::<NonZeroStrategy>(is_list, &segments),
-            FillRule::Positive => FillSolver::fill::<PositiveStrategy>(is_list, &segments),
-            FillRule::Negative => FillSolver::fill::<NegativeStrategy>(is_list, &segments),
-        };
-
-        Self::build_links::<F>(&segments, &fills)
     }
 
-    fn build_links<F: InclusionFilterStrategy>(segments: &[Segment], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+    fn fill_boolean(segments: &[Segment], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
+        let is_list = solver.is_list_fill(segments);
+        match fill_rule {
+            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy>(is_list, segments),
+            FillRule::NonZero => FillSolver::fill::<NonZeroStrategy>(is_list, segments),
+            FillRule::Positive => FillSolver::fill::<PositiveStrategy>(is_list, segments),
+            FillRule::Negative => FillSolver::fill::<NegativeStrategy>(is_list, segments),
+        }
+    }
+
+    fn build_boolean<F: InclusionBooleanFilterStrategy>(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let segments = segments.split_segments(solver);
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_boolean_links::<F>(&segments, &fills)
+    }
+
+    fn build_boolean_all(segments: Vec<Segment>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let segments = segments.split_segments(solver);
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_all_links(&segments, &fills)
+    }
+
+    fn build_boolean_links<F: InclusionBooleanFilterStrategy>(segments: &[Segment], fills: &[SegmentFill]) -> Vec<OverlayLink> {
         let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
 
         let empty_id = IdPoint::new(0, IntPoint::ZERO);
@@ -109,6 +131,46 @@ impl OverlayLinkBuilder {
             if !F::is_included(fill) {
                 continue;
             }
+            let (segment, link) = unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
+            *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), fill);
+
+            i += 1;
+        }
+
+        links
+    }
+
+    fn build_string_links<F: InclusionStringFilterStrategy>(segments: &[Segment], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+        let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
+
+        let empty_id = IdPoint::new(0, IntPoint::ZERO);
+        let empty_link = OverlayLink::new(empty_id, empty_id, 0);
+        let mut links = vec![empty_link; n];
+
+        let mut i = 0;
+        for (j, &fill) in fills.iter().enumerate() {
+            if !F::is_included(fill) {
+                continue;
+            }
+            let (segment, link) = unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
+            let s = segment.count.clip.signum();
+            let dir_fill = (s + 1) as u8;
+
+            *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), dir_fill);
+
+            i += 1;
+        }
+
+        links
+    }
+
+    fn build_all_links(segments: &[Segment], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+        let empty_id = IdPoint::new(0, IntPoint::ZERO);
+        let empty_link = OverlayLink::new(empty_id, empty_id, 0);
+        let mut links = vec![empty_link; fills.len()];
+
+        let mut i = 0;
+        for (j, &fill) in fills.iter().enumerate() {
             let (segment, link) = unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
             *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), fill);
 

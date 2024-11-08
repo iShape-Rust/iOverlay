@@ -43,7 +43,7 @@ impl EditorApp {
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.boolean.workspace.subj,
                                 self.state.boolean.workspace.camera,
-                                Some(self.state.boolean.fill.to_fill_rule()),
+                                Some(self.state.boolean.fill.fill_rule()),
                                 Some(Design::subject_color().scale_alpha(0.2)),
                                 Some(Design::subject_color()),
                                 4.0,
@@ -54,7 +54,7 @@ impl EditorApp {
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.boolean.workspace.clip,
                                 self.state.boolean.workspace.camera,
-                                Some(self.state.boolean.fill.to_fill_rule()),
+                                Some(self.state.boolean.fill.fill_rule()),
                                 Some(Design::clip_color().scale_alpha(0.2)),
                                 Some(Design::clip_color()),
                                 4.0,
@@ -68,7 +68,7 @@ impl EditorApp {
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.boolean.workspace.subj,
                                 self.state.boolean.workspace.camera,
-                                Some(self.state.boolean.fill.to_fill_rule()),
+                                Some(self.state.boolean.fill.fill_rule()),
                                 None,
                                 Some(Design::subject_color()),
                                 1.0,
@@ -79,7 +79,7 @@ impl EditorApp {
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.boolean.workspace.clip,
                                 self.state.boolean.workspace.camera,
-                                Some(self.state.boolean.fill.to_fill_rule()),
+                                Some(self.state.boolean.fill.fill_rule()),
                                 None,
                                 Some(Design::clip_color()),
                                 1.0,

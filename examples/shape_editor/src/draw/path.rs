@@ -1,7 +1,6 @@
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
-use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
 use i_triangle::triangulation::float::Triangulation;
 use i_triangle::stroke::butt::ButtStrokeBuilder;
 use i_triangle::stroke::style::StrokeStyle;
@@ -22,13 +21,13 @@ pub(crate) struct PathWidget {
 }
 
 impl PathWidget {
-    pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
-        let offset = Self::offset_for_shapes(shapes, camera);
-        let stroke = Self::stroke_mesh_for_shapes(shapes, camera, offset, stroke_color, stroke_width, arrows);
-        Self {
-            stroke,
-        }
-    }
+    // pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
+    //     let offset = Self::offset_for_shapes(shapes, camera);
+    //     let stroke = Self::stroke_mesh_for_shapes(shapes, camera, offset, stroke_color, stroke_width, arrows);
+    //     Self {
+    //         stroke,
+    //     }
+    // }
 
     pub(crate) fn with_paths(paths: &IntPaths, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
         let offset = Self::offset_for_paths(paths, camera);
@@ -38,25 +37,24 @@ impl PathWidget {
         }
     }
 
-    fn stroke_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
-        if shapes.is_empty() {
-            return None;
-        }
-        let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
-
-        let mut builder = TriangulationBuilder::new();
-        for shape in shapes.iter() {
-            for path in shape.iter() {
-                Self::append_path(&mut builder, camera, path, width, arrows);
-            }
-        }
-        let r = 0.5 * width;
-        let offset = Vector::new(offset.x - r, offset.y - r);
-
-        let triangulation = builder.build();
-
-        Self::stroke_mesh_for_triangulation(triangulation, offset, color)
-    }
+    // fn stroke_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
+    //     if shapes.is_empty() {
+    //         return None;
+    //     }
+    //
+    //     let mut builder = TriangulationBuilder::new();
+    //     for shape in shapes.iter() {
+    //         for path in shape.iter() {
+    //             Self::append_path(&mut builder, camera, path, width, arrows);
+    //         }
+    //     }
+    //     let r = 0.5 * width;
+    //     let offset = Vector::new(offset.x - r, offset.y - r);
+    //
+    //     let triangulation = builder.build();
+    //
+    //     Self::stroke_mesh_for_triangulation(triangulation, offset, color)
+    // }
 
     fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
         if paths.is_empty() {
@@ -69,8 +67,13 @@ impl PathWidget {
             Self::append_path(&mut builder, camera, path, width, arrows);
         }
 
-        let r = 0.5 * width;
-        let offset = Vector::new(offset.x - r, offset.y - r);
+        let s = if arrows {
+            2.5 * width
+        } else {
+            0.5 * width
+        };
+
+        let offset = Vector::new(offset.x - s, offset.y - s);
 
         let triangulation = builder.build();
 
@@ -95,21 +98,21 @@ impl PathWidget {
         })
     }
 
-    fn offset_for_shapes(shapes: &IntShapes, camera: Camera) -> Vector<f32> {
-        if shapes.is_empty() {
-            return Vector::new(0.0, 0.0);
-        }
-
-        let mut min_x = i32::MAX;
-        let mut max_y = i32::MIN;
-
-        for p in shapes.iter().flatten().flatten() {
-            min_x = min_x.min(p.x);
-            max_y = max_y.max(p.y);
-        }
-
-        camera.point_to_screen(IntPoint::new(min_x, max_y))
-    }
+    // fn offset_for_shapes(shapes: &IntShapes, camera: Camera) -> Vector<f32> {
+    //     if shapes.is_empty() {
+    //         return Vector::new(0.0, 0.0);
+    //     }
+    //
+    //     let mut min_x = i32::MAX;
+    //     let mut max_y = i32::MIN;
+    //
+    //     for p in shapes.iter().flatten().flatten() {
+    //         min_x = min_x.min(p.x);
+    //         max_y = max_y.max(p.y);
+    //     }
+    //
+    //     camera.point_to_screen(IntPoint::new(min_x, max_y))
+    // }
 
     fn offset_for_paths(paths: &IntPaths, camera: Camera) -> Vector<f32> {
         if paths.is_empty() {

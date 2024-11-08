@@ -1,30 +1,10 @@
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Paths;
-use i_shape::float::adapter::PathToFloat;
 use crate::core::fill_rule::FillRule;
 use crate::float::source::resource::OverlayResource;
-use crate::float::string_graph::FloatStringGraph;
 use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::clip::ClipRule;
-
-impl<P, T> FloatStringGraph<P, T>
-where
-    P: FloatPointCompatible<T>,
-    T: FloatNumber,
-{
-    /// Clips the line strings in the graph based on the specified `ClipRule`.
-    ///
-    /// - `clip_rule`: Clip rule to determine how boundary and inversion settings affect the result.
-    ///
-    /// # Returns
-    /// A `Paths<P>` collection of string lines that meet the clipping conditions.
-    #[inline]
-    pub fn clip_string_lines(&self, clip_rule: ClipRule) -> Paths<P> {
-        let lines = self.graph.clip_string_lines(clip_rule);
-        lines.into_iter().map(|path| path.to_float(&self.adapter)).collect()
-    }
-}
 
 pub trait FloatClip<R, P, T>
 where
@@ -56,7 +36,6 @@ where
     #[inline]
     fn clip_by(&self, resource: &R0, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P> {
         FloatStringOverlay::with_shape_and_string(resource, self)
-            .into_graph(fill_rule)
-            .clip_string_lines(clip_rule)
+            .clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }

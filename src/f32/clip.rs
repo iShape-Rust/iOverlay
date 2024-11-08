@@ -1,24 +1,9 @@
 use i_float::f32_point::F32Point;
-use i_shape::f32::adapter::PathToFloat;
 use i_shape::f32::shape::{F32Path, F32Shape, F32Shapes};
 use crate::core::fill_rule::FillRule;
 use crate::f32::line::F32Line;
-use crate::f32::string::{F32StringGraph, F32StringOverlay};
+use crate::f32::string::F32StringOverlay;
 use crate::string::clip::ClipRule;
-
-impl F32StringGraph {
-    /// Clips the line strings in the graph based on the specified `ClipRule`, adapting integer-based lines to `F32Line`.
-    ///
-    /// - `clip_rule`: The clipping rule specifying whether to invert the selection and include boundaries.
-    ///
-    /// # Returns
-    /// A vector of `F32Path` containing the points of lines that meet the clipping conditions.
-    #[inline]
-    pub fn clip_string_lines(&self, clip_rule: ClipRule) -> Vec<F32Path> {
-        let lines = self.graph.clip_string_lines(clip_rule);
-        lines.into_iter().map(|path| path.to_float(&self.adapter)).collect()
-    }
-}
 
 // #[deprecated(
 //     since = "1.8.0",
@@ -70,7 +55,7 @@ impl F32Clip for F32Shapes {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -78,7 +63,7 @@ impl F32Clip for F32Shapes {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_lines(lines.to_vec());
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -86,7 +71,7 @@ impl F32Clip for F32Shapes {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_path(path.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -94,7 +79,7 @@ impl F32Clip for F32Shapes {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shapes(self.clone());
         overlay.add_string_paths(paths.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }
 
@@ -104,7 +89,7 @@ impl F32Clip for F32Shape {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -112,7 +97,7 @@ impl F32Clip for F32Shape {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_lines(lines.to_vec());
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -120,7 +105,7 @@ impl F32Clip for F32Shape {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_path(path.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -128,7 +113,7 @@ impl F32Clip for F32Shape {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_paths(self.clone());
         overlay.add_string_paths(paths.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }
 
@@ -138,7 +123,7 @@ impl F32Clip for [F32Point] {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -146,7 +131,7 @@ impl F32Clip for [F32Point] {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_lines(lines.to_vec());
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -154,7 +139,7 @@ impl F32Clip for [F32Point] {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_path(path.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
     #[inline]
@@ -162,6 +147,6 @@ impl F32Clip for [F32Point] {
         let mut overlay = F32StringOverlay::new();
         overlay.add_shape_path(self.to_vec());
         overlay.add_string_paths(paths.to_vec(), is_open);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 }

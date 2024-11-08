@@ -12,7 +12,6 @@ use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use iced::widget::Stack;
 use iced::widget::Container;
 use iced::{Length, Padding, Size, Vector};
-use iced::advanced::text::Difference::Shape;
 use crate::app::string::control::ModeOption;
 use crate::draw::varicolored::VaricoloredWidget;
 
@@ -78,7 +77,7 @@ impl EditorApp {
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.string.workspace.body,
                                 self.state.string.workspace.camera,
-                                Some(self.state.string.fill.to_fill_rule()),
+                                Some(self.state.string.fill.fill_rule()),
                                 Some(Design::clip_color().scale_alpha(0.3)),
                                 Some(Design::clip_color()),
                                 4.0,
@@ -115,7 +114,7 @@ impl EditorApp {
                             Container::new(ShapeWidget::with_paths(
                                 &self.state.string.workspace.body,
                                 self.state.string.workspace.camera,
-                                Some(self.state.string.fill.to_fill_rule()),
+                                Some(self.state.string.fill.fill_rule()),
                                 Some(Design::subject_color().scale_alpha(0.2)),
                                 Some(Design::subject_color()),
                                 4.0,

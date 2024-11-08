@@ -9,6 +9,7 @@ use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::{Segment, ToSegment};
 use crate::segm::shape_count::ShapeCount;
+use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 
@@ -161,6 +162,29 @@ impl StringOverlay {
         }
     }
 
+    /// Clips lines according to the specified fill and clip rules.
+    /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
+    /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
+    /// # Returns
+    /// A vector of `IntPath` instances representing the clipped sections of the input lines.
+    #[inline]
+    pub fn clip_string_lines(self, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+        self.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
+    }
+
+    /// Clips lines according to the specified fill and clip rules.
+    /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
+    /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
+    /// - `solver`: A solver type to be used for advanced control over the graph building process.
+    ///
+    /// # Returns
+    /// A vector of `IntPath` instances representing the clipped sections of the input lines.
+    #[inline]
+    pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<IntPath> {
+        let links = OverlayLinkBuilder::build_string_with_clip_rule(self.segments, fill_rule, clip_rule, solver);
+        StringGraph::new(solver, links).clip_string_lines()
+    }
+
     /// Converts the overlay into a `StringGraph`, using the specified `FillRule`.
     /// This graph is used for string operations, enabling analysis and manipulation of geometric data.
     /// - `fill_rule`: The rule that defines how to fill shapes (e.g., non-zero, even-odd).
@@ -175,7 +199,7 @@ impl StringOverlay {
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> StringGraph {
-        let links = OverlayLinkBuilder::build_string(self.segments, fill_rule, solver);
+        let links = OverlayLinkBuilder::build_string_all(self.segments, fill_rule, solver);
         StringGraph::new(solver, links)
     }
 }

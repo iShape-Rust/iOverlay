@@ -83,8 +83,8 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
             shell.publish((self.on_size)(size));
         }
 
-        match event {
-            Event::Mouse(mouse_event) => match mouse_event {
+        if let Event::Mouse(mouse_event) = event {
+            match mouse_event {
                 mouse::Event::CursorMoved { position } => {
                     if bounds.contains(position) {
                         let cursor = Vector::point(position);
@@ -117,9 +117,9 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                 _ => {
                     // println!("other mouse event: {:?}", mouse_event);
                 }
-            },
-            _ => {}
+            }
         }
+
         event::Status::Ignored
     }
 

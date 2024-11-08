@@ -109,8 +109,8 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
 
 
         let bounds = layout.bounds();
-        match event {
-            Event::Mouse(mouse_event) => match mouse_event {
+        if let Event::Mouse(mouse_event) = event {
+            match mouse_event {
                 mouse::Event::CursorMoved { position } => {
                     if bounds.contains(position) {
                         let cursor = Vector { x: position.x, y: position.y };
@@ -152,8 +152,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                     }
                 }
                 _ => {},
-            },
-            _ => {},
+            }
         }
 
         event::Status::Ignored

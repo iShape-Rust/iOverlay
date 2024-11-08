@@ -2,7 +2,6 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
-use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -17,29 +16,10 @@ pub struct ClipRule {
 }
 
 impl StringGraph {
+
     #[inline]
-    pub fn clip_string_lines(&self, clip_rule: ClipRule) -> Vec<IntPath> {
-        let mut visited: Vec<_> = if clip_rule.invert {
-            let target = if clip_rule.boundary_included { 1 } else { 0 };
-            self.links.iter()
-                .map(|link|
-                if link.fill & CLIP_BOTH != 0 {
-                    (link.fill & SUBJ_BOTH).count_ones() > target
-                } else {
-                    true
-                })
-                .collect()
-        } else {
-            let target = if clip_rule.boundary_included { 1 } else { 2 };
-            self.links.iter()
-                .map(|link|
-                if link.fill & CLIP_BOTH != 0 {
-                    (link.fill & SUBJ_BOTH).count_ones() < target
-                } else {
-                    true
-                })
-                .collect()
-        };
+    pub(super) fn clip_string_lines(&self) -> Vec<IntPath> {
+        let mut visited = vec![false; self.links.len()];
 
         let mut link_index = 0;
         let mut paths = Vec::new();
@@ -119,28 +99,28 @@ impl IntClip for IntShapes {
     fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_lines(lines);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_path(&self, path: &IntPath, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_path(path);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_paths(paths);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 }
 
@@ -149,28 +129,28 @@ impl IntClip for IntShape {
     fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_lines(lines);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_path(&self, path: &IntPath, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_path(path);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_paths(paths);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 }
 
@@ -179,28 +159,28 @@ impl IntClip for [IntPoint] {
     fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_lines(lines);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_path(&self, path: &IntPath, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_path(path);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
     fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_paths(paths);
-        overlay.into_graph(fill_rule).clip_string_lines(clip_rule)
+        overlay.clip_string_lines(fill_rule, clip_rule)
     }
 }
 

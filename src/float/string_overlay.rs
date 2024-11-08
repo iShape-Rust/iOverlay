@@ -1,10 +1,13 @@
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_shape::base::data::Paths;
+use i_shape::float::adapter::ShapeToFloat;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
 use crate::float::source::resource::OverlayResource;
 use crate::float::string_graph::FloatStringGraph;
+use crate::string::clip::ClipRule;
 use crate::string::overlay::StringOverlay;
 
 /// The `FloatStringOverlay` struct is a builder for overlaying geometric shapes by converting
@@ -127,5 +130,18 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> FloatStringGraph<P, T> {
         let graph = self.overlay.into_graph_with_solver(fill_rule, solver);
         FloatStringGraph { graph, adapter: self.adapter }
+    }
+
+    /// Executes a single Boolean operation on the current geometry using the specified fill and clip rules.
+    ///
+    /// ### Parameters:
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
+    /// - `clip_rule`: Clip rule to determine how the boundary and inversion settings affect the result.
+    /// - `solver`: Type of solver to use.
+    /// - Returns: A `Paths<P>` collection of string lines that meet the clipping conditions.
+    #[inline]
+    pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Paths<P> {
+        let paths = self.overlay.clip_string_lines_with_solver(fill_rule, clip_rule, solver);
+        paths.to_float(&self.adapter)
     }
 }

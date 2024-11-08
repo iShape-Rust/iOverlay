@@ -110,7 +110,7 @@ impl ModeOption {
         ModeOption::Xor,
     ];
 
-    pub(crate) fn to_overlay_rule(&self) -> Option<OverlayRule> {
+    pub(crate) fn overlay_rule(&self) -> Option<OverlayRule> {
         match self {
             ModeOption::Subject => Some(OverlayRule::Subject),
             ModeOption::Clip => Some(OverlayRule::Clip),

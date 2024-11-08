@@ -122,7 +122,7 @@ pub(super) fn style_separator(theme: &Theme) -> rule::Style {
     };
 
     rule::Style {
-        color: color,
+        color,
         width: 1,
         radius: border::Radius::new(0),
         fill_mode: rule::FillMode::Padded(0),
