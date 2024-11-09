@@ -80,8 +80,43 @@ mod tests {
     }
 
     #[test]
+    fn test_4() {
+        execute(4);
+    }
+
+    #[test]
+    fn test_5() {
+        execute(5);
+    }
+
+    #[test]
+    fn test_6() {
+        execute(6);
+    }
+
+    #[test]
+    fn test_7() {
+        execute(7);
+    }
+
+    #[test]
+    fn test_8() {
+        execute(8);
+    }
+
+    #[test]
+    fn test_9() {
+        execute(9);
+    }
+
+    #[test]
+    fn test_10() {
+        execute(10);
+    }
+
+    #[test]
     fn test_debug() {
-        let index = 3;
+        let index = 10;
         debug_execute_slice(index);
         debug_execute_clip(index, false);
         debug_execute_clip(index, true);

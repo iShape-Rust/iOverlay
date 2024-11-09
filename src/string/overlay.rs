@@ -189,7 +189,7 @@ impl StringOverlay {
     #[inline]
     pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<IntPath> {
         let links = OverlayLinkBuilder::build_string_with_clip_rule(self.segments, fill_rule, clip_rule, solver);
-        StringGraph::new(solver, links).clip_string_lines()
+        StringGraph::new(solver, links).into_clip_string_lines()
     }
 
     /// Converts the overlay into a `StringGraph`, using the specified `FillRule`.
