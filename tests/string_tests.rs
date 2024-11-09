@@ -22,24 +22,6 @@ mod tests {
 
         let clip_invert = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert: true, boundary_included: false });
         assert_eq!(true, overlay::is_paths_one_of(&clip_invert, &test.clip_invert));
-
-        // let graph = overlay.into_graph_with_solver(fill_rule, Default);
-        //
-        // let clip = graph.extract_shapes(OverlayRule::Clip);
-        // let subject = graph.extract_shapes(OverlayRule::Subject);
-        // let difference = graph.extract_shapes(OverlayRule::Difference);
-        // let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
-        // let intersect = graph.extract_shapes(OverlayRule::Intersect);
-        // let union = graph.extract_shapes(OverlayRule::Union);
-        // let xor = graph.extract_shapes(OverlayRule::Xor);
-        //
-        // assert_eq!(true, test_result(&clip, &test.clip));
-        // assert_eq!(true, test_result(&subject, &test.subject));
-        // assert_eq!(true, test_result(&difference, &test.difference));
-        // assert_eq!(true, test_result(&inverse_difference, &test.inverse_difference));
-        // assert_eq!(true, test_result(&intersect, &test.intersect));
-        // assert_eq!(true, test_result(&union, &test.union));
-        // assert_eq!(true, test_result(&xor, &test.xor));
     }
 
     fn debug_execute_slice(index: usize) {

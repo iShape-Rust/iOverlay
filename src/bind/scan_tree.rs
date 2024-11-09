@@ -3,7 +3,6 @@ use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::bind::segment::IdSegment;
 use crate::bind::solver::ScanHoleStore;
-use crate::geom::id_point::IdPoint;
 use crate::geom::x_segment::XSegment;
 use crate::util::log::Int;
 
@@ -71,13 +70,13 @@ impl ScanHoleStore for ScanHoleTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, path_point: IdPoint) -> usize {
+    fn find_under_and_nearest(&mut self, segment: XSegment) -> usize {
         let mut index = self.tree.root;
         let mut id = usize::MAX;
-        let p = path_point.point;
+        let x = segment.a.x;
         while index != EMPTY_REF {
             let node = self.tree.node(index);
-            if node.value.x_segment.b.x <= p.x {
+            if node.value.x_segment.b.x <= x {
                 let nd_parent = node.parent;
                 _ = self.tree.delete_index(index);
                 if nd_parent != EMPTY_REF {
@@ -85,7 +84,7 @@ impl ScanHoleStore for ScanHoleTree {
                 } else {
                     index = self.tree.root;
                 }
-            } else if node.value.x_segment.is_under_point(p) {
+            } else if node.value.x_segment.is_under_segment(&segment) {
                 id = node.value.id;
                 index = node.right;
             } else {

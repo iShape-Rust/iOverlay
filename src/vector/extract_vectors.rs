@@ -1,12 +1,12 @@
 use i_float::int::point::IntPoint;
-use crate::bind::segment::IdSegments;
+use crate::bind::segment::{IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
-use crate::geom::id_point::IdPoint;
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::MaskFilter;
 use crate::core::node::OverlayNode;
 use crate::core::solver::Solver;
+use crate::geom::x_segment::XSegment;
 use crate::segm::segment::SegmentFill;
 use crate::util::sort::SmartBinSort;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
@@ -138,17 +138,20 @@ impl JoinHoles for Vec<VectorShape> {
     }
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
-        let mut i_points = Vec::with_capacity(holes.len());
-        for (i, hole) in holes.iter().enumerate() {
-            let p = hole.first().unwrap().a;
-            i_points.push(IdPoint::new(i, p));
+        let mut hole_segments: Vec<_> = holes.iter().enumerate()
+            .map(|(id, path)| {
+                let x_segment = most_left_bottom(path);
+                IdSegment { id, x_segment }
+            })
+            .collect();
+
+        // mostly sorted array!
+        if !is_sorted(&hole_segments) {
+            hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
         }
 
-        // TODO this sort probably is not need because we take first point in path
-        i_points.smart_bin_sort_by(solver, |a, b| a.point.x.cmp(&b.point.x));
-
-        let x_min = i_points[0].point.x;
-        let x_max = i_points[i_points.len() - 1].point.x;
+        let x_min = hole_segments[0].x_segment.a.x;
+        let x_max = hole_segments[hole_segments.len() - 1].x_segment.a.x;
 
         let mut segments = Vec::new();
         for (i, shape) in self.iter().enumerate() {
@@ -157,7 +160,7 @@ impl JoinHoles for Vec<VectorShape> {
 
         segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
-        let solution = ShapeBinder::bind(self.len(), i_points, segments);
+        let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 
         for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
             self[shape_index].reserve_exact(capacity);
@@ -168,4 +171,29 @@ impl JoinHoles for Vec<VectorShape> {
             self[shape_index].push(hole);
         }
     }
+}
+
+#[inline]
+fn most_left_bottom(path: &VectorPath) -> XSegment {
+    let mut index = 0;
+    let mut a = path[0].a;
+    for (i, &e) in path.iter().skip(1).enumerate() {
+        if e.a < a {
+            a = e.a;
+            index = i;
+        }
+    }
+    let n = path.len();
+    let b0 = path[index].b;
+    let b1 = path[(index + n - 1) % n].a;
+
+    let s0 = XSegment { a, b: b0 };
+    let s1 = XSegment { a, b: b1 };
+
+    if s0.is_under_segment(&s1) { s0 } else { s1 }
+}
+
+#[inline]
+fn is_sorted(segments: &[IdSegment]) -> bool {
+    segments.windows(2).all(|slice| slice[0].x_segment.a <= slice[1].x_segment.a)
 }

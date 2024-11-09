@@ -4,7 +4,7 @@ use crate::bind::segment::{IdSegment, IdSegments};
 use crate::bind::scan_list::ScanHoleList;
 use crate::bind::scan_tree::ScanHoleTree;
 use crate::core::solver::Solver;
-use crate::geom::id_point::IdPoint;
+use crate::geom::x_segment::XSegment;
 use crate::util::sort::SmartBinSort;
 
 pub(crate) struct BindSolution {
@@ -16,23 +16,23 @@ pub(crate) struct ShapeBinder;
 
 pub(crate) trait ScanHoleStore {
     fn insert(&mut self, segment: IdSegment, stop: i32);
-    fn find_under_and_nearest(&mut self, path_point: IdPoint) -> usize;
+    fn find_under_and_nearest(&mut self, segment: XSegment) -> usize;
 }
 
 impl ShapeBinder {
     #[inline]
-    pub(crate) fn bind(shape_count: usize, hole_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
+    pub(crate) fn bind(shape_count: usize, hole_segments: Vec<IdSegment>, segments: Vec<IdSegment>) -> BindSolution {
         if shape_count < 128 {
             let scan_list = ScanHoleList::new(segments.len());
-            Self::private_solve(scan_list, shape_count, hole_points, segments)
+            Self::private_solve(scan_list, shape_count, hole_segments, segments)
         } else {
             let scan_tree = ScanHoleTree::new(segments.len());
-            Self::private_solve(scan_tree, shape_count, hole_points, segments)
+            Self::private_solve(scan_tree, shape_count, hole_segments, segments)
         }
     }
 
-    fn private_solve<S: ScanHoleStore>(scan_store: S, shape_count: usize, hole_points: Vec<IdPoint>, segments: Vec<IdSegment>) -> BindSolution {
-        let children_count = hole_points.len();
+    fn private_solve<S: ScanHoleStore>(scan_store: S, shape_count: usize, hole_segments: Vec<IdSegment>, segments: Vec<IdSegment>) -> BindSolution {
+        let children_count = hole_segments.len();
         let mut scan_store = scan_store;
 
         let mut parent_for_child = vec![0; children_count];
@@ -41,24 +41,24 @@ impl ShapeBinder {
         let mut i = 0;
         let mut j = 0;
 
-        while i < hole_points.len() {
-            let p = hole_points[i].point;
+        while i < hole_segments.len() {
+            let x = hole_segments[i].x_segment.a.x;
 
             while j < segments.len() {
                 let id_segment = &segments[j];
-                if id_segment.x_segment.a >= p {
+                if id_segment.x_segment.a.x > x {
                     break;
                 }
 
-                if id_segment.x_segment.b.x > p.x {
-                    scan_store.insert(*id_segment, p.x);
+                if id_segment.x_segment.b.x > x {
+                    scan_store.insert(*id_segment, x);
                 }
                 j += 1
             }
 
-            while i < hole_points.len() && hole_points[i].point.x == p.x {
-                let parent_index = scan_store.find_under_and_nearest(hole_points[i]);
-                let child_index = hole_points[i].id;
+            while i < hole_segments.len() && hole_segments[i].x_segment.a.x == x {
+                let parent_index = scan_store.find_under_and_nearest(hole_segments[i].x_segment);
+                let child_index = hole_segments[i].id;
 
                 parent_for_child[child_index] = parent_index;
                 children_count_for_parent[parent_index] += 1;
@@ -73,7 +73,7 @@ impl ShapeBinder {
 
 pub(crate) trait JoinHoles {
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<IdPoint>);
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>);
 }
 
 impl JoinHoles for Vec<IntShape> {
@@ -90,20 +90,23 @@ impl JoinHoles for Vec<IntShape> {
             return;
         }
 
-        let mut hole_points: Vec<_> = holes.iter().enumerate()
-            .map(|(i, path)| IdPoint::new(i, *path.first().unwrap()))
+        let mut hole_segments: Vec<_> = holes.iter().enumerate()
+            .map(|(id, path)| {
+                let x_segment = most_left_bottom(path);
+                IdSegment { id, x_segment }
+            })
             .collect();
 
         // mostly sorted array!
-        if !is_sorted(&hole_points) {
-            hole_points.sort_by(|a, b| a.point.cmp(&b.point));
+        if !is_sorted(&hole_segments) {
+            hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
         }
-        self.scan_join(solver, holes, hole_points);
+        self.scan_join(solver, holes, hole_segments);
     }
 
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_points: Vec<IdPoint>) {
-        let x_min = hole_points[0].point.x;
-        let x_max = hole_points[hole_points.len() - 1].point.x;
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>) {
+        let x_min = hole_segments[0].x_segment.a.x;
+        let x_max = hole_segments[hole_segments.len() - 1].x_segment.a.x;
 
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
@@ -113,7 +116,7 @@ impl JoinHoles for Vec<IntShape> {
 
         segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
 
-        let solution = ShapeBinder::bind(self.len(), hole_points, segments);
+        let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 
         for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
             self[shape_index].reserve(capacity);
@@ -127,6 +130,26 @@ impl JoinHoles for Vec<IntShape> {
 }
 
 #[inline]
-fn is_sorted(points: &[IdPoint]) -> bool {
-    points.windows(2).all(|slice| slice[0].point <= slice[1].point)
+fn most_left_bottom(path: &IntPath) -> XSegment {
+    let mut index = 0;
+    let mut a = path[0];
+    for (i, &p) in path.iter().skip(1).enumerate() {
+        if p < a {
+            a = p;
+            index = i;
+        }
+    }
+    let n = path.len();
+    let b0 = path[(index + 1) % n];
+    let b1 = path[(index + n - 1) % n];
+
+    let s0 = XSegment { a, b: b0 };
+    let s1 = XSegment { a, b: b1 };
+
+    if s0.is_under_segment(&s1) { s0 } else { s1 }
+}
+
+#[inline]
+fn is_sorted(segments: &[IdSegment]) -> bool {
+    segments.windows(2).all(|slice| slice[0].x_segment.a <= slice[1].x_segment.a)
 }
