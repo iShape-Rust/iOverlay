@@ -22,48 +22,52 @@ pub struct ClipRule {
 
 impl StringGraph {
     #[inline]
-    pub(super) fn clip_string_lines(self) -> Vec<IntPath> {
+    pub(super) fn into_clip_string_lines(self) -> Vec<IntPath> {
         let mut paths = Vec::new();
 
         let mut links = self.links;
         let nodes = self.nodes;
 
-        for (start_node_index, start_node) in nodes.iter().enumerate() {
-            for &link_index in start_node.iter() {
-                let mlink = unsafe { links.get_unchecked_mut(link_index) };
-                let (a, mut b) = if mlink.a.id == start_node_index { (mlink.a, mlink.b) } else { (mlink.b, mlink.a) };
-
-                let is_move_possible = mlink.visit_if_possible(a.point, b.point);
-
-                if !is_move_possible {
-                    continue;
-                }
-
-                let mut sub_path = Vec::new();
-                sub_path.push(a.point);
-                sub_path.push(b.point);
-
-                while let Some(c) = Self::find_next_point(&nodes, &mut links, b) {
-                    b = c;
-                    sub_path.push(b.point);
-                }
-
-                paths.push(sub_path);
+        let mut link_index = 0;
+        let mut sub_path = Vec::new();
+        while link_index < links.len() {
+            let link = unsafe { links.get_unchecked_mut(link_index) };
+            let fill = link.fill & CLIP_ALL;
+            if fill == 0 {
+                link_index += 1;
+                continue;
             }
-        }
 
+            // if false we must revert path after build
+            let is_out_node = link.visit();
+            sub_path.push(link.a.point);
+            sub_path.push(link.b.point);
+            let mut a = link.b;
+            while let Some(b) = Self::find_next_point(&nodes, &mut links, a, is_out_node) {
+                a = b;
+                sub_path.push(b.point);
+            }
+
+            if !is_out_node {
+                sub_path.reverse()
+            }
+
+            paths.push(sub_path.clone());
+            sub_path.clear();
+        }
         paths
     }
 
     #[inline]
-    fn find_next_point(nodes: &[Vec<usize>], links: &mut [OverlayLink], b: IdPoint) -> Option<IdPoint> {
-        let node = unsafe { nodes.get_unchecked(b.id) };
+    fn find_next_point(nodes: &[Vec<usize>], links: &mut [OverlayLink], a: IdPoint, is_out_node: bool) -> Option<IdPoint> {
+        let node = unsafe { nodes.get_unchecked(a.id) };
         for &index in node.iter() {
-            let mlink = unsafe { links.get_unchecked_mut(index) };
-            let c = mlink.other(b.id);
-            let is_move_possible = mlink.visit_if_possible(b.point, c.point);
+            let link = unsafe { links.get_unchecked_mut(index) };
+            let b = link.other(a.id);
+            let is_forward = is_out_node == (a.point > b.point);
+            let is_move_possible = link.visit_if_possible(is_forward);
             if is_move_possible {
-                return Some(c);
+                return Some(b);
             }
         }
         None
@@ -72,11 +76,11 @@ impl StringGraph {
 
 const CLIP_BACK: SegmentFill = STRING_BACK_CLIP << 2;
 const CLIP_FORWARD: SegmentFill = STRING_FORWARD_CLIP << 2;
+const CLIP_ALL: SegmentFill = CLIP_BACK | CLIP_FORWARD;
 
 impl OverlayLink {
     #[inline]
-    fn visit_if_possible(&mut self, a: IntPoint, b: IntPoint) -> bool {
-        let is_forward = a > b;
+    fn visit_if_possible(&mut self, is_forward: bool) -> bool {
         if is_forward {
             let is_link_forward = self.fill & CLIP_FORWARD == CLIP_FORWARD;
             if is_link_forward {
@@ -90,6 +94,17 @@ impl OverlayLink {
             }
             is_link_back
         }
+    }
+
+    #[inline]
+    fn visit(&mut self) -> bool {
+        let is_back = self.fill & CLIP_BACK == CLIP_BACK;
+        if is_back {
+            self.fill &= !CLIP_BACK;
+        } else {
+            self.fill = 0;
+        }
+        is_back
     }
 }
 
