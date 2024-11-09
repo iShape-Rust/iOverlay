@@ -70,6 +70,16 @@ pub mod overlay {
         false
     }
 
+    pub fn is_paths_one_of(paths: &IntPaths, groups: &Vec<IntPaths>) -> bool {
+        for item in groups.iter() {
+            if item.eq(paths) {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub trait JsonPrint {
         fn json_print(&self) -> String;
     }

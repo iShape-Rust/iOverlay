@@ -17,6 +17,12 @@ mod tests {
         let slice = test.body.slice_by_paths(&test.string, fill_rule);
         assert_eq!(true, overlay::is_group_of_shapes_one_of(&slice, &test.slice));
 
+        let clip_direct = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert: false, boundary_included: false });
+        assert_eq!(true, overlay::is_paths_one_of(&clip_direct, &test.clip_direct));
+
+        let clip_invert = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert: true, boundary_included: false });
+        assert_eq!(true, overlay::is_paths_one_of(&clip_invert, &test.clip_invert));
+
         // let graph = overlay.into_graph_with_solver(fill_rule, Default);
         //
         // let clip = graph.extract_shapes(OverlayRule::Clip);
@@ -41,7 +47,7 @@ mod tests {
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
         let slice = test.body.slice_by_paths(&test.string, fill_rule);
 
-        print!("slice: {}", slice.json_print());
+        println!("slice: {}", slice.json_print());
     }
 
     fn debug_execute_clip(index: usize, invert: bool) {
@@ -50,23 +56,34 @@ mod tests {
 
         let clip = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert, boundary_included: false });
 
-        print!("clip: {}", clip.json_print());
+        println!("clip {}: {}", invert, clip.json_print());
     }
 
     #[test]
     fn test_0() {
         execute(0);
     }
-    
+
     #[test]
-    fn test_debug() {
-        // debug_execute_slice(0);
-        debug_execute_clip(0, false);
+    fn test_1() {
+        execute(1);
     }
 
     #[test]
-    fn test_debug_2() {
-        // debug_execute_slice(0);
-        debug_execute_clip(1, false);
+    fn test_2() {
+        execute(2);
+    }
+
+    #[test]
+    fn test_3() {
+        execute(3);
+    }
+
+    #[test]
+    fn test_debug() {
+        let index = 3;
+        debug_execute_slice(index);
+        debug_execute_clip(index, false);
+        debug_execute_clip(index, true);
     }
 }
