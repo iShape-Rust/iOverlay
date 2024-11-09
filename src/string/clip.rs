@@ -2,7 +2,10 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
-use crate::segm::segment::{SegmentFill, CLIP_BACK, CLIP_FORWARD};
+use crate::core::link::OverlayLink;
+use crate::geom::id_point::IdPoint;
+use crate::segm::segment::SegmentFill;
+use crate::segm::shape_count::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -16,44 +19,21 @@ pub struct ClipRule {
     pub boundary_included: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
-enum Direction {
-    Forward,
-    Back,
-    Both,
-    None,
-}
-
-impl Direction {
-    #[inline]
-    fn new(fill: SegmentFill) -> Direction {
-        let forward = fill & CLIP_FORWARD == CLIP_FORWARD;
-        let back = fill & CLIP_BACK == CLIP_BACK;
-        match (forward, back) {
-            (true, true) => Direction::Both,
-            (true, false) => Direction::Forward,
-            (false, true) => Direction::Back,
-            (false, false) => Direction::None,
-        }
-    }
-}
 
 impl StringGraph {
     #[inline]
-    pub(super) fn clip_string_lines(&self) -> Vec<IntPath> {
-        let mut moves: Vec<_> = self.links.iter()
-            .map(|link| Direction::new(link.fill))
-            .collect();
-
+    pub(super) fn clip_string_lines(self) -> Vec<IntPath> {
         let mut paths = Vec::new();
 
-        for (start_node_index, start_node) in self.nodes.iter().enumerate() {
+        let mut links = self.links;
+        let nodes = self.nodes;
+
+        for (start_node_index, start_node) in nodes.iter().enumerate() {
             for &link_index in start_node.iter() {
-                let mut link = self.link(link_index);
-                let (a, mut b) = if link.a.id == start_node_index { (link.a, link.b) } else { (link.b, link.a) };
-                let is_forward = a.point > b.point;
-                let this_move = unsafe { moves.get_unchecked_mut(link_index) };
-                let is_move_possible = Self::visit_if_possible(this_move, is_forward);
+                let mlink = unsafe { links.get_unchecked_mut(link_index) };
+                let (a, mut b) = if mlink.a.id == start_node_index { (mlink.a, mlink.b) } else { (mlink.b, mlink.a) };
+
+                let is_move_possible = mlink.visit_if_possible(a.point, b.point);
 
                 if !is_move_possible {
                     continue;
@@ -61,25 +41,11 @@ impl StringGraph {
 
                 let mut sub_path = Vec::new();
                 sub_path.push(a.point);
+                sub_path.push(b.point);
 
-                loop {
+                while let Some(c) = Self::find_next_point(&nodes, &mut links, b) {
+                    b = c;
                     sub_path.push(b.point);
-                    let node = self.node(b.id);
-                    let next_index = if let Some(&not_visited_index) = node.iter()
-                        .find(|&&index| {
-                            let index_move = unsafe { moves.get_unchecked_mut(index) };
-                            let c = self.link(index).other(b.id);
-                            let is_forward = b.point > c.point;
-
-                            Self::visit_if_possible(index_move, is_forward)
-                        }) {
-                        not_visited_index
-                    } else {
-                        break;
-                    };
-
-                    link = self.link(next_index);
-                    b = link.other(b.id);
                 }
 
                 paths.push(sub_path);
@@ -89,31 +55,40 @@ impl StringGraph {
         paths
     }
 
-    fn visit_if_possible(dir: &mut Direction, is_forward: bool) -> bool {
+    #[inline]
+    fn find_next_point(nodes: &[Vec<usize>], links: &mut [OverlayLink], b: IdPoint) -> Option<IdPoint> {
+        let node = unsafe { nodes.get_unchecked(b.id) };
+        for &index in node.iter() {
+            let mlink = unsafe { links.get_unchecked_mut(index) };
+            let c = mlink.other(b.id);
+            let is_move_possible = mlink.visit_if_possible(b.point, c.point);
+            if is_move_possible {
+                return Some(c);
+            }
+        }
+        None
+    }
+}
+
+const CLIP_BACK: SegmentFill = STRING_BACK_CLIP << 2;
+const CLIP_FORWARD: SegmentFill = STRING_FORWARD_CLIP << 2;
+
+impl OverlayLink {
+    #[inline]
+    fn visit_if_possible(&mut self, a: IntPoint, b: IntPoint) -> bool {
+        let is_forward = a > b;
         if is_forward {
-            match dir {
-                Direction::Forward => {
-                    *dir = Direction::None;
-                    true
-                }
-                Direction::Both => {
-                    *dir = Direction::Back;
-                    true
-                }
-                Direction::Back | Direction::None => false,
+            let is_link_forward = self.fill & CLIP_FORWARD == CLIP_FORWARD;
+            if is_link_forward {
+                self.fill &= !CLIP_FORWARD;
             }
+            is_link_forward
         } else {
-            match dir {
-                Direction::Back => {
-                    *dir = Direction::None;
-                    true
-                }
-                Direction::Both => {
-                    *dir = Direction::Forward;
-                    true
-                }
-                Direction::Forward | Direction::None => false,
+            let is_link_back = self.fill & CLIP_BACK == CLIP_BACK;
+            if is_link_back {
+                self.fill &= !CLIP_BACK;
             }
+            is_link_back
         }
     }
 }

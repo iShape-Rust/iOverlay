@@ -13,6 +13,9 @@ pub struct ShapeCountString {
     pub clip: u8,
 }
 
+pub(crate) const STRING_FORWARD_CLIP: u8 = 0b10;
+pub(crate) const STRING_BACK_CLIP: u8 = 0b1;
+
 pub(crate) trait ShapeCount
 where
     Self: Clone + Copy + Send,
@@ -69,8 +72,8 @@ impl ShapeCount for ShapeCountString {
         // 0 - bit - back
         // 1 - bit - forward
         let mask = match clip.cmp(&0) {
-            Ordering::Greater => 0b10,
-            Ordering::Less => 0b01,
+            Ordering::Greater => STRING_FORWARD_CLIP,
+            Ordering::Less => STRING_BACK_CLIP,
             Ordering::Equal => 0,
         };
         Self { subj, clip: mask }
@@ -78,9 +81,10 @@ impl ShapeCount for ShapeCountString {
 
     #[inline(always)]
     fn with_shape_type(shape_type: ShapeType) -> (Self, Self) {
+        // todo!!! remove
         match shape_type {
             ShapeType::Subject => (Self { subj: 1, clip: 0 }, Self { subj: -1, clip: 0 }),
-            ShapeType::Clip => (Self { subj: 0, clip: 0b10 }, Self { subj: 0, clip: 0b01 })
+            ShapeType::Clip => (Self { subj: 0, clip: STRING_FORWARD_CLIP }, Self { subj: 0, clip: STRING_BACK_CLIP })
         }
     }
 

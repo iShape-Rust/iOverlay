@@ -6,9 +6,10 @@ use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay::ShapeType;
 use crate::core::solver::Solver;
+use crate::geom::x_segment::XSegment;
 use crate::segm::build::BuildSegments;
-use crate::segm::segment::{Segment, ToSegment};
-use crate::segm::shape_count::{ShapeCount, ShapeCountString};
+use crate::segm::segment::Segment;
+use crate::segm::shape_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
@@ -70,7 +71,7 @@ impl StringOverlay {
     /// when paths are not directly stored in a collection.
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     #[inline]
-    pub fn add_shape_contour_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I) {
+    pub fn add_shape_contour_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I) {
         self.segments.append_path_iter(iter, ShapeType::Subject);
     }
 
@@ -102,9 +103,15 @@ impl StringOverlay {
     /// - `line`: An `IntLine` representing the open line (defined by two points).
     #[inline]
     pub fn add_string_line(&mut self, line: IntLine) {
-        if line[0] != line[1] {
-            self.segments.push(line.to_segment(ShapeCountString::new(0, 1)));
-        }
+        let a = line[0];
+        let b = line[1];
+        let segment = match a.cmp(&b) {
+            std::cmp::Ordering::Less => Segment { x_segment: XSegment { a, b }, count: ShapeCountString { subj: 0, clip: STRING_BACK_CLIP } },
+            std::cmp::Ordering::Greater => Segment { x_segment: XSegment { a: b, b: a }, count: ShapeCountString { subj: 0, clip: STRING_FORWARD_CLIP } },
+            std::cmp::Ordering::Equal => return,
+        };
+
+        self.segments.push(segment);
     }
 
     /// Adds multiple lines (open paths) to the overlay.
