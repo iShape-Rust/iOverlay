@@ -1,11 +1,11 @@
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 
 pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self);
 }
 
-impl<C: ShapeCount> ShapeSegmentsMerge for Vec<Segment<C>> {
+impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
     fn merge_if_needed(&mut self) {
         if self.len() < 2 { return; }
 
@@ -22,7 +22,7 @@ impl<C: ShapeCount> ShapeSegmentsMerge for Vec<Segment<C>> {
     }
 }
 
-fn merge<C: ShapeCount>(segments: &mut [Segment<C>], after: usize) -> usize {
+fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {
     let mut i = after;
     let mut j = i - 1;
     let mut prev = segments[j];
@@ -52,7 +52,7 @@ fn merge<C: ShapeCount>(segments: &mut [Segment<C>], after: usize) -> usize {
 mod tests {
     use i_float::int::point::IntPoint;
     use super::*;
-    use crate::segm::shape_count::ShapeCountBoolean;
+    use crate::segm::winding_count::ShapeCountBoolean;
 
     #[test]
     fn test_merge_if_needed_empty() {

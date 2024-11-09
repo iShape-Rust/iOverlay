@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use i_float::int::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use crate::geom::x_segment::XSegment;
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 
 pub type SegmentFill = u8;
 
@@ -26,7 +26,7 @@ pub(crate) struct Segment<C: Send> {
     pub(crate) count: C,
 }
 
-impl<C: ShapeCount> Segment<C> {
+impl<C: WindingCount> Segment<C> {
     #[inline(always)]
     pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: C) -> Self {
         if a < b {

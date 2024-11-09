@@ -5,7 +5,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLink;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
-use crate::segm::shape_count::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
+use crate::segm::winding_count::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;

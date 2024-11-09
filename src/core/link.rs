@@ -6,7 +6,7 @@ use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::{Segment, SegmentFill};
-use crate::segm::shape_count::{ShapeCount, ShapeCountBoolean, ShapeCountString};
+use crate::segm::winding_count::{WindingCount, ShapeCountBoolean, ShapeCountString};
 use crate::split::solver::SplitSegments;
 use crate::string::clip::ClipRule;
 

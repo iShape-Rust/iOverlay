@@ -13,7 +13,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCountBoolean;
+use crate::segm::winding_count::ShapeCountBoolean;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::graph::OverlayGraph;

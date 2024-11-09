@@ -1,9 +1,9 @@
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn list_split<C: ShapeCount>(&mut self, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn list_split<C: WindingCount>(&mut self, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 

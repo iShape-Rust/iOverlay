@@ -3,18 +3,18 @@ use i_key_sort::index::{BinKey, BinLayout};
 use i_key_sort::key_sort::Bin;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
 use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
 use crate::util::sort::SmartBinSort;
 
-pub(crate) trait SplitSegments<C: ShapeCount> {
+pub(crate) trait SplitSegments<C: WindingCount> {
     fn split_segments(self, solver: Solver) -> Vec<Segment<C>>;
 }
 
-impl<C: ShapeCount> SplitSegments<C> for Vec<Segment<C>> {
+impl<C: WindingCount> SplitSegments<C> for Vec<Segment<C>> {
     #[inline]
     fn split_segments(self, solver: Solver) -> Vec<Segment<C>> {
         let mut segments = self;
@@ -36,7 +36,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    pub(crate) fn split<C: ShapeCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(crate) fn split<C: WindingCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let is_list = self.solver.is_list_split(&segments);
 
         if is_list {
@@ -89,7 +89,7 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply<C: ShapeCount>(&self, marks: &mut Vec<LineMark>, segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
+    pub(super) fn apply<C: WindingCount>(&self, marks: &mut Vec<LineMark>, segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
         self.sort_and_filter_marks(marks, &segments);
         let min = segments[0].x_segment.a.x;
         let mut max = segments[0].x_segment.b.x;
@@ -242,7 +242,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn one_bin_merge<C: ShapeCount>(marks: &mut [LineMark], mut segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
+    fn one_bin_merge<C: WindingCount>(marks: &mut [LineMark], mut segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
         if need_to_fix {
             segments.reserve(marks.len());
         } else {
@@ -278,7 +278,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn multi_split_edge<C: ShapeCount>(marks: &[LineMark], segments: &mut Vec<Segment<C>>) {
+    fn multi_split_edge<C: WindingCount>(marks: &[LineMark], segments: &mut Vec<Segment<C>>) {
         let mut iter = marks.iter();
         let m0 = iter.next().unwrap();
 

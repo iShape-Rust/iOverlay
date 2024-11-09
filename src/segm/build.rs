@@ -3,20 +3,20 @@ use i_float::triangle::Triangle;
 use crate::core::overlay::ShapeType;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 
 pub(crate) trait BuildSegments {
     fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType);
 }
 
-impl<C: ShapeCount> BuildSegments for Vec<Segment<C>> {
+impl<C: WindingCount> BuildSegments for Vec<Segment<C>> {
     #[inline]
     fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
         private_append_iter(self, iter, shape_type);
     }
 }
 
-fn private_append_iter<I: Iterator<Item=IntPoint>, C: ShapeCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) {
+fn private_append_iter<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) {
     // our goal add all not degenerate segments
     let mut p0 = if let Some(p) = iter.next() { p } else { return; };
     let mut p1 = if let Some(p) = iter.next() { p } else { return; };
@@ -97,7 +97,7 @@ mod tests {
     use crate::segm::build::BuildSegments;
     use crate::segm::merge::ShapeSegmentsMerge;
     use crate::segm::segment::Segment;
-    use crate::segm::shape_count::ShapeCountBoolean;
+    use crate::segm::winding_count::ShapeCountBoolean;
 
     #[test]
     fn test_0() {

@@ -1,6 +1,6 @@
 use crate::geom::line_range::LineRange;
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 use crate::split::fragment::Fragment;
 use crate::split::segment_tree::SegmentTree;
 use crate::split::solver::SplitSolver;
@@ -8,7 +8,7 @@ use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split<C: ShapeCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn tree_split<C: WindingCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let ver_range = segments.ver_range();
         let height = ver_range.width() as usize;
 
@@ -25,7 +25,7 @@ impl SplitSolver {
         }
     }
 
-    fn simple<C: ShapeCount>(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    fn simple<C: WindingCount>(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
@@ -61,7 +61,7 @@ impl SplitSolver {
         segments
     }
 
-    fn complex<C: ShapeCount>(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    fn complex<C: WindingCount>(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;

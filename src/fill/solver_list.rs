@@ -5,14 +5,14 @@ use crate::fill::count_segment::CountSegment;
 use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::geom::end::End;
 use crate::segm::segment::{Segment, SegmentFill, NONE};
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 use crate::util::log::Int;
 
 struct ScanFillList<C> {
     buffer: Vec<CountSegment<C>>,
 }
 
-impl<C: ShapeCount> ScanFillList<C> {
+impl<C: WindingCount> ScanFillList<C> {
     #[inline(always)]
     fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
@@ -53,7 +53,7 @@ impl<C: ShapeCount> ScanFillList<C> {
 }
 
 impl FillSolver {
-    pub(super) fn list_fill<F: FillStrategy<C>, C: ShapeCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
+    pub(super) fn list_fill<F: FillStrategy<C>, C: WindingCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillList::new(segments.len());
         let mut buf = Vec::with_capacity(4);

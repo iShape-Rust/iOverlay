@@ -16,7 +16,7 @@ pub struct ShapeCountString {
 pub(crate) const STRING_FORWARD_CLIP: u8 = 0b10;
 pub(crate) const STRING_BACK_CLIP: u8 = 0b1;
 
-pub(crate) trait ShapeCount
+pub(crate) trait WindingCount
 where
     Self: Clone + Copy + Send,
 {
@@ -28,7 +28,7 @@ where
     fn invert(self) -> Self;
 }
 
-impl ShapeCount for ShapeCountBoolean {
+impl WindingCount for ShapeCountBoolean {
     #[inline(always)]
     fn is_not_empty(&self) -> bool { self.subj != 0 || self.clip != 0 }
 
@@ -63,7 +63,7 @@ impl ShapeCount for ShapeCountBoolean {
     }
 }
 
-impl ShapeCount for ShapeCountString {
+impl WindingCount for ShapeCountString {
     #[inline(always)]
     fn is_not_empty(&self) -> bool { self.subj != 0 || self.clip != 0 }
 

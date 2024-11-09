@@ -8,14 +8,14 @@ use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::geom::end::End;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::{Segment, SegmentFill, NONE};
-use crate::segm::shape_count::ShapeCount;
+use crate::segm::winding_count::WindingCount;
 use crate::util::log::Int;
 
 pub(super) struct ScanFillTree<C> {
     tree: Tree<CountSegment<C>>,
 }
 
-impl<C: ShapeCount> ScanFillTree<C> {
+impl<C: WindingCount> ScanFillTree<C> {
     #[inline]
     pub(super) fn new(count: usize) -> Self {
         let capacity = count.log2_sqrt();
@@ -102,7 +102,7 @@ impl<C: ShapeCount> ScanFillTree<C> {
 
 
 impl FillSolver {
-    pub(super) fn tree_fill<F: FillStrategy<C>, C: ShapeCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
+    pub(super) fn tree_fill<F: FillStrategy<C>, C: WindingCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillTree::new(segments.len());
         let mut buf = Vec::with_capacity(4);

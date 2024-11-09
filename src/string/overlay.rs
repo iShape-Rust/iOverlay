@@ -9,7 +9,7 @@ use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
-use crate::segm::shape_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
+use crate::segm::winding_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
