@@ -1,13 +1,12 @@
 use i_float::int::point::IntPoint;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::{Segment, ToSegment};
-use crate::segm::shape_count::ShapeCount;
 
 pub type IntLine = [IntPoint; 2];
 
-impl ToSegment for IntLine {
+impl<C: Send> ToSegment<C> for IntLine {
     #[inline(always)]
-    fn to_segment(&self, count: ShapeCount) -> Segment {
+    fn to_segment(&self, count: C) -> Segment<C> {
         let a = self[0];
         let b = self[1];
         if a < b {
@@ -18,9 +17,9 @@ impl ToSegment for IntLine {
     }
 }
 
-impl ToSegment for [IntPoint] {
+impl<C: Send> ToSegment<C> for [IntPoint] {
     #[inline(always)]
-    fn to_segment(&self, count: ShapeCount) -> Segment {
+    fn to_segment(&self, count: C) -> Segment<C> {
         let a = self[0];
         let b = self[1];
         if a < b {

@@ -13,6 +13,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
+use crate::segm::shape_count::ShapeCountBoolean;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::graph::OverlayGraph;
@@ -30,7 +31,7 @@ pub enum ShapeType {
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
 pub struct Overlay {
-    pub(crate) segments: Vec<Segment>,
+    pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
 }
 
 impl Overlay {

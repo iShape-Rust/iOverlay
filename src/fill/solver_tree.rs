@@ -11,22 +11,20 @@ use crate::segm::segment::{Segment, SegmentFill, NONE};
 use crate::segm::shape_count::ShapeCount;
 use crate::util::log::Int;
 
-pub(super) struct ScanFillTree {
-    tree: Tree<CountSegment>,
+pub(super) struct ScanFillTree<C> {
+    tree: Tree<CountSegment<C>>,
 }
 
-impl ScanFillTree {
+impl<C: ShapeCount> ScanFillTree<C> {
     #[inline]
     pub(super) fn new(count: usize) -> Self {
         let capacity = count.log2_sqrt();
-        let count = ShapeCount { subj: 0, clip: 0 };
+        let count = C::new(0, 0);
         let x_segment = XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO };
         Self { tree: Tree::new(CountSegment { count, x_segment }, capacity) }
     }
-}
 
-impl ScanFillTree {
-    pub(super) fn insert(&mut self, segment: CountSegment) {
+    pub(super) fn insert(&mut self, segment: CountSegment<C>) {
         let stop = segment.x_segment.a.x;
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;
@@ -77,9 +75,9 @@ impl ScanFillTree {
         }
     }
 
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount {
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> C {
         let mut index = self.tree.root;
-        let mut result = ShapeCount { subj: 0, clip: 0 };
+        let mut result = C::new(0, 0);
         while index != EMPTY_REF {
             let node = self.tree.node(index);
             if node.value.x_segment.b.x <= p.x {
@@ -104,7 +102,7 @@ impl ScanFillTree {
 
 
 impl FillSolver {
-    pub(super) fn tree_fill<F: FillStrategy>(segments: &[Segment]) -> Vec<SegmentFill> {
+    pub(super) fn tree_fill<F: FillStrategy<C>, C: ShapeCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillTree::new(segments.len());
         let mut buf = Vec::with_capacity(4);

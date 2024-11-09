@@ -8,25 +8,23 @@ use crate::segm::segment::{Segment, SegmentFill, NONE};
 use crate::segm::shape_count::ShapeCount;
 use crate::util::log::Int;
 
-struct ScanFillList {
-    buffer: Vec<CountSegment>,
+struct ScanFillList<C> {
+    buffer: Vec<CountSegment<C>>,
 }
 
-impl ScanFillList {
+impl<C: ShapeCount> ScanFillList<C> {
     #[inline(always)]
     fn new(count: usize) -> Self {
         Self { buffer: Vec::with_capacity(count.log2_sqrt()) }
     }
-}
 
-impl ScanFillList {
     #[inline(always)]
     fn clear(&mut self, x: i32) {
         self.buffer.retain(|s| s.x_segment.b.x > x);
     }
 
     #[inline(always)]
-    fn insert(&mut self, segment: CountSegment) {
+    fn insert(&mut self, segment: CountSegment<C>) {
         match self.buffer.binary_search(&segment) {
             Ok(_) => unreachable!("Buffer can only contain unique elements"),
             Err(index) => self.buffer.insert(index, segment)
@@ -34,7 +32,7 @@ impl ScanFillList {
     }
 
     #[inline(always)]
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> ShapeCount {
+    fn find_under_and_nearest(&mut self, p: IntPoint) -> C {
         match self.buffer.binary_search_by(|s|
         if s.x_segment.is_under_point(p) {
             Ordering::Less
@@ -45,7 +43,7 @@ impl ScanFillList {
             Ok(_) => unreachable!("This condition should never occur"),
             Err(index) => {
                 if index == 0 {
-                    ShapeCount { subj: 0, clip: 0 }
+                    C::new(0, 0)
                 } else {
                     unsafe { self.buffer.get_unchecked(index - 1) }.count
                 }
@@ -55,7 +53,7 @@ impl ScanFillList {
 }
 
 impl FillSolver {
-    pub(super) fn list_fill<F: FillStrategy>(segments: &[Segment]) -> Vec<SegmentFill> {
+    pub(super) fn list_fill<F: FillStrategy<C>, C: ShapeCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
         // Mark. self is sorted by x_segment.a
         let mut scan_list = ScanFillList::new(segments.len());
         let mut buf = Vec::with_capacity(4);

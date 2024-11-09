@@ -53,14 +53,20 @@ mod tests {
         print!("clip: {}", clip.json_print());
     }
 
-    // #[test]
-    // fn test_0() {
-    //     execute(0);
-    // }
-    //
-    // #[test]
-    // fn test_debug() {
-    //     // debug_execute_slice(0);
-    //     debug_execute_clip(0, false);
-    // }
+    #[test]
+    fn test_0() {
+        execute(0);
+    }
+    
+    #[test]
+    fn test_debug() {
+        // debug_execute_slice(0);
+        debug_execute_clip(0, false);
+    }
+
+    #[test]
+    fn test_debug_2() {
+        // debug_execute_slice(0);
+        debug_execute_clip(1, false);
+    }
 }

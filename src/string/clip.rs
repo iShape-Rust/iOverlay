@@ -2,7 +2,6 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
-use crate::core::link::OverlayLink;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -36,49 +35,52 @@ impl StringGraph {
                 })
             .collect();
 
-        let mut link_index = 0;
         let mut paths = Vec::new();
-        while link_index < moves.len() {
-            let this_move = unsafe { moves.get_unchecked_mut(link_index) };
-            let mut link = self.link(link_index);
-            let is_move_possible = Self::visit_if_possible(this_move, link);
 
-            if !is_move_possible {
-                link_index += 1;
-                continue;
+        for (start_node_index, start_node) in self.nodes.iter().enumerate() {
+            for &link_index in start_node.iter() {
+                let mut link = self.link(link_index);
+                let (a, mut b) = if link.a.id == start_node_index { (link.a, link.b) } else { (link.b, link.a) };
+                let is_forward = a.point > b.point;
+                let this_move = unsafe { moves.get_unchecked_mut(link_index) };
+                let is_move_possible = Self::visit_if_possible(this_move, is_forward);
+
+                if !is_move_possible {
+                    continue;
+                }
+
+                let mut sub_path = Vec::new();
+                sub_path.push(a.point);
+
+                loop {
+                    sub_path.push(b.point);
+                    let node = self.node(b.id);
+                    let next_index = if let Some(&not_visited_index) = node.iter()
+                        .find(|&&index| {
+                            let index_move = unsafe { moves.get_unchecked_mut(index) };
+                            let c = self.link(index).other(b.id);
+                            let is_forward = b.point > c.point;
+                            let is_move_possible = Self::visit_if_possible(index_move, is_forward);
+                            is_move_possible
+                        }) {
+                        not_visited_index
+                    } else {
+                        break;
+                    };
+
+                    link = self.link(next_index);
+                    b = link.other(b.id);
+                }
+
+                paths.push(sub_path);
             }
-
-            let mut sub_path = Vec::new();
-            let mut a = link.a;
-            sub_path.push(a.point);
-            loop {
-                let b = link.other(a.id);
-                sub_path.push(b.point);
-                let node = self.node(b.id);
-                let next_index = if let Some(&not_visited_index) = node.iter()
-                    .find(|&&index| {
-                        let index_move = unsafe { moves.get_unchecked_mut(index) };
-                        let index_link = self.link(index);
-                        let is_move_possible = Self::visit_if_possible(index_move, index_link);
-                        is_move_possible
-                    }) {
-                    not_visited_index
-                } else {
-                    break;
-                };
-
-                link = self.link(next_index);
-                a = b;
-            }
-
-            paths.push(sub_path);
         }
 
         paths
     }
 
-    fn visit_if_possible(dir: &mut Direction, link: &OverlayLink) -> bool {
-        if link.is_direct() {
+    fn visit_if_possible(dir: &mut Direction, is_forward: bool) -> bool {
+        if is_forward {
             match dir {
                 Direction::Forward => {
                     *dir = Direction::None;

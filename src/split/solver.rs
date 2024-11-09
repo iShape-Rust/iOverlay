@@ -10,13 +10,13 @@ use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
 use crate::util::sort::SmartBinSort;
 
-pub(crate) trait SplitSegments {
-    fn split_segments(self, solver: Solver) -> Vec<Segment>;
+pub(crate) trait SplitSegments<C: ShapeCount> {
+    fn split_segments(self, solver: Solver) -> Vec<Segment<C>>;
 }
 
-impl SplitSegments for Vec<Segment> {
+impl<C: ShapeCount> SplitSegments<C> for Vec<Segment<C>> {
     #[inline]
-    fn split_segments(self, solver: Solver) -> Vec<Segment> {
+    fn split_segments(self, solver: Solver) -> Vec<Segment<C>> {
         let mut segments = self;
         segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
         segments.merge_if_needed();
@@ -30,14 +30,13 @@ pub(super) struct SplitSolver {
 }
 
 impl SplitSolver {
-
     #[inline(always)]
     pub(crate) fn new(solver: Solver) -> Self {
         Self { solver }
     }
 
     #[inline]
-    pub(crate) fn split(&mut self, segments: Vec<Segment>) -> Vec<Segment> {
+    pub(crate) fn split<C: ShapeCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let is_list = self.solver.is_list_split(&segments);
 
         if is_list {
@@ -90,7 +89,7 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply(&self, marks: &mut Vec<LineMark>, segments: Vec<Segment>, need_to_fix: bool) -> Vec<Segment> {
+    pub(super) fn apply<C: ShapeCount>(&self, marks: &mut Vec<LineMark>, segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
         self.sort_and_filter_marks(marks, &segments);
         let min = segments[0].x_segment.a.x;
         let mut max = segments[0].x_segment.b.x;
@@ -118,7 +117,7 @@ impl SplitSolver {
 
         let empty = Segment {
             x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
-            count: ShapeCount { subj: 0, clip: 0 },
+            count: C::new(0, 0),
         };
 
         let mut buffer = vec![empty; new_len];
@@ -191,7 +190,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn init_bins(max: i32, layout: &BinLayout<i32>, marks: &[LineMark], segments: &[Segment]) -> Vec<Bin> {
+    fn init_bins<C: Send>(max: i32, layout: &BinLayout<i32>, marks: &[LineMark], segments: &[Segment<C>]) -> Vec<Bin> {
         let bin_count = layout.index(max) + 1;
         let mut bins = vec![Bin { offset: 0, data: 0 }; bin_count];
 
@@ -243,7 +242,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn one_bin_merge(marks: &mut [LineMark], mut segments: Vec<Segment>, need_to_fix: bool) -> Vec<Segment> {
+    fn one_bin_merge<C: ShapeCount>(marks: &mut [LineMark], mut segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
         if need_to_fix {
             segments.reserve(marks.len());
         } else {
@@ -279,7 +278,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn multi_split_edge(marks: &[LineMark], segments: &mut Vec<Segment>) {
+    fn multi_split_edge<C: ShapeCount>(marks: &[LineMark], segments: &mut Vec<Segment<C>>) {
         let mut iter = marks.iter();
         let m0 = iter.next().unwrap();
 
@@ -300,7 +299,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_and_filter_marks(&self, marks: &mut Vec<LineMark>, segments: &[Segment]) {
+    fn sort_and_filter_marks<C: Send>(&self, marks: &mut Vec<LineMark>, segments: &[Segment<C>]) {
         marks.smart_bin_sort_by(&self.solver, |a, b| a.index.cmp(&b.index).then(a.point.cmp(&b.point)));
         marks.dedup();
 
@@ -330,7 +329,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_sub_marks(marks: &mut [LineMark], segments: &[Segment]) {
+    fn sort_sub_marks<C: Send>(marks: &mut [LineMark], segments: &[Segment<C>]) {
         let mut j0 = 0;
         let mut j = 1;
 

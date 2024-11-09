@@ -9,14 +9,14 @@ pub(crate) trait BuildSegments {
     fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType);
 }
 
-impl BuildSegments for Vec<Segment> {
+impl<C: ShapeCount> BuildSegments for Vec<Segment<C>> {
     #[inline]
     fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
         private_append_iter(self, iter, shape_type);
     }
 }
 
-fn private_append_iter<I: Iterator<Item=IntPoint>>(segments: &mut Vec<Segment>, mut iter: I, shape_type: ShapeType) {
+fn private_append_iter<I: Iterator<Item=IntPoint>, C: ShapeCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) {
     // our goal add all not degenerate segments
     let mut p0 = if let Some(p) = iter.next() { p } else { return; };
     let mut p1 = if let Some(p) = iter.next() { p } else { return; };
@@ -33,7 +33,7 @@ fn private_append_iter<I: Iterator<Item=IntPoint>>(segments: &mut Vec<Segment>, 
 
     let q1 = p0;
 
-    let (direct, invert) = shape_type.counts();
+    let (direct, invert) = C::with_shape_type(shape_type);
 
     for p in &mut iter {
         if Triangle::is_line_point(p0, p1, p) {
@@ -79,19 +79,9 @@ fn private_append_iter<I: Iterator<Item=IntPoint>>(segments: &mut Vec<Segment>, 
     }
 }
 
-impl ShapeType {
+impl<C: Send> Segment<C> {
     #[inline]
-    fn counts(&self) -> (ShapeCount, ShapeCount) {
-        match self {
-            ShapeType::Subject => (ShapeCount::new(1, 0), ShapeCount::new(-1, 0)),
-            ShapeType::Clip => (ShapeCount::new(0, 1), ShapeCount::new(0, -1)),
-        }
-    }
-}
-
-impl Segment {
-    #[inline]
-    fn with_ab(p0: IntPoint, p1: IntPoint, direct: ShapeCount, invert: ShapeCount) -> Self {
+    fn with_ab(p0: IntPoint, p1: IntPoint, direct: C, invert: C) -> Self {
         if p0 < p1 {
             Self { x_segment: XSegment { a: p0, b: p1 }, count: direct }
         } else {
@@ -107,6 +97,7 @@ mod tests {
     use crate::segm::build::BuildSegments;
     use crate::segm::merge::ShapeSegmentsMerge;
     use crate::segm::segment::Segment;
+    use crate::segm::shape_count::ShapeCountBoolean;
 
     #[test]
     fn test_0() {
@@ -171,7 +162,7 @@ mod tests {
 
     fn test_count(mut points: Vec<IntPoint>, count: usize) {
         let n = points.len();
-        let mut segments: Vec<Segment> = Vec::with_capacity(n);
+        let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::with_capacity(n);
         for _ in 0..n {
             segments.append_path_iter(points.iter().copied(), ShapeType::Subject);
             segments.merge_if_needed();

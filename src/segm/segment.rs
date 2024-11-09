@@ -21,14 +21,14 @@ pub const BOTH_BOTTOM: SegmentFill = SUBJ_BOTTOM | CLIP_BOTTOM;
 pub const ALL: SegmentFill = SUBJ_BOTH | CLIP_BOTH;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Segment {
+pub(crate) struct Segment<C: Send> {
     pub(crate) x_segment: XSegment,
-    pub(crate) count: ShapeCount,
+    pub(crate) count: C,
 }
 
-impl Segment {
+impl<C: ShapeCount> Segment<C> {
     #[inline(always)]
-    pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: ShapeCount) -> Self {
+    pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: C) -> Self {
         if a < b {
             Self { x_segment: XSegment { a, b }, count }
         } else {
@@ -37,30 +37,30 @@ impl Segment {
     }
 }
 
-impl PartialEq<Self> for Segment {
+impl<C: Send> PartialEq<Self> for Segment<C> {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
     }
 }
 
-impl Eq for Segment {}
+impl<C: Send> Eq for Segment<C> {}
 
-impl PartialOrd for Segment {
+impl<C: Send> PartialOrd for Segment<C> {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Segment {
+impl<C: Send> Ord for Segment<C> {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.x_segment.cmp(&other.x_segment)
     }
 }
 
-impl BinKey<i32> for Segment {
+impl<C: Send> BinKey<i32> for Segment<C> {
     #[inline(always)]
     fn bin_key(&self) -> i32 {
         self.x_segment.bin_key()
@@ -72,6 +72,6 @@ impl BinKey<i32> for Segment {
     }
 }
 
-pub(crate) trait ToSegment {
-    fn to_segment(&self, shape_count: ShapeCount) -> Segment;
+pub(crate) trait ToSegment<C: Send> {
+    fn to_segment(&self, shape_count: C) -> Segment<C>;
 }

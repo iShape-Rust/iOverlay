@@ -108,7 +108,7 @@ impl SpaceLayout {
         buffer.push(Fragment { index, rect, x_segment });
     }
 
-    pub(super) fn is_fragmentation_required_for_edges(&self, edges: &[Segment]) -> bool {
+    pub(super) fn is_fragmentation_required_for_edges<C: Send>(&self, edges: &[Segment<C>]) -> bool {
         let mut i = 0;
         for edge in edges.iter() {
             if self.is_fragmentation_required(edge.x_segment) {

@@ -23,14 +23,9 @@ impl MaskFilter for Vec<OverlayLink> {
 }
 
 
-pub(super) trait InclusionBooleanFilterStrategy {
+pub(super) trait InclusionFilterStrategy {
     fn is_included(fill: SegmentFill) -> bool;
 }
-
-pub(super) trait InclusionStringFilterStrategy {
-    fn is_included(fill: SegmentFill) -> bool;
-}
-
 
 pub(super) struct SubjectFilter;
 pub(super) struct ClipFilter;
@@ -46,84 +41,84 @@ pub(super) struct StringClipInsideBoundaryIncludedFilter;
 pub(super) struct StringClipOutsideBoundaryExcludedFilter;
 pub(super) struct StringClipOutsideBoundaryIncludedFilter;
 
-impl InclusionBooleanFilterStrategy for SubjectFilter {
+impl InclusionFilterStrategy for SubjectFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_subject()
     }
 }
 
-impl InclusionBooleanFilterStrategy for ClipFilter {
+impl InclusionFilterStrategy for ClipFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_clip()
     }
 }
 
-impl InclusionBooleanFilterStrategy for IntersectFilter {
+impl InclusionFilterStrategy for IntersectFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_intersect()
     }
 }
 
-impl InclusionBooleanFilterStrategy for UnionFilter {
+impl InclusionFilterStrategy for UnionFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_union()
     }
 }
 
-impl InclusionBooleanFilterStrategy for DifferenceFilter {
+impl InclusionFilterStrategy for DifferenceFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_difference()
     }
 }
 
-impl InclusionBooleanFilterStrategy for InverseDifferenceFilter {
+impl InclusionFilterStrategy for InverseDifferenceFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_inverse_difference()
     }
 }
 
-impl InclusionBooleanFilterStrategy for XorFilter {
+impl InclusionFilterStrategy for XorFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_xor()
     }
 }
 
-impl InclusionBooleanFilterStrategy for FillerFilter {
+impl InclusionFilterStrategy for FillerFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         !fill.is_filler()
     }
 }
 
-impl InclusionStringFilterStrategy for StringClipInsideBoundaryExcludedFilter {
+impl InclusionFilterStrategy for StringClipInsideBoundaryExcludedFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_string_clip_inside_boundary_excluded()
     }
 }
 
-impl InclusionStringFilterStrategy for StringClipInsideBoundaryIncludedFilter {
+impl InclusionFilterStrategy for StringClipInsideBoundaryIncludedFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_string_clip_inside_boundary_included()
     }
 }
 
-impl InclusionStringFilterStrategy for StringClipOutsideBoundaryExcludedFilter {
+impl InclusionFilterStrategy for StringClipOutsideBoundaryExcludedFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_string_clip_outside_boundary_excluded()
     }
 }
 
-impl InclusionStringFilterStrategy for StringClipOutsideBoundaryIncludedFilter {
+impl InclusionFilterStrategy for StringClipOutsideBoundaryIncludedFilter {
     #[inline(always)]
     fn is_included(fill: SegmentFill) -> bool {
         fill.is_string_clip_outside_boundary_included()

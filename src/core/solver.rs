@@ -55,7 +55,7 @@ impl Solver {
     const MAX_SPLIT_LIST_COUNT: usize = 4_000;
     const MAX_FILL_LIST_COUNT: usize = 8_000;
 
-    pub(crate) fn is_list_split(&self, segments: &[Segment]) -> bool {
+    pub(crate) fn is_list_split<C: Send>(&self, segments: &[Segment<C>]) -> bool {
         match self.strategy {
             List => { true }
             Tree => { false }
@@ -65,7 +65,7 @@ impl Solver {
         }
     }
 
-    pub(crate) fn is_list_fill(&self, segments: &[Segment]) -> bool {
+    pub(crate) fn is_list_fill<C: Send>(&self, segments: &[Segment<C>]) -> bool {
         match self.strategy {
             List => { true }
             Tree => { false }
