@@ -13,6 +13,9 @@ pub const SUBJ_BOTTOM: SegmentFill = 0b0010;
 pub const CLIP_TOP: SegmentFill = 0b0100;
 pub const CLIP_BOTTOM: SegmentFill = 0b1000;
 
+pub const CLIP_BACK: SegmentFill = 0b100;
+pub const CLIP_FORWARD: SegmentFill = 0b01000;
+
 pub const SUBJ_BOTH: SegmentFill = SUBJ_TOP | SUBJ_BOTTOM;
 pub const CLIP_BOTH: SegmentFill = CLIP_TOP | CLIP_BOTTOM;
 pub const BOTH_TOP: SegmentFill = SUBJ_TOP | CLIP_TOP;

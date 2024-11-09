@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use crate::core::overlay::ShapeType;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,16 +66,13 @@ impl ShapeCount for ShapeCountString {
 
     #[inline(always)]
     fn new(subj: i32, clip: i32) -> Self {
-        let mask = if clip > 0 {
-            0b10
-        } else if clip < 0 {
-            0b01
-        } else {
-            0
-        };
-
         // 0 - bit - back
         // 1 - bit - forward
+        let mask = match clip.cmp(&0) {
+            Ordering::Greater => 0b10,
+            Ordering::Less => 0b01,
+            Ordering::Equal => 0,
+        };
         Self { subj, clip: mask }
     }
 
@@ -97,7 +95,7 @@ impl ShapeCount for ShapeCountString {
     #[inline(always)]
     fn apply(&mut self, count: Self) {
         self.subj += count.subj;
-        self.clip = self.clip | count.clip;
+        self.clip |= self.clip;
     }
 
     #[inline(always)]

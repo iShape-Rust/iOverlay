@@ -8,7 +8,7 @@ use crate::core::overlay::ShapeType;
 use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::{Segment, ToSegment};
-use crate::segm::shape_count::{ShapeCount, ShapeCountBoolean, ShapeCountString};
+use crate::segm::shape_count::{ShapeCount, ShapeCountString};
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
@@ -199,7 +199,7 @@ impl StringOverlay {
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
     pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> StringGraph {
-        let links = OverlayLinkBuilder::build_string_all::<ShapeCountBoolean>(self.segments, fill_rule, solver);
+        let links = OverlayLinkBuilder::build_string_all(self.segments, fill_rule, solver);
         StringGraph::new(solver, links)
     }
 }

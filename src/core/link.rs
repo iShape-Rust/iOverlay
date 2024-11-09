@@ -60,7 +60,7 @@ impl OverlayLinkBuilder {
         }
     }
 
-    pub(crate) fn build_string_all<C>(segments: Vec<Segment<ShapeCountString>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+    pub(crate) fn build_string_all(segments: Vec<Segment<ShapeCountString>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
         if segments.is_empty() { return vec![]; }
         let segments = segments.split_segments(solver);
         if segments.is_empty() { return vec![]; }
@@ -86,10 +86,10 @@ impl OverlayLinkBuilder {
     fn fill_string(segments: &[Segment<ShapeCountString>], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
         let is_list = solver.is_list_fill(segments);
         match fill_rule {
-            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategyString, ShapeCountString>(is_list, &segments),
-            FillRule::NonZero => FillSolver::fill::<NonZeroStrategyString, ShapeCountString>(is_list, &segments),
-            FillRule::Positive => FillSolver::fill::<PositiveStrategyString, ShapeCountString>(is_list, &segments),
-            FillRule::Negative => FillSolver::fill::<NegativeStrategyString, ShapeCountString>(is_list, &segments),
+            FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategyString, ShapeCountString>(is_list, segments),
+            FillRule::NonZero => FillSolver::fill::<NonZeroStrategyString, ShapeCountString>(is_list, segments),
+            FillRule::Positive => FillSolver::fill::<PositiveStrategyString, ShapeCountString>(is_list, segments),
+            FillRule::Negative => FillSolver::fill::<NegativeStrategyString, ShapeCountString>(is_list, segments),
         }
     }
 
@@ -119,27 +119,6 @@ impl OverlayLinkBuilder {
         Self::build_all_links(&segments, &fills)
     }
 
-    // fn build_boolean_links<F: InclusionBooleanFilterStrategy>(segments: &[Segment<ShapeCountBoolean>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
-    //     let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
-    //
-    //     let empty_id = IdPoint::new(0, IntPoint::ZERO);
-    //     let empty_link = OverlayLink::new(empty_id, empty_id, 0);
-    //     let mut links = vec![empty_link; n];
-    //
-    //     let mut i = 0;
-    //     for (j, &fill) in fills.iter().enumerate() {
-    //         if !F::is_included(fill) {
-    //             continue;
-    //         }
-    //         let (segment, link) = unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
-    //         *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), fill);
-    //
-    //         i += 1;
-    //     }
-    //
-    //     links
-    // }
-
     fn build_links<F: InclusionFilterStrategy, C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
         let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
 
@@ -166,12 +145,9 @@ impl OverlayLinkBuilder {
         let empty_link = OverlayLink::new(empty_id, empty_id, 0);
         let mut links = vec![empty_link; fills.len()];
 
-        let mut i = 0;
-        for (j, &fill) in fills.iter().enumerate() {
-            let (segment, link) = unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
+        for (i, &fill) in fills.iter().enumerate() {
+            let (segment, link) = unsafe { (segments.get_unchecked(i), links.get_unchecked_mut(i)) };
             *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), fill);
-
-            i += 1;
         }
 
         links

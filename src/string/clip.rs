@@ -2,6 +2,7 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
+use crate::segm::segment::{SegmentFill, CLIP_BACK, CLIP_FORWARD};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -23,16 +24,25 @@ enum Direction {
     None,
 }
 
+impl Direction {
+    #[inline]
+    fn new(fill: SegmentFill) -> Direction {
+        let forward = fill & CLIP_FORWARD == CLIP_FORWARD;
+        let back = fill & CLIP_BACK == CLIP_BACK;
+        match (forward, back) {
+            (true, true) => Direction::Both,
+            (true, false) => Direction::Forward,
+            (false, true) => Direction::Back,
+            (false, false) => Direction::None,
+        }
+    }
+}
+
 impl StringGraph {
     #[inline]
     pub(super) fn clip_string_lines(&self) -> Vec<IntPath> {
         let mut moves: Vec<_> = self.links.iter()
-            .map(|link|
-                match link.fill {
-                    0 => Direction::Back,
-                    1 => Direction::Both,
-                    _ => Direction::Forward,
-                })
+            .map(|link| Direction::new(link.fill))
             .collect();
 
         let mut paths = Vec::new();
@@ -60,8 +70,8 @@ impl StringGraph {
                             let index_move = unsafe { moves.get_unchecked_mut(index) };
                             let c = self.link(index).other(b.id);
                             let is_forward = b.point > c.point;
-                            let is_move_possible = Self::visit_if_possible(index_move, is_forward);
-                            is_move_possible
+
+                            Self::visit_if_possible(index_move, is_forward)
                         }) {
                         not_visited_index
                     } else {
