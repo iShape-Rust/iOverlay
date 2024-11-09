@@ -228,13 +228,12 @@ impl FillStrategy<ShapeCountString> for EvenOddStrategyString {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
-        let clip = (this.clip != 0) as u8;
         let top = ShapeCountString { subj, clip: 0 };
 
         let subj_top = 1 & top.subj as SegmentFill;
         let subj_bot = 1 & bot.subj as SegmentFill;
 
-        let fill = subj_top | (subj_bot << 1) | clip << 2;
+        let fill = subj_top | (subj_bot << 1) | this.clip << 2;
 
         (top, fill)
     }
@@ -244,7 +243,7 @@ impl FillStrategy<ShapeCountString> for NonZeroStrategyString {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
-        let top = ShapeCountString { subj, clip: 0 }; // clip not important
+        let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
         let subj_top = (top.subj != 0) as SegmentFill;
         let subj_bot = (bot.subj != 0) as SegmentFill;
@@ -259,7 +258,7 @@ impl FillStrategy<ShapeCountString> for PositiveStrategyString {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
-        let top = ShapeCountString { subj, clip: 0 };
+        let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
         let subj_top = (top.subj < 0) as SegmentFill;
         let subj_bot = (bot.subj < 0) as SegmentFill;
@@ -274,7 +273,7 @@ impl FillStrategy<ShapeCountString> for NegativeStrategyString {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
-        let top = ShapeCountString { subj, clip: 0 };
+        let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
         let subj_top = (top.subj > 0) as SegmentFill;
         let subj_bot = (bot.subj > 0) as SegmentFill;
