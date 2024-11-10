@@ -74,7 +74,7 @@ impl OverlayGraph {
             }
         }
 
-        shapes.join_unsorted_holes(&self.solver, holes);
+        shapes.join_sorted_holes(&self.solver, holes);
 
         shapes
     }

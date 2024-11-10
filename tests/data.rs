@@ -19,6 +19,7 @@ pub mod overlay {
         }
     }
 
+    #[allow(dead_code)]
     #[derive(Debug, Deserialize)]
     pub struct BooleanTest {
         #[serde(rename = "fillRule")]
@@ -39,6 +40,7 @@ pub mod overlay {
     }
 
     impl BooleanTest {
+        #[allow(dead_code)]
         pub fn load(index: usize) -> Self {
             let file_name = format!("test_{}.json", index);
             let mut path_buf = PathBuf::from("./tests/boolean");
@@ -64,6 +66,7 @@ pub mod overlay {
         }
     }
 
+    #[allow(dead_code)]
     #[derive(Debug, Deserialize)]
     pub struct StringTest {
         #[serde(rename = "fillRule")]
@@ -77,6 +80,7 @@ pub mod overlay {
     }
 
     impl StringTest {
+        #[allow(dead_code)]
         pub fn load(index: usize) -> Self {
             let file_name = format!("test_{}.json", index);
             let mut path_buf = PathBuf::from("./tests/string");

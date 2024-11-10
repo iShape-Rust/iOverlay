@@ -73,6 +73,7 @@ impl ShapeBinder {
 
 pub(crate) trait JoinHoles {
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
+    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>);
 }
 
@@ -91,16 +92,42 @@ impl JoinHoles for Vec<IntShape> {
         }
 
         let mut hole_segments: Vec<_> = holes.iter().enumerate()
+            .map(|(id, path)| IdSegment { id, x_segment: most_left_bottom(path) })
+            .collect();
+
+        hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
+
+        self.scan_join(solver, holes, hole_segments);
+    }
+
+    #[inline]
+    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
+        if self.is_empty() || holes.is_empty() {
+            return;
+        }
+
+        if self.len() == 1 {
+            self[0].reserve(holes.len());
+            let mut hole_paths = holes;
+            self[0].append(&mut hole_paths);
+            return;
+        }
+
+        let hole_segments: Vec<_> = holes.iter().enumerate()
             .map(|(id, path)| {
-                let x_segment = most_left_bottom(path);
+                let a = path[1];
+                let b = path[2];
+                debug_assert!(a < b);
+
+                let x_segment = XSegment { a, b };
+
+                debug_assert_eq!(x_segment, most_left_bottom(path));
                 IdSegment { id, x_segment }
             })
             .collect();
 
-        // mostly sorted array!
-        if !is_sorted(&hole_segments) {
-            hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
-        }
+        debug_assert!(is_sorted(&hole_segments));
+
         self.scan_join(solver, holes, hole_segments);
     }
 
@@ -133,7 +160,7 @@ impl JoinHoles for Vec<IntShape> {
 fn most_left_bottom(path: &IntPath) -> XSegment {
     let mut index = 0;
     let mut a = path[0];
-    for (i, &p) in path.iter().skip(1).enumerate() {
+    for (i, &p) in path.iter().enumerate().skip(1) {
         if p < a {
             a = p;
             index = i;

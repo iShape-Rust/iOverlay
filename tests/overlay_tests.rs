@@ -9,6 +9,7 @@ mod tests {
     use i_overlay::core::solver::Solver;
     use crate::data::overlay::BooleanTest;
     use crate::util::overlay;
+    use crate::util::overlay::JsonPrint;
 
     const SOLVERS: [Solver; 3] = [
         Solver::LIST,
@@ -48,7 +49,7 @@ mod tests {
         let graph = overlay.into_graph_with_solver(fill_rule, solver);
         let result = graph.extract_shapes(overlay_rule);
 
-        print!("result: {:?}", result);
+        println!("result: {}", result.json_print());
         match overlay_rule {
             OverlayRule::Subject => {
                 assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject));
@@ -750,7 +751,12 @@ mod tests {
     }
 
     #[test]
+    fn test_135() {
+        execute(135);
+    }
+
+    #[test]
     fn test_debug() {
-        debug_execute(134, OverlayRule::InverseDifference, Solver::LIST);
+        debug_execute(135, OverlayRule::Clip, Solver::LIST);
     }
 }

@@ -138,17 +138,21 @@ impl JoinHoles for Vec<VectorShape> {
     }
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
-        let mut hole_segments: Vec<_> = holes.iter().enumerate()
+        let hole_segments: Vec<_> = holes.iter().enumerate()
             .map(|(id, path)| {
-                let x_segment = most_left_bottom(path);
+                let v = path[1];
+                let x_segment = if v.a < v.b {
+                        XSegment { a: v.a, b: v.b}
+                    } else {
+                        XSegment { a: v.b, b: v.a }
+                };
+                debug_assert_eq!(x_segment, most_left_bottom(path));
                 IdSegment { id, x_segment }
             })
             .collect();
 
-        // mostly sorted array!
-        if !is_sorted(&hole_segments) {
-            hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
-        }
+        debug_assert!(is_sorted(&hole_segments));
+
 
         let x_min = hole_segments[0].x_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].x_segment.a.x;
@@ -177,7 +181,7 @@ impl JoinHoles for Vec<VectorShape> {
 fn most_left_bottom(path: &VectorPath) -> XSegment {
     let mut index = 0;
     let mut a = path[0].a;
-    for (i, &e) in path.iter().skip(1).enumerate() {
+    for (i, &e) in path.iter().enumerate().skip(1) {
         if e.a < a {
             a = e.a;
             index = i;

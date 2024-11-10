@@ -53,7 +53,7 @@ impl StringGraph {
                 let start_data = StartPathData::new(is_hole, link, left_top_link);
                 let paths = self.get_path(&start_data, visited).split_loops(min_area);
                 if is_hole {
-                    shapes.join_unsorted_holes(&self.solver, paths);
+                    shapes.join_sorted_holes(&self.solver, paths);
                 } else {
                     for path in paths.into_iter() {
                         shapes.push(vec![path]);
