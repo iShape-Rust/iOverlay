@@ -7,6 +7,7 @@ mod tests {
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::float::clip::FloatClip;
+    use i_overlay::float::filter::ContourFilter;
     use i_overlay::float::overlay::FloatOverlay;
     use i_overlay::float::slice::FloatSlice;
     use i_overlay::string::clip::ClipRule;
@@ -305,26 +306,26 @@ mod tests {
         assert_eq!(shapes.is_empty(), true);
     }
 
-    // #[test]
-    // fn test_empty_1() {
-    //     let shape = [
-    //         [
-    //             FPoint::new(-10.0, -10.0),
-    //             FPoint::new(-10.0, 10.0),
-    //             FPoint::new(10.0, 10.0),
-    //             FPoint::new(10.0, -10.0)
-    //         ].to_vec()
-    //     ];
-    //
-    //     let shapes = FloatOverlay::with_adapter(FloatPointAdapter::with_iter(shape.iter().flatten()), shape.len())
-    //         .unsafe_add_contours(&shape, ShapeType::Subject)
-    //         .into_graph(FillRule::NonZero)
-    //         .extract_shapes(OverlayRule::Subject);
-    //
-    //     assert_eq!(shapes.len(), 1);
-    //     assert_eq!(shapes[0].len(), 1);
-    //     assert_eq!(shapes[0][0].len(), 4);
-    // }
+    #[test]
+    fn test_empty_1() {
+        let shape = [
+            [
+                FPoint::new(-10.0, -10.0),
+                FPoint::new(-10.0, 10.0),
+                FPoint::new(10.0, 10.0),
+                FPoint::new(10.0, -10.0)
+            ].to_vec()
+        ];
+    
+        let shapes = FloatOverlay::with_adapter(FloatPointAdapter::with_iter(shape.iter().flatten()), shape.len())
+            .unsafe_add_source(&shape, ShapeType::Subject)
+            .into_graph(FillRule::NonZero)
+            .extract_shapes(OverlayRule::Subject);
+    
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
 
     #[test]
     fn test_empty_2() {
@@ -640,5 +641,43 @@ mod tests {
 
         assert_eq!(result_0.len(), 0);
         assert_eq!(result_1.len(), 1);
+    }
+
+    #[test]
+    fn test_simplify() {
+        let shape_0 = [
+            [
+                [48.239437f32, -54.70892f32],
+                [47.195786, -55.457626],
+                [46.968903, -56.886974],
+                [36.532383, -55.07193],
+                [37.961735, -46.7454],
+                [40.02635, -47.085724],
+                [40.094414, -46.7454],
+                [44.51859, -47.516796],
+                [44.473213, -47.83443],
+                [48.398254, -48.51507],
+                [48.10331, -49.9898],
+                [48.874702, -50.965385],
+            ].to_vec()
+        ];
+
+        let shape_1 = [
+            [
+                [48.398247, -48.515068],
+                [48.10331, -49.989796],
+                [44.473213, -47.834427],
+            ].to_vec()
+        ];
+
+        let result_no_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
+            .overlay(OverlayRule::Intersect, FillRule::EvenOdd );
+
+        let result_with_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
+            .overlay_with_filter_and_solver(OverlayRule::Intersect, FillRule::EvenOdd, ContourFilter { min_area: 0.0, simplify: true }, Default::default() );
+
+
+        assert_eq!(result_no_filter.len(), 2);
+        assert_eq!(result_with_filter.len(), 1);
     }
 }
