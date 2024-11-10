@@ -11,7 +11,7 @@
 //! - **Data Types**: Supports i32, f32, and f64 APIs.
 //!
 //! ## Simple Example
-//! ![iOverlay Logo](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)
+//! [Simple Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)
 //! Here's an example of performing a union operation between two polygons:
 //!
 //! ```rust
@@ -133,7 +133,7 @@
 //! ```
 //!
 //! ## Slicing a Polygon by a Line
-//!
+//! [Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
 //! In addition to boolean operations, `iOverlay` supports slicing a polygon by a line, allowing you to split polygons along specified paths.
 //!
 //!```rust
@@ -142,23 +142,24 @@
 //! use i_overlay::float::slice::FloatSlice;
 //!
 //! let polygon = [
-//!     [0.0, 0.0],
-//!     [2.0, 0.0],
-//!     [2.0, 2.0],
-//!     [0.0, 2.0],
+//!     [1.0, 1.0],
+//!     [1.0, 4.0],
+//!     [4.0, 4.0],
+//!     [4.0, 1.0],
 //! ];
 //!
 //! let slicing_line = [
-//!     [1.0, 0.0],
-//!     [1.0, 3.0],
+//!     [3.0, 5.0],
+//!     [2.0, 2.0],
+//!     [3.0, 3.0],
+//!     [2.0, 0.0],
 //! ];
 //!
 //! let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 //!
 //! println!("result: {:?}", result);
 //! ```
-//!
-//! This example shows a simple slicing operation where `polygon` is sliced by `slicing_line`. The `slice_by` function returns a vector of shapes resulting from the slice, allowing for flexible shape manipulation.
+
 
 
 pub mod fill;

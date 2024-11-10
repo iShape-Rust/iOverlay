@@ -3,8 +3,10 @@ mod tests {
     use i_float::float::compatible::FloatPointCompatible;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::float::clip::FloatClip;
     use i_overlay::float::single::SingleFloatOverlay;
     use i_overlay::float::slice::FloatSlice;
+    use i_overlay::string::clip::ClipRule;
 
     #[test]
     fn test_simple_union() {
@@ -83,16 +85,42 @@ mod tests {
 
     #[test]
     fn test_slice() {
-        let result = [
-            [0.0, 0.0],
-            [2.0, 0.0],
-            [2.0, 2.0],
-            [0.0, 2.0]
-        ].slice_by(&[
-            [1.0, 0.0],
-            [1.0, 3.0],
-        ], FillRule::NonZero);
+        let polygon = [
+            [1.0, 1.0],
+            [1.0, 4.0],
+            [4.0, 4.0],
+            [4.0, 1.0],
+        ];
 
+        let slicing_line = [
+            [3.0, 5.0],
+            [2.0, 2.0],
+            [3.0, 3.0],
+            [2.0, 0.0],
+        ];
+
+        let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
+
+        println!("result: {:?}", result);
+    }
+
+    #[test]
+    fn test_clip() {
+        let polygon = [
+            [1.0, 1.0],
+            [1.0, 4.0],
+            [4.0, 4.0],
+            [4.0, 1.0],
+        ];
+
+        let slicing_line = [
+            [3.0, 5.0],
+            [2.0, 2.0],
+            [3.0, 3.0],
+            [2.0, 0.0],
+        ];
+
+        let result = slicing_line.clip_by(&polygon, FillRule::NonZero, ClipRule { invert: false, boundary_included: false });
 
         println!("result: {:?}", result);
     }
