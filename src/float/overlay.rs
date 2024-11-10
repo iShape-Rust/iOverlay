@@ -179,15 +179,6 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 }
 
-impl<T: FloatNumber> Default for Filter<T> {
-    fn default() -> Self {
-        Self {
-            min_area: T::from_float(0.0),
-            simplify: false,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::core::fill_rule::FillRule;
