@@ -2,7 +2,7 @@ use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
-use i_shape::int::simple::Simple;
+use i_shape::int::simple::Simplify;
 use crate::bind::solver::JoinHoles;
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
@@ -270,11 +270,7 @@ pub(crate) trait Validate {
 impl Validate for IntPath {
     #[inline]
     fn validate(&mut self, min_area: usize) -> bool {
-        let slice = self.as_slice();
-        if !slice.is_simple() {
-            let simple = slice.to_simple();
-            let _ = std::mem::replace(self, simple);
-        }
+        self.simplify();
 
         if self.len() < 3 {
             return false;

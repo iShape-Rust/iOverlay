@@ -5,6 +5,7 @@ use i_shape::base::data::Shapes;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
 use crate::core::overlay_rule::OverlayRule;
+use crate::float::filter::Filter;
 use crate::float::overlay::FloatOverlay;
 use crate::float::source::resource::OverlayResource;
 
@@ -30,9 +31,10 @@ where
     fn simplify(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
         let adapter = FloatPointAdapter::with_iter(self.iter_paths().flatten());
         let capacity = self.iter_paths().fold(0, |s, c| s + c.len());
+        let filter = Filter { min_area, simplify: true };
         FloatOverlay::with_adapter(adapter, capacity)
             .unsafe_add_source(self, ShapeType::Subject)
-            .overlay_with_min_area_and_solver(OverlayRule::Subject, fill_rule, min_area, Default::default())
+            .overlay_with_filter_and_solver(OverlayRule::Subject, fill_rule, filter, Default::default())
     }
 }
 

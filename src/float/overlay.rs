@@ -7,10 +7,12 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::simple::Simplify;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
+use crate::float::filter::Filter;
 use crate::float::graph::FloatOverlayGraph;
 use crate::float::source::resource::OverlayResource;
 
@@ -138,7 +140,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        self.overlay_with_min_area_and_solver(overlay_rule, fill_rule, T::from_float(0.0), Default::default())
+        self.overlay_with_filter_and_solver(overlay_rule, fill_rule, Default::default(), Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
@@ -150,7 +152,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - `filter`:
     /// - `solver`: Type of solver to use.
     /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
@@ -164,10 +166,25 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay_with_min_area_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P> {
-        let area = self.adapter.sqr_float_to_int(min_area);
+    pub fn overlay_with_filter_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, filter: Filter<T>, solver: Solver) -> Shapes<P> {
+        let area = self.adapter.sqr_float_to_int(filter.min_area);
         let shapes = self.overlay.overlay_with_min_area_and_solver(overlay_rule, fill_rule, area, solver);
-        shapes.to_float(&self.adapter)
+        let mut float = shapes.to_float(&self.adapter);
+
+        if filter.simplify {
+            float.simplify(&self.adapter);
+        }
+
+        float
+    }
+}
+
+impl<T: FloatNumber> Default for Filter<T> {
+    fn default() -> Self {
+        Self {
+            min_area: T::from_float(0.0),
+            simplify: false,
+        }
     }
 }
 
