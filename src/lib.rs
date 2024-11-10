@@ -3,118 +3,88 @@
 //! The `iOverlay` library provides high-performance boolean operations on polygons, including union, intersection, difference, and xor. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (i32) and floating-point (f32, f64) APIs, iOverlay offers flexibility and precision across diverse use cases.
 //!
 //! ## Features
-//! - **Operations**: union, intersection, difference, and exclusion.
-//! - **Polygons**: with holes, self-intersections, and multiple paths.
+//! - **Boolean Operations**: union, intersection, difference, and exclusion.
+//! - **String Line Operations**: clip and slice.
+//! - **Polygons**: with holes, self-intersections, and multiple contours.
 //! - **Simplification**: removes degenerate vertices and merges collinear edges.
-//! - **Fill Rules**: even-odd and non-zero.
+//! - **Fill Rules**: even-odd, non-zero, positive and negative.
 //! - **Data Types**: Supports i32, f32, and f64 APIs.
 //!
-//! ## i32 Example
+//! ## Simple Example
+//! ![iOverlay Logo](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)
 //! Here's an example of performing a union operation between two polygons:
 //!
 //! ```rust
-//!use i_float::int::point::IntPoint;
 //!use i_overlay::core::fill_rule::FillRule;
-//!use i_overlay::core::overlay::Overlay;
 //!use i_overlay::core::overlay_rule::OverlayRule;
+//!use i_overlay::float::single::SingleFloatOverlay;
 //!
+//! // Define the subject "O"
 //!let subj = [
-//!    // Define the subject polygon (a square)
-//!    IntPoint::new(-10, -10),
-//!    IntPoint::new(-10, 10),
-//!    IntPoint::new(10, 10),
-//!    IntPoint::new(10, -10),
-//!].to_vec();
+//!    // main contour
+//!    vec![
+//!         [1.0, 0.0],
+//!         [1.0, 5.0],
+//!         [4.0, 5.0],
+//!         [4.0, 0.0], // the contour is auto closed!
+//!    ],
+//!    // hole contour
+//!    vec![
+//!         [2.0, 1.0],
+//!         [3.0, 1.0],
+//!         [3.0, 4.0],
+//!         [2.0, 4.0], // the contour is auto closed!
+//!    ],
+//!];
 //!
+//! // Define the clip "-"
 //!let clip = [
-//!    // Define the clip polygon (a slightly shifted square)
-//!    IntPoint::new(-5, -5),
-//!    IntPoint::new(-5, 15),
-//!    IntPoint::new(15, 15),
-//!    IntPoint::new(15, -5),
-//!].to_vec();
+//!    // main contour
+//!    [0.0, 2.0],
+//!    [5.0, 2.0],
+//!    [5.0, 3.0],
+//!    [0.0, 3.0], // the contour is auto closed!
+//!];
 //!
-//!let shapes = Overlay::with_contours(&[subj], &[clip])
-//!    .into_graph(FillRule::NonZero)
-//!    .extract_shapes(OverlayRule::Union);
+//!let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 //!
-//!println!("shapes count: {}", shapes.len());
-//!
-//!if shapes.len() > 0 {
-//!    let contour = &shapes[0][0];
-//!    println!("shape 0 contour: ");
-//!    for p in contour {
-//!        let x = p.x;
-//!        let y = p.y;
-//!        println!("({}, {})", x, y);
-//!    }
-//!}
+//!println!("result: {}", result);
 //! ```
-//! The `extract_shapes` function for `i32` returns a `Vec<IntShapes>`:
-//!
-//! - `Vec<IntShape>`: A collection of shapes.
-//! - `IntShape`: Represents a shape made up of:
-//!   - `Vec<IntPath>`: A list of paths (contours).
-//!   - The first path is the outer boundary (clockwise), and subsequent paths represent holes (counterclockwise).
-//! - `IntPath`: A sequence of points (`Vec<IntPoint>`) forming a closed contour.
-//!
-//! **Note**: _Outer boundary paths have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours._
-//! ## f64 Example
-//! Same example but with float api:
-//!
-//! ```rust
-//!use i_overlay::core::fill_rule::FillRule;
-//!use i_overlay::core::overlay::ShapeType;
-//!use i_overlay::core::overlay_rule::OverlayRule;
-//!use i_overlay::f64::overlay::F64Overlay;
-//!use i_overlay::i_float::f64_point::F64Point;
-//!
-//! let subj = [
-//!    // Define the subject polygon (a square)
-//!    F64Point::new(-10.0, -10.0),
-//!    F64Point::new(-10.0, 10.0),
-//!    F64Point::new(10.0, 10.0),
-//!    F64Point::new(10.0, -10.0),
-//! ].to_vec();
-//!
-//! let clip = [
-//!    // Define the clip polygon (a slightly shifted square)
-//!    F64Point::new(-5.0, -5.0),
-//!    F64Point::new(-5.0, 15.0),
-//!    F64Point::new(15.0, 15.0),
-//!    F64Point::new(15.0, -5.0),
-//! ].to_vec();
-//!
-//! let mut overlay = F64Overlay::new();
-//!
-//! overlay.add_path(subj, ShapeType::Subject);
-//! overlay.add_path(clip, ShapeType::Clip);
-//!
-//! let graph = overlay.into_graph(FillRule::NonZero);
-//! let shapes = graph.extract_shapes(OverlayRule::Union);
-//!
-//! println!("shapes count: {}", shapes.len());
-//!
-//! if shapes.len() > 0 {
-//!    let contour = &shapes[0][0];
-//!    println!("shape 0 contour: ");
-//!    for p in contour {
-//!        let x = p.x;
-//!        let y = p.y;
-//!        println!("({}, {})", x, y);
-//!    }
-//! }
+//! The result is a vec of shapes:
+//! ```text
+//! [
+//!     // first shape
+//!     [
+//!         // main contour
+//!         [
+//!             [0.0, 2.0], [0.0, 3.0], [1.0, 3.0], [1.0, 5.0], [4.0, 5.0], [4.0, 3.0], [5.0, 3.0], [5.0, 2.0], [4.0, 2.0], [4.0, 0.0], [1.0, 0.0], [1.0, 2.0]
+//!         ],
+//!         // first hole
+//!         [
+//!             [2.0, 2.0], [2.0, 1.0], [3.0, 1.0], [3.0, 2.0]
+//!         ],
+//!         // second hole
+//!         [
+//!             [2.0, 4.0], [2.0, 3.0], [3.0, 3.0], [3.0, 4.0]
+//!         ]
+//!     ]
+//!     // ... other shapes if present
+//! ]
 //! ```
-//! The result of the `extract_shapes` function for `f64` returns a `Vec<F64Shapes>`:
+//! The `overlay` function returns a `Vec<Shapes>`:
 //!
-//! - `Vec<F64Shape>`: A collection of shapes.
-//! - `F64Shape`: Represents one shape, consisting of:
-//!    - `Vec<F64Path>`: A list of paths (contours).
-//!    - The first path is the outer boundary (clockwise), and subsequent paths represent holes (counterclockwise).
-//!  - `F64Path`: A series of points (`Vec<F64Point>`) forming a closed contour.
+//! - `Vec<Shape>`: A collection of shapes.
+//! - `Shape`: Represents a shape made up of:
+//!   - `Vec<Contour>`: A list of contours.
+//!   - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
+//! - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 //!
-//!  **Note**: _Outer boundary paths have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours._
-//!
+//! **Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
+
+
+
+
+
 pub mod fill;
 pub mod core;
 pub mod vector;

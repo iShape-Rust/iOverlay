@@ -8,9 +8,10 @@ use crate::float::source::resource::OverlayResource;
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and fill rules.
-pub trait SingleFloatOverlay<S, P, T>
+pub trait SingleFloatOverlay<R0, R1, P, T>
 where
-    S: OverlayResource<P, T>,
+    R0: OverlayResource<P, T>,
+    R1: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
@@ -24,17 +25,18 @@ where
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - Returns: A vector of `Shapes<P>` representing the cleaned-up geometric result.
-    fn overlay(&self, source: &S, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P>;
+    fn overlay(&self, source: &R1, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P>;
 }
 
-impl<R, P, T> SingleFloatOverlay<R, P, T> for R
+impl<R0, R1, P, T> SingleFloatOverlay<R0, R1, P, T> for R0
 where
-    R: OverlayResource<P, T>,
+    R0: OverlayResource<P, T>,
+    R1: OverlayResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
     #[inline]
-    fn overlay(&self, resource: &R, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
+    fn overlay(&self, resource: &R1, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
         FloatOverlay::with_subj_and_clip(self, resource).overlay(overlay_rule, fill_rule)
     }
 }
