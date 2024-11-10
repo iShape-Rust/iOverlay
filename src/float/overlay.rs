@@ -152,7 +152,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `filter`:
+    /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
+    ///     - `min_area`: Only retain contours with an area larger than this.
+    ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
     /// - `solver`: Type of solver to use.
     /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation

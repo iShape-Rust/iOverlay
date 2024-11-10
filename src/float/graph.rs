@@ -7,8 +7,11 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::simple::Simplify;
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
+use crate::float::filter::ContourFilter;
+
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
@@ -51,7 +54,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Shapes<P> {
-        self.extract_shapes_min_area(overlay_rule, T::from_float(0.0))
+        self.extract_shapes_min_area(overlay_rule, Default::default())
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes.
@@ -59,7 +62,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// # Parameters
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
-    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
+    ///     - `min_area`: Only retain contours with an area larger than this.
+    ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
     ///
     /// # Returns
     /// A `Shapes<P>` collection, representing the geometric result of the applied overlay rule.
@@ -72,10 +77,15 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
-    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: T) -> Shapes<P> {
-        let area = self.adapter.sqr_float_to_int(min_area);
+    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, filter: ContourFilter<T>) -> Shapes<P> {
+        let area = self.adapter.sqr_float_to_int(filter.min_area);
         let shapes = self.graph.extract_shapes_min_area(overlay_rule, area);
+        let mut float = shapes.to_float(&self.adapter);
 
-        shapes.to_float(&self.adapter)
+        if filter.simplify {
+            float.simplify(&self.adapter);
+        }
+
+        float
     }
 }
