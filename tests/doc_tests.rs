@@ -120,7 +120,8 @@ mod tests {
             [2.0, 0.0],
         ];
 
-        let result = slicing_line.clip_by(&polygon, FillRule::NonZero, ClipRule { invert: false, boundary_included: false });
+        let clip_rule = ClipRule { invert: false, boundary_included: false };
+        let result = slicing_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
 
         println!("result: {:?}", result);
     }

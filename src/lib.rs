@@ -11,7 +11,7 @@
 //! - **Data Types**: Supports i32, f32, and f64 APIs.
 //!
 //! ## Simple Example
-//! [Simple Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)
+//! ![Simple Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)
 //! Here's an example of performing a union operation between two polygons:
 //!
 //! ```rust
@@ -48,7 +48,7 @@
 //!
 //!let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 //!
-//!println!("result: {}", result);
+//!println!("result: {:?}", result);
 //! ```
 //! The result is a vec of shapes:
 //! ```text
@@ -133,7 +133,7 @@
 //! ```
 //!
 //! ## Slicing a Polygon by a Line
-//! [Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
+//! ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
 //! In addition to boolean operations, `iOverlay` supports slicing a polygon by a line, allowing you to split polygons along specified paths.
 //!
 //!```rust
@@ -159,7 +159,35 @@
 //!
 //! println!("result: {:?}", result);
 //! ```
-
+//! ## Clip a String Lines by a Polygon
+//! ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
+//! In addition to boolean operations, `iOverlay` supports slicing a polygon by a line, allowing you to split polygons along specified paths.
+//!
+//!```rust
+//! use i_overlay::core::fill_rule::FillRule;
+//! use i_overlay::float::clip::FloatClip;
+//! use i_overlay::float::single::SingleFloatOverlay;
+//! use i_overlay::string::clip::ClipRule;
+//!
+//! let string_line = [
+//!     [3.0, 5.0],
+//!     [2.0, 2.0],
+//!     [3.0, 3.0],
+//!     [2.0, 0.0],
+//! ];
+//!
+//! let polygon = [
+//!     [1.0, 1.0],
+//!     [1.0, 4.0],
+//!     [4.0, 4.0],
+//!     [4.0, 1.0],
+//! ];
+//!
+//! let clip_rule = ClipRule { invert: false, boundary_included: false };
+//! let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
+//!
+//! println!("result: {:?}", result);
+//! ```
 
 
 pub mod fill;
