@@ -80,9 +80,85 @@
 //! - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 //!
 //! **Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
-
-
-
+//! ## Using a Custom Point Type
+//!
+//! `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait. This flexibility supports integration with custom data structures.
+//!
+//! Here's an example:
+//!
+//!```rust
+//! use i_float::float::compatible::FloatPointCompatible;
+//! use i_overlay::core::fill_rule::FillRule;
+//! use i_overlay::core::overlay_rule::OverlayRule;
+//! use i_overlay::float::single::SingleFloatOverlay;
+//!
+//! #[derive(Clone, Copy, Debug)]
+//! struct CustomPoint {
+//!     x: f32,
+//!     y: f32,
+//! }
+//!
+//! // Implement the `FloatPointCompatible` trait for CustomPoint
+//! impl FloatPointCompatible<f32> for CustomPoint {
+//!     fn from_xy(x: f32, y: f32) -> Self {
+//!         Self { x, y }
+//!     }
+//!
+//!     fn x(&self) -> f32 {
+//!         self.x
+//!     }
+//!
+//!     fn y(&self) -> f32 {
+//!         self.y
+//!     }
+//! }
+//!
+//! let subj = [
+//!     CustomPoint { x: 0.0, y: 0.0 },
+//!     CustomPoint { x: 0.0, y: 3.0 },
+//!     CustomPoint { x: 3.0, y: 3.0 },
+//!     CustomPoint { x: 3.0, y: 0.0 },
+//! ];
+//!
+//! let clip = [
+//!     CustomPoint { x: 1.0, y: 1.0 },
+//!     CustomPoint { x: 1.0, y: 2.0 },
+//!     CustomPoint { x: 2.0, y: 2.0 },
+//!     CustomPoint { x: 2.0, y: 1.0 },
+//! ];
+//!
+//! let result = subj.overlay(&clip, OverlayRule::Difference, FillRule::EvenOdd);
+//!
+//! println!("result: {:?}", result);
+//! ```
+//!
+//! ## Slicing a Polygon by a Line
+//!
+//! In addition to boolean operations, `iOverlay` supports slicing a polygon by a line, allowing you to split polygons along specified paths.
+//!
+//!```rust
+//! use i_overlay::core::fill_rule::FillRule;
+//! use i_overlay::float::single::SingleFloatOverlay;
+//! use i_overlay::float::slice::FloatSlice;
+//!
+//! let polygon = [
+//!     [0.0, 0.0],
+//!     [2.0, 0.0],
+//!     [2.0, 2.0],
+//!     [0.0, 2.0],
+//! ];
+//!
+//! let slicing_line = [
+//!     [1.0, 0.0],
+//!     [1.0, 3.0],
+//! ];
+//!
+//! let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
+//!
+//! println!("result: {:?}", result);
+//! ```
+//!
+//! This example shows a simple slicing operation where `polygon` is sliced by `slicing_line`. The `slice_by` function returns a vector of shapes resulting from the slice, allowing for flexible shape manipulation.
 
 
 pub mod fill;
