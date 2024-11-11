@@ -113,7 +113,7 @@ mod tests {
             [4.0, 1.0],
         ];
 
-        let slicing_line = [
+        let string_line = [
             [3.0, 5.0],
             [2.0, 2.0],
             [3.0, 3.0],
@@ -121,7 +121,7 @@ mod tests {
         ];
 
         let clip_rule = ClipRule { invert: false, boundary_included: false };
-        let result = slicing_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
+        let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
 
         println!("result: {:?}", result);
     }

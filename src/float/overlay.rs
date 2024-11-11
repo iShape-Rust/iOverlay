@@ -7,7 +7,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
-use i_shape::float::simple::Simplify;
+use i_shape::float::simple::SimplifyContour;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
@@ -174,7 +174,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let mut float = shapes.to_float(&self.adapter);
 
         if filter.simplify {
-            float.simplify(&self.adapter);
+            float.simplify_contour(&self.adapter);
         }
 
         float

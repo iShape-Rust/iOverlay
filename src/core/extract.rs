@@ -270,7 +270,7 @@ pub(crate) trait Validate {
 impl Validate for IntPath {
     #[inline]
     fn validate(&mut self, min_area: usize) -> bool {
-        self.simplify();
+        self.simplify_contour();
 
         if self.len() < 3 {
             return false;

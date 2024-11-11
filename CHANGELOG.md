@@ -1,3 +1,13 @@
+## [1.8.0] - 2024-11-11
+### Added
+- New Float API. A new template-based Float API that uses an iterator, eliminating data cloning. This API can work directly with user-defined Point structures. The previous F32/F64 API is now deprecated. 
+- new Single Boolean Operation `overlay`, which work without creating `OverlayGraph`, and can be 10-20% faster in some cases.
+### Changed
+- The String Line API is now officially supported
+- The clip operation now keep the original path order.
+### Fixed
+- Hole Solver is reworked and connect holes more carefully
+
 ## [1.7.4] - 2024-11-06
 ### Fixed
 - Fixed bug bind holes same hole point and contour x_segment.a.

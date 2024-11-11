@@ -82,7 +82,7 @@
 //! **Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 //! ## Using a Custom Point Type
 //!
-//! `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait. This flexibility supports integration with custom data structures.
+//! `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 //!
 //! Here's an example:
 //!
@@ -132,9 +132,8 @@
 //! println!("result: {:?}", result);
 //! ```
 //!
-//! ## Slicing a Polygon by a Line
+//! ## Slicing a Polygon by a String Line
 //! ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
-//! In addition to boolean operations, `iOverlay` supports slicing a polygon by a line, allowing you to split polygons along specified paths.
 //!
 //!```rust
 //! use i_overlay::core::fill_rule::FillRule;
@@ -160,8 +159,7 @@
 //! println!("result: {:?}", result);
 //! ```
 //! ## Clip a String Lines by a Polygon
-//! ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
-//! In addition to boolean operations, `iOverlay` supports slicing a polygon by a line, allowing you to split polygons along specified paths.
+//! ![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
 //!
 //!```rust
 //! use i_overlay::core::fill_rule::FillRule;

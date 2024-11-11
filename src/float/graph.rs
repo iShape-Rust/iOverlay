@@ -7,7 +7,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
-use i_shape::float::simple::Simplify;
+use i_shape::float::simple::SimplifyContour;
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::filter::ContourFilter;
@@ -54,7 +54,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Shapes<P> {
-        self.extract_shapes_min_area(overlay_rule, Default::default())
+        self.extract_shapes_with_filter(overlay_rule, Default::default())
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes.
@@ -77,13 +77,13 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
-    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, filter: ContourFilter<T>) -> Shapes<P> {
+    pub fn extract_shapes_with_filter(&self, overlay_rule: OverlayRule, filter: ContourFilter<T>) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
         let shapes = self.graph.extract_shapes_min_area(overlay_rule, area);
         let mut float = shapes.to_float(&self.adapter);
 
         if filter.simplify {
-            float.simplify(&self.adapter);
+            float.simplify_contour(&self.adapter);
         }
 
         float

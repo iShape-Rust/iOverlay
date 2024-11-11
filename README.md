@@ -20,10 +20,11 @@ Try out iOverlay with an interactive demo:
 
 ## Features
 
-- **Operations**: union, intersection, difference, and exclusion.
-- **Polygons**: with holes, self-intersections, and multiple paths.
+- **Boolean Operations**: union, intersection, difference, and exclusion.
+- **String Line Operations**: clip and slice.
+- **Polygons**: with holes, self-intersections, and multiple contours.
 - **Simplification**: removes degenerate vertices and merges collinear edges.
-- **Fill Rules**: even-odd and non-zero.
+- **Fill Rules**: even-odd, non-zero, positive and negative.
 - **Data Types**: Supports i32, f32, and f64 APIs.
 
 ## Getting Started
@@ -31,108 +32,162 @@ Try out iOverlay with an interactive demo:
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^1.7"
+i_overlay = "^1.8"
 ```
 
-### Hello world
+### Simple Example
 
-Let's union two squares
-
-### f64 Example ###
+![Simple Example](readme/example_union.svg)
+Here's an example of performing a union operation between two polygons:
 
 ```rust
+// Define the subject "O"
 let subj = [
-    // Define the subject polygon (a square)
-    F64Point::new(-10.0, -10.0),
-    F64Point::new(-10.0, 10.0),
-    F64Point::new(10.0, 10.0),
-    F64Point::new(10.0, -10.0),
-].to_vec();
+    // main contour
+    vec![
+      [1.0, 0.0],
+      [1.0, 5.0],
+      [4.0, 5.0],
+      [4.0, 0.0], // the contour is auto closed!
+    ],
+    // hole contour
+    vec![
+      [2.0, 1.0],
+      [3.0, 1.0],
+      [3.0, 4.0],
+      [2.0, 4.0], // the contour is auto closed!
+    ],
+];
 
+// Define the clip "-"
 let clip = [
-    // Define the clip polygon (a slightly shifted square)
-    F64Point::new(-5.0, -5.0),
-    F64Point::new(-5.0, 15.0),
-    F64Point::new(15.0, 15.0),
-    F64Point::new(15.0, -5.0),
-].to_vec();
+    // main contour
+    [0.0, 2.0],
+    [5.0, 2.0],
+    [5.0, 3.0],
+    [0.0, 3.0], // the contour is auto closed!
+];
 
-let mut overlay = F64Overlay::new();
+let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 
-overlay.add_path(subj, ShapeType::Subject);
-overlay.add_path(clip, ShapeType::Clip);
-
-let graph = overlay.into_graph(FillRule::NonZero);
-let shapes = graph.extract_shapes(OverlayRule::Union);
-
-println!("shapes count: {}", shapes.len());
-
-if shapes.len() > 0 {
-    let contour = &shapes[0][0];
-    println!("shape 0 contour: ");
-    for p in contour {
-        let x = p.x;
-        let y = p.y;
-        println!("({}, {})", x, y);
-    }
-}
+println!("result: {:?}", result);
 ```
-The result of the `extract_shapes` function for `f64` returns a `Vec<F64Shapes>`:
+The result is a vec of shapes:
+```text
+[
+    // first shape
+    [
+        // main contour
+        [
+            [0.0, 2.0], [0.0, 3.0], [1.0, 3.0], [1.0, 5.0], [4.0, 5.0], [4.0, 3.0], [5.0, 3.0], [5.0, 2.0], [4.0, 2.0], [4.0, 0.0], [1.0, 0.0], [1.0, 2.0]
+        ],
+        // first hole
+        [
+            [2.0, 2.0], [2.0, 1.0], [3.0, 1.0], [3.0, 2.0]
+        ],
+        // second hole
+        [
+            [2.0, 4.0], [2.0, 3.0], [3.0, 3.0], [3.0, 4.0]
+        ]
+    ]
+    // ... other shapes if present
+]
+```
+The `overlay` function returns a `Vec<Shapes>`:
 
-- `Vec<F64Shape>`: A collection of shapes.
-- `F64Shape`: Represents one shape, consisting of:
-  - `Vec<F64Path>`: A list of paths (contours).
-  - The first path is the outer boundary (clockwise), and subsequent paths represent holes (counterclockwise).
-- `F64Path`: A series of points (`Vec<F64Point>`) forming a closed contour.
+- `Vec<Shape>`: A collection of shapes.
+- `Shape`: Represents a shape made up of:
+  - `Vec<Contour>`: A list of contours.
+  - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
+- `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 
-**Note**: _Outer boundary paths have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours._
+**Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours. 
 
 
-### i32 Example ###
-
+### Custom Point ###
+`iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 ```rust
+#[derive(Clone, Copy, Debug)]
+struct CustomPoint {
+  x: f32,
+  y: f32,
+}
+
+impl FloatPointCompatible<f32> for CustomPoint {
+  fn from_xy(x: f32, y: f32) -> Self {
+    Self { x, y }
+  }
+
+  fn x(&self) -> f32 {
+    self.x
+  }
+
+  fn y(&self) -> f32 {
+    self.y
+  }
+}
+
 let subj = [
-    // Define the subject polygon (a square)
-    IntPoint::new(-10, -10),
-    IntPoint::new(-10, 10),
-    IntPoint::new(10, 10),
-    IntPoint::new(10, -10),
-].to_vec();
+CustomPoint { x: 0.0, y: 0.0 },
+CustomPoint { x: 0.0, y: 3.0 },
+CustomPoint { x: 3.0, y: 3.0 },
+CustomPoint { x: 3.0, y: 0.0 },
+];
 
 let clip = [
-    // Define the clip polygon (a slightly shifted square)
-    IntPoint::new(-5, -5),
-    IntPoint::new(-5, 15),
-    IntPoint::new(15, 15),
-    IntPoint::new(15, -5),
-].to_vec();
+CustomPoint { x: 1.0, y: 1.0 },
+CustomPoint { x: 1.0, y: 2.0 },
+CustomPoint { x: 2.0, y: 2.0 },
+CustomPoint { x: 2.0, y: 1.0 },
+];
 
-let shapes = Overlay::with_paths(&[subj], &[clip])
-    .into_graph(FillRule::NonZero)
-    .extract_shapes(OverlayRule::Union);
+let result = subj.overlay(&clip, OverlayRule::Difference, FillRule::EvenOdd);
 
-println!("shapes count: {}", shapes.len());
-
-if shapes.len() > 0 {
-    let contour = &shapes[0][0];
-    println!("shape 0 contour: ");
-    for p in contour {
-        let x = p.x;
-        let y = p.y;
-        println!("({}, {})", x, y);
-    }
-}
+println!("result: {:?}", result);
 ```
-The `extract_shapes` function for `i32` returns a `Vec<IntShapes>`:
+### Slicing a Polygon by a String Line
+![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
+```rust
+let polygon = [
+    [1.0, 1.0],
+    [1.0, 4.0],
+    [4.0, 4.0],
+    [4.0, 1.0],
+];
 
-- `Vec<IntShape>`: A collection of shapes.
-- `IntShape`: Represents a shape made up of:
-  - `Vec<IntPath>`: A list of paths (contours).
-  - The first path is the outer boundary (clockwise), and subsequent paths represent holes (counterclockwise).
-- `IntPath`: A sequence of points (`Vec<IntPoint>`) forming a closed contour.
+let slicing_line = [
+    [3.0, 5.0],
+    [2.0, 2.0],
+    [3.0, 3.0],
+    [2.0, 0.0],
+];
 
-**Note**: _Outer boundary paths have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours._
+let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 
+println!("result: {:?}", result);
+```
+### Clip a String Lines by a Polygon
+![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
+```rust
+let polygon = [
+    [1.0, 1.0],
+    [1.0, 4.0],
+    [4.0, 4.0],
+    [4.0, 1.0],
+];
+
+let string_line = [
+    [3.0, 5.0],
+    [2.0, 2.0],
+    [3.0, 3.0],
+    [2.0, 0.0],
+];
+
+let clip_rule = ClipRule { invert: false, boundary_included: false };
+let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
+
+println!("result: {:?}", result);
+```
 # Overlay Rules
 
 <img src="readme/ab.svg" alt="AB" style="width:50%;">

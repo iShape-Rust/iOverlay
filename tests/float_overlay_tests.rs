@@ -674,10 +674,10 @@ mod tests {
             .overlay(OverlayRule::Intersect, FillRule::EvenOdd );
 
         let result_with_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .overlay_with_filter_and_solver(OverlayRule::Intersect, FillRule::EvenOdd, ContourFilter { min_area: 0.0, simplify: true }, Default::default() );
+            .overlay_with_filter_and_solver(OverlayRule::Intersect, FillRule::EvenOdd, ContourFilter { min_area: 0.0, simplify: false }, Default::default() );
 
 
-        assert_eq!(result_no_filter.len(), 2);
-        assert_eq!(result_with_filter.len(), 1);
+        assert_eq!(result_no_filter.len(), 1);
+        assert_eq!(result_with_filter.len(), 2);
     }
 }
