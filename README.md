@@ -128,17 +128,17 @@ impl FloatPointCompatible<f32> for CustomPoint {
 }
 
 let subj = [
-CustomPoint { x: 0.0, y: 0.0 },
-CustomPoint { x: 0.0, y: 3.0 },
-CustomPoint { x: 3.0, y: 3.0 },
-CustomPoint { x: 3.0, y: 0.0 },
+    CustomPoint { x: 0.0, y: 0.0 },
+    CustomPoint { x: 0.0, y: 3.0 },
+    CustomPoint { x: 3.0, y: 3.0 },
+    CustomPoint { x: 3.0, y: 0.0 },
 ];
 
 let clip = [
-CustomPoint { x: 1.0, y: 1.0 },
-CustomPoint { x: 1.0, y: 2.0 },
-CustomPoint { x: 2.0, y: 2.0 },
-CustomPoint { x: 2.0, y: 1.0 },
+    CustomPoint { x: 1.0, y: 1.0 },
+    CustomPoint { x: 1.0, y: 2.0 },
+    CustomPoint { x: 2.0, y: 2.0 },
+    CustomPoint { x: 2.0, y: 1.0 },
 ];
 
 let result = subj.overlay(&clip, OverlayRule::Difference, FillRule::EvenOdd);
