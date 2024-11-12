@@ -3,12 +3,13 @@ use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
 use i_shape::int::simple::Simplify;
-use crate::bind::solver::JoinHoles;
+use crate::bind::segment::IdSegment;
+use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
 use crate::core::node::OverlayNode;
 use crate::core::vector_rotation::NearestCCWVector;
-
+use crate::geom::x_segment::XSegment;
 use super::overlay_rule::OverlayRule;
 use super::filter::MaskFilter;
 
@@ -49,6 +50,7 @@ impl OverlayGraph {
         let visited = buffer.as_mut_slice();
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
+        let mut anchors = Vec::new();
 
         let mut link_index = 0;
         while link_index < visited.len() {
@@ -61,12 +63,23 @@ impl OverlayGraph {
             let link = self.link(left_top_link);
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
+
             let start_data = StartPathData::new(is_hole, link, left_top_link);
 
             let mut path = self.get_path(&start_data, visited);
 
-            if path.validate(min_area) {
+            let (is_valid, is_modified) = path.validate(min_area);
+
+            if is_valid {
                 if is_hole {
+                    let x_segment = if is_modified {
+                        path.left_bottom_segment()
+                    } else {
+                        XSegment { a: path[1], b: path[2] }
+                    };
+                    debug_assert_eq!(x_segment, path.left_bottom_segment());
+                    let id = holes.len();
+                    anchors.push(IdSegment { id, x_segment });
                     holes.push(path);
                 } else {
                     shapes.push(vec![path]);
@@ -74,7 +87,7 @@ impl OverlayGraph {
             }
         }
 
-        shapes.join_sorted_holes(&self.solver, holes);
+        shapes.join_sorted_holes(&self.solver, holes, anchors);
 
         shapes
     }
@@ -264,26 +277,26 @@ impl StartPathData {
 
 
 pub(crate) trait Validate {
-    fn validate(&mut self, min_area: usize) -> bool;
+    fn validate(&mut self, min_area: usize) -> (bool, bool);
 }
 
 impl Validate for IntPath {
     #[inline]
-    fn validate(&mut self, min_area: usize) -> bool {
-        self.simplify_contour();
+    fn validate(&mut self, min_area: usize) -> (bool, bool) {
+        let is_modified = self.simplify_contour();
 
         if self.len() < 3 {
-            return false;
+            return (false, is_modified);
         }
 
         if min_area == 0 {
-            return true;
+            return (true, is_modified);
         }
 
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() as usize >> 1;
 
-        abs_area >= min_area
+        (abs_area >= min_area, is_modified)
     }
 }
 

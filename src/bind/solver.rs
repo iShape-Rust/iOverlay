@@ -1,5 +1,5 @@
 use i_shape::int::path::IntPath;
-use i_shape::int::shape::IntShape;
+use i_shape::int::shape::{IntContour, IntShape};
 use crate::bind::segment::{IdSegment, IdSegments};
 use crate::bind::scan_list::ScanHoleList;
 use crate::bind::scan_tree::ScanHoleTree;
@@ -71,9 +71,14 @@ impl ShapeBinder {
     }
 }
 
+pub(crate) struct HoleData {
+    contour: IntPath,
+    left_bottom_segment: XSegment,
+}
+
 pub(crate) trait JoinHoles {
-    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
-    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>);
+    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>);
+    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, anchors: Vec<IdSegment>);
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>);
 }
 
@@ -92,7 +97,7 @@ impl JoinHoles for Vec<IntShape> {
         }
 
         let mut hole_segments: Vec<_> = holes.iter().enumerate()
-            .map(|(id, path)| IdSegment { id, x_segment: most_left_bottom(path) })
+            .map(|(id, path)| IdSegment { id, x_segment: path.left_bottom_segment() })
             .collect();
 
         hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
@@ -101,34 +106,19 @@ impl JoinHoles for Vec<IntShape> {
     }
 
     #[inline]
-    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
+    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, anchors: Vec<IdSegment>) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
 
         if self.len() == 1 {
-            self[0].reserve(holes.len());
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
             return;
         }
+        debug_assert!(is_sorted(&anchors));
 
-        let hole_segments: Vec<_> = holes.iter().enumerate()
-            .map(|(id, path)| {
-                let a = path[1];
-                let b = path[2];
-                debug_assert!(a < b);
-
-                let x_segment = XSegment { a, b };
-
-                debug_assert_eq!(x_segment, most_left_bottom(path));
-                IdSegment { id, x_segment }
-            })
-            .collect();
-
-        debug_assert!(is_sorted(&hole_segments));
-
-        self.scan_join(solver, holes, hole_segments);
+        self.scan_join(solver, holes, anchors);
     }
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>) {
@@ -156,24 +146,29 @@ impl JoinHoles for Vec<IntShape> {
     }
 }
 
-#[inline]
-fn most_left_bottom(path: &IntPath) -> XSegment {
-    let mut index = 0;
-    let mut a = path[0];
-    for (i, &p) in path.iter().enumerate().skip(1) {
-        if p < a {
-            a = p;
-            index = i;
+pub(crate) trait LeftBottomSegment {
+    fn left_bottom_segment(&self) -> XSegment;
+}
+
+impl LeftBottomSegment for IntContour {
+    fn left_bottom_segment(&self) -> XSegment {
+        let mut index = 0;
+        let mut a = *self.first().unwrap();
+        for (i, &p) in self.iter().enumerate().skip(1) {
+            if p < a {
+                a = p;
+                index = i;
+            }
         }
+        let n = self.len();
+        let b0 = self[(index + 1) % n];
+        let b1 = self[(index + n - 1) % n];
+
+        let s0 = XSegment { a, b: b0 };
+        let s1 = XSegment { a, b: b1 };
+
+        if s0.is_under_segment(&s1) { s0 } else { s1 }
     }
-    let n = path.len();
-    let b0 = path[(index + 1) % n];
-    let b1 = path[(index + n - 1) % n];
-
-    let s0 = XSegment { a, b: b0 };
-    let s1 = XSegment { a, b: b1 };
-
-    if s0.is_under_segment(&s1) { s0 } else { s1 }
 }
 
 #[inline]
