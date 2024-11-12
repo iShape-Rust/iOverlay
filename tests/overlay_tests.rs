@@ -755,8 +755,8 @@ mod tests {
         execute(135);
     }
 
-    #[test]
-    fn test_debug() {
-        debug_execute(138, OverlayRule::Subject, Solver::LIST);
-    }
+    // #[test]
+    // fn test_debug() {
+    //     debug_execute(138, OverlayRule::Subject, Solver::LIST);
+    // }
 }

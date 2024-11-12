@@ -13,11 +13,21 @@ pub(crate) struct IdSegment {
 
 impl IdSegment {
     #[inline(always)]
-    pub(crate) fn new(id: usize, a: IntPoint, b: IntPoint) -> Self {
+    fn new(id: usize, a: IntPoint, b: IntPoint) -> Self {
         Self {
             id,
             x_segment: XSegment { a, b },
         }
+    }
+
+    #[inline(always)]
+    fn is_hole(&self) -> bool {
+        self.id & 1 == 1
+    }
+
+    #[inline(always)]
+    fn index(&self) -> usize {
+        self.id >> 1
     }
 }
 
@@ -48,11 +58,23 @@ impl Ord for IdSegment {
     }
 }
 
-pub trait IdSegments {
+pub(crate) trait IdSegments {
+    fn append_hull_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32);
+    fn append_hole_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32);
     fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id: usize, x_min: i32, x_max: i32);
 }
 
 impl IdSegments for IntPath {
+    fn append_hole_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
+        let id= (index << 1) | 1;
+        self.append_id_segments(buffer, id, x_min, x_max);
+    }
+
+    fn append_hull_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
+        let id= index << 1;
+        self.append_id_segments(buffer, id, x_min, x_max);
+    }
+
     fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id: usize, x_min: i32, x_max: i32) {
         let mut b = self[self.len() - 1];
         for &a in self.iter() {
@@ -64,7 +86,18 @@ impl IdSegments for IntPath {
     }
 }
 
+
 impl IdSegments for VectorPath {
+    fn append_hole_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
+        let id= (index << 1) + 1;
+        self.append_id_segments(buffer, id, x_min, x_max);
+    }
+
+    fn append_hull_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
+        let id= index << 1;
+        self.append_id_segments(buffer, id, x_min, x_max);
+    }
+
     fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id: usize, x_min: i32, x_max: i32) {
         for vec in self.iter() {
             if vec.a.x < vec.b.x && x_min < vec.b.x && vec.a.x <= x_max {

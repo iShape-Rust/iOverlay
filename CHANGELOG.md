@@ -1,3 +1,6 @@
+## [1.8.1] - 2024-11-12
+### Fixed
+- Fixed bug bind holes not correct shape index.
 ## [1.8.0] - 2024-11-11
 ### Added
 - New Float API. A new template-based Float API that uses an iterator, eliminating data cloning. This API can work directly with user-defined Point structures. The previous F32/F64 API is now deprecated. 

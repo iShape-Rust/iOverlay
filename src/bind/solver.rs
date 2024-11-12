@@ -31,40 +31,46 @@ impl ShapeBinder {
         }
     }
 
-    fn private_solve<S: ScanHoleStore>(scan_store: S, shape_count: usize, hole_segments: Vec<IdSegment>, segments: Vec<IdSegment>) -> BindSolution {
-        let children_count = hole_segments.len();
+    fn private_solve<S: ScanHoleStore>(scan_store: S, shape_count: usize, anchors: Vec<IdSegment>, segments: Vec<IdSegment>) -> BindSolution {
+        let children_count = anchors.len();
         let mut scan_store = scan_store;
 
         let mut parent_for_child = vec![0; children_count];
         let mut children_count_for_parent = vec![0; shape_count];
 
-        let mut i = 0;
+
         let mut j = 0;
 
-        while i < hole_segments.len() {
-            let x = hole_segments[i].x_segment.a.x;
+        for anchor in anchors.iter() {
+            let p = anchor.x_segment.a;
 
             while j < segments.len() {
                 let id_segment = &segments[j];
-                if id_segment.x_segment.a.x > x {
+                if id_segment.x_segment.a >= p {
                     break;
                 }
 
-                if id_segment.x_segment.b.x > x {
-                    scan_store.insert(*id_segment, x);
+                if id_segment.x_segment.b.x > p.x {
+                    scan_store.insert(*id_segment, p.x);
                 }
                 j += 1
             }
 
-            while i < hole_segments.len() && hole_segments[i].x_segment.a.x == x {
-                let parent_index = scan_store.find_under_and_nearest(hole_segments[i].x_segment);
-                let child_index = hole_segments[i].id;
+            let target_id = scan_store.find_under_and_nearest(anchor.x_segment);
+            let is_shape = target_id & 1 == 0;
+            let index = target_id >> 1;
+            let parent_index = if is_shape {
+                index
+            } else {
+                // index is a hole index
+                // at this moment this hole parent is known
+                parent_for_child[index]
+            };
 
-                parent_for_child[child_index] = parent_index;
-                children_count_for_parent[parent_index] += 1;
+            let child_index = anchor.id;
 
-                i += 1;
-            }
+            parent_for_child[child_index] = parent_index;
+            children_count_for_parent[parent_index] += 1;
         }
 
         BindSolution { parent_for_child, children_count_for_parent }
@@ -128,10 +134,14 @@ impl JoinHoles for Vec<IntShape> {
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(&mut segments, i, x_min, x_max);
+            shape[0].append_hull_segments(&mut segments, i, x_min, x_max);
         }
 
-        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
+        for (i, hole) in holes.iter().enumerate() {
+            hole.append_hole_segments(&mut segments, i, x_min, x_max);
+        }
+
+        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.cmp(&b.x_segment.a));
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 
