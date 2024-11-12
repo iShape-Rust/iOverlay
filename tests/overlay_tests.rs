@@ -757,6 +757,6 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        debug_execute(135, OverlayRule::Clip, Solver::LIST);
+        debug_execute(138, OverlayRule::Subject, Solver::LIST);
     }
 }

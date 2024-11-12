@@ -8,10 +8,12 @@ use crate::app::design::{style_sheet_background, Design};
 use crate::app::main::{EditorApp, AppMessage};
 use i_triangle::i_overlay::i_shape::int::count::IntShapes;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
+use i_triangle::i_overlay::vector::edge::VectorEdge;
 use iced::widget::Stack;
 use iced::widget::Container;
 use iced::{Length, Padding, Size, Vector};
 use crate::app::boolean::control::ModeOption;
+use crate::draw::vectors::VectorsWidget;
 
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
@@ -19,6 +21,7 @@ pub(crate) struct WorkspaceState {
     pub(crate) clip: IntPaths,
     pub(crate) solution: IntShapes,
     pub(crate) points: Vec<EditorPoint>,
+    pub(crate) vectors: Vec<VectorEdge>,
 }
 
 impl EditorApp {
@@ -57,6 +60,20 @@ impl EditorApp {
                                 Some(self.state.boolean.fill.fill_rule()),
                                 Some(Design::clip_color().scale_alpha(0.2)),
                                 Some(Design::clip_color()),
+                                4.0,
+                            ))
+                                .width(Length::Fill)
+                                .height(Length::Fill)
+                        )
+                    }
+                    ModeOption::Debug => {
+                        stack = stack.push(
+                            Container::new(VectorsWidget::with_vectors(
+                                &self.state.boolean.workspace.vectors,
+                                self.state.boolean.workspace.camera,
+                                Design::subject_color(),
+                                Design::clip_color(),
+                                Design::both_color(),
                                 4.0,
                             ))
                                 .width(Length::Fill)
@@ -152,6 +169,6 @@ fn on_update_drag(drag: Vector<f32>) -> AppMessage {
 
 impl Default for WorkspaceState {
     fn default() -> Self {
-        WorkspaceState { camera: Camera::empty(), subj: vec![], clip: vec![], solution: vec![], points: vec![] }
+        WorkspaceState { camera: Camera::empty(), subj: vec![], clip: vec![], solution: vec![], points: vec![], vectors: vec![] }
     }
 }

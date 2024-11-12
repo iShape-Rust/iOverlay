@@ -34,6 +34,10 @@ impl Design {
         Color::from_rgb8(255, 140, 0)
     }
 
+    pub(crate) fn both_color() -> Color {
+        Color::from_rgb8(76, 217, 100)
+    }
+
     pub(super) fn new() -> Self {
         Self {
             action_separator: 3.0

@@ -1,4 +1,5 @@
 use i_float::int::point::IntPoint;
+
 use crate::bind::segment::{IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
 use crate::core::graph::OverlayGraph;

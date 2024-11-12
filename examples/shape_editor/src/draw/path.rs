@@ -98,22 +98,6 @@ impl PathWidget {
         })
     }
 
-    // fn offset_for_shapes(shapes: &IntShapes, camera: Camera) -> Vector<f32> {
-    //     if shapes.is_empty() {
-    //         return Vector::new(0.0, 0.0);
-    //     }
-    //
-    //     let mut min_x = i32::MAX;
-    //     let mut max_y = i32::MIN;
-    //
-    //     for p in shapes.iter().flatten().flatten() {
-    //         min_x = min_x.min(p.x);
-    //         max_y = max_y.max(p.y);
-    //     }
-    //
-    //     camera.point_to_screen(IntPoint::new(min_x, max_y))
-    // }
-
     fn offset_for_paths(paths: &IntPaths, camera: Camera) -> Vector<f32> {
         if paths.is_empty() {
             return Vector::new(0.0, 0.0);
