@@ -20,6 +20,11 @@ impl Camera {
         self.scale < 0.000_000_000_1
     }
 
+    pub(crate) fn set_scale(&mut self, scale: f32) {
+        self.scale = scale;
+        self.i_scale = 1.0 / scale;
+    }
+
     pub(crate) fn is_not_empty(&self) -> bool {
         self.scale > 0.0
     }
