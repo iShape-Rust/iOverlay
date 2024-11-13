@@ -5,7 +5,7 @@
 
 ![Balloons](readme/balloons.svg)
 
-The iOverlay library provides high-performance boolean operations on polygons, including union, intersection, difference, and xor. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (i32) and floating-point (f32, f64) APIs, iOverlay offers flexibility and precision across diverse use cases.  
+The iOverlay library provides high-performance boolean operations on polygons, including **union**, **intersection**, **difference**, and **xor**. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (`i32`) and floating-point (`f32`, `f64`) APIs, iOverlay offers flexibility and precision across diverse use cases.  
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
 
@@ -73,19 +73,19 @@ let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 println!("result: {:?}", result);
 ```
 The result is a vec of shapes:
-```text
+```rust
 [
     // first shape
     [
-        // main contour
+        // main contour (clockwise order)
         [
             [0.0, 2.0], [0.0, 3.0], [1.0, 3.0], [1.0, 5.0], [4.0, 5.0], [4.0, 3.0], [5.0, 3.0], [5.0, 2.0], [4.0, 2.0], [4.0, 0.0], [1.0, 0.0], [1.0, 2.0]
         ],
-        // first hole
+        // first hole (counterclockwise order)
         [
             [2.0, 2.0], [2.0, 1.0], [3.0, 1.0], [3.0, 2.0]
         ],
-        // second hole
+        // second hole (counterclockwise order)
         [
             [2.0, 4.0], [2.0, 3.0], [3.0, 3.0], [3.0, 4.0]
         ]
