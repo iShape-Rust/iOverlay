@@ -53,6 +53,7 @@ impl OverlayGraph {
         let mut anchors = Vec::new();
 
         let mut link_index = 0;
+        let is_all_anchors_sorted = true;
         while link_index < visited.len() {
             if visited.is_visited(link_index) {
                 link_index += 1;
@@ -63,7 +64,6 @@ impl OverlayGraph {
             let link = self.link(left_top_link);
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
-
             let start_data = StartPathData::new(is_hole, link, left_top_link);
 
             let mut path = self.get_path(&start_data, visited);
@@ -72,11 +72,15 @@ impl OverlayGraph {
 
             if is_valid {
                 if is_hole {
-                    let x_segment = if is_modified {
-                        path.left_bottom_segment()
-                    } else {
-                        XSegment { a: path[1], b: path[2] }
+                    let mut x_segment = XSegment { a: path[1], b: path[2] };
+                    if is_modified {
+                        let most_left = path.left_bottom_segment();
+                        if most_left != x_segment {
+                            x_segment = most_left;
+                            is_all_anchors_sorted = false;
+                        }
                     };
+
                     debug_assert_eq!(x_segment, path.left_bottom_segment());
                     let id = holes.len();
                     anchors.push(IdSegment { id, x_segment });
@@ -85,6 +89,10 @@ impl OverlayGraph {
                     shapes.push(vec![path]);
                 }
             }
+        }
+
+        if !is_all_anchors_sorted {
+            anchors.sort_by(|s0, s1| s0.x_segment.a.cmp(&s1.x_segment.a));
         }
 
         shapes.join_sorted_holes(&self.solver, holes, anchors);
