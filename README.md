@@ -73,7 +73,7 @@ let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 println!("result: {:?}", result);
 ```
 The result is a vec of shapes:
-```text
+```rust
 [
     // first shape
     [
