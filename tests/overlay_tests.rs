@@ -22,23 +22,44 @@ mod tests {
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
         for solver in SOLVERS {
             let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
-            let graph = overlay.into_graph_with_solver(fill_rule, solver);
+            let graph = overlay.clone().into_graph_with_solver(fill_rule, solver);
 
-            let clip = graph.extract_shapes(OverlayRule::Clip);
-            let subject = graph.extract_shapes(OverlayRule::Subject);
-            let difference = graph.extract_shapes(OverlayRule::Difference);
-            let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
-            let intersect = graph.extract_shapes(OverlayRule::Intersect);
-            let union = graph.extract_shapes(OverlayRule::Union);
-            let xor = graph.extract_shapes(OverlayRule::Xor);
+            let subject_0 = graph.extract_shapes(OverlayRule::Subject);
+            let subject_1 = overlay.clone().overlay(OverlayRule::Subject, fill_rule);
 
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&clip, &test.clip));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&subject, &test.subject));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&difference, &test.difference));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&inverse_difference, &test.inverse_difference));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&intersect, &test.intersect));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&union, &test.union));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&xor, &test.xor));
+            let clip_0 = graph.extract_shapes(OverlayRule::Clip);
+            let clip_1 = overlay.clone().overlay(OverlayRule::Clip, fill_rule);
+
+            let difference_0 = graph.extract_shapes(OverlayRule::Difference);
+            let difference_1 = overlay.clone().overlay(OverlayRule::Difference, fill_rule);
+
+            let inverse_difference_0 = graph.extract_shapes(OverlayRule::InverseDifference);
+            let inverse_difference_1 = overlay.clone().overlay(OverlayRule::InverseDifference, fill_rule);
+
+            let intersect_0 = graph.extract_shapes(OverlayRule::Intersect);
+            let intersect_1 = overlay.clone().overlay(OverlayRule::Intersect, fill_rule);
+
+            let union_0 = graph.extract_shapes(OverlayRule::Union);
+            let union_1 = overlay.clone().overlay(OverlayRule::Union, fill_rule);
+
+            let xor_0 = graph.extract_shapes(OverlayRule::Xor);
+            let xor_1 = overlay.clone().overlay(OverlayRule::Xor, fill_rule);
+
+            assert_eq!(subject_0, subject_1);
+            assert_eq!(clip_0, clip_1);
+            assert_eq!(difference_0, difference_1);
+            assert_eq!(inverse_difference_0, inverse_difference_1);
+            assert_eq!(intersect_0, intersect_1);
+            assert_eq!(union_0, union_1);
+            assert_eq!(xor_0, xor_1);
+
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&clip_0, &test.clip));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&subject_0, &test.subject));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&difference_0, &test.difference));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&inverse_difference_0, &test.inverse_difference));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&intersect_0, &test.intersect));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&union_0, &test.union));
+            assert_eq!(true, overlay::is_group_of_shapes_one_of(&xor_0, &test.xor));
         }
     }
 
