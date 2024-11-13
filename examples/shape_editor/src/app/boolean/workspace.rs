@@ -74,7 +74,7 @@ impl EditorApp {
                                 Design::subject_color(),
                                 Design::clip_color(),
                                 Design::both_color(),
-                                4.0,
+                                2.0,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)

@@ -1,12 +1,10 @@
 use std::f32::consts::PI;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
 use i_triangle::i_overlay::vector::edge::{SideFill, SUBJ_LEFT, SUBJ_RIGHT, CLIP_LEFT, CLIP_RIGHT, VectorEdge};
 use i_triangle::triangulation::float::Triangulation;
 use i_triangle::stroke::butt::ButtStrokeBuilder;
 use i_triangle::stroke::style::StrokeStyle;
-use i_triangle::triangulation::float::TriangulationBuilder;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
@@ -88,7 +86,7 @@ impl VectorsWidget {
 
         let mut builder = MeshBuilder::new();
 
-        let s = 4.0 * width;
+        let s = 8.0 * width;
         let offset = Vector::new(offset.x - s, offset.y - s);
 
         for vector in vectors.iter() {
@@ -135,21 +133,20 @@ impl VectorsWidget {
         let sub_triangulation = stroke_builder.build_open_path_mesh(&screen_path);
         builder.append(sub_triangulation, segment_color);
 
-        let r2 = 2.0 * width;
-        let r4 = 4.0 * width;
+        let r2 = 4.0 * width;
 
         let a = screen_path[0];
         let b = screen_path[1];
 
         let n = (b - a).normalize();
         let m = (a + b) * 0.5;
-        let m0 = b - n * r4;
+        let m0 = b - n * r2;
         let t0 = FloatPoint::new(-n.y, n.x) * r2;
         let t1 = FloatPoint::new(n.y, -n.x) * r2;
         let s0 = n * r2;
         let s1 = -n * r2;
-        let v0 = m0 + t0;
-        let v1 = m0 + t1;
+        let v0 = m0 + t0 * 0.5;
+        let v1 = m0 + t1 * 0.5;
 
         let subj_right = schema.subj_right(vector.fill);
         let clip_right = schema.clip_right(vector.fill);
@@ -162,17 +159,17 @@ impl VectorsWidget {
         let clip_right_pos = m + t0 + s1;
         let clip_left_pos = m + t1 + s1;
 
-        Self::append_cirlce(builder, subj_right_pos, subj_right, width);
-        Self::append_cirlce(builder, clip_right_pos, clip_right, width);
-        Self::append_cirlce(builder, subj_left_pos, subj_left, width);
-        Self::append_cirlce(builder, clip_left_pos, clip_left, width);
+        Self::append_circle(builder, subj_right_pos, subj_right, 2.0 * width);
+        Self::append_circle(builder, clip_right_pos, clip_right, 2.0 * width);
+        Self::append_circle(builder, subj_left_pos, subj_left, 2.0 * width);
+        Self::append_circle(builder, clip_left_pos, clip_left, 2.0 * width);
 
         let arrow_triangulation = stroke_builder.build_open_path_mesh(&[v0, b, v1]);
         builder.append(arrow_triangulation, segment_color);
 
     }
 
-    fn append_cirlce(builder: &mut MeshBuilder, pos: FloatPoint<f32>, color: color::Packed, radius: f32) {
+    fn append_circle(builder: &mut MeshBuilder, pos: FloatPoint<f32>, color: color::Packed, radius: f32) {
         let n = 8;
         let da = 2.0 * PI / n as f32;
         let mut a = 0.0f32;
