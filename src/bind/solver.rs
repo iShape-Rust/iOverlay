@@ -77,11 +77,6 @@ impl ShapeBinder {
     }
 }
 
-pub(crate) struct HoleData {
-    contour: IntPath,
-    left_bottom_segment: XSegment,
-}
-
 pub(crate) trait JoinHoles {
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>);
     fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, anchors: Vec<IdSegment>);

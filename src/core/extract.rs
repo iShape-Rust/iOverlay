@@ -53,7 +53,7 @@ impl OverlayGraph {
         let mut anchors = Vec::new();
 
         let mut link_index = 0;
-        let is_all_anchors_sorted = true;
+        let mut is_all_anchors_sorted = true;
         while link_index < visited.len() {
             if visited.is_visited(link_index) {
                 link_index += 1;

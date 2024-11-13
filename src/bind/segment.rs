@@ -19,16 +19,6 @@ impl IdSegment {
             x_segment: XSegment { a, b },
         }
     }
-
-    #[inline(always)]
-    fn is_hole(&self) -> bool {
-        self.id & 1 == 1
-    }
-
-    #[inline(always)]
-    fn index(&self) -> usize {
-        self.id >> 1
-    }
 }
 
 impl PartialEq<Self> for IdSegment {

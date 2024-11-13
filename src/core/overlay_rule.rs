@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::segm::segment::{SegmentFill, BOTH_BOTTOM, BOTH_TOP, CLIP_TOP, NONE, SUBJ_TOP};
 
 /// Defines the types of overlay/boolean operations that can be applied to shapes. For a visual description, see [Overlay Rules](https://ishape-rust.github.io/iShape-js/overlay/overlay_rules/overlay_rules.html).
@@ -36,5 +37,21 @@ impl OverlayRule {
                 is_subject || is_clip
             }
         }
+    }
+}
+
+impl fmt::Display for OverlayRule {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let text = match self {
+            OverlayRule::Subject => "Subject",
+            OverlayRule::Clip => "Clip",
+            OverlayRule::Intersect => "Intersect",
+            OverlayRule::Union => "Union",
+            OverlayRule::Difference => "Difference",
+            OverlayRule::InverseDifference => "InverseDifference",
+            OverlayRule::Xor => "Xor",
+        };
+
+        write!(f, "{}", text)
     }
 }

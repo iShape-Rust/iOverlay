@@ -1,3 +1,5 @@
+use std::fmt;
+
 /// Represents the rule used to determine the "bind" of a shape, affecting how shapes are filled. For a visual description, see [Fill Rules](https://ishape-rust.github.io/iShape-js/overlay/filling_rules/filling_rules.html).
 /// - `EvenOdd`: Only odd-numbered sub-regions are filled.
 /// - `NonZero`: Only non-zero sub-regions are filled.
@@ -9,4 +11,17 @@ pub enum FillRule {
     NonZero,
     Positive,
     Negative
+}
+
+impl fmt::Display for FillRule {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let text = match self {
+            FillRule::EvenOdd => "EvenOdd",
+            FillRule::NonZero => "NonZero",
+            FillRule::Positive => "Positive",
+            FillRule::Negative => "Negative",
+        };
+
+        write!(f, "{}", text)
+    }
 }

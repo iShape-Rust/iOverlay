@@ -42,14 +42,14 @@ mod tests {
         }
     }
 
-    fn debug_execute(index: usize, overlay_rule: OverlayRule, solver: Solver) {
+    #[allow(dead_code)]
+    fn debug_execute(index: usize, overlay_rule: OverlayRule, fill_rule: FillRule, solver: Solver) {
         let test = BooleanTest::load(index);
-        let fill_rule = test.fill_rule.unwrap_or(FillRule::NonZero);
         let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
         let graph = overlay.into_graph_with_solver(fill_rule, solver);
         let result = graph.extract_shapes(overlay_rule);
 
-        println!("result: {}", result.json_print());
+        println!("{}: {}", &overlay_rule, result.json_print());
         match overlay_rule {
             OverlayRule::Subject => {
                 assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject));
@@ -73,6 +73,33 @@ mod tests {
                 assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.xor));
             }
         }
+    }
+
+    #[allow(dead_code)]
+    fn print_json(index: usize, fill_rule: FillRule) {
+        let test = BooleanTest::load(index);
+        let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
+        let graph = overlay.into_graph_with_solver(fill_rule, Default::default());
+
+        let subject = graph.extract_shapes(OverlayRule::Subject);
+        let clip = graph.extract_shapes(OverlayRule::Clip);
+        let union = graph.extract_shapes(OverlayRule::Union);
+        let intersect = graph.extract_shapes(OverlayRule::Intersect);
+        let difference = graph.extract_shapes(OverlayRule::Difference);
+        let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
+        let xor = graph.extract_shapes(OverlayRule::Xor);
+
+
+        println!("\"fillRule\": {},", if fill_rule == FillRule::EvenOdd { 0 } else { 1 });
+        println!("\"subjPaths\": {},", test.subj_paths.json_print());
+        println!("\"clipPaths\": {},", test.clip_paths.json_print());
+        println!("\"subject\": [{}],", subject.json_print());
+        println!("\"clip\": [{}],", clip.json_print());
+        println!("\"union\": [{}],", union.json_print());
+        println!("\"intersect\": [{}],", intersect.json_print());
+        println!("\"difference\": [{}],", difference.json_print());
+        println!("\"inverseDifference\": [{}],", inverse_difference.json_print());
+        println!("\"xor\": [{}]", xor.json_print());
     }
 
     #[test]
@@ -755,8 +782,48 @@ mod tests {
         execute(135);
     }
 
-    // #[test]
-    // fn test_debug() {
-    //     debug_execute(138, OverlayRule::Subject, Solver::LIST);
-    // }
+    #[test]
+    fn test_136() {
+        execute(136);
+    }
+
+    #[test]
+    fn test_137() {
+        execute(137);
+    }
+
+    #[test]
+    fn test_138() {
+        execute(138);
+    }
+
+    #[test]
+    fn test_139() {
+        execute(139);
+    }
+
+    #[test]
+    fn test_140() {
+        execute(140);
+    }
+
+    #[test]
+    fn test_141() {
+        execute(141);
+    }
+
+    #[test]
+    fn test_142() {
+        execute(142);
+    }
+
+    #[test]
+    fn test_143() {
+        execute(143);
+    }
+
+    #[test]
+    fn test_debug() {
+        // print_json(143, FillRule::NonZero)
+    }
 }
