@@ -1,3 +1,6 @@
+## [1.8.2] - 2024-11-13
+### Fixed
+- Small fix hole bind for degenerate contours.
 ## [1.8.1] - 2024-11-12
 ### Fixed
 - Fixed bug bind holes not correct shape index.
