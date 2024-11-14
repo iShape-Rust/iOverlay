@@ -159,8 +159,8 @@ impl EditorApp {
         self.state.string.string_update_point(update);
     }
 
-    pub(super) fn string_update_zoom(&mut self, scale: f32) {
-        self.state.string.workspace.camera.scale = scale;
+    pub(super) fn string_update_zoom(&mut self, camera: Camera) {
+        self.state.string.workspace.camera = camera;
     }
 
     pub(super) fn string_update_drag(&mut self, new_pos: Vector<f32>) {
@@ -176,7 +176,7 @@ fn on_update_size(size: Size) -> AppMessage {
     AppMessage::String(StringMessage::WorkspaceSized(size))
 }
 
-fn on_update_zoom(zoom: f32) -> AppMessage {
+fn on_update_zoom(zoom: Camera) -> AppMessage {
     AppMessage::String(StringMessage::WorkspaceZoomed(zoom))
 }
 

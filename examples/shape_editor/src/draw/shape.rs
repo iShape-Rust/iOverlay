@@ -17,7 +17,7 @@ use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::Mesh;
 use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
 use crate::geom::camera::Camera;
-use crate::geom::viewport::ViewPortExt;
+use crate::geom::vector::VectorExt;
 
 pub(crate) struct ShapeWidget {
     fill: Option<Mesh>,
@@ -71,7 +71,7 @@ impl ShapeWidget {
         }
         let color_pack = pack(color);
         let vertices = triangulation.points.iter().map(|&p| {
-            let v = camera.point_to_screen(p);
+            let v = camera.world_to_view(p);
             SolidVertex2D { position: [v.x - offset.x, v.y - offset.y], color: color_pack }
         }).collect();
 
@@ -95,7 +95,7 @@ impl ShapeWidget {
         for shape in shapes.iter() {
             for path in shape.iter() {
                 let world_path: Vec<_> = path.iter().map(|&p| {
-                    let v = camera.point_to_screen(p);
+                    let v = camera.world_to_view(p);
                     FloatPoint::new(v.x, v.y)
                 }).collect();
 
@@ -122,7 +122,7 @@ impl ShapeWidget {
 
         for path in paths.iter() {
             let world_path: Vec<_> = path.iter().map(|&p| {
-                let v = camera.point_to_screen(p);
+                let v = camera.world_to_view(p);
                 FloatPoint::new(v.x, v.y)
             }).collect();
 
@@ -169,7 +169,7 @@ impl ShapeWidget {
             max_y = max_y.max(p.y);
         }
 
-        camera.point_to_screen(IntPoint::new(min_x, max_y))
+        camera.world_to_view(IntPoint::new(min_x, max_y))
     }
 
     fn offset_for_paths(paths: &IntPaths, camera: Camera) -> Vector<f32> {
@@ -185,7 +185,7 @@ impl ShapeWidget {
             max_y = max_y.max(p.y);
         }
 
-        camera.point_to_screen(IntPoint::new(min_x, max_y))
+        camera.world_to_view(IntPoint::new(min_x, max_y))
     }
 }
 
@@ -233,7 +233,7 @@ impl<Message> Widget<Message, Theme, Renderer> for ShapeWidget {
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let offset = layout.bounds().offset();
+        let offset = Vector::point(layout.position());
         if let Some(mesh) = &self.fill {
             renderer.with_translation(offset, |renderer| {
                 renderer.draw_mesh(mesh.clone())

@@ -142,8 +142,8 @@ impl EditorApp {
         self.state.boolean.boolean_update_point(update);
     }
 
-    pub(super) fn boolean_update_zoom(&mut self, scale: f32) {
-        self.state.boolean.workspace.camera.set_scale(scale);
+    pub(super) fn boolean_update_zoom(&mut self, camera: Camera) {
+        self.state.boolean.workspace.camera = camera;
     }
 
     pub(super) fn boolean_update_drag(&mut self, new_pos: Vector<f32>) {
@@ -159,7 +159,7 @@ fn on_update_size(size: Size) -> AppMessage {
     AppMessage::Bool(BooleanMessage::WorkspaceSized(size))
 }
 
-fn on_update_zoom(zoom: f32) -> AppMessage {
+fn on_update_zoom(zoom: Camera) -> AppMessage {
     AppMessage::Bool(BooleanMessage::WorkspaceZoomed(zoom))
 }
 

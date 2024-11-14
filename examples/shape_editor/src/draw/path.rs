@@ -14,7 +14,7 @@ use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::Mesh;
 use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
 use crate::geom::camera::Camera;
-use crate::geom::viewport::ViewPortExt;
+use crate::geom::vector::VectorExt;
 
 pub(crate) struct PathWidget {
     stroke: Option<Mesh>,
@@ -111,13 +111,13 @@ impl PathWidget {
             max_y = max_y.max(p.y);
         }
 
-        camera.point_to_screen(IntPoint::new(min_x, max_y))
+        camera.world_to_view(IntPoint::new(min_x, max_y))
     }
 
     fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let screen_path: Vec<_> = path.iter().map(|&p| {
-            let v = camera.point_to_screen(p);
+            let v = camera.world_to_view(p);
             FloatPoint::new(v.x, v.y)
         }).collect();
 
@@ -191,7 +191,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PathWidget {
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let offset = layout.bounds().offset();
+        let offset = Vector::point(layout.position());
         if let Some(mesh) = &self.stroke {
             renderer.with_translation(offset, |renderer| {
                 renderer.draw_mesh(mesh.clone())

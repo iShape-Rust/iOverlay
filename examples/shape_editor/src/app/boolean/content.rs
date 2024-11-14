@@ -34,7 +34,7 @@ pub(crate) enum BooleanMessage {
     SolverSelected(SolverOption),
     PointEdited(PointEditUpdate),
     WorkspaceSized(Size),
-    WorkspaceZoomed(f32),
+    WorkspaceZoomed(Camera),
     WorkspaceDraged(Vector<f32>),
 }
 

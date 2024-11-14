@@ -1,4 +1,3 @@
-use crate::geom::vector::VectorExt;
 use crate::geom::camera::Camera;
 use crate::sheet::state::SheetState;
 use iced::Point;
@@ -12,7 +11,7 @@ use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
 pub(crate) struct SheetWidget<'a, Message> {
     camera: Camera,
     on_size: Box<dyn Fn(Size) -> Message + 'a>,
-    on_zoom: Box<dyn Fn(f32) -> Message + 'a>,
+    on_zoom: Box<dyn Fn(Camera) -> Message + 'a>,
     on_drag: Box<dyn Fn(Vector<f32>) -> Message + 'a>,
 }
 
@@ -20,7 +19,7 @@ impl<'a, Message: 'a> SheetWidget<'a, Message> {
     pub(crate) fn new(
         camera: Camera,
         on_size: impl Fn(Size) -> Message + 'a,
-        on_zoom: impl Fn(f32) -> Message + 'a,
+        on_zoom: impl Fn(Camera) -> Message + 'a,
         on_drag: impl Fn(Vector<f32>) -> Message + 'a,
     ) -> Self {
         Self {
@@ -87,8 +86,8 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
             match mouse_event {
                 mouse::Event::CursorMoved { position } => {
                     if bounds.contains(position) {
-                        let cursor = Vector::point(position);
-                        if let Some(drag) = state.mouse_move(self.camera, cursor) {
+                        let view_cursor = position - bounds.position();
+                        if let Some(drag) = state.mouse_move(self.camera, view_cursor) {
                             shell.publish((self.on_drag)(drag));
                             return event::Status::Captured;
                         }
@@ -97,7 +96,8 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
                     let position = cursor.position().unwrap_or(Point::ORIGIN);
                     if bounds.contains(position) {
-                        state.mouse_press(self.camera, Vector::point(position));
+                        let view_cursor = position - bounds.position();
+                        state.mouse_press(self.camera, view_cursor);
                         return event::Status::Captured;
                     }
                 }
@@ -108,7 +108,8 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                 mouse::Event::WheelScrolled { delta } => {
                     let position = cursor.position().unwrap_or(Point::ORIGIN);
                     if bounds.contains(position) {
-                        if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), delta) {
+                        let cursor = position - bounds.position();
+                        if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), delta, cursor) {
                             shell.publish((self.on_zoom)(scale));
                             return event::Status::Captured;
                         }

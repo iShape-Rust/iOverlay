@@ -14,7 +14,7 @@ use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::{color, Mesh};
 use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
 use crate::geom::camera::Camera;
-use crate::geom::viewport::ViewPortExt;
+use crate::geom::vector::VectorExt;
 
 struct ColorSchema {
     subj: color::Packed,
@@ -117,14 +117,14 @@ impl VectorsWidget {
             max_y = max_y.max(v.b.y);
         }
 
-        camera.point_to_screen(IntPoint::new(min_x, max_y))
+        camera.world_to_view(IntPoint::new(min_x, max_y))
     }
 
     fn append_vector(builder: &mut MeshBuilder, camera: Camera, vector: &VectorEdge, offset: Vector<f32>, schema: &ColorSchema, width: f32) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let path = [vector.a, vector.b];
         let screen_path: Vec<_> = path.iter().map(|&p| {
-            let v = camera.point_to_screen(p);
+            let v = camera.world_to_view(p);
             FloatPoint::new(v.x - offset.x, v.y - offset.y)
         }).collect();
 
@@ -234,7 +234,7 @@ impl<Message> Widget<Message, Theme, Renderer> for VectorsWidget {
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let offset = layout.bounds().offset();
+        let offset = Vector::point(layout.position());
         if let Some(mesh) = &self.stroke {
             renderer.with_translation(offset, |renderer| {
                 renderer.draw_mesh(mesh.clone())

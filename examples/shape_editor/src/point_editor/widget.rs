@@ -11,6 +11,7 @@ use iced::advanced::widget::{Tree, Widget};
 use iced::{Event, event, mouse, Point, Color};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
 
+
 #[derive(Debug, Clone)]
 pub(crate) struct PointEditUpdate {
     pub(crate) point: EditorPoint,
@@ -113,12 +114,10 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
             match mouse_event {
                 mouse::Event::CursorMoved { position } => {
                     if bounds.contains(position) {
-                        let cursor = Vector { x: position.x, y: position.y };
-                        let offset = bounds.offset();
+                        let view_cursor = position - bounds.position();
                         if let Some(updated_point) = state.mouse_move(
                             &*self,
-                            cursor,
-                            offset,
+                            view_cursor
                         ) {
                             shell.publish((self.on_update)(updated_point));
                             return event::Status::Captured;
@@ -128,12 +127,10 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
                     let position = cursor.position().unwrap_or(Point::ORIGIN);
                     if bounds.contains(position) {
-                        let cursor = Vector { x: position.x, y: position.y };
-                        let offset = bounds.offset();
+                        let view_cursor = position - bounds.position();
                         if state.mouse_press(
                             &*self,
-                            cursor,
-                            offset,
+                            view_cursor,
                         ) {
                             return event::Status::Captured;
                         }
@@ -141,12 +138,10 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left) => {
                     let position = cursor.position().unwrap_or(Point::ORIGIN);
-                    let cursor = Vector { x: position.x, y: position.y };
-                    let offset = bounds.offset();
+                    let view_cursor = position - bounds.position();
                     if state.mouse_release(
                         &*self,
-                        cursor,
-                        offset,
+                        view_cursor,
                     ) {
                         return event::Status::Captured;
                     }
@@ -175,11 +170,10 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let bounds = layout.bounds();
-        let offset = bounds.offset() - Vector::new(self.mesh_radius, self.mesh_radius);
+        let offset = layout.position() - Point::new(self.mesh_radius, self.mesh_radius);
 
         for (index, p) in self.points.iter().enumerate() {
-            let posistion = self.camera.point_to_screen_offset(offset, p.pos);
+            let position = self.camera.world_to_screen(offset, p.pos);
             let mesh = match &state.select {
                 SelectState::Hover(hover_index) => if index == *hover_index {
                     mesh.hover.clone()
@@ -194,7 +188,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                 SelectState::None => mesh.main.clone(),
             };
 
-            renderer.with_translation(posistion, |renderer| renderer.draw_mesh(mesh));
+            renderer.with_translation(position, |renderer| renderer.draw_mesh(mesh));
         }
     }
 }
