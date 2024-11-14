@@ -28,7 +28,7 @@ impl SheetState {
     pub(super) fn mouse_move(&mut self, camera: Camera, view_cursor: Vector<f32>) -> Option<Vector<f32>> {
         if let DragState::Drag(drag) = &self.drag_state {
             let translate = drag.start_screen - view_cursor;
-            let world_dist = camera.distance_to_world(translate);
+            let world_dist = camera.view_distance_to_world(translate);
             let new_pos = Vector::new(
                 drag.start_world.x + world_dist.x,
                 drag.start_world.y + world_dist.y,
@@ -46,11 +46,13 @@ impl SheetState {
             let mut new_camera = camera;
             new_camera.set_scale(s * camera.scale);
 
-            let start_world = camera.view_to_world(view_cursor);
-            let end_world = new_camera.view_to_world(view_cursor);
+            let world_pos = camera.view_to_world(view_cursor);
+            let new_view_pos = new_camera.world_to_view(world_pos);
 
-            let diff = start_world - end_world;
-            new_camera.pos = new_camera.pos - diff;
+            let view_distance = view_cursor - new_view_pos;
+            let world_distance = new_camera.view_distance_to_world(view_distance);
+
+            new_camera.pos = new_camera.pos - world_distance;
 
             Some(new_camera)
         } else {

@@ -1,5 +1,4 @@
 use crate::geom::camera::Camera;
-use crate::geom::viewport::ViewPortExt;
 use crate::point_editor::state::SelectState;
 use crate::point_editor::state::PointsEditorState;
 use crate::point_editor::point::EditorPoint;
@@ -9,7 +8,7 @@ use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
 use iced::{Event, event, mouse, Point, Color};
-use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
+use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
 
 
 #[derive(Debug, Clone)]
@@ -57,7 +56,6 @@ impl<'a, Message> PointsEditorWidget<'a, Message> {
         self.drag_color = color;
         self
     }
-
 }
 
 impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Message> {
@@ -117,7 +115,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                         let view_cursor = position - bounds.position();
                         if let Some(updated_point) = state.mouse_move(
                             &*self,
-                            view_cursor
+                            view_cursor,
                         ) {
                             shell.publish((self.on_update)(updated_point));
                             return event::Status::Captured;
@@ -146,7 +144,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                         return event::Status::Captured;
                     }
                 }
-                _ => {},
+                _ => {}
             }
         }
 

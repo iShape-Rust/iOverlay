@@ -101,7 +101,7 @@ impl PointsEditorState {
         let mut min_index = usize::MAX;
         // println!("cursor: {:?}", &cursor);
         for (i, p) in widget.points.iter().enumerate() {
-            let view_pos = widget.camera.world_to_view(p.pos);
+            let view_pos = widget.camera.int_world_to_view(p.pos);
             // println!("screen_pos: {:?}", &screen_pos);
             let ds = Self::sqr_length(&cursor, &view_pos);
             if ds <= min_ds {
@@ -144,7 +144,7 @@ impl PointsEditorState {
 
     fn mouse_drag(drag: &Drag, camera: Camera, points: &[EditorPoint], cursor: Vector<f32>) -> Option<PointEditUpdate> {
         let translate = cursor - drag.start_float;
-        let world_dist = camera.distance_to_world(translate).round();
+        let world_dist = camera.view_distance_to_world(translate).round();
         let world_point = world_dist + drag.editor_point.pos;
         let real_point = &points[drag.index];
         if world_point != real_point.pos {
@@ -161,7 +161,7 @@ impl PointsEditorState {
         let mut min_ds = radius * radius;
         let mut min_index = usize::MAX;
         for (i, p) in points.iter().enumerate() {
-            let view_pos = camera.world_to_view(p.pos);
+            let view_pos = camera.int_world_to_view(p.pos);
             let ds = Self::sqr_length(&cursor, &view_pos);
             if ds <= min_ds {
                 min_ds = ds;

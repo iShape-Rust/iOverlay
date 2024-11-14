@@ -78,7 +78,7 @@ impl VaricoloredWidget {
         }
         let color_pack = pack(color);
         let vertices = triangulation.points.iter().map(|&p| {
-            let v = camera.world_to_view(p);
+            let v = camera.int_world_to_view(p);
             SolidVertex2D { position: [v.x - offset.x, v.y - offset.y], color: color_pack }
         }).collect();
 
@@ -101,7 +101,7 @@ impl VaricoloredWidget {
 
         for path in paths.iter() {
             let world_path: Vec<_> = path.iter().map(|&p| {
-                let v = camera.world_to_view(p);
+                let v = camera.int_world_to_view(p);
                 FloatPoint::new(v.x, v.y)
             }).collect();
 
@@ -148,7 +148,7 @@ impl VaricoloredWidget {
             max_y = max_y.max(p.y);
         }
 
-        camera.world_to_view(IntPoint::new(min_x, max_y))
+        camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 }
 

@@ -117,14 +117,14 @@ impl VectorsWidget {
             max_y = max_y.max(v.b.y);
         }
 
-        camera.world_to_view(IntPoint::new(min_x, max_y))
+        camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 
     fn append_vector(builder: &mut MeshBuilder, camera: Camera, vector: &VectorEdge, offset: Vector<f32>, schema: &ColorSchema, width: f32) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let path = [vector.a, vector.b];
         let screen_path: Vec<_> = path.iter().map(|&p| {
-            let v = camera.world_to_view(p);
+            let v = camera.int_world_to_view(p);
             FloatPoint::new(v.x - offset.x, v.y - offset.y)
         }).collect();
 

@@ -111,13 +111,13 @@ impl PathWidget {
             max_y = max_y.max(p.y);
         }
 
-        camera.world_to_view(IntPoint::new(min_x, max_y))
+        camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 
     fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let screen_path: Vec<_> = path.iter().map(|&p| {
-            let v = camera.world_to_view(p);
+            let v = camera.int_world_to_view(p);
             FloatPoint::new(v.x, v.y)
         }).collect();
 

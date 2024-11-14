@@ -47,27 +47,36 @@ impl Camera {
         Camera { scale, i_scale, size, pos }
     }
 
+    #[inline]
     pub(crate) fn world_to_screen(&self, view_left_top: Vector<f32>, world: IntPoint) -> Vector<f32> {
         let x = self.scale * (world.x as f32 - self.pos.x) + view_left_top.x + 0.5 * self.size.width;
         let y = self.scale * (self.pos.y - world.y as f32) + view_left_top.y + 0.5 * self.size.height;
         Vector { x, y }
     }
 
-    pub(crate) fn world_to_view(&self, world: IntPoint) -> Vector<f32> {
-        let x = self.scale * (world.x as f32 - self.pos.x) + 0.5 * self.size.width;
-        let y = self.scale * (self.pos.y - world.y as f32) + 0.5 * self.size.height;
+    #[inline]
+    pub(crate) fn int_world_to_view(&self, world: IntPoint) -> Vector<f32> {
+        self.world_to_view(Vector::new(world.x as f32, world.y as f32))
+    }
+
+    #[inline]
+    pub(crate) fn world_to_view(&self, world: Vector<f32>) -> Vector<f32> {
+        let x = self.scale * (world.x - self.pos.x) + 0.5 * self.size.width;
+        let y = self.scale * (self.pos.y - world.y) + 0.5 * self.size.height;
         Vector { x, y }
     }
 
+    #[inline]
     pub(crate) fn view_to_world(&self, view: Vector<f32>) -> Vector<f32> {
         let x = self.i_scale * (view.x - 0.5 * self.size.width) + self.pos.x;
         let y = self.i_scale * (0.5 * self.size.height - view.y) + self.pos.y;
         Vector { x, y }
     }
 
-    pub(crate) fn distance_to_world(&self, distance: Vector<f32>) -> Vector<f32> {
-        let x = distance.x * self.i_scale;
-        let y = -distance.y * self.i_scale;
+    #[inline]
+    pub(crate) fn view_distance_to_world(&self, view_distance: Vector<f32>) -> Vector<f32> {
+        let x = view_distance.x * self.i_scale;
+        let y = -view_distance.y * self.i_scale;
         Vector { x, y }
     }
 }
