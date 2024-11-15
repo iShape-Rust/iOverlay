@@ -51,8 +51,12 @@ impl<'a, Message> PointsEditorWidget<'a, Message> {
         }
     }
 
-    pub(crate) fn set_accent_color(mut self, color: Color) -> Self {
-        self.hover_color = color.scale_alpha(0.6);
+    pub(crate) fn set_hover_color(mut self, color: Color) -> Self {
+        self.hover_color = color;
+        self
+    }
+
+    pub(crate) fn set_drag_color(mut self, color: Color) -> Self {
         self.drag_color = color;
         self
     }
@@ -63,8 +67,8 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         tree::Tag::of::<PointsEditorState>()
     }
 
-    fn state(&self) -> tree::State {
-        tree::State::new(PointsEditorState::default())
+    fn state(&self) -> State {
+        State::new(PointsEditorState::default())
     }
 
     fn size(&self) -> Size<Length> {

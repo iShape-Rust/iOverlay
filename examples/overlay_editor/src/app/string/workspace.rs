@@ -37,6 +37,7 @@ impl EditorApp {
             stack = stack.push(
                 Container::new(SheetWidget::new(
                     self.state.string.workspace.camera,
+                    Design::negative_color().scale_alpha(0.5),
                     on_update_size,
                     on_update_zoom,
                     on_update_drag,
@@ -138,7 +139,9 @@ impl EditorApp {
                     Container::new(PointsEditorWidget::new(
                         &self.state.string.workspace.points,
                         self.state.string.workspace.camera,
-                        on_update_point).set_accent_color(Design::negative_color())
+                        on_update_point)
+                        .set_drag_color(Design::accent_color())
+                        .set_hover_color(Design::negative_color())
                     )
                         .width(Length::Fill)
                         .height(Length::Fill)

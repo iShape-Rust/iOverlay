@@ -1,4 +1,4 @@
-pub(crate) mod main;
+pub mod main;
 mod design;
 mod boolean;
 mod string;

@@ -45,8 +45,10 @@ impl PointsEditorState {
             return;
         }
 
+        let sr = 1.2 * r;
+
         let mut main_vertices = Vec::with_capacity(4);
-        let mut hower_vertices = Vec::with_capacity(4);
+        let mut hover_vertices = Vec::with_capacity(4);
         let mut drag_vertices = Vec::with_capacity(4);
         let mut indices = Vec::with_capacity(6);
         let main_pack = pack(main_color);
@@ -58,10 +60,10 @@ impl PointsEditorState {
         main_vertices.push(SolidVertex2D { position: [2.0 * r, r], color: main_pack });
         main_vertices.push(SolidVertex2D { position: [r, 0.0], color: main_pack });
 
-        hower_vertices.push(SolidVertex2D { position: [0.0, r], color: hover_pack });
-        hower_vertices.push(SolidVertex2D { position: [r, 2.0 * r], color: hover_pack });
-        hower_vertices.push(SolidVertex2D { position: [2.0 * r, r], color: hover_pack });
-        hower_vertices.push(SolidVertex2D { position: [r, 0.0], color: hover_pack });
+        hover_vertices.push(SolidVertex2D { position: [0.0, sr], color: hover_pack });
+        hover_vertices.push(SolidVertex2D { position: [r, 2.0 * sr], color: hover_pack });
+        hover_vertices.push(SolidVertex2D { position: [2.0 * sr, sr], color: hover_pack });
+        hover_vertices.push(SolidVertex2D { position: [sr, 0.0], color: hover_pack });
 
         drag_vertices.push(SolidVertex2D { position: [0.0, r], color: drag_pack });
         drag_vertices.push(SolidVertex2D { position: [r, 2.0 * r], color: drag_pack });
@@ -84,8 +86,8 @@ impl PointsEditorState {
                 clip_bounds: Rectangle::INFINITE,
             },
             hover: Mesh::Solid {
-                buffers: Indexed { vertices: hower_vertices, indices: indices.clone() },
-                transformation: Transformation::IDENTITY,
+                buffers: Indexed { vertices: hover_vertices, indices: indices.clone() },
+                transformation: Transformation::translate(r - sr, r - sr),
                 clip_bounds: Rectangle::INFINITE,
             },
             drag: Mesh::Solid {

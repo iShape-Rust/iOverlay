@@ -1,4 +1,3 @@
-use std::default::Default;
 use iced::Subscription;
 use iced::keyboard::Key::Named as NamedBox;
 use iced::event::{self, Event as MainEvent};
@@ -15,7 +14,7 @@ use crate::app::design::style_separator;
 use crate::app::design::{style_sidebar_button, style_sidebar_button_selected, Design};
 use crate::data::resource::AppResource;
 
-pub(crate) struct EditorApp {
+pub struct EditorApp {
     main_actions: Vec<MainAction>,
     pub(super) state: MainState,
     pub(super) app_resource: AppResource,
@@ -57,8 +56,8 @@ pub(crate) enum AppMessage {
 }
 
 impl EditorApp {
-    fn new() -> Self {
-        let mut app_resource = AppResource::new();
+
+    pub fn new(mut app_resource: AppResource) -> Self {
         Self {
             main_actions: vec![MainAction::Boolean, MainAction::String],
             state: MainState {
@@ -71,7 +70,7 @@ impl EditorApp {
         }
     }
 
-    pub(crate) fn update(&mut self, message: AppMessage) {
+    pub fn update(&mut self, message: AppMessage) {
         match message {
             AppMessage::Main(msg) => self.update_main(msg),
             AppMessage::Bool(msg) => self.boolean_update(msg),
@@ -89,7 +88,7 @@ impl EditorApp {
         }
     }
 
-    pub(crate) fn subscription(&self) -> Subscription<AppMessage> {
+    pub fn subscription(&self) -> Subscription<AppMessage> {
         event::listen().map(AppMessage::EventOccurred)
     }
 
@@ -105,7 +104,7 @@ impl EditorApp {
         }
     }
 
-    pub(crate) fn view(&self) -> Element<AppMessage> {
+    pub fn view(&self) -> Element<AppMessage> {
         let content = Row::new()
             .push(Container::new(self.main_navigation())
                 .width(Length::Fixed(160.0))
@@ -147,11 +146,5 @@ impl EditorApp {
                 )
             },
         )
-    }
-}
-
-impl Default for EditorApp {
-    fn default() -> Self {
-        Self::new()
     }
 }

@@ -1,17 +1,19 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_triangle::i_overlay::i_shape::int::shape::IntContour;
 use serde::Deserialize;
+use crate::data::boolean::BooleanTest;
 
 #[derive(Debug, Clone, Deserialize)]
-pub(crate) struct PolygonTest {
-    #[serde(rename = "subjPaths")]
-    pub(crate) subj_paths: Vec<IntPath>,
-    #[serde(rename = "clipPaths")]
-    pub(crate) clip_paths: Vec<IntPath>,
+pub(crate) struct StringTest {
+    #[serde(rename = "body")]
+    pub(crate) body: Vec<IntContour>,
+    #[serde(rename = "string")]
+    pub(crate) string: Vec<IntPath>,
 }
 
-impl PolygonTest {
+impl StringTest {
     fn load(index: usize, folder: &str) -> Option<Self> {
         let file_name = format!("test_{}.json", index);
         let mut path_buf = PathBuf::from(folder);
@@ -27,7 +29,7 @@ impl PolygonTest {
             }
         };
 
-        let result: Result<PolygonTest, _> = serde_json::from_str(&data);
+        let result: Result<StringTest, _> = serde_json::from_str(&data);
         match result {
             Ok(test) => Some(test),
             Err(e) => {
@@ -62,19 +64,38 @@ impl PolygonTest {
     }
 }
 
-pub(crate) struct BooleanResource {
-    folder: String,
+pub(crate) struct StringResource {
+    folder: Option<String>,
     pub(crate) count: usize,
-    pub(crate) tests: HashMap<usize, PolygonTest>
+    pub(crate) tests: HashMap<usize, StringTest>
 }
 
-impl BooleanResource {
-    pub(crate) fn new(folder: &str) -> Self {
-        let count = PolygonTest::tests_count(folder);
-        Self { count, folder: folder.to_string(), tests: Default::default() }
+impl StringResource {
+    pub(crate) fn with_path(folder: &str) -> Self {
+        let count = StringTest::tests_count(folder);
+        Self { count, folder: Some(folder.to_string()), tests: Default::default() }
     }
 
-    pub(crate) fn load(&mut self, index: usize) -> Option<PolygonTest> {
+    pub(crate) fn with_content(content: String) -> Self {
+        let tests_vec: Vec<StringTest> = serde_json::from_str(&content).unwrap_or_else(|e| {
+            eprintln!("Failed to parse JSON content: {}", e);
+            vec![]
+        });
+
+        let tests: HashMap<usize, StringTest> = tests_vec
+            .into_iter()
+            .enumerate() // Assign indices
+            .collect();
+
+        let count = tests.len();
+        Self {
+            count,
+            folder: None,
+            tests,
+        }
+    }
+
+    pub(crate) fn load(&mut self, index: usize) -> Option<StringTest> {
         if self.count <= index {
             return None;
         }
@@ -82,7 +103,8 @@ impl BooleanResource {
             return Some(test.clone())
         }
 
-        let test = PolygonTest::load(index, self.folder.as_str())?;
+        let folder = if let Some(folder) = &self.folder { folder } else { return None; };
+        let test = StringTest::load(index, folder.as_str())?;
 
         self.tests.insert(index, test.clone());
 

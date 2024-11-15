@@ -31,6 +31,7 @@ impl EditorApp {
             stack = stack.push(
                 Container::new(SheetWidget::new(
                     self.state.boolean.workspace.camera,
+                    Design::negative_color().scale_alpha(0.5),
                     on_update_size,
                     on_update_zoom,
                     on_update_drag,
@@ -38,7 +39,6 @@ impl EditorApp {
                     .width(Length::Fill)
                     .height(Length::Fill)
             );
-
             if self.state.boolean.workspace.camera.is_not_empty() {
                 match self.state.boolean.mode {
                     ModeOption::Edit => {
@@ -121,7 +121,9 @@ impl EditorApp {
                     Container::new(PointsEditorWidget::new(
                         &self.state.boolean.workspace.points,
                         self.state.boolean.workspace.camera,
-                        on_update_point).set_accent_color(Design::accent_color())
+                        on_update_point)
+                        .set_drag_color(Design::accent_color())
+                        .set_hover_color(Design::negative_color())
                     )
                         .width(Length::Fill)
                         .height(Length::Fill)
