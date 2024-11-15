@@ -15,6 +15,7 @@ Try out iOverlay with an interactive demo:
 
 - [Stars Rotation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 - [Shapes Editor](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
+- [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
 
 
 
