@@ -1,3 +1,9 @@
+## [1.9.0] - 2024-11-20
+### Changed
+- new fregment solver for splitting big data set
+- multithreading splitting
+### Removed
+- f32/f64 deprecated api removed
 ## [1.8.2] - 2024-11-13
 ### Fixed
 - Small fix hole bind for degenerate contours.
