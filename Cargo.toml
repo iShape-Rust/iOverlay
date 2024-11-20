@@ -13,7 +13,6 @@ i_float = { version = "~1.5.0" }
 i_shape = { version = "~1.5.0" }
 i_tree = { version = "~0.8.3" }
 i_key_sort = { version = "~0.2.0" }
-log = "0.4.22"
 
 #i_float = { path = "../iFloat" }
 #i_shape = { path = "../iShape" }
@@ -32,11 +31,3 @@ allow_multithreading = ["rayon"]
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 rand = { version = "^0.8.5", features = [] }
-
-[profile.dev]
-debug = true
-opt-level = 0 # debug build
-
-[profile.test]
-debug = true
-opt-level = 0 # debug build
