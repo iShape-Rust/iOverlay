@@ -1,17 +1,16 @@
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
     use std::f64::consts::PI;
-    use i_float::f64_point::F64Point;
     use i_float::int::point::IntPoint;
-    use i_shape::f64::shape::F64Path;
+    use i_shape::base::data::Path;
     use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntShape;
-    use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
-    use i_overlay::f64::overlay::F64Overlay;
+    use i_overlay::float::overlay::FloatOverlay;
 
     const SOLVERS: [Solver; 3] = [
         Solver::LIST,
@@ -257,9 +256,8 @@ mod tests {
             let r = i as f64;
             let subj_path = random_float(r, n);
 
-            let mut overlay = F64Overlay::new();
-            overlay.add_path(subj_path, ShapeType::Subject);
-            let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
+            let graph = FloatOverlay::with_subj(&subj_path)
+                .into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
             graph.graph.validate();
             _ = graph.extract_shapes(OverlayRule::Subject);
         }
@@ -324,7 +322,7 @@ mod tests {
         points
     }
 
-    fn random_float(radius: f64, n: usize) -> F64Path {
+    fn random_float(radius: f64, n: usize) -> Path<[f64; 2]> {
         let a = 0.5 * radius;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);
@@ -332,7 +330,7 @@ mod tests {
         for _ in 0..n {
             let x = rng.gen_range(range.clone());
             let y = rng.gen_range(range.clone());
-            points.push(F64Point { x, y })
+            points.push([x, y])
         }
 
         points

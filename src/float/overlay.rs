@@ -60,6 +60,26 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
             .unsafe_add_source(clip, ShapeType::Clip)
     }
 
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// - `subj`: A `OverlayResource` that define the subject.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    pub fn with_subj<R>(subj: &R) -> Self
+    where
+        R: OverlayResource<P, T> +?Sized,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        let iter = subj.iter_paths().flatten();
+        let adapter = FloatPointAdapter::with_iter(iter);
+        let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
+
+        Self::with_adapter(adapter, subj_capacity)
+            .unsafe_add_source(subj, ShapeType::Subject)
+    }
+
     /// Adds a shapes to the overlay.
     /// - `resource`: A `OverlayResource` that define subject or clip.
     ///   `OverlayResource` can be one of the following:

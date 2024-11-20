@@ -191,8 +191,6 @@
 pub mod fill;
 pub mod core;
 pub mod vector;
-pub mod f64;
-pub mod f32;
 pub mod float;
 pub mod string;
 pub mod segm;

@@ -8,7 +8,7 @@ use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split<C: WindingCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn tree_split<C: WindingCount>(&mut self, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let ver_range = segments.ver_range();
         let height = ver_range.width() as usize;
 
@@ -18,14 +18,6 @@ impl SplitSolver {
 
         let layout = SpaceLayout::new(height, segments.len());
 
-        if layout.is_fragmentation_required_for_edges(&segments) {
-            self.simple(ver_range, &layout, segments)
-        } else {
-            self.complex(ver_range, &layout, segments)
-        }
-    }
-
-    fn simple<C: WindingCount>(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let mut tree = SegmentTree::new(ver_range, layout.power, 0);
         let mut marks = Vec::new();
         let mut need_to_fix = true;
@@ -49,54 +41,6 @@ impl SplitSolver {
                 return segments;
             }
 
-            tree.clear();
-
-            segments = self.apply(&mut marks, segments, need_to_fix);
-
-            marks.clear();
-
-            iter += 1;
-        }
-
-        segments
-    }
-
-    fn complex<C: WindingCount>(&self, ver_range: LineRange, layout: &SpaceLayout, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
-        let mut tree = SegmentTree::new(ver_range, layout.power, 0);
-        let mut marks = Vec::new();
-        let mut need_to_fix = true;
-
-        let mut fragments = Vec::with_capacity(2 * segments.len());
-
-        let mut iter = 0;
-
-        while need_to_fix && segments.len() > 2 {
-            need_to_fix = false;
-
-            for (i, &e) in segments.iter().enumerate() {
-                layout.break_into_fragments(i, e.x_segment, &mut fragments);
-            }
-
-            if 100 * fragments.len() <= 110 * segments.len() {
-                // we can switch to simple solution
-                segments = self.simple(ver_range, layout, segments);
-                return segments;
-            }
-
-            tree.radius = self.solver.radius(iter);
-
-            for fragment in fragments.iter() {
-                let any_round = tree.intersect(fragment, &mut marks);
-                need_to_fix = any_round || need_to_fix;
-
-                tree.insert(fragment.clone());
-            }
-
-            if marks.is_empty() {
-                return segments;
-            }
-
-            fragments.clear();
             tree.clear();
 
             segments = self.apply(&mut marks, segments, need_to_fix);
