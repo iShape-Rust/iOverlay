@@ -33,7 +33,7 @@ Try out iOverlay with an interactive demo:
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^1.8"
+i_overlay = "^1.9"
 ```
 
 ### Simple Example
