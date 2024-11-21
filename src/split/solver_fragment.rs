@@ -90,11 +90,13 @@ impl SplitSolver {
             marks: Vec<LineMark>,
         }
 
+        let marks_capacity = marks.len() / buffer.groups.len();
+
         let results: Vec<TaskResult> = buffer
             .groups
             .par_iter_mut()
             .map(|group| {
-                let mut marks = Vec::new();
+                let mut marks = Vec::with_capacity(marks_capacity);
                 let any_round = SplitSolver::bin_split(radius, group, &mut marks);
                 TaskResult {
                     any_round,
@@ -104,8 +106,22 @@ impl SplitSolver {
             .collect();
 
         let mut is_any_round = false;
-        for mut result in results.into_iter() {
+        let mut size = 0;
+        for result in results.iter() {
             is_any_round = is_any_round || result.any_round;
+            size += result.marks.len();
+        }
+
+        if size == 0 {
+            return false;
+        }
+
+        if marks.capacity() < size {
+            let additional = size - marks.capacity();
+            marks.reserve(additional);
+        }
+
+        for mut result in results.into_iter() {
             marks.append(&mut result.marks);
         }
 
