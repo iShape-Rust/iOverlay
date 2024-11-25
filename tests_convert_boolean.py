@@ -8,11 +8,11 @@ output_file = "./tests_boolean.json"
 def merge_json_files(input_folder, output_file):
     combined_data = []
 
-    # Iterate through all JSON files in the folder
-    for filename in sorted(os.listdir(input_folder)):
-        if filename.endswith(".json"):
-            filepath = os.path.join(input_folder, filename)
+    for index in range(145):  # Adjust range to include 144
+        filename = f"test_{index}.json"
+        filepath = os.path.join(input_folder, filename)
 
+        if os.path.exists(filepath):  # Check if the file exists
             try:
                 # Open and parse the JSON file
                 with open(filepath, "r") as file:
@@ -28,8 +28,9 @@ def merge_json_files(input_folder, output_file):
                 combined_data.append(entry)
             except Exception as e:
                 print(f"Error processing file {filename}: {e}")
+        else:
+            print(f"File {filename} does not exist. Skipping.")
 
-    # Write the combined data to the output file
     try:
         with open(output_file, "w") as outfile:
             json.dump(combined_data, outfile, indent=2)

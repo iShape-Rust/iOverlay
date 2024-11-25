@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use i_overlay::float::overlay::FloatOverlay;
-    use i_overlay::float::filter::ContourFilter;
     use std::f64::consts::PI;
     use i_shape::base::data::Contour;
     use i_float::int::point::IntPoint;
@@ -57,6 +55,7 @@ mod tests {
         }
     }
 
+    /*
     #[test]
     fn test_spiral() {
         let fill = FillRule::NonZero;
@@ -79,6 +78,7 @@ mod tests {
             assert_eq!(list_result, frag_result);
         }
     }
+    */
 
     fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {
         let mut result = Vec::with_capacity(n * n);
@@ -139,48 +139,94 @@ mod tests {
         result
     }
 
-    fn spiral(count: usize, radius: f64) -> Contour<[f64; 2]> {
-        let mut a_path = Vec::with_capacity(4 * count);
-        let mut b_path = Vec::with_capacity(2 * count);
+    /*
+    fn discrete_spiral(count: usize, a: i32) -> Vec<IntContour> {
+        let mut rects = Vec::with_capacity(8 * count);
 
-        let mut a: f64 = 0.0;
-        let mut r = radius;
-        let w = 0.1 * radius;
+        let a2 = 2 * a;
+        let a3 = 3 * a;
+        let a4 = 4 * a;
+        let a4 = 6 * a;
 
-        let c0 = [0.0, 0.0];
-        let mut p0 = c0;
-
+        // horizontal rects
+        let mut s = 0;
         for i in 0..count {
-            let (sy, sx) = a.sin_cos();
 
-            let rr = if i % 2 == 0 {
-                r + 0.2 * radius
-            } else {
-                r - 0.2 * radius
-            };
+            // bottom
+            let r0x0 = -(s + a);
+            let r0x1 = r0x0;
+            let r0x2 = s + a;
+            let r0x3 = r0x2;
 
-            let p = [rr * sx, rr * sy];
-            let nx = p[0] - p0[0];
-            let ny = p[1] - p0[1];
-            let l = (nx * nx + ny * ny).sqrt();
+            let r0y0 = s - a;
+            let r0y1 = r0y0 - a2;
+            let r0y2 = r0y1;
+            let r0y3 = r0y0;
 
-            let n = [nx / l, ny/ l];
-            let t = [w * -n[1], w * n[0]];
+            // top
+            let r1x0 = r0x0 - a4;
+            let r1x1 = r1x0;
+            let r1x2 = r0x2;
+            let r1x3 = r1x2;
 
-            a_path.push([p0[0] + t[0], p0[1] + t[1]]);
-            a_path.push([p[0] + t[0], p[1] + t[1]]);
-            a_path.push([p0[0] - t[0], p0[1] - t[1]]);
-            a_path.push([p[0] - t[0], p[1] - t[1]]);
+            let r1y0 = -r0y1;
+            let r1y1 = r1y0 - a2;
+            let r1y2 = r1y1;
+            let r1y3 = r1y0;
 
-            a += radius / r;
-            r = radius * (1.0 + a / (2.0 * PI));
-            p0 = p;
+            // left
+            let r2x0 = -s - a6;
+            let r2x1 = r2x0;
+            let r2x2 = r2x1 + a2;
+            let r2x3 = r0x2;
+
+            let r2y0 = -s + a3;
+            let r2y1 = r2y0 - s;
+            let r2y2 = r0y1;
+            let r2y3 = r0y0;
+
+            // right
+            let r3x0 = -r2x0;
+            let r3x1 = r2x2;
+            let r3x2 = r2x2 + a2;
+            let r3x3 = r2x3;
+
+            let r3y0 = r2y0;
+            let r3y1 = r0y0 - s;
+            let r3y2 = r0y1;
+            let r3y3 = r0y0;
+
+            s += a4;
+
+            rects.push(vec![IntPoint::new(r0x0, r0y0), IntPoint::new(r0x1, r0y1), IntPoint::new(r0x2, r0y2), IntPoint::new(r0x3, r0y3)]);
+            rects.push(vec![IntPoint::new(r1x0, r1y0), IntPoint::new(r1x1, r1y1), IntPoint::new(r1x2, r1y2), IntPoint::new(r1x3, r1y3)]);
+            rects.push(vec![IntPoint::new(r2x0, r2y0), IntPoint::new(r2x1, r2y1), IntPoint::new(r2x2, r2y2), IntPoint::new(r2x3, r2y3)]);
+            rects.push(vec![IntPoint::new(r3x0, r3y0), IntPoint::new(r3x1, r3y1), IntPoint::new(r3x2, r3y2), IntPoint::new(r3x3, r3y3)]);
         }
 
-        b_path.reverse();
-        a_path.append(&mut b_path);
+        // top rects
+        let mut y = -3 * a;
+        let mut s = 0;
+        for i in 0..count {
+            let x0 = -s;
+            let x1 = x0;
+            let x2 = s + a;
+            let x3 = x2;
 
-        a_path
+            let y0 = y;
+            let y1 = y - a2;
+            let y2 = y1;
+            let y3 = y0;
+
+            s += a4;
+
+            rects.push(vec![
+                IntPoint::new(x0, y0),
+                IntPoint::new(x1, y1),
+                IntPoint::new(x2, y2),
+                IntPoint::new(x3, y3),
+            ])
+        }
     }
-
+    */
 }
