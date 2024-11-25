@@ -29,6 +29,7 @@ impl<'a, P> Iterator for TripleResourceIterator<'a, P> {
                 return Some(it.as_slice())
             }
             self.i += 1;
+            self.j = 0;
         }
 
         None
