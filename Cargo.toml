@@ -9,7 +9,7 @@ repository = "https://github.com/iShape-Rust/iOverlay"
 readme = "README.md"
 
 [dependencies]
-i_float = { version = "~1.5.0" }
+i_float = { version = "~1.5.1" }
 i_shape = { version = "~1.5.0" }
 i_tree = { version = "~0.8.3" }
 i_key_sort = { version = "~0.2.0" }
@@ -26,6 +26,7 @@ optional = true
 [features]
 default = ["allow_multithreading"]
 allow_multithreading = ["rayon"]
+glam = ["i_float/glam"]
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
