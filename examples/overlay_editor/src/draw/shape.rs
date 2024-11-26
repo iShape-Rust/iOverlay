@@ -51,7 +51,12 @@ impl ShapeWidget {
         }
         let color = color?;
 
+
+        println!("shapes: {:?}", shapes);
+
         let triangulation = shapes.to_triangulation(fill_rule, 0);
+        println!("triangulation: {}", triangulation.indices.len());
+
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
 

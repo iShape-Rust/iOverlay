@@ -60,6 +60,7 @@ pub mod overlay {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_group_of_shapes_one_of(group: &Vec<IntShape>, groups: &Vec<Vec<IntShape>>) -> bool {
         for item in groups.iter() {
             if item.are_equal(group) {

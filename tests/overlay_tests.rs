@@ -73,27 +73,13 @@ mod tests {
 
         println!("{}: {}", &overlay_rule, result.json_print());
         match overlay_rule {
-            OverlayRule::Subject => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject));
-            }
-            OverlayRule::Clip => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.clip));
-            }
-            OverlayRule::Intersect => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.intersect));
-            }
-            OverlayRule::Union => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.union));
-            }
-            OverlayRule::Difference => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.difference));
-            }
-            OverlayRule::InverseDifference => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.inverse_difference));
-            }
-            OverlayRule::Xor => {
-                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.xor));
-            }
+            OverlayRule::Subject => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject)),
+            OverlayRule::Clip => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.clip)),
+            OverlayRule::Intersect => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.intersect)),
+            OverlayRule::Union => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.union)),
+            OverlayRule::Difference => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.difference)),
+            OverlayRule::InverseDifference => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.inverse_difference)),
+            OverlayRule::Xor => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.xor)),
         }
     }
 
