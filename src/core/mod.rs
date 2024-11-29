@@ -9,3 +9,4 @@ pub(crate) mod link;
 pub(crate) mod node;
 pub(crate) mod filter;
 pub(crate) mod vector_rotation;
+pub mod divide;
