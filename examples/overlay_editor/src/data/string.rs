@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use i_triangle::i_overlay::i_shape::int::path::IntPath;
 use i_triangle::i_overlay::i_shape::int::shape::IntContour;
 use serde::Deserialize;
-use crate::data::boolean::BooleanTest;
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct StringTest {
