@@ -51,7 +51,11 @@ impl StringGraph {
             if visited.count(left_top_link) == 1 {
                 let is_hole = string_rule.is_hole(link.fill);
                 let start_data = StartPathData::new(is_hole, link, left_top_link);
-                let paths = self.get_path(&start_data, visited).split_loops(min_area);
+                let paths = if let Some(path) = self.get_path(&start_data, visited) {
+                    path.split_loops(min_area)
+                } else {
+                    continue;
+                };
                 if is_hole {
                     shapes.join_unsorted_holes(&self.solver, paths);
                 } else {
@@ -65,6 +69,7 @@ impl StringGraph {
                 for index in track.into_iter() {
                     visited.reset(index);
                 }
+
                 if paths.is_empty() {
                     continue;
                 }
@@ -89,7 +94,7 @@ impl StringGraph {
     }
 
     #[inline]
-    fn get_path(&self, start_data: &StartPathData, visited: &mut [u8]) -> IntPath {
+    fn get_path(&self, start_data: &StartPathData, visited: &mut [u8]) -> Option<IntPath> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
@@ -101,7 +106,7 @@ impl StringGraph {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
+            link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited)?;
 
             let link = self.link(link_id);
             node_id = if link.a.id == node_id {
@@ -115,7 +120,7 @@ impl StringGraph {
             visited.visit(link_id);
         }
 
-        path
+        Some(path)
     }
 
     #[inline]
@@ -132,7 +137,12 @@ impl StringGraph {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id = self.find_nearest_counter_wise_link_to(link_id, node_id, visited);
+            link_id = if let Some(id) = self.find_nearest_counter_wise_link_to(link_id, node_id, visited) {
+                id
+            } else {
+                path.clear();
+                return (path, track);
+            };
 
             let link = self.link(link_id);
             node_id = if link.a.id == node_id {
@@ -185,11 +195,11 @@ impl StringGraph {
         target_index: usize,
         node_id: usize,
         visited: &[u8],
-    ) -> usize {
+    ) -> Option<usize> {
         let indices = self.node(node_id);
 
         let mut is_first = true;
-        let mut first_index = 0;
+        let mut first_index = usize::MAX;
         let mut second_index = usize::MAX;
         let mut pos = 0;
         for (i, &link_index) in indices.iter().enumerate() {
@@ -207,7 +217,11 @@ impl StringGraph {
         }
 
         if second_index == usize::MAX {
-            return first_index;
+            return if first_index == usize::MAX {
+                None
+            } else {
+                Some(first_index)
+            }
         }
 
         let target = self.link(target_index);
@@ -230,7 +244,7 @@ impl StringGraph {
             }
         }
 
-        vector_solver.best_id
+        Some(vector_solver.best_id)
     }
 }
 

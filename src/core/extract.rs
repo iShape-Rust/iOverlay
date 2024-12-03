@@ -1,17 +1,17 @@
-use i_float::int::point::IntPoint;
-use i_float::triangle::Triangle;
-use i_shape::int::path::{IntPath, PointPathExtension};
-use i_shape::int::shape::IntShapes;
-use i_shape::int::simple::Simplify;
+use super::filter::MaskFilter;
+use super::overlay_rule::OverlayRule;
 use crate::bind::segment::IdSegment;
-use crate::bind::solver::{JoinHoles, LeftBottomSegment};
+use crate::bind::solver::{JoinHoles, LeftBottomSegment, SortByAngle};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
 use crate::core::node::OverlayNode;
 use crate::core::vector_rotation::NearestCCWVector;
 use crate::geom::x_segment::XSegment;
-use super::overlay_rule::OverlayRule;
-use super::filter::MaskFilter;
+use i_float::int::point::IntPoint;
+use i_float::triangle::Triangle;
+use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::shape::IntShapes;
+use i_shape::int::simple::Simplify;
 
 impl OverlayGraph {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -45,7 +45,12 @@ impl OverlayGraph {
         self.extract(visited, overlay_rule, min_area)
     }
 
-    pub(crate) fn extract(&self, filter: Vec<bool>, overlay_rule: OverlayRule, min_area: usize) -> IntShapes {
+    pub(crate) fn extract(
+        &self,
+        filter: Vec<bool>,
+        overlay_rule: OverlayRule,
+        min_area: usize,
+    ) -> IntShapes {
         let mut buffer = filter;
         let visited = buffer.as_mut_slice();
         let mut shapes = Vec::new();
@@ -72,7 +77,10 @@ impl OverlayGraph {
 
             if is_valid {
                 if is_hole {
-                    let mut x_segment = XSegment { a: path[1], b: path[2] };
+                    let mut x_segment = XSegment {
+                        a: path[1],
+                        b: path[2],
+                    };
                     if is_modified {
                         let most_left = path.left_bottom_segment();
                         if most_left != x_segment {
@@ -92,7 +100,9 @@ impl OverlayGraph {
         }
 
         if !is_all_anchors_sorted {
-            anchors.sort_by(|s0, s1| s0.x_segment.a.cmp(&s1.x_segment.a));
+            anchors.sort_by_a_then_by_angle(&self.solver);
+        } else {
+            anchors.add_sort_by_angle();
         }
 
         shapes.join_sorted_holes(&self.solver, holes, anchors);
@@ -115,7 +125,11 @@ impl OverlayGraph {
             let node = self.node(node_id);
             link_id = match node {
                 OverlayNode::Bridge(bridge) => {
-                    if bridge[0] == link_id { bridge[1] } else { bridge[0] }
+                    if bridge[0] == link_id {
+                        bridge[1]
+                    } else {
+                        bridge[0]
+                    }
                 }
                 OverlayNode::Cross(indices) => {
                     self.find_nearest_counter_wise_link_to(link_id, node_id, indices, visited)
@@ -169,7 +183,9 @@ impl OverlayGraph {
         let target = self.link(target_index);
         let (c, a) = if target.a.id == node_id {
             (target.a.point, target.b.point)
-        } else { (target.b.point, target.a.point) };
+        } else {
+            (target.b.point, target.a.point)
+        };
 
         // more the one vectors
         let b = self.link(first_index).other(node_id).point;
@@ -197,9 +213,7 @@ impl OverlayGraph {
         let node = self.node(top.a.id);
 
         match node {
-            OverlayNode::Bridge(bridge) => {
-                self.find_left_top_link_on_bridge(bridge)
-            }
+            OverlayNode::Bridge(bridge) => self.find_left_top_link_on_bridge(bridge),
             OverlayNode::Cross(indices) => {
                 self.find_left_top_link_on_indices(top, link_index, indices, visited)
             }
@@ -207,7 +221,13 @@ impl OverlayGraph {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_indices(&self, link: &OverlayLink, link_index: usize, indices: &[usize], visited: &[bool]) -> usize {
+    fn find_left_top_link_on_indices(
+        &self,
+        link: &OverlayLink,
+        link_index: usize,
+        indices: &[usize],
+        visited: &[bool],
+    ) -> usize {
         let mut top_index = link_index;
         let mut top = link;
 
@@ -218,7 +238,9 @@ impl OverlayGraph {
                 continue;
             }
             let link = self.link(i);
-            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
+            if !link.is_direct()
+                || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point)
+            {
                 continue;
             }
 
@@ -282,7 +304,6 @@ impl StartPathData {
         }
     }
 }
-
 
 pub(crate) trait Validate {
     fn validate(&mut self, min_area: usize) -> (bool, bool);

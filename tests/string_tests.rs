@@ -16,7 +16,7 @@ mod tests {
 
         let slice = test.body.slice_by_paths(&test.string, fill_rule);
         assert_eq!(true, overlay::is_group_of_shapes_one_of(&slice, &test.slice));
-
+ 
         let clip_direct = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert: false, boundary_included: false });
         assert_eq!(true, overlay::is_paths_one_of(&clip_direct, &test.clip_direct));
 
@@ -24,6 +24,7 @@ mod tests {
         assert_eq!(true, overlay::is_paths_one_of(&clip_invert, &test.clip_invert));
     }
 
+    #[allow(dead_code)]
     fn debug_execute_slice(index: usize) {
         let test = StringTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
@@ -32,13 +33,14 @@ mod tests {
         println!("slice: {}", slice.json_print());
     }
 
+    #[allow(dead_code)]
     fn debug_execute_clip(index: usize, invert: bool) {
         let test = StringTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
 
         let clip = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert, boundary_included: false });
 
-        println!("clip {}: {}", invert, clip.json_print());
+        println!("clip invert {}: {}", invert, clip.json_print());
     }
 
     #[test]
@@ -97,8 +99,28 @@ mod tests {
     }
 
     #[test]
+    fn test_11() {
+        execute(11);
+    }
+
+    #[test]
+    fn test_12() {
+        execute(12);
+    }
+
+    #[test]
+    fn test_13() {
+        execute(13);
+    }
+
+    #[test]
+    fn test_14() {
+        execute(14);
+    }
+
+    #[test]
     fn test_debug() {
-        let index = 10;
+        let index = 14;
         debug_execute_slice(index);
         debug_execute_clip(index, false);
         debug_execute_clip(index, true);
