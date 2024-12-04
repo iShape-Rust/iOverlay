@@ -3,6 +3,7 @@ use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntShapes;
 use crate::bind::solver::JoinHoles;
 use crate::core::extract::StartPathData;
+use crate::core::link::OverlayLink;
 use crate::core::vector_rotation::NearestCCWVector;
 use crate::string::rule::StringRule;
 use crate::string::split::Split;
@@ -190,7 +191,7 @@ impl StringGraph {
         top_index
     }
 
-    pub(crate) fn find_nearest_counter_wise_link_to(
+    fn find_nearest_counter_wise_link_to(
         &self,
         target_index: usize,
         node_id: usize,
@@ -234,7 +235,8 @@ impl StringGraph {
         let mut vector_solver = NearestCCWVector::new(c, a, b, first_index);
 
         // add second vector
-        vector_solver.add(self.link(second_index).other(node_id).point, second_index);
+        let second = self.link(second_index).other(node_id).point;
+        vector_solver.add(second, second_index);
 
         // check the rest vectors
         for &link_index in indices.iter().skip(pos + 1) {
