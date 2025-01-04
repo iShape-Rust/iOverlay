@@ -844,7 +844,7 @@ mod tests {
 
     #[test]
     fn test_debug_2() {
-        debug_execute(149, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
+        debug_execute(156, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
         // print_json(136, FillRule::NonZero)
     }
 }
