@@ -17,6 +17,7 @@ pub(crate) struct ShapeBinder;
 pub(crate) trait ScanHoleStore {
     fn insert(&mut self, segment: IdSegment, stop: i32);
     fn find_under_and_nearest(&mut self, segment: XSegment) -> usize;
+    fn is_emmpty(&self) -> bool;
 }
 
 impl ShapeBinder {
@@ -55,6 +56,8 @@ impl ShapeBinder {
                 }
                 j += 1
             }
+
+            debug_assert!(!scan_store.is_emmpty(), "scan_store can not be empty!");
 
             let target_id = scan_store.find_under_and_nearest(anchor.x_segment);
             let is_shape = target_id & 1 == 0;

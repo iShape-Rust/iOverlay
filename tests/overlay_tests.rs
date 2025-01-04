@@ -831,6 +831,11 @@ mod tests {
     }
 
     #[test]
+    fn test_149() {
+        execute(149);
+    }
+
+    #[test]
     fn test_debug() {
         debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::FRAG)
         // print_json(136, FillRule::NonZero)
@@ -839,7 +844,7 @@ mod tests {
 
     #[test]
     fn test_debug_2() {
-        debug_execute(5, OverlayRule::Subject, FillRule::NonZero, Solver::FRAG)
+        debug_execute(149, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
         // print_json(136, FillRule::NonZero)
     }
 }
