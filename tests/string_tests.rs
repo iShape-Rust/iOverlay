@@ -119,8 +119,13 @@ mod tests {
     }
 
     #[test]
+    fn test_15() {
+        execute(15);
+    }
+
+    #[test]
     fn test_debug() {
-        let index = 14;
+        let index = 15;
         debug_execute_slice(index);
         debug_execute_clip(index, false);
         debug_execute_clip(index, true);

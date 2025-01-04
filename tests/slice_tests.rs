@@ -459,8 +459,8 @@ mod tests {
 
     #[test]
     fn test_random_3() {
-        for _ in 0..50000 {
-            let path = random_polygon(8, 4);
+        for _ in 0..1000000 {
+            let path = random_polygon(8, 6);
             let lines = random_lines(8, 4);
 
             let shapes = path.slice_by_lines(&lines, FillRule::NonZero);
@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn test_random_4() {
-        for _ in 0..10000 {
+        for _ in 0..1000000 {
             let path = random_polygon(8, 8);
             let lines = random_lines(8, 8);
 

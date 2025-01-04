@@ -35,7 +35,7 @@ impl StringGraph {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     pub fn extract_shapes_min_area(&self, string_rule: StringRule, min_area: usize) -> IntShapes {
-        let mut binding = self.filter(string_rule);
+        let mut binding = self.filter_slice(string_rule);
         let visited = binding.as_mut_slice();
         let mut shapes = Vec::new();
 
@@ -247,6 +247,48 @@ impl StringGraph {
         }
 
         Some(vector_solver.best_id)
+    }
+
+    fn detect_all_holes(&self, visited: &mut [u8]) {
+        let mut binding = self.filter_body(string_rule);
+        let body_visited = binding.as_mut_slice();
+
+        let mut link_index = 0;
+        while link_index < visited.len() {
+            if visited.is_visited(link_index) {
+                link_index += 1;
+                continue;
+            }
+
+            let left_top_link = self.find_left_top_link(link_index, visited);
+            let link = self.link(left_top_link);
+
+
+            let is_hole = string_rule.is_hole(link.fill);
+            let start_data = StartPathData::new(is_hole, link, left_top_link);
+            let paths = if let Some(path) = self.get_path(&start_data, visited) {
+                path.split_loops(min_area)
+            } else {
+                continue;
+            };
+            if is_hole {
+                shapes.join_unsorted_holes(&self.solver, paths);
+            } else {
+                for path in paths.into_iter() {
+                    shapes.push(vec![path]);
+                }
+            }
+        }
+    }
+
+}
+
+impl OverlayLink {
+
+    fn is_hole(&self) -> bool {
+        if self.is_direct() {
+            self.fill & SUBJ_TOP == SUBJ_TOP
+        }
     }
 }
 
