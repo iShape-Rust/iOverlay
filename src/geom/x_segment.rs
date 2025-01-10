@@ -51,6 +51,17 @@ impl XSegment {
     pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
         range.min > self.a.y && range.min > self.b.y || range.max < self.a.y && range.max < self.b.y
     }
+
+    #[inline(always)]
+    pub(crate) fn cmp_by_angle(&self, other: &Self) -> Ordering {
+        // sort angles counterclockwise
+        debug_assert!(self.a == other.a);
+        let v0 = self.b.subtract(self.a);
+        let v1 = other.b.subtract(other.a);
+        let cross = v0.cross_product(v1);
+        0.cmp(&cross)
+    }
+
 }
 
 impl PartialOrd for XSegment {

@@ -20,6 +20,7 @@ impl ScanHoleTree {
 }
 
 impl ScanHoleStore for ScanHoleTree {
+
     fn insert(&mut self, segment: IdSegment, stop: i32) {
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;

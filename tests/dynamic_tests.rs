@@ -263,6 +263,31 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_14() {
+        let p = IntPoint::new(0, 0);
+        let mut rng = rand::thread_rng();
+        let paths_count = 3;
+        let mut subj_paths = Vec::with_capacity(paths_count);
+        for _ in 0..1000_000 {
+            subj_paths.clear();
+            let x_range = 0..=8;
+            let y_range = -8..=8;
+            for _ in 0..paths_count {
+                let ax = rng.gen_range(x_range.clone());
+                let ay = rng.gen_range(y_range.clone());
+                let bx = rng.gen_range(x_range.clone());
+                let by = rng.gen_range(y_range.clone());
+                subj_paths.push(vec![p, IntPoint::new(ax, ay), IntPoint::new(bx, by)]);
+            }
+
+            let mut overlay = Overlay::new(4);
+            overlay.add_contours(&subj_paths, ShapeType::Subject);
+            let graph = overlay.into_graph(FillRule::NonZero);
+            _ = graph.extract_shapes(OverlayRule::Subject);
+        }
+    }
+
     fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> IntShape {
         let da = PI / count as f64;
         let mut a = angle;

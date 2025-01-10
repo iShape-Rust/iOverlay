@@ -1,9 +1,9 @@
+use crate::core::nearest_vector::NearestVector;
 use i_float::triangle::Triangle;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntShapes;
 use crate::bind::solver::JoinHoles;
 use crate::core::extract::StartPathData;
-use crate::core::vector_rotation::NearestCCWVector;
 use crate::string::rule::StringRule;
 use crate::string::split::Split;
 use crate::string::graph::StringGraph;
@@ -217,7 +217,7 @@ impl StringGraph {
 
         // more the one vectors
         let b = self.link(first_index).other(node_id).point;
-        let mut vector_solver = NearestCCWVector::new(c, a, b, first_index);
+        let mut vector_solver = NearestVector::new(c, a, b, first_index, false);
 
         // add second vector
         vector_solver.add(self.link(second_index).other(node_id).point, second_index);

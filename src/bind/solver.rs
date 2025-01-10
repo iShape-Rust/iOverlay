@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
 use crate::bind::segment::{IdSegment, IdSegments};
@@ -46,15 +47,18 @@ impl ShapeBinder {
 
             while j < segments.len() {
                 let id_segment = &segments[j];
-                if id_segment.x_segment.a >= p {
+                if id_segment.cmp_by_a_then_by_angle(anchor) == Ordering::Greater {
                     break;
                 }
+
 
                 if id_segment.x_segment.b.x > p.x {
                     scan_store.insert(*id_segment, p.x);
                 }
                 j += 1
             }
+
+            // debug_assert!(!scan_store.is_emmpty(), "scan_store can not be empty!");
 
             let target_id = scan_store.find_under_and_nearest(anchor.x_segment);
             let is_shape = target_id & 1 == 0;
@@ -101,7 +105,7 @@ impl JoinHoles for Vec<IntShape> {
             .map(|(id, path)| IdSegment { id, x_segment: path.left_bottom_segment() })
             .collect();
 
-        hole_segments.sort_by(|a, b| a.x_segment.a.cmp(&b.x_segment.a));
+        hole_segments.sort_by_a_then_by_angle(solver);
 
         self.scan_join(solver, holes, hole_segments);
     }
@@ -119,6 +123,8 @@ impl JoinHoles for Vec<IntShape> {
         }
         debug_assert!(is_sorted(&anchors));
 
+        let mut anchors = anchors;
+        anchors.add_sort_by_angle();
         self.scan_join(solver, holes, anchors);
     }
 
@@ -136,7 +142,7 @@ impl JoinHoles for Vec<IntShape> {
             hole.append_hole_segments(&mut segments, i, x_min, x_max);
         }
 
-        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.cmp(&b.x_segment.a));
+        segments.sort_by_a_then_by_angle(&solver);
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 
@@ -179,4 +185,121 @@ impl LeftBottomSegment for IntContour {
 #[inline]
 fn is_sorted(segments: &[IdSegment]) -> bool {
     segments.windows(2).all(|slice| slice[0].x_segment.a <= slice[1].x_segment.a)
+}
+
+impl IdSegment {
+    #[inline]
+    fn cmp_by_a_then_by_angle(&self, other: &Self) -> Ordering {
+        self.x_segment
+            .a
+            .cmp(&other.x_segment.a)
+            .then_with(|| self.x_segment.cmp_by_angle(&other.x_segment))
+    }
+}
+
+pub(crate) trait SortByAngle {
+    fn sort_by_a_then_by_angle(&mut self, solver: &Solver);
+    fn add_sort_by_angle(&mut self);
+}
+
+impl SortByAngle for [IdSegment] {
+
+    #[inline]
+    fn sort_by_a_then_by_angle(&mut self, solver: &Solver) {
+        self.smart_bin_sort_by(solver, |s0, s1| s0.cmp_by_a_then_by_angle(s1));
+    }
+
+    fn add_sort_by_angle(&mut self) {
+        // there is a very small chance that sort is required that's why we don't use regular sort
+
+        let mut start = 0;
+        while start < self.len() {
+            let a = self[start].x_segment.a;
+            let mut end = start + 1;
+
+            while end < self.len() && self[end].x_segment.a == a {
+                end += 1;
+            }
+
+            if end > start + 1 {
+                self[start..end].sort_by(|s0, s1| s0.x_segment.cmp_by_angle(&s1.x_segment));
+            }
+
+            start = end;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::bind::solver::JoinHoles;
+    use crate::core::solver::Solver;
+    use crate::geom::x_segment::XSegment;
+    use i_float::int::point::IntPoint;
+    use std::cmp::Ordering;
+
+    #[test]
+    fn test_0() {
+        let mut shapes = vec![
+            vec![vec![
+                IntPoint::new(-3, 2),
+                IntPoint::new(-3, 4),
+                IntPoint::new(-1, 4),
+                IntPoint::new(-1, 2),
+            ]],
+            vec![vec![
+                IntPoint::new(3, 0),
+                IntPoint::new(2, 3),
+                IntPoint::new(3, 6),
+                IntPoint::new(6, 6),
+                IntPoint::new(6, 0),
+            ]],
+            vec![vec![
+                IntPoint::new(0, -2),
+                IntPoint::new(0, -1),
+                IntPoint::new(10, -1),
+                IntPoint::new(10, -2),
+            ]],
+        ];
+
+        let holes = vec![
+            vec![
+                IntPoint::new(4, 3),
+                IntPoint::new(4, 4),
+                IntPoint::new(2, 3),
+            ],
+            vec![
+                IntPoint::new(3, 1),
+                IntPoint::new(4, 2),
+                IntPoint::new(2, 3),
+            ],
+        ];
+
+        shapes.join_unsorted_holes(&Solver::default(), holes);
+
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[1].len(), 3);
+    }
+
+    #[test]
+    fn test_sort() {
+        let s0 = XSegment {
+            a: IntPoint::new(0, -2),
+            b: IntPoint::new(10, -2),
+        };
+        let s1 = XSegment {
+            a: IntPoint::new(2, 3),
+            b: IntPoint::new(3, 0),
+        };
+        let by_a = s0.a.cmp(&s1.a);
+        let long_result = match by_a {
+            Ordering::Equal => s0.cmp_by_angle(&s1),
+            _ => by_a,
+        };
+
+        let short_result = s0.a.cmp(&s1.b).then_with(|| s0.cmp_by_angle(&s1));
+
+        assert_eq!(short_result, long_result);
+        assert_eq!(Ordering::Less, long_result);
+    }
 }

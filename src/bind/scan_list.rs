@@ -15,6 +15,7 @@ impl ScanHoleList {
 }
 
 impl ScanHoleStore for ScanHoleList {
+
     #[inline(always)]
     fn insert(&mut self, segment: IdSegment, _stop: i32) {
         self.buffer.push(segment)

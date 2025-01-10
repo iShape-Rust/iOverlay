@@ -8,5 +8,5 @@ pub mod simplify;
 pub(crate) mod link;
 pub(crate) mod node;
 pub(crate) mod filter;
-pub(crate) mod vector_rotation;
+pub(crate) mod nearest_vector;
 pub mod divide;

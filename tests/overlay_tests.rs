@@ -97,7 +97,6 @@ mod tests {
         let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
         let xor = graph.extract_shapes(OverlayRule::Xor);
 
-
         println!("\"fillRule\": {},", if fill_rule == FillRule::EvenOdd { 0 } else { 1 });
         println!("\"subjPaths\": {},", test.subj_paths.json_print());
         println!("\"clipPaths\": {},", test.clip_paths.json_print());
@@ -831,15 +830,30 @@ mod tests {
     }
 
     #[test]
-    fn test_debug() {
-        debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::FRAG)
-        // print_json(136, FillRule::NonZero)
+    fn test_150() {
+        execute(150);
     }
-
 
     #[test]
-    fn test_debug_2() {
-        debug_execute(5, OverlayRule::Subject, FillRule::NonZero, Solver::FRAG)
-        // print_json(136, FillRule::NonZero)
+    fn test_151() {
+        execute(151);
     }
+
+    #[test]
+    fn test_152() {
+        execute(152);
+    }
+
+    // #[test]
+    // fn test_debug() {
+    //     // debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::FRAG)
+    //     print_json(152, FillRule::NonZero)
+    // }
+    //
+    //
+    // #[test]
+    // fn test_debug_2() {
+    //     debug_execute(141, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
+    //     // print_json(136, FillRule::NonZero)
+    // }
 }
