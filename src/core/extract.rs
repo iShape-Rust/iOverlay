@@ -73,27 +73,31 @@ impl OverlayGraph {
 
             let mut path = self.get_path(&start_data, is_hole, visited);
             let (is_valid, is_modified) = path.validate(min_area);
-            if is_valid {
-                if is_hole {
-                    path.reverse();
-                    // TODO validate
-                    let mut x_segment = XSegment {
-                        a: path[1],
-                        b: path[2],
-                    };
-                    if is_modified {
-                        let most_left = path.left_bottom_segment();
-                        if most_left != x_segment {
-                            x_segment = most_left;
-                            is_all_anchors_sorted = false;
-                        }
-                    };
 
-                    debug_assert_eq!(x_segment, path.left_bottom_segment());
-                    let id = holes.len();
-                    anchors.push(IdSegment { id, x_segment });
-                    holes.push(path);
-                }
+            if !is_valid {
+                link_index += 1;
+                continue;
+            }
+
+            if is_hole {
+                path.reverse();
+                // TODO validate
+                let mut x_segment = XSegment {
+                    a: path[1],
+                    b: path[2],
+                };
+                if is_modified {
+                    let most_left = path.left_bottom_segment();
+                    if most_left != x_segment {
+                        x_segment = most_left;
+                        is_all_anchors_sorted = false;
+                    }
+                };
+
+                debug_assert_eq!(x_segment, path.left_bottom_segment());
+                let id = holes.len();
+                anchors.push(IdSegment { id, x_segment });
+                holes.push(path);
             } else {
                 shapes.push(vec![path]);
             }

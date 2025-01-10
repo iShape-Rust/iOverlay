@@ -97,7 +97,6 @@ mod tests {
         let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
         let xor = graph.extract_shapes(OverlayRule::Xor);
 
-
         println!("\"fillRule\": {},", if fill_rule == FillRule::EvenOdd { 0 } else { 1 });
         println!("\"subjPaths\": {},", test.subj_paths.json_print());
         println!("\"clipPaths\": {},", test.clip_paths.json_print());
@@ -854,7 +853,7 @@ mod tests {
 
     #[test]
     fn test_debug_2() {
-        debug_execute(152, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
+        debug_execute(155, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
         // print_json(136, FillRule::NonZero)
     }
 }
