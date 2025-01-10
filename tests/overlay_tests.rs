@@ -844,16 +844,16 @@ mod tests {
         execute(152);
     }
 
-    #[test]
-    fn test_debug() {
-        debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::FRAG)
-        // print_json(136, FillRule::NonZero)
-    }
-
-
-    #[test]
-    fn test_debug_2() {
-        debug_execute(155, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
-        // print_json(136, FillRule::NonZero)
-    }
+    // #[test]
+    // fn test_debug() {
+    //     // debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::FRAG)
+    //     print_json(152, FillRule::NonZero)
+    // }
+    //
+    //
+    // #[test]
+    // fn test_debug_2() {
+    //     debug_execute(141, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
+    //     // print_json(136, FillRule::NonZero)
+    // }
 }
