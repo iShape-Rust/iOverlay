@@ -48,7 +48,7 @@ impl OverlayGraph {
                     last_node_id: link.b.id,
                     fill: link.fill,
                 };
-                let path = self.get_vector_path(start_data, visited);
+                let path = self.get_vector_path(start_data, true, visited);
                 holes.push(path);
             } else {
                 let start_data = StartVectorPathData {
@@ -59,7 +59,7 @@ impl OverlayGraph {
                     last_node_id: link.a.id,
                     fill: link.fill,
                 };
-                let path = self.get_vector_path(start_data, visited);
+                let path = self.get_vector_path(start_data, false, visited);
                 shapes.push(vec![path]);
             };
 
@@ -71,7 +71,7 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, start_data: StartVectorPathData, visited: &mut [bool]) -> VectorPath {
+    fn get_vector_path(&self, start_data: StartVectorPathData, clockwise: bool, visited: &mut [bool]) -> VectorPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
@@ -89,7 +89,7 @@ impl OverlayGraph {
                     if bridge[0] == link_id { bridge[1] } else { bridge[0] }
                 }
                 OverlayNode::Cross(indices) => {
-                    self.find_nearest_counter_wise_link_to(link_id, node_id, indices, visited)
+                    self.find_nearest_link_to(link_id, node_id, clockwise, indices, visited)
                 }
             };
 

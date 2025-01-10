@@ -21,11 +21,6 @@ impl ScanHoleTree {
 
 impl ScanHoleStore for ScanHoleTree {
 
-    #[inline]
-    fn is_emmpty(&self) -> bool {
-        self.tree.root == EMPTY_REF
-    }
-
     fn insert(&mut self, segment: IdSegment, stop: i32) {
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;

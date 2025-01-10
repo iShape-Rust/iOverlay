@@ -831,8 +831,18 @@ mod tests {
     }
 
     #[test]
-    fn test_149() {
-        execute(149);
+    fn test_150() {
+        execute(150);
+    }
+
+    #[test]
+    fn test_151() {
+        execute(151);
+    }
+
+    #[test]
+    fn test_152() {
+        execute(152);
     }
 
     #[test]
@@ -844,7 +854,7 @@ mod tests {
 
     #[test]
     fn test_debug_2() {
-        debug_execute(156, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
+        debug_execute(152, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
         // print_json(136, FillRule::NonZero)
     }
 }
