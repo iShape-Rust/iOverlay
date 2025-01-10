@@ -1,3 +1,8 @@
+## [1.9.4] - 2025-01-10
+### Fixed
+- hole path builder uses clockwise edge priority, which is more topologically natural.
+- holes-builder now uses edge orientation and not only its position.
+
 ## [1.9.0] - 2024-11-20
 ### Changed
 - new fregment solver for splitting big data set
