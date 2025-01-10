@@ -80,8 +80,6 @@ impl OverlayGraph {
             }
 
             if is_hole {
-                path.reverse();
-                // TODO validate
                 let mut x_segment = XSegment {
                     a: path[1],
                     b: path[2],
