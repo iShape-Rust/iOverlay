@@ -3,6 +3,7 @@ use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
+use crate::core::solver::Solver;
 use crate::float::filter::ContourFilter;
 use crate::float::overlay::FloatOverlay;
 use crate::float::source::resource::OverlayResource;
@@ -17,6 +18,13 @@ pub trait SimplifyShape<P, T: FloatNumber> {
     /// - `min_area`: The minimum area below which shapes or contours will be excluded from the result.
     /// - Returns: A collection of `Shapes<P>` that represents the simplified geometry.
     fn simplify_shape(&self, fill_rule: FillRule, min_area: T) -> Shapes<P>;
+
+    /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
+    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
+    /// - `min_area`: The minimum area below which shapes or contours will be excluded from the result.
+    /// - `solver`: Type of solver to use.
+    /// - Returns: A collection of Shapes<P> that represents the simplified geometry.
+    fn simplify_shape_with_solver(&self, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P>;
 }
 
 impl<S, P, T> SimplifyShape<P, T> for S
@@ -30,6 +38,13 @@ where
         let filter = ContourFilter { min_area, simplify: true };
         FloatOverlay::with_subj(self)
             .overlay_with_filter_and_solver(OverlayRule::Subject, fill_rule, filter, Default::default())
+    }
+
+    #[inline]
+    fn simplify_shape_with_solver(&self, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P> {
+        let filter = ContourFilter { min_area, simplify: true };
+        FloatOverlay::with_subj(self)
+            .overlay_with_filter_and_solver(OverlayRule::Subject, fill_rule, filter, solver)
     }
 }
 
