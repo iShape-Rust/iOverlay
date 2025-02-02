@@ -1,11 +1,10 @@
-
 #[cfg(test)]
 mod tests {
     use i_float::int::point::IntPoint;
-    use i_shape::int::path::IntPath;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_shape::int::path::IntPath;
 
     #[test]
     fn test_0() {
@@ -19,7 +18,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        assert_eq!(9+4, test(3, OverlayRule::Xor));
+        assert_eq!(9 + 4, test(3, OverlayRule::Xor));
     }
 
     #[test]

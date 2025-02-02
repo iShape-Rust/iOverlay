@@ -142,7 +142,7 @@ impl JoinHoles for Vec<IntShape> {
             hole.append_hole_segments(&mut segments, i, x_min, x_max);
         }
 
-        segments.sort_by_a_then_by_angle(&solver);
+        segments.sort_by_a_then_by_angle(solver);
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 

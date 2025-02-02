@@ -1,3 +1,10 @@
+## [1.10.0] - 2025-02-02
+### Changed
+- snap by radius can now grow without limit.
+- enum Precision converted to struct
+### Added
+- New SimplifyShape API `simplify_shape_with_solver` which allow to set Solver.
+
 ## [1.9.4] - 2025-01-10
 ### Fixed
 - hole path builder uses clockwise edge priority, which is more topologically natural.
