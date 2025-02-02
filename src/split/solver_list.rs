@@ -1,19 +1,20 @@
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
+use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn list_split<C: WindingCount>(&mut self, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn list_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
-        let mut iter = 0;
+        let mut snap_radius = snap_radius;
 
         while need_to_fix && segments.len() > 2 {
             need_to_fix = false;
             marks.clear();
 
-            let radius: i64 = self.solver.radius(iter);
+            let radius: i64 = snap_radius.radius();
 
             for i in 0..segments.len() - 1 {
                 let ei = &segments[i].x_segment;
@@ -39,12 +40,12 @@ impl SplitSolver {
 
             segments = self.apply(&mut marks, segments, need_to_fix);
 
+            snap_radius.increment();
+
             if need_to_fix && !self.solver.is_list_split(&segments) {
                 // finish with tree solver if edges is become large
-                return self.tree_split(segments);
+                return self.tree_split(snap_radius, segments);
             }
-
-            iter += 1;
         }
 
         segments

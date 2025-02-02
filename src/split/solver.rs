@@ -36,18 +36,19 @@ impl SplitSolver {
     }
 
     #[inline]
-    pub(crate) fn split<C: WindingCount>(&mut self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(crate) fn split<C: WindingCount>(&self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let is_list = self.solver.is_list_split(&segments);
+        let snap_radius = self.snap_radius();
         if is_list {
-            return self.list_split(segments);
+            return self.list_split(snap_radius, segments);
         }
 
         let is_fragmentation = self.solver.is_fragmentation_required(&segments);
 
         if is_fragmentation {
-            self.fragment_split(segments)
+            self.fragment_split(snap_radius, segments)
         } else {
-            self.tree_split(segments)
+            self.tree_split(snap_radius, segments)
         }
     }
 

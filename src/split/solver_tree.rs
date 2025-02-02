@@ -3,17 +3,18 @@ use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 use crate::split::fragment::Fragment;
 use crate::split::segment_tree::SegmentTree;
+use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use crate::split::space_layout::SpaceLayout;
 
 
 impl SplitSolver {
-    pub(super) fn tree_split<C: WindingCount>(&mut self, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn tree_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let ver_range = segments.ver_range();
         let height = ver_range.width() as usize;
 
         if height < SpaceLayout::MIN_HEIGHT {
-            return self.list_split(segments);
+            return self.list_split(snap_radius, segments);
         }
 
         let layout = SpaceLayout::new(height, segments.len());
@@ -22,12 +23,12 @@ impl SplitSolver {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
-        let mut iter = 0;
+        let mut snap_radius = snap_radius;
 
         while need_to_fix && segments.len() > 2 {
             need_to_fix = false;
 
-            tree.radius = self.solver.radius(iter);
+            tree.radius = snap_radius.radius();
 
             for (i, e) in segments.iter().enumerate() {
                 let fragment = Fragment::with_index_and_segment(i, e.x_segment);
@@ -47,7 +48,7 @@ impl SplitSolver {
 
             marks.clear();
 
-            iter += 1;
+            snap_radius.increment();
         }
 
         segments

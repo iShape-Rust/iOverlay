@@ -5,14 +5,15 @@ use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::fragment::Fragment;
 use crate::split::grid_layout::{FragmentBuffer, GridLayout};
 use crate::split::line_mark::LineMark;
+use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn fragment_split<C: WindingCount>(&mut self, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn fragment_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
         let layout = if let Some(layout) = GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len()) {
             layout
         } else {
-            return self.tree_split(segments)
+            return self.tree_split(snap_radius, segments)
         };
 
         let mut buffer = FragmentBuffer::new(layout);
@@ -20,7 +21,7 @@ impl SplitSolver {
         let mut marks = Vec::new();
         let mut need_to_fix = true;
 
-        let mut iter = 0;
+        let mut snap_radius = snap_radius;
 
         while need_to_fix && segments.len() > 2 {
 
@@ -29,7 +30,7 @@ impl SplitSolver {
                 buffer.add_segment(i, segment.x_segment);
             }
 
-            need_to_fix = self.process(iter, &mut buffer, &mut marks);
+            need_to_fix = self.process(snap_radius.radius(), &mut buffer, &mut marks);
 
             if !buffer.on_border.is_empty() {
                 for (&index, segments) in buffer.on_border.iter_mut() {
@@ -50,15 +51,14 @@ impl SplitSolver {
 
             marks.clear();
 
-            iter += 1;
+            snap_radius.increment();
         }
 
         segments
     }
 
     #[inline]
-    fn process(&self, iter: usize, buffer: &mut FragmentBuffer, marks: &mut Vec<LineMark>) -> bool {
-        let radius = self.solver.radius(iter);
+    fn process(&self, radius: i64, buffer: &mut FragmentBuffer, marks: &mut Vec<LineMark>) -> bool {
         #[cfg(feature = "allow_multithreading")]
         {
             if self.solver.multithreading.is_some() {
