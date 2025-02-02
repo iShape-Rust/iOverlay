@@ -12,7 +12,7 @@
 
 ## [1.9.0] - 2024-11-20
 ### Changed
-- new fregment solver for splitting big data set
+- new fragment solver for splitting big data set
 - multithreading splitting
 ### Removed
 - f32/f64 deprecated api removed
