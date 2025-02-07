@@ -81,7 +81,7 @@ fn private_append_iter<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &m
 
 impl<C: Send> Segment<C> {
     #[inline]
-    fn with_ab(p0: IntPoint, p1: IntPoint, direct: C, invert: C) -> Self {
+    pub(crate) fn with_ab(p0: IntPoint, p1: IntPoint, direct: C, invert: C) -> Self {
         if p0 < p1 {
             Self { x_segment: XSegment { a: p0, b: p1 }, count: direct }
         } else {

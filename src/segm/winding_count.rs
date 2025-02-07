@@ -16,6 +16,13 @@ pub struct ShapeCountString {
 pub(crate) const STRING_FORWARD_CLIP: u8 = 0b10;
 pub(crate) const STRING_BACK_CLIP: u8 = 0b1;
 
+impl ShapeCountBoolean {
+    pub(crate) const SUBJ_DIRECT: ShapeCountBoolean = ShapeCountBoolean { subj: 1, clip: 0 };
+    pub(crate) const SUBJ_INVERT: ShapeCountBoolean = ShapeCountBoolean { subj: -1, clip: 0 };
+    pub(crate) const CLIP_DIRECT: ShapeCountBoolean = ShapeCountBoolean { subj: 0, clip: 1 };
+    pub(crate) const CLIP_INVERT: ShapeCountBoolean = ShapeCountBoolean { subj: 0, clip: -1 };
+}
+
 pub(crate) trait WindingCount
 where
     Self: Clone + Copy + Send,
@@ -38,8 +45,8 @@ impl WindingCount for ShapeCountBoolean {
     #[inline(always)]
     fn with_shape_type(shape_type: ShapeType) -> (Self, Self) {
         match shape_type {
-            ShapeType::Subject => (Self { subj: 1, clip: 0 }, Self { subj: -1, clip: 0 }),
-            ShapeType::Clip => (Self { subj: 0, clip: 1 }, Self { subj: 0, clip: -1 })
+            ShapeType::Subject => (ShapeCountBoolean::SUBJ_DIRECT, ShapeCountBoolean::SUBJ_INVERT),
+            ShapeType::Clip => (ShapeCountBoolean::CLIP_DIRECT, ShapeCountBoolean::CLIP_INVERT)
         }
     }
 

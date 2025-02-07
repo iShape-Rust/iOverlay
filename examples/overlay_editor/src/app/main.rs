@@ -25,6 +25,7 @@ pub(super) struct MainState {
     selected_action: MainAction,
     pub(super) boolean: BooleanState,
     pub(super) string: StringState,
+    pub(super) path_offset: PathOffsetState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
