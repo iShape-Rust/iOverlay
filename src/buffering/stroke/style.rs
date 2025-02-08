@@ -1,60 +1,70 @@
+use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use crate::buffering::stroke::builder_cap::CapBuilder;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum LineCap {
+#[derive(Debug)]
+pub enum LineCap<P: FloatPointCompatible<T>, T: FloatNumber> {
     Butt,
-    Round,
+    Round(T),
     Square,
+    Custom(Vec<P>)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum LineJoin {
-    Miter,
-    Round,
+#[derive(Debug)]
+pub enum LineJoin<T: FloatNumber> {
+    Miter(T),
+    Round(T),
     Bevel,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct StrokeStyle<T: FloatNumber> {
-    pub width: T,
-    pub round_limit: T,
-    pub miter_limit: T,
-    pub begin_cap: LineCap,
-    pub end_cap: LineCap,
-    pub join: LineJoin,
+#[derive(Debug)]
+pub struct StrokeStyle<P: FloatPointCompatible<T>, T: FloatNumber> {
+    pub(super) width: T,
+    pub(super) start_cap: CapBuilder<P, T>,
+    pub(super) end_cap: CapBuilder<P, T>,
+    pub(super) join: LineJoin<T>,
 }
 
-impl<T: FloatNumber> StrokeStyle<T> {
+impl<P: FloatPointCompatible<T>, T: FloatNumber> StrokeStyle<P, T> {
     pub fn new(width: T) -> Self {
         Self { width, ..Default::default() }
     }
 
-    pub fn line_width(mut self, width: f32) -> Self {
+    pub fn width(mut self, width: T) -> Self {
         self.width = width;
         self
     }
 
-    pub fn line_cap(mut self, cap: LineCap) -> Self {
-        self.begin_cap = cap;
-        self.end_cap = cap;
+    pub fn cap(mut self, cap: LineCap<P, T>) -> Self {
+        let builder = CapBuilder::new(cap);
+        self.start_cap = builder.clone();
+        self.end_cap = builder;
         self
     }
 
-    pub fn line_join(mut self, join: LineJoin) -> Self {
+    pub fn start_cap(mut self, cap: LineCap<P, T>) -> Self {
+        self.start_cap = CapBuilder::new(cap);
+        self
+    }
+
+    pub fn end_cap(mut self, cap: LineCap<P, T>) -> Self {
+        self.end_cap = CapBuilder::new(cap);
+        self
+    }
+
+    pub fn line_join(mut self, join: LineJoin<T>) -> Self {
         self.join = join;
         self
     }
 }
 
-impl<T: FloatNumber> Default for StrokeStyle<T> {
+impl<P: FloatPointCompatible<T>, T: FloatNumber> Default for StrokeStyle<P, T> {
     fn default() -> Self {
         Self {
             width: T::from_float(1.0),
-            round_limit: T::from_float(0.5),
-            miter_limit: T::from_float(2.0),
-            begin_cap: LineCap::Butt,
-            end_cap: LineCap::Butt,
-            join: LineJoin::Round
+            start_cap: CapBuilder::butt(),
+            end_cap: CapBuilder::butt(),
+            join: LineJoin::Bevel
         }
     }
 }

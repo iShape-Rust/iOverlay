@@ -1,14 +1,14 @@
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 
-pub(crate) struct Rotator<T, P> {
+pub(crate) struct Rotator<T: FloatNumber> {
     a_x: T,
     a_y: T,
     b_x: T,
     b_y: T,
 }
 
-impl<T: FloatNumber, P: FloatPointCompatible<T>> Rotator<T, P> {
+impl<T: FloatNumber> Rotator<T> {
 
     pub(crate) fn new(cs: T, sn: T) -> Self {
         let a_x = cs;
@@ -24,7 +24,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> Rotator<T, P> {
         }
     }
 
-    pub(crate) fn rotate(&self, v: P) -> P {
+    pub(crate) fn rotate<P: FloatPointCompatible<T>>(&self, v: P) -> P {
         let v_x = v.x();
         let v_y = v.y();
         let x = self.a_x * v_x + self.b_x * v_y;

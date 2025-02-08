@@ -1,68 +1,73 @@
+use std::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use crate::buffering::stroke::section::Section;
+use crate::buffering::stroke::style::LineCap;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
 
-pub(super) trait CapBuilder<P, T> {
-    fn add_start_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>);
-    fn add_end_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>);
+#[derive(Debug, Clone)]
+pub(super) struct CapBuilder<P, T> {
+    points: Option<Vec<P>>,
+    _phantom: PhantomData<T>,
 }
 
-pub(super) struct ButtCapBuilder;
+impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
 
-impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> for ButtCapBuilder {
-    fn add_start_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
-        let a = adapter.float_to_int(section.a_top);
-        let b = adapter.float_to_int(section.a_bot);
-        segments.push(Segment::subject_ab(b, a));
+    pub(super) fn butt() -> Self {
+        Self { points: None, _phantom: Default::default() }
     }
 
-    fn add_end_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>){
-        let a = adapter.float_to_int(section.b_top);
-        let b = adapter.float_to_int(section.b_bot);
-        segments.push(Segment::subject_ab(a, b));
+    pub(super) fn new(cap: LineCap<P, T>) -> Self {
+        let points = match cap {
+            LineCap::Butt => None,
+            LineCap::Round(ratio) => Some(Self::round_points(ratio)),
+            LineCap::Square => Some(Self::square_points()),
+            LineCap::Custom(points) => Some(points)
+        };
+
+        Self { points, _phantom: Default::default() }
+    }
+
+    pub(super) fn round_points(ratio: T) -> Vec<P> {
+        Vec::new()
+    }
+
+    pub(super) fn square_points() -> Vec<P> {
+        let r = T::from_float(1.0);
+        vec![P::from_xy(r, r), P::from_xy(r, -r)]
+    }
+
+    pub(super) fn add_to_start(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
+        if let Some(points) = &self.points {
+
+        } else {
+            let a = adapter.float_to_int(&section.a_top);
+            let b = adapter.float_to_int(&section.a_bot);
+            segments.push(Segment::subject_ab(b, a));
+        }
+    }
+
+    pub(super) fn add_to_end(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
+        if let Some(points) = &self.points {
+
+        } else {
+            let a = adapter.float_to_int(&section.b_top);
+            let b = adapter.float_to_int(&section.b_bot);
+            segments.push(Segment::subject_ab(a, b));
+        }
+    }
+
+    pub(super) fn capacity(&self) -> usize {
+        if let Some(points) = &self.points {
+            1 + points.len()
+        } else {
+            1
+        }
     }
 }
-
-pub(super) struct SquareCapBuilder;
-
-impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> for SquareCapBuilder {
-    fn add_start_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
-        let a = adapter.float_to_int(section.a_top);
-        let b = adapter.float_to_int(section.a_bot);
-        segments.push(Segment::subject_ab(b, a));
-    }
-
-    fn add_end_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>){
-        let a = adapter.float_to_int(section.b_top);
-        let b = adapter.float_to_int(section.b_bot);
-        segments.push(Segment::subject_ab(a, b));
-    }
-}
-
-pub(super) struct RoundCapBuilder;
-
-impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> for RoundCapBuilder {
-    fn add_start_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
-        let a = adapter.float_to_int(section.a_top);
-        let b = adapter.float_to_int(section.a_bot);
-        segments.push(Segment::subject_ab(b, a));
-    }
-
-    fn add_end_cap(&self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>){
-        let a = adapter.float_to_int(section.b_top);
-        let b = adapter.float_to_int(section.b_bot);
-        segments.push(Segment::subject_ab(a, b));
-    }
-}
-
 /*
-pub(crate) struct CapBuilder<T, P> {
-    pub(super) count_for_pi: usize,
-    pub(super) rotator: Rotator<T, P>,
-}
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<T, P> {
     pub(super) fn new(style: StrokeStyle<T>) -> Option<Self> {

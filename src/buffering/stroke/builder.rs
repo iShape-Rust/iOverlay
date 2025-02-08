@@ -1,95 +1,134 @@
-use i_float::adapter::FloatPointAdapter;
-use i_float::float::compatible::FloatPointCompatible;
-use i_float::float::number::FloatNumber;
-use crate::buffering::stroke::builder_round::RoundBuilder;
-use crate::buffering::stroke::section::Section;
+use crate::buffering::stroke::builder_cap::CapBuilder;
+use crate::buffering::stroke::builder_join::{
+    BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
+};
+use crate::buffering::stroke::section::{Section, SectionToSegment};
 use crate::buffering::stroke::style::{LineJoin, StrokeStyle};
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
+use i_float::adapter::FloatPointAdapter;
+use i_float::float::compatible::FloatPointCompatible;
+use i_float::float::number::FloatNumber;
 
-pub(super) struct StrokeBuilder<T, P, C, J> {
-    cap_builder: C,
-    join_builder: J
+trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
+    fn build<'a>(
+        &self,
+        path: &[P],
+        is_closed_path: bool,
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+    );
 }
 
-impl<T: FloatNumber, P: FloatPointCompatible<T>> StrokeBuilder<T, P, C, J> {
+pub(super) struct StrokeBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
+    builder: Box<dyn StrokeBuild<P, T>>,
+}
 
-    fn new(style: StrokeStyle<T>) -> StrokeBuilder<T, P, C, J> {
-        match style.join {
-            LineJoin::Miter => {
+struct Builder<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> {
+    radius: T,
+    join_builder: J,
+    start_cap_builder: CapBuilder<P, T>,
+    end_cap_builder: CapBuilder<P, T>,
+}
 
-            }
-            LineJoin::Round => {
+impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuilder<P, T> {
+    pub(super) fn new(style: StrokeStyle<P, T>) -> StrokeBuilder<P, T> {
+        let radius = T::from_float(0.5) * style.width;
 
-            }
-            LineJoin::Bevel => {
+        let builder: Box<dyn StrokeBuild<P, T>> = match style.join {
+            LineJoin::Miter(_) => Box::new(Builder {
+                radius,
+                join_builder: MiterJoinBuilder {},
+                start_cap_builder: style.start_cap,
+                end_cap_builder: style.end_cap,
+            }),
+            LineJoin::Round(_) => Box::new(Builder {
+                radius,
+                join_builder: RoundJoinBuilder {},
+                start_cap_builder: style.start_cap,
+                end_cap_builder: style.end_cap,
+            }),
+            LineJoin::Bevel => Box::new(Builder {
+                radius,
+                join_builder: BevelJoinBuilder {},
+                start_cap_builder: style.start_cap,
+                end_cap_builder: style.end_cap,
+            }),
+        };
 
-            }
+        Self { builder }
+    }
+
+    pub(super) fn build(
+        &self,
+        path: &[P],
+        is_closed_path: bool,
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+    ) {
+        self.builder.build(path, is_closed_path, adapter, segments);
+    }
+}
+
+impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBuild<P, T>
+    for Builder<J, P, T>
+{
+    fn build(
+        &self,
+        path: &[P],
+        is_closed_path: bool,
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+    ) {
+        if is_closed_path {
+            self.closed_segments(path, adapter, segments);
+        } else {
+            self.open_segments(path, adapter, segments);
         }
     }
-
 }
 
+impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J, P, T> {
+    fn closed_segments<'a>(
+        &self,
+        path: &[P],
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+    ) {
+        let n = path.len();
+        let start = Section::section(self.radius, &path[n - 1], &path[0]);
 
-
-pub(super) trait SectionBuilder<T, P> {
-    fn add_section(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>);
-    fn add_bevel_join(&mut self, s0: &Section<T, P>, s1: &Section<T, P>, adapter: &FloatPointAdapter<P, T>);
-    fn add_round_join(&mut self, s0: &Section<T, P>, s1: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, round_builder: &RoundBuilder<T, P>);
-    fn add_start_bevel_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>);
-    fn add_end_bevel_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>);
-    fn add_start_round_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, round_builder: &RoundBuilder<T, P>);
-    fn add_end_round_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, round_builder: &RoundBuilder<T, P>);
-}
-
-/*
-impl<T: FloatNumber, P: FloatPointCompatible<T>> SectionBuilder<T, P> for Vec<Segment<ShapeCountBoolean>> {
-    fn add_section(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>) {
-        let a_top = adapter.float_to_int(section.a_top);
-        let b_top = adapter.float_to_int(section.b_top);
-        let a_bot = adapter.float_to_int(section.a_bot);
-        let b_bot = adapter.float_to_int(section.b_bot);
-
-        self.push(Segment::subject_ab(a_top, b_top));
-        self.push(Segment::subject_ab(b_bot, a_bot));
-    }
-
-    fn add_bevel_join(&mut self, s0: &Section<T, P>, s1: &Section<T, P>, adapter: &FloatPointAdapter<P, T>) {
-        if s0.b_top != s1.a_top {
-            let a = adapter.float_to_int(s0.b_top);
-            let b = adapter.float_to_int(s1.a_top);
-            self.push(Segment::subject_ab(a, b));
+        let mut s0 = start.clone();
+        segments.add_section(&s0, adapter);
+        for b in path.iter() {
+            let s1 = Section::section(self.radius, &s0.b, b);
+            self.join_builder.add_join(&s0, &s1, adapter, segments);
+            segments.add_section(&s1, adapter);
+            s0 = s1;
         }
 
-        if s0.b_bot != s1.a_bot {
-            let a = adapter.float_to_int(s0.b_bot);
-            let b = adapter.float_to_int(s1.a_bot);
-            self.push(Segment::subject_ab(b, a));
+        self.join_builder.add_join(&s0, &start, adapter, segments);
+    }
+
+    fn open_segments<'a>(
+        &self,
+        path: &[P],
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+    ) {
+        let mut s0 = Section::section(self.radius, &path[0], &path[1]);
+
+        self.start_cap_builder.add_to_start(&s0, adapter, segments);
+
+        segments.add_section(&s0, adapter);
+
+        for b in path.iter().skip(1) {
+            let s1 = Section::section(self.radius, &s0.b, b);
+            self.join_builder.add_join(&s0, &s1, adapter, segments);
+            segments.add_section(&s1, adapter);
+            s0 = s1;
         }
-    }
 
-    fn add_round_join(&mut self, s0: &Section<T, P>, s1: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, round_builder: &RoundBuilder<T, P>) {
-
-    }
-
-    fn add_start_bevel_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>) {
-        let a = adapter.float_to_int(section.a_top);
-        let b = adapter.float_to_int(section.a_bot);
-        self.push(Segment::subject_ab(b, a));
-    }
-
-    fn add_end_bevel_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>) {
-        let a = adapter.float_to_int(section.b_top);
-        let b = adapter.float_to_int(section.b_bot);
-        self.push(Segment::subject_ab(a, b));
-    }
-
-    fn add_start_round_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, round_builder: &RoundBuilder<T, P>) {
-
-    }
-
-    fn add_end_round_cap(&mut self, section: &Section<T, P>, adapter: &FloatPointAdapter<P, T>, round_builder: &RoundBuilder<T, P>) {
-
+        self.end_cap_builder.add_to_end(&s0, adapter, segments);
     }
 }
-*/
