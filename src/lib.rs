@@ -188,6 +188,7 @@
 //! ```
 
 
+pub mod buffering;
 pub mod fill;
 pub mod core;
 pub mod vector;
@@ -199,7 +200,7 @@ pub(crate) mod split;
 pub(crate) mod bind;
 pub(crate) mod geom;
 pub(crate) mod util;
-mod buffering;
+
 
 pub use i_float;
 pub use i_shape;

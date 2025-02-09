@@ -12,7 +12,11 @@ use crate::app::main::EditorApp;
 use crate::data::resource::AppResource;
 
 fn main() -> iced::Result {
-    let app_resource = AppResource::with_paths("../../tests/boolean", "../../tests/string");
+    let app_resource = AppResource::with_paths(
+        "../../tests/boolean",
+        "../../tests/string",
+        "../../tests/stroke"
+    );
 
     // let boolean_file_path = Path::new("../../tests_boolean.json");
     // let string_file_path = Path::new("../../tests_string.json");

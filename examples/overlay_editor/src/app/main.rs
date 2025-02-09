@@ -6,10 +6,13 @@ use iced::{Alignment, Element, Length};
 use iced::keyboard::Event as KeyboardEvent;
 use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
-use crate::app::string::content::StringMessage;
-use crate::app::string::content::StringState;
 use crate::app::boolean::content::BooleanMessage;
 use crate::app::boolean::content::BooleanState;
+use crate::app::string::content::StringMessage;
+use crate::app::string::content::StringState;
+use crate::app::stroke::content::StrokeMessage;
+use crate::app::stroke::content::StrokeState;
+
 use crate::app::design::style_separator;
 use crate::app::design::{style_sidebar_button, style_sidebar_button_selected, Design};
 use crate::data::resource::AppResource;
@@ -25,20 +28,22 @@ pub(super) struct MainState {
     selected_action: MainAction,
     pub(super) boolean: BooleanState,
     pub(super) string: StringState,
-    pub(super) path_offset: PathOffsetState,
+    pub(super) stroke: StrokeState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum MainAction {
     Boolean,
     String,
+    Stroke,
 }
 
 impl MainAction {
     fn title(&self) -> &str {
         match self {
             MainAction::Boolean => "Boolean",
-            MainAction::String => "String"
+            MainAction::String => "String",
+            MainAction::Stroke => "Stroke"
         }
     }
 }
@@ -53,6 +58,7 @@ pub(crate) enum AppMessage {
     Main(MainMessage),
     Bool(BooleanMessage),
     String(StringMessage),
+    Stroke(StrokeMessage),
     EventOccurred(MainEvent),
 }
 
@@ -60,11 +66,12 @@ impl EditorApp {
 
     pub fn new(mut app_resource: AppResource) -> Self {
         Self {
-            main_actions: vec![MainAction::Boolean, MainAction::String],
+            main_actions: vec![MainAction::Boolean, MainAction::String, MainAction::Stroke],
             state: MainState {
                 selected_action: MainAction::Boolean,
                 boolean: BooleanState::new(&mut app_resource.boolean),
                 string: StringState::new(&mut app_resource.string),
+                stroke: StrokeState::new(&mut app_resource.stroke),
             },
             app_resource,
             design: Design::new(),
@@ -76,6 +83,7 @@ impl EditorApp {
             AppMessage::Main(msg) => self.update_main(msg),
             AppMessage::Bool(msg) => self.boolean_update(msg),
             AppMessage::String(msg) => self.string_update(msg),
+            AppMessage::Stroke(msg) => self.stroke_update(msg),
             AppMessage::EventOccurred(MainEvent::Keyboard(KeyboardEvent::KeyPressed { key: NamedBox(named @ (Named::ArrowDown | Named::ArrowUp)), .. })) => {
                 match (named, self.state.selected_action.clone()) {
                     (Named::ArrowDown, MainAction::Boolean) => self.boolean_next_test(),
@@ -100,6 +108,7 @@ impl EditorApp {
                 match self.state.selected_action {
                     MainAction::Boolean => self.boolean_init(),
                     MainAction::String => self.string_init(),
+                    MainAction::Stroke => self.stroke_init(),
                 }
             }
         }
@@ -126,6 +135,13 @@ impl EditorApp {
                         vertical_rule(1).style(style_separator)
                     )
                     .push(self.string_content())
+            }
+            MainAction::Stroke => {
+                content
+                    .push(
+                        vertical_rule(1).style(style_separator)
+                    )
+                    .push(self.stroke_content())
             }
         };
 

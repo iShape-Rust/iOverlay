@@ -36,7 +36,7 @@ pub(crate) enum StringMessage {
     PointEdited(PointEditUpdate),
     WorkspaceSized(Size),
     WorkspaceZoomed(Camera),
-    WorkspaceDraged(Vector<f32>),
+    WorkspaceDragged(Vector<f32>),
 }
 
 impl EditorApp {
@@ -92,7 +92,7 @@ impl EditorApp {
             StringMessage::PointEdited(update) => self.string_update_point(update),
             StringMessage::WorkspaceSized(size) => self.string_update_size(size),
             StringMessage::WorkspaceZoomed(zoom) => self.string_update_zoom(zoom),
-            StringMessage::WorkspaceDraged(drag) => self.string_update_drag(drag),
+            StringMessage::WorkspaceDragged(drag) => self.string_update_drag(drag),
         }
     }
 

@@ -18,6 +18,8 @@ trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
+
+    fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize;
 }
 
 pub(super) struct StrokeBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -35,24 +37,27 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
     pub(super) fn new(style: StrokeStyle<P, T>) -> StrokeBuilder<P, T> {
         let radius = T::from_float(0.5) * style.width;
 
+        let start_cap_builder = CapBuilder::new(style.start_cap);
+        let end_cap_builder = CapBuilder::new(style.end_cap);
+
         let builder: Box<dyn StrokeBuild<P, T>> = match style.join {
             LineJoin::Miter(_) => Box::new(Builder {
                 radius,
                 join_builder: MiterJoinBuilder {},
-                start_cap_builder: style.start_cap,
-                end_cap_builder: style.end_cap,
+                start_cap_builder,
+                end_cap_builder,
             }),
-            LineJoin::Round(_) => Box::new(Builder {
+            LineJoin::Round(ratio) => Box::new(Builder {
                 radius,
-                join_builder: RoundJoinBuilder {},
-                start_cap_builder: style.start_cap,
-                end_cap_builder: style.end_cap,
+                join_builder: RoundJoinBuilder::new(ratio),
+                start_cap_builder,
+                end_cap_builder,
             }),
             LineJoin::Bevel => Box::new(Builder {
                 radius,
                 join_builder: BevelJoinBuilder {},
-                start_cap_builder: style.start_cap,
-                end_cap_builder: style.end_cap,
+                start_cap_builder,
+                end_cap_builder,
             }),
         };
 
@@ -67,6 +72,15 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         self.builder.build(path, is_closed_path, adapter, segments);
+    }
+
+    pub(super) fn capacity(
+        &self,
+        paths_count: usize,
+        points_count: usize,
+        is_closed_path: bool,
+    ) -> usize {
+        self.builder.capacity(paths_count, points_count, is_closed_path)
     }
 }
 
@@ -84,6 +98,16 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
             self.closed_segments(path, adapter, segments);
         } else {
             self.open_segments(path, adapter, segments);
+        }
+    }
+
+    fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize {
+        if is_closed_path {
+            4 * points_count - 2
+        } else {
+            4 * (points_count - 1)
+                + paths_count
+                    * (self.end_cap_builder.capacity() + self.start_cap_builder.capacity())
         }
     }
 }
@@ -122,7 +146,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         segments.add_section(&s0, adapter);
 
-        for b in path.iter().skip(1) {
+        for b in path.iter().skip(2) {
             let s1 = Section::section(self.radius, &s0.b, b);
             self.join_builder.add_join(&s0, &s1, adapter, segments);
             segments.add_section(&s1, adapter);

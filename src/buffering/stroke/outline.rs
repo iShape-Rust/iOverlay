@@ -46,7 +46,6 @@ where
             points_count += path.len();
         }
 
-
         let r = T::from_float(0.5 * style.width.to_f64());
         let a = match style.join {
             LineJoin::Miter(a) => a.max(r),
@@ -58,7 +57,8 @@ where
         let adapter = FloatPointAdapter::new(rect);
 
         let builder = StrokeBuilder::new(style);
-        let mut segments = Vec::new();
+        let capacity = builder.capacity(paths_count, points_count, is_closed_path);
+        let mut segments = Vec::with_capacity(capacity);
 
         for path in self.iter_paths() {
             builder.build(path, is_closed_path, &adapter, &mut segments);
@@ -74,5 +74,85 @@ where
         };
 
         float
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::buffering::stroke::outline::Outline;
+    use crate::buffering::stroke::style::{LineJoin, StrokeStyle};
+
+    #[test]
+    fn test_simple() {
+        let path = [
+            [0.0, 0.0],
+            [10.0, 0.0],
+        ];
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_bevel_join() {
+        let path = [
+            [-10.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 10.0],
+        ];
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 7);
+    }
+
+    #[test]
+    fn test_round_join() {
+        let path = [
+            [-10.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 10.0],
+        ];
+
+        let style = StrokeStyle::new(2.0).line_join(LineJoin::Round(2.0));
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 7);
+    }
+
+    #[test]
+    fn test_simple_closed() {
+        let path = [
+            [-5.0, -5.0],
+            [-5.0,  5.0],
+            [ 5.0,  5.0],
+            [ 5.0, -5.0],
+        ];
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke(style, true);
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 2);
+
+        assert_eq!(shape[0].len(), 7);
+        assert_eq!(shape[1].len(), 4);
     }
 }

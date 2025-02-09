@@ -184,7 +184,7 @@ fn on_update_zoom(zoom: Camera) -> AppMessage {
 }
 
 fn on_update_drag(drag: Vector<f32>) -> AppMessage {
-    AppMessage::String(StringMessage::WorkspaceDraged(drag))
+    AppMessage::String(StringMessage::WorkspaceDragged(drag))
 }
 
 impl Default for WorkspaceState {

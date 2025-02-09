@@ -10,6 +10,7 @@ pub(crate) struct Rotator<T: FloatNumber> {
 
 impl<T: FloatNumber> Rotator<T> {
 
+    #[inline]
     pub(crate) fn new(cs: T, sn: T) -> Self {
         let a_x = cs;
         let a_y = sn;
@@ -24,6 +25,15 @@ impl<T: FloatNumber> Rotator<T> {
         }
     }
 
+    #[inline]
+    pub(crate) fn with_angle(angle: f64) -> Self {
+        let (sn, cs) = angle.sin_cos();
+        let sin = T::from_float(sn);
+        let cos = T::from_float(cs);
+        Self::new(sin, cos)
+    }
+
+    #[inline]
     pub(crate) fn rotate<P: FloatPointCompatible<T>>(&self, v: P) -> P {
         let v_x = v.x();
         let v_y = v.y();
