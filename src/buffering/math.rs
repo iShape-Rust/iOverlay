@@ -14,7 +14,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> Math<T, P> {
 
     #[inline(always)]
     pub(crate) fn ortho_and_scale(p: &P, s: T) -> P {
-        let t = P::from_xy(p.y(), -p.x());
+        let t = P::from_xy(-p.y(), p.x());
         FloatPointMath::scale(&t, s)
     }
 }

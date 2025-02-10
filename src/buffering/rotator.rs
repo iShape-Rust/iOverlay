@@ -30,15 +30,60 @@ impl<T: FloatNumber> Rotator<T> {
         let (sn, cs) = angle.sin_cos();
         let sin = T::from_float(sn);
         let cos = T::from_float(cs);
-        Self::new(sin, cos)
+        Self::new(cos, sin)
     }
 
     #[inline]
-    pub(crate) fn rotate<P: FloatPointCompatible<T>>(&self, v: P) -> P {
+    pub(crate) fn rotate<P: FloatPointCompatible<T>>(&self, v: &P) -> P {
         let v_x = v.x();
         let v_y = v.y();
         let x = self.a_x * v_x + self.b_x * v_y;
         let y = self.a_y * v_x + self.b_y * v_y;
         P::from_xy(x, y)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::f64::consts::PI;
+    use crate::buffering::rotator::Rotator;
+    use crate::buffering::stroke::outline::Outline;
+
+
+    #[test]
+    fn test_ccw_rotate() {
+        let deg_45 = 0.25 * PI;
+        let rotator = Rotator::with_angle(deg_45);
+        let v0 = [1.0f32, 0.0f32];
+        let v1 = rotator.rotate(&v0);
+        let v2 = rotator.rotate(&v1);
+        let v3 = rotator.rotate(&v2);
+
+        let i_sqrt2 = 1.0f32 / 2.0f32.sqrt();
+
+        compare_vecs(v1, [i_sqrt2, i_sqrt2]);
+        compare_vecs(v2, [0.0, 1.0]);
+        compare_vecs(v3, [-i_sqrt2, i_sqrt2]);
+    }
+
+    #[test]
+    fn test_cw_rotate() {
+        let deg_45 = -0.25 * PI;
+        let rotator = Rotator::with_angle(deg_45);
+        let v0 = [1.0f32, 0.0f32];
+        let v1 = rotator.rotate(&v0);
+        let v2 = rotator.rotate(&v1);
+        let v3 = rotator.rotate(&v2);
+
+        let i_sqrt2 = 1.0f32 / 2.0f32.sqrt();
+
+        compare_vecs(v1, [i_sqrt2, -i_sqrt2]);
+        compare_vecs(v2, [0.0, -1.0]);
+        compare_vecs(v3, [-i_sqrt2, -i_sqrt2]);
+    }
+
+    fn compare_vecs(v0: [f32; 2], v1: [f32; 2]) {
+        assert!((v0[0] - v1[0]).abs() < 0.0001);
+        assert!((v0[1] - v1[1]).abs() < 0.0001);
     }
 }

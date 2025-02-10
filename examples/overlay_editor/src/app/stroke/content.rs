@@ -1,14 +1,3 @@
-use std::collections::HashMap;
-use i_triangle::i_overlay::buffering::stroke::outline::Outline;
-use i_triangle::i_overlay::buffering::stroke::style::StrokeStyle;
-use i_triangle::i_overlay::float::source::resource::OverlayResource;
-use i_triangle::i_overlay::i_float::adapter::FloatPointAdapter;
-use i_triangle::i_overlay::i_float::float::rect::FloatRect;
-use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_float::int::rect::IntRect;
-use i_triangle::i_overlay::i_shape::float::adapter::PathToInt;
-use iced::{Alignment, Length, Padding, Size, Vector};
-use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
 use crate::app::design;
 use crate::app::fill_option::FillOption;
 use crate::app::main::{AppMessage, EditorApp};
@@ -17,12 +6,24 @@ use crate::app::stroke::control::{CapOption, JoinOption};
 use crate::app::stroke::workspace::WorkspaceState;
 use crate::data::stroke::StrokeResource;
 use crate::geom::camera::Camera;
-use crate::point_editor::point::{EditorPoint, MultiIndex};
 use crate::point_editor::point::PathsToEditorPoints;
+use crate::point_editor::point::{EditorPoint, MultiIndex};
 use crate::point_editor::widget::PointEditUpdate;
+use i_triangle::i_overlay::buffering::stroke::outline::Outline;
+use i_triangle::i_overlay::buffering::stroke::style::{LineJoin, StrokeStyle};
+use i_triangle::i_overlay::float::source::resource::OverlayResource;
+use i_triangle::i_overlay::i_float::adapter::FloatPointAdapter;
+use i_triangle::i_overlay::i_float::float::rect::FloatRect;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::i_shape::float::adapter::PathToInt;
+use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
+use iced::{Alignment, Length, Padding, Size, Vector};
+use std::collections::HashMap;
 
 pub(crate) struct StrokeState {
     pub(crate) test: usize,
+    pub(crate) width: f32,
     pub(crate) cap: CapOption,
     pub(crate) cap_value: u8,
     pub(crate) join: JoinOption,
@@ -35,6 +36,7 @@ pub(crate) struct StrokeState {
 #[derive(Debug, Clone)]
 pub(crate) enum StrokeMessage {
     TestSelected(usize),
+    WidthValueUpdated(f32),
     CapSelected(CapOption),
     CapValueUpdated(u8),
     JoinSelected(JoinOption),
@@ -55,13 +57,22 @@ impl EditorApp {
                 Container::new(
                     Button::new(
                         Text::new(format!("test_{}", index))
-                            .style(if is_selected { design::style_sidebar_text_selected } else { design::style_sidebar_text })
-                            .size(14)
+                            .style(if is_selected {
+                                design::style_sidebar_text_selected
+                            } else {
+                                design::style_sidebar_text
+                            })
+                            .size(14),
                     )
-                        .width(Length::Fill)
-                        .on_press(AppMessage::Stroke(StrokeMessage::TestSelected(index)))
-                        .style(if is_selected { design::style_sidebar_button_selected } else { design::style_sidebar_button })
-                ).padding(self.design.action_padding())
+                    .width(Length::Fill)
+                    .on_press(AppMessage::Stroke(StrokeMessage::TestSelected(index)))
+                    .style(if is_selected {
+                        design::style_sidebar_button_selected
+                    } else {
+                        design::style_sidebar_button
+                    }),
+                )
+                .padding(self.design.action_padding()),
             );
         }
 
@@ -77,14 +88,15 @@ impl EditorApp {
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
                         .padding(Padding::new(0.0).right(8))
-                        .style(design::style_sidebar_background)
-                ).direction(scrollable::Direction::Vertical(
+                        .style(design::style_sidebar_background),
+                )
+                .direction(scrollable::Direction::Vertical(
                     scrollable::Scrollbar::new()
                         .width(4)
                         .margin(0)
                         .scroller_width(4)
                         .anchor(scrollable::Anchor::Start),
-                ))
+                )),
             )
             .push(self.stroke_workspace())
     }
@@ -92,6 +104,7 @@ impl EditorApp {
     pub(crate) fn stroke_update(&mut self, message: StrokeMessage) {
         match message {
             StrokeMessage::TestSelected(index) => self.stroke_set_test(index),
+            StrokeMessage::WidthValueUpdated(value) => self.stroke_update_width(value),
             StrokeMessage::CapSelected(cap) => self.stroke_update_cap(cap),
             StrokeMessage::CapValueUpdated(value) => self.stroke_update_cap_value(value),
             StrokeMessage::JoinSelected(join) => self.stroke_update_join(join),
@@ -104,7 +117,9 @@ impl EditorApp {
     }
 
     fn stroke_set_test(&mut self, index: usize) {
-        self.state.stroke.set_test(index, &mut self.app_resource.stroke);
+        self.state
+            .stroke
+            .set_test(index, &mut self.app_resource.stroke);
         self.state.stroke.update_solution();
     }
 
@@ -139,6 +154,11 @@ impl EditorApp {
         }
     }
 
+    fn stroke_update_width(&mut self, width: f32) {
+        self.state.stroke.width = width;
+        self.state.stroke.update_solution();
+    }
+
     fn stroke_update_cap(&mut self, cap: CapOption) {
         self.state.stroke.cap = cap;
         self.state.stroke.update_solution();
@@ -164,6 +184,7 @@ impl StrokeState {
     pub(crate) fn new(resource: &mut StrokeResource) -> Self {
         let mut state = StrokeState {
             test: usize::MAX,
+            width: 1.0,
             cap: CapOption::Butt,
             cap_value: 50,
             join: JoinOption::Bevel,
@@ -201,7 +222,9 @@ impl StrokeState {
             }
 
             self.workspace.stroke_input = stroke_input;
-            self.workspace.stroke_input.feed_edit_points(0, editor_points);
+            self.workspace
+                .stroke_input
+                .feed_edit_points(0, editor_points);
 
             self.cameras.insert(self.test, self.workspace.camera);
             let mut camera = *self.cameras.get(&index).unwrap_or(&Camera::empty());
@@ -231,7 +254,16 @@ impl StrokeState {
             float_paths.push(float_path);
         }
 
-        let style = StrokeStyle::new(2.0);
+        let mut style = StrokeStyle::new(self.width);
+        match self.join {
+            JoinOption::Miter => {},
+            JoinOption::Round => {
+                let ratio = 0.01 * self.join_value as f32;
+                style = style.line_join(LineJoin::Round(ratio))
+            }
+            JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
+        }
+
         let float_shapes = float_paths.stroke(style, false);
 
         let scale = self.workspace.scale;

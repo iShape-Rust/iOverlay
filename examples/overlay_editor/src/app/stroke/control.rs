@@ -59,10 +59,25 @@ impl std::fmt::Display for JoinOption {
 
 impl EditorApp {
     pub(crate) fn stroke_control(&self) -> Column<AppMessage> {
+        let width_list = Row::new()
+            .push(
+                Text::new("Stroke Width:")
+                    .width(Length::Fixed(120.0))
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .push(
+                Container::new(slider(0.1f32..=10.0f32, self.state.stroke.width, on_update_width))
+                    .width(160)
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .height(Length::Fixed(40.0));
+
         let mut cap_pick_list = Row::new()
             .push(
                 Text::new("Line Cap:")
-                    .width(Length::Fixed(90.0))
+                    .width(Length::Fixed(120.0))
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
             )
@@ -98,7 +113,7 @@ impl EditorApp {
         let mut join_pick_list = Row::new()
             .push(
                 Text::new("Line Join:")
-                    .width(Length::Fixed(90.0))
+                    .width(Length::Fixed(120.0))
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
             )
@@ -132,10 +147,15 @@ impl EditorApp {
         }
 
         Column::new()
+            .push(width_list)
             .push(cap_pick_list)
             .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
             .push(join_pick_list)
     }
+}
+
+fn on_update_width(value: f32) -> AppMessage {
+    AppMessage::Stroke(StrokeMessage::WidthValueUpdated(value))
 }
 
 fn on_select_cap(option: CapOption) -> AppMessage {

@@ -49,7 +49,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
             }),
             LineJoin::Round(ratio) => Box::new(Builder {
                 radius,
-                join_builder: RoundJoinBuilder::new(ratio),
+                join_builder: RoundJoinBuilder::new(ratio, radius),
                 start_cap_builder,
                 end_cap_builder,
             }),

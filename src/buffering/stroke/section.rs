@@ -21,7 +21,7 @@ pub(super) struct Section<P: FloatPointCompatible<T>, T: FloatNumber> {
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> Section<P, T> {
     pub(crate) fn section(radius: T, a: &P, b: &P) -> Self {
-        let dir = Math::normal(a, b);
+        let dir = Math::normal(b, a);
         let t = Math::ortho_and_scale(&dir, radius);
 
         let a_top = FloatPointMath::add(a, &t);
