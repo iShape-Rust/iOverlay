@@ -43,12 +43,13 @@ impl EditorApp {
                 let shapes = &self.state.stroke.workspace.stroke_output;
                 if !shapes.is_empty() {
                     stack = stack.push(
-                        Container::new(PathWidget::with_paths(
+                        Container::new(ShapeWidget::with_paths(
                             &self.state.stroke.workspace.stroke_output,
                             self.state.stroke.workspace.camera,
-                            Design::solution_color(),
-                            4.0,
-                            true,
+                            None,
+                            None,
+                            Some(Design::solution_color()),
+                            2.0,
                         ))
                             .width(Length::Fill)
                             .height(Length::Fill)
@@ -59,8 +60,8 @@ impl EditorApp {
                         &self.state.stroke.workspace.stroke_input,
                         self.state.stroke.workspace.camera,
                         Design::subject_color(),
-                        4.0,
-                        true,
+                        1.0,
+                        false,
                     ))
                         .width(Length::Fill)
                         .height(Length::Fill)

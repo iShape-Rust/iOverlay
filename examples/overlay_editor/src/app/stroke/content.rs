@@ -24,7 +24,9 @@ use crate::point_editor::widget::PointEditUpdate;
 pub(crate) struct StrokeState {
     pub(crate) test: usize,
     pub(crate) cap: CapOption,
+    pub(crate) cap_value: u8,
     pub(crate) join: JoinOption,
+    pub(crate) join_value: u8,
     pub(crate) workspace: WorkspaceState,
     pub(crate) size: Size,
     pub(crate) cameras: HashMap<usize, Camera>,
@@ -34,7 +36,9 @@ pub(crate) struct StrokeState {
 pub(crate) enum StrokeMessage {
     TestSelected(usize),
     CapSelected(CapOption),
+    CapValueUpdated(u8),
     JoinSelected(JoinOption),
+    JoinValueUpdated(u8),
     PointEdited(PointEditUpdate),
     WorkspaceSized(Size),
     WorkspaceZoomed(Camera),
@@ -89,7 +93,9 @@ impl EditorApp {
         match message {
             StrokeMessage::TestSelected(index) => self.stroke_set_test(index),
             StrokeMessage::CapSelected(cap) => self.stroke_update_cap(cap),
+            StrokeMessage::CapValueUpdated(value) => self.stroke_update_cap_value(value),
             StrokeMessage::JoinSelected(join) => self.stroke_update_join(join),
+            StrokeMessage::JoinValueUpdated(value) => self.stroke_update_join_value(value),
             StrokeMessage::PointEdited(update) => self.stroke_update_point(update),
             StrokeMessage::WorkspaceSized(size) => self.stroke_update_size(size),
             StrokeMessage::WorkspaceZoomed(zoom) => self.stroke_update_zoom(zoom),
@@ -138,8 +144,18 @@ impl EditorApp {
         self.state.stroke.update_solution();
     }
 
+    fn stroke_update_cap_value(&mut self, cap_value: u8) {
+        self.state.stroke.cap_value = cap_value;
+        self.state.stroke.update_solution();
+    }
+
     fn stroke_update_join(&mut self, join: JoinOption) {
         self.state.stroke.join = join;
+        self.state.stroke.update_solution();
+    }
+
+    fn stroke_update_join_value(&mut self, value: u8) {
+        self.state.stroke.join_value = value;
         self.state.stroke.update_solution();
     }
 }
@@ -149,7 +165,9 @@ impl StrokeState {
         let mut state = StrokeState {
             test: usize::MAX,
             cap: CapOption::Butt,
+            cap_value: 50,
             join: JoinOption::Bevel,
+            join_value: 50,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(resource.count),
             size: Size::ZERO,
