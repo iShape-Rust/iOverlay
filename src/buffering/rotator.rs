@@ -47,7 +47,6 @@ impl<T: FloatNumber> Rotator<T> {
 mod tests {
     use std::f64::consts::PI;
     use crate::buffering::rotator::Rotator;
-    use crate::buffering::stroke::outline::Outline;
 
 
     #[test]

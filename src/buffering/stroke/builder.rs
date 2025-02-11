@@ -20,6 +20,7 @@ trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
     );
 
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize;
+    fn additional_offset(&self, radius: T) -> T;
 }
 
 pub(super) struct StrokeBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -41,9 +42,9 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         let end_cap_builder = CapBuilder::new(style.end_cap);
 
         let builder: Box<dyn StrokeBuild<P, T>> = match style.join {
-            LineJoin::Miter(_) => Box::new(Builder {
+            LineJoin::Miter(ratio) => Box::new(Builder {
                 radius,
-                join_builder: MiterJoinBuilder {},
+                join_builder: MiterJoinBuilder::new(ratio),
                 start_cap_builder,
                 end_cap_builder,
             }),
@@ -64,6 +65,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         Self { builder }
     }
 
+    #[inline]
     pub(super) fn build(
         &self,
         path: &[P],
@@ -74,6 +76,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         self.builder.build(path, is_closed_path, adapter, segments);
     }
 
+    #[inline]
     pub(super) fn capacity(
         &self,
         paths_count: usize,
@@ -82,11 +85,17 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
     ) -> usize {
         self.builder.capacity(paths_count, points_count, is_closed_path)
     }
+
+    #[inline]
+    pub(super) fn additional_offset(&self, radius: T) -> T {
+        self.builder.additional_offset(radius)
+    }
 }
 
 impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBuild<P, T>
     for Builder<J, P, T>
 {
+    #[inline]
     fn build(
         &self,
         path: &[P],
@@ -101,6 +110,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
         }
     }
 
+    #[inline]
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize {
         if is_closed_path {
             4 * points_count - 2
@@ -109,6 +119,11 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
                 + paths_count
                     * (self.end_cap_builder.capacity() + self.start_cap_builder.capacity())
         }
+    }
+
+    #[inline]
+    fn additional_offset(&self, radius: T) -> T {
+        self.join_builder.additional_offset(radius)
     }
 }
 
@@ -124,7 +139,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         let mut s0 = start.clone();
         segments.add_section(&s0, adapter);
-        for b in path.iter() {
+        for b in path.iter().skip(1) {
             let s1 = Section::section(self.radius, &s0.b, b);
             self.join_builder.add_join(&s0, &s1, adapter, segments);
             segments.add_section(&s1, adapter);

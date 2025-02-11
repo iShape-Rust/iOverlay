@@ -2,7 +2,7 @@ use crate::app::fill_option::FillOption;
 use crate::app::main::{AppMessage, EditorApp};
 use crate::app::solver_option::SolverOption;
 use crate::app::stroke::content::StrokeMessage;
-use iced::widget::{pick_list, slider, Column, Container, Row, Space, Text};
+use iced::widget::{checkbox, pick_list, slider, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -67,7 +67,9 @@ impl EditorApp {
                     .align_y(Alignment::Center),
             )
             .push(
-                Container::new(slider(0.1f32..=10.0f32, self.state.stroke.width, on_update_width))
+                Container::new(
+                    slider(0.1f32..=10.0f32, self.state.stroke.width, on_update_width).step(0.01f32)
+                )
                     .width(160)
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
@@ -106,7 +108,6 @@ impl EditorApp {
                     .width(250)
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
-
             );
         }
 
@@ -151,11 +152,20 @@ impl EditorApp {
             .push(cap_pick_list)
             .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
             .push(join_pick_list)
+            .push(
+                checkbox("Is Closed", self.state.stroke.is_closed)
+                    .on_toggle(on_set_is_closed)
+
+            )
     }
 }
 
 fn on_update_width(value: f32) -> AppMessage {
     AppMessage::Stroke(StrokeMessage::WidthValueUpdated(value))
+}
+
+fn on_set_is_closed(value: bool) -> AppMessage {
+    AppMessage::Stroke(StrokeMessage::IsClosedUpdated(value))
 }
 
 fn on_select_cap(option: CapOption) -> AppMessage {

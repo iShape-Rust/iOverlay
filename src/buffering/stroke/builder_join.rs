@@ -17,6 +17,7 @@ pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
     fn capacity(&self) -> usize;
+    fn additional_offset(&self, radius: T) -> T;
 }
 
 pub(super) struct BevelJoinBuilder;
@@ -71,14 +72,35 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for BevelJoin
         Self::join_bot(s0, s1, adapter, segments);
     }
 
+    #[inline]
     fn capacity(&self) -> usize {
         2
     }
+
+    #[inline]
+    fn additional_offset(&self, radius: T) -> T {
+        radius
+    }
 }
 
-pub(super) struct MiterJoinBuilder;
+pub(super) struct MiterJoinBuilder<T> {
+    ratio: T,
+    limit_dot_product: T,
+}
 
-impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoinBuilder {
+impl<T: FloatNumber> MiterJoinBuilder<T> {
+    pub(super) fn new(ratio: T) -> Self {
+        // ratio = L / R, where L is max length of Corner
+        let fixed_ratio = ratio.to_f64().min(20.0);
+        let limit_dot_product = T::from_float(fixed_ratio.cos());
+        Self {
+            ratio: T::from_float(fixed_ratio),
+            limit_dot_product
+        }
+    }
+}
+
+impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoinBuilder<T> {
     fn add_join(
         &self,
         s0: &Section<P, T>,
@@ -86,41 +108,67 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
-        let a0 = adapter.float_to_int(&s0.b_top);
-        let b0 = adapter.float_to_int(&s1.a_top);
+        let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
+        let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
 
-        if a0 != b0 {
-            segments.push(Segment::subject_ab(a0, b0));
+        if self.limit_dot_product > dot_product {
+            BevelJoinBuilder::join_top(s0, s1, adapter, segments);
+            BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
+            return;
         }
 
-        let a1 = adapter.float_to_int(&s0.b_bot);
-        let b1 = adapter.float_to_int(&s1.a_bot);
+        let turn_left = cross_product > T::from_float(0.0);
 
-        if a1 != b1 {
-            segments.push(Segment::subject_ab(b1, a1));
-        }
+        let (pa, pb, va, vb) = if turn_left {
+            BevelJoinBuilder::join_top(s0, s1, adapter, segments);
+            let va = P::from_xy(-s1.dir.x(), -s1.dir.y());
+            let vb = P::from_xy(-s0.dir.x(), -s0.dir.y());
+            (s1.a_bot, s0.b_bot, va, vb)
+        } else {
+            BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
+            (s0.b_top, s1.a_top, s1.dir, s0.dir)
+        };
+
+        let k = (pb.x() - pa.x()) / (va.x() + vb.x());
+        let x = pa.x() + k * va.x();
+        let y = pa.y() + k * va.y();
+        let pc = P::from_xy(x, y);
+
+        let p0 = adapter.float_to_int(&pa);
+        let p1 = adapter.float_to_int(&pc);
+        let p2 = adapter.float_to_int(&pb);
+
+        segments.push(Segment::subject_ab(p0, p1));
+        segments.push(Segment::subject_ab(p1, p2));
     }
 
+    #[inline]
     fn capacity(&self) -> usize {
         4
+    }
+
+    #[inline]
+    fn additional_offset(&self, radius: T) -> T {
+        self.ratio * radius
     }
 }
 
 pub(super) struct RoundJoinBuilder<T> {
     inv_ratio: f64,
+    average_count: usize,
     radius: T,
     limit_dot_product: T,
 }
 
 impl<T: FloatNumber> RoundJoinBuilder<T> {
     pub(super) fn new(ratio: T, radius: T) -> Self {
-        /// ratio = A / R
+        // ratio = A / R
         let fixed_ratio = ratio.to_f64().min(0.25 * PI);
-        // let limit_angle = PI - fixed_ratio;
         let limit_dot_product = T::from_float(fixed_ratio.cos());
-
+        let average_count = (0.6 * PI / fixed_ratio) as usize + 2;
         Self {
             inv_ratio: 1.0 / fixed_ratio,
+            average_count,
             radius,
             limit_dot_product,
         }
@@ -178,7 +226,13 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
         }
     }
 
+    #[inline]
     fn capacity(&self) -> usize {
-        4
+        self.average_count
+    }
+
+    #[inline]
+    fn additional_offset(&self, radius: T) -> T {
+        radius
     }
 }

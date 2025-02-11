@@ -24,6 +24,7 @@ use std::collections::HashMap;
 pub(crate) struct StrokeState {
     pub(crate) test: usize,
     pub(crate) width: f32,
+    pub(crate) is_closed: bool,
     pub(crate) cap: CapOption,
     pub(crate) cap_value: u8,
     pub(crate) join: JoinOption,
@@ -37,6 +38,7 @@ pub(crate) struct StrokeState {
 pub(crate) enum StrokeMessage {
     TestSelected(usize),
     WidthValueUpdated(f32),
+    IsClosedUpdated(bool),
     CapSelected(CapOption),
     CapValueUpdated(u8),
     JoinSelected(JoinOption),
@@ -104,6 +106,7 @@ impl EditorApp {
     pub(crate) fn stroke_update(&mut self, message: StrokeMessage) {
         match message {
             StrokeMessage::TestSelected(index) => self.stroke_set_test(index),
+            StrokeMessage::IsClosedUpdated(value) => self.stroke_update_is_closed(value),
             StrokeMessage::WidthValueUpdated(value) => self.stroke_update_width(value),
             StrokeMessage::CapSelected(cap) => self.stroke_update_cap(cap),
             StrokeMessage::CapValueUpdated(value) => self.stroke_update_cap_value(value),
@@ -154,6 +157,11 @@ impl EditorApp {
         }
     }
 
+    fn stroke_update_is_closed(&mut self, is_closed: bool) {
+        self.state.stroke.is_closed = is_closed;
+        self.state.stroke.update_solution();
+    }
+
     fn stroke_update_width(&mut self, width: f32) {
         self.state.stroke.width = width;
         self.state.stroke.update_solution();
@@ -185,6 +193,7 @@ impl StrokeState {
         let mut state = StrokeState {
             test: usize::MAX,
             width: 1.0,
+            is_closed: false,
             cap: CapOption::Butt,
             cap_value: 50,
             join: JoinOption::Bevel,
@@ -256,7 +265,10 @@ impl StrokeState {
 
         let mut style = StrokeStyle::new(self.width);
         match self.join {
-            JoinOption::Miter => {},
+            JoinOption::Miter => {
+                let ratio = 0.01 * self.join_value as f32;
+                style = style.line_join(LineJoin::Miter(ratio))
+            },
             JoinOption::Round => {
                 let ratio = 0.01 * self.join_value as f32;
                 style = style.line_join(LineJoin::Round(ratio))
@@ -264,7 +276,7 @@ impl StrokeState {
             JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
         }
 
-        let float_shapes = float_paths.stroke(style, false);
+        let float_shapes = float_paths.stroke(style, self.is_closed);
 
         let scale = self.workspace.scale;
         let mut int_paths = Vec::with_capacity(float_shapes.len());
