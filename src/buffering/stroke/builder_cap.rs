@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use std::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
@@ -33,8 +34,25 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
         Self { points, _phantom: Default::default() }
     }
 
-    pub(super) fn round_points(ratio: T, r: T) -> Vec<P> {
-        Vec::new()
+    pub(super) fn round_points(angle: T, r: T) -> Vec<P> {
+        let n = if angle > T::from_float(0.0) {
+            let count = PI * (r / angle).to_f64();
+            (count as usize).min(1024).max(2)
+        } else {
+            1024
+        };
+
+        let fix_angle = PI / n as f64;
+        let rotator = Rotator::with_angle(fix_angle);
+        let mut v = P::from_xy(T::from_float(0.0), T::from_float(-1.0));
+        let mut points = Vec::with_capacity(n);
+        for _ in 1..n {
+            v = rotator.rotate(&v);
+            let p = FloatPointMath::scale(&v, r);
+            points.push(p);
+        }
+
+        points
     }
 
     pub(super) fn square_points(r: T) -> Vec<P> {

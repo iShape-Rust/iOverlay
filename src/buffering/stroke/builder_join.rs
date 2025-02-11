@@ -98,7 +98,6 @@ impl<T: FloatNumber> MiterJoinBuilder<T> {
 
         let half_angle = 0.5 * fixed_angle;
         let tan = half_angle.tan();
-        let sin = half_angle.sin();
 
         let r = radius.to_f64();
         let l = r / tan;
