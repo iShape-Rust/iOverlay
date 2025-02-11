@@ -141,12 +141,12 @@ mod tests {
     #[test]
     fn test_miter_join_turn_right() {
         let path = [
-            [-6.0, -7.0],
+            [-6.0, -12.0],
             [ 0.0,  0.0],
-            [ 6.0, -7.0],
+            [ 6.0, -12.0],
         ];
 
-        let style = StrokeStyle::new(2.0).line_join(LineJoin::Miter(10.0));
+        let style = StrokeStyle::new(2.0).line_join(LineJoin::Miter(5.0 * PI / 180.0));
         let shapes = path.stroke(style, false);
 
         assert_eq!(shapes.len(), 1);

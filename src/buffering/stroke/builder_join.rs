@@ -79,23 +79,37 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for BevelJoin
 
     #[inline]
     fn additional_offset(&self, radius: T) -> T {
-        radius
+        // add extra 10% to avoid problems with floating point precision.
+        T::from_float(1.1) * radius
     }
 }
 
 pub(super) struct MiterJoinBuilder<T> {
-    ratio: T,
     limit_dot_product: T,
+    max_offset: T,
+    max_length: T,
 }
 
 impl<T: FloatNumber> MiterJoinBuilder<T> {
-    pub(super) fn new(ratio: T) -> Self {
-        // ratio = L / R, where L is max length of Corner
-        let fixed_ratio = ratio.to_f64().min(20.0);
-        let limit_dot_product = T::from_float(fixed_ratio.cos());
+    pub(super) fn new(angle: T, radius: T) -> Self {
+        // angle - min possible angle
+        let fixed_angle = angle.to_f64().max(0.01);
+        let limit_dot_product = -T::from_float(fixed_angle.cos());
+
+        let half_angle = 0.5 * fixed_angle;
+        let tan = half_angle.tan();
+        let sin = half_angle.sin();
+
+        let r = radius.to_f64();
+        let l = r / tan;
+        // add extra 10% to avoid problems with floating point precision.
+        let max_offset = T::from_float(1.1 * (r * r + l * l).sqrt());
+        let max_length = T::from_float(l);
+
         Self {
-            ratio: T::from_float(fixed_ratio),
-            limit_dot_product
+            limit_dot_product,
+            max_offset,
+            max_length
         }
     }
 }
@@ -110,36 +124,69 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
     ) {
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
+        let turn = cross_product > T::from_float(0.0);
 
-        if self.limit_dot_product > dot_product {
-            BevelJoinBuilder::join_top(s0, s1, adapter, segments);
-            BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
-            return;
-        }
+        let is_limited = self.limit_dot_product > dot_product;
 
-        let turn_left = cross_product > T::from_float(0.0);
+        if is_limited {
+            let (pa, pb, ac, bc) = if turn {
+                BevelJoinBuilder::join_top(s0, s1, adapter, segments);
+                // (s1.a_bot, s0.b_bot, s1.dir, s0.dir);
+                let (pa, pb, va, vb) = (s1.a_bot, s0.b_bot, s1.dir, s0.dir);
 
-        let (pa, pb, va, vb) = if turn_left {
-            BevelJoinBuilder::join_top(s0, s1, adapter, segments);
-            let va = P::from_xy(-s1.dir.x(), -s1.dir.y());
-            let vb = P::from_xy(-s0.dir.x(), -s0.dir.y());
-            (s1.a_bot, s0.b_bot, va, vb)
+                let ax = pa.x() - self.max_length * va.x();
+                let ay = pa.y() - self.max_length * va.y();
+                let bx = pb.x() + self.max_length * vb.x();
+                let by = pb.y() + self.max_length * vb.y();
+
+                let ac = P::from_xy(ax, ay);
+                let bc = P::from_xy(bx, by);
+
+                (pa, pb, ac, bc)
+            } else {
+                BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
+                let (pa, pb, va, vb) = (s0.b_top, s1.a_top, s0.dir, s1.dir);
+
+                let ax = pa.x() + self.max_length * va.x();
+                let ay = pa.y() + self.max_length * va.y();
+                let bx = pb.x() - self.max_length * vb.x();
+                let by = pb.y() - self.max_length * vb.y();
+
+                let ac = P::from_xy(ax, ay);
+                let bc = P::from_xy(bx, by);
+
+                (pa, pb, ac, bc)
+            };
+
+            let ia = adapter.float_to_int(&pa);
+            let ib = adapter.float_to_int(&pb);
+            let iac = adapter.float_to_int(&ac);
+            let ibc = adapter.float_to_int(&bc);
+
+            segments.push(Segment::subject_ab(ia, iac));
+            segments.push(Segment::subject_ab(iac, ibc));
+            segments.push(Segment::subject_ab(ibc, ib));
         } else {
-            BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
-            (s0.b_top, s1.a_top, s1.dir, s0.dir)
-        };
+            let (pa, pb, va, vb) = if turn {
+                BevelJoinBuilder::join_top(s0, s1, adapter, segments);
+                (s1.a_bot, s0.b_bot, s1.dir, s0.dir)
+            } else {
+                BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
+                (s0.b_top, s1.a_top, s0.dir, s1.dir)
+            };
 
-        let k = (pb.x() - pa.x()) / (va.x() + vb.x());
-        let x = pa.x() + k * va.x();
-        let y = pa.y() + k * va.y();
-        let pc = P::from_xy(x, y);
+            let k = (pb.x() - pa.x()) / (va.x() + vb.x());
+            let x = pa.x() + k * va.x();
+            let y = pa.y() + k * va.y();
+            let c = P::from_xy(x, y);
 
-        let p0 = adapter.float_to_int(&pa);
-        let p1 = adapter.float_to_int(&pc);
-        let p2 = adapter.float_to_int(&pb);
+            let ia = adapter.float_to_int(&pa);
+            let ib = adapter.float_to_int(&pb);
+            let ic = adapter.float_to_int(&c);
 
-        segments.push(Segment::subject_ab(p0, p1));
-        segments.push(Segment::subject_ab(p1, p2));
+            segments.push(Segment::subject_ab(ia, ic));
+            segments.push(Segment::subject_ab(ic, ib));
+        }
     }
 
     #[inline]
@@ -149,7 +196,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
 
     #[inline]
     fn additional_offset(&self, radius: T) -> T {
-        self.ratio * radius
+        self.max_offset
     }
 }
 
@@ -233,6 +280,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
 
     #[inline]
     fn additional_offset(&self, radius: T) -> T {
-        radius
+        // add extra 10% to avoid problems with floating point precision.
+        T::from_float(1.1) * radius
     }
 }

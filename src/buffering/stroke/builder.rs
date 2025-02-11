@@ -44,7 +44,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         let builder: Box<dyn StrokeBuild<P, T>> = match style.join {
             LineJoin::Miter(ratio) => Box::new(Builder {
                 radius,
-                join_builder: MiterJoinBuilder::new(ratio),
+                join_builder: MiterJoinBuilder::new(ratio, radius),
                 start_cap_builder,
                 end_cap_builder,
             }),
