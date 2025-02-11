@@ -34,6 +34,11 @@ impl<T: FloatNumber> Rotator<T> {
     }
 
     #[inline]
+    pub(crate) fn with_vector<P: FloatPointCompatible<T>>(v: &P) -> Self {
+        Self::new(v.x(), v.y())
+    }
+
+    #[inline]
     pub(crate) fn rotate<P: FloatPointCompatible<T>>(&self, v: &P) -> P {
         let v_x = v.x();
         let v_y = v.y();

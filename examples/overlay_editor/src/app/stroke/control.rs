@@ -76,9 +76,9 @@ impl EditorApp {
             )
             .height(Length::Fixed(40.0));
 
-        let mut cap_pick_list = Row::new()
+        let mut start_cap_pick_list = Row::new()
             .push(
-                Text::new("Line Cap:")
+                Text::new("Start Cap:")
                     .width(Length::Fixed(120.0))
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
@@ -87,8 +87,8 @@ impl EditorApp {
                 Container::new(
                     pick_list(
                         &CapOption::ALL[..],
-                        Some(self.state.stroke.cap),
-                        on_select_cap,
+                        Some(self.state.stroke.start_cap),
+                        on_select_start_cap,
                     )
                     .width(Length::Fixed(160.0)),
                 )
@@ -97,12 +97,47 @@ impl EditorApp {
             )
             .height(Length::Fixed(40.0));
 
-        if self.state.stroke.cap == CapOption::Round {
-            let slider = slider(1..=100, self.state.stroke.cap_value, on_update_cap_value)
+        if self.state.stroke.start_cap == CapOption::Round {
+            let slider = slider(1..=100, self.state.stroke.start_cap_value, on_update_start_cap_value)
                 .default(50)
                 .shift_step(5);
 
-            cap_pick_list = cap_pick_list.push(
+            start_cap_pick_list = start_cap_pick_list.push(
+                Container::new(slider)
+                    .padding(Padding::new(0.0).left(20.0))
+                    .width(250)
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            );
+        }
+
+        let mut end_cap_pick_list = Row::new()
+            .push(
+                Text::new("End Cap:")
+                    .width(Length::Fixed(120.0))
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .push(
+                Container::new(
+                    pick_list(
+                        &CapOption::ALL[..],
+                        Some(self.state.stroke.end_cap),
+                        on_select_end_cap,
+                    )
+                        .width(Length::Fixed(160.0)),
+                )
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .height(Length::Fixed(40.0));
+
+        if self.state.stroke.end_cap == CapOption::Round {
+            let slider = slider(1..=100, self.state.stroke.end_cap_value, on_update_end_cap_value)
+                .default(50)
+                .shift_step(5);
+
+            end_cap_pick_list = end_cap_pick_list.push(
                 Container::new(slider)
                     .padding(Padding::new(0.0).left(20.0))
                     .width(250)
@@ -149,7 +184,9 @@ impl EditorApp {
 
         Column::new()
             .push(width_list)
-            .push(cap_pick_list)
+            .push(start_cap_pick_list)
+            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(end_cap_pick_list)
             .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
             .push(join_pick_list)
             .push(
@@ -168,12 +205,20 @@ fn on_set_is_closed(value: bool) -> AppMessage {
     AppMessage::Stroke(StrokeMessage::IsClosedUpdated(value))
 }
 
-fn on_select_cap(option: CapOption) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::CapSelected(option))
+fn on_select_start_cap(option: CapOption) -> AppMessage {
+    AppMessage::Stroke(StrokeMessage::StartCapSelected(option))
 }
 
-fn on_update_cap_value(value: u8) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::CapValueUpdated(value))
+fn on_update_start_cap_value(value: u8) -> AppMessage {
+    AppMessage::Stroke(StrokeMessage::StartCapValueUpdated(value))
+}
+
+fn on_select_end_cap(option: CapOption) -> AppMessage {
+    AppMessage::Stroke(StrokeMessage::EndCapSelected(option))
+}
+
+fn on_update_end_cap_value(value: u8) -> AppMessage {
+    AppMessage::Stroke(StrokeMessage::EndCapValueUpdated(value))
 }
 
 fn on_select_join(option: JoinOption) -> AppMessage {

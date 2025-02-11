@@ -1,3 +1,4 @@
+use std::cmp::max;
 use crate::buffering::stroke::builder_cap::CapBuilder;
 use crate::buffering::stroke::builder_join::{
     BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
@@ -38,8 +39,8 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
     pub(super) fn new(style: StrokeStyle<P, T>) -> StrokeBuilder<P, T> {
         let radius = T::from_float(0.5) * style.width;
 
-        let start_cap_builder = CapBuilder::new(style.start_cap);
-        let end_cap_builder = CapBuilder::new(style.end_cap);
+        let start_cap_builder = CapBuilder::new(style.start_cap, radius);
+        let end_cap_builder = CapBuilder::new(style.end_cap, radius);
 
         let builder: Box<dyn StrokeBuild<P, T>> = match style.join {
             LineJoin::Miter(ratio) => Box::new(Builder {
@@ -123,7 +124,10 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
 
     #[inline]
     fn additional_offset(&self, radius: T) -> T {
-        self.join_builder.additional_offset(radius)
+        let start_cap = self.start_cap_builder.additional_offset();
+        let end_cap = self.end_cap_builder.additional_offset();
+        let join = self.join_builder.additional_offset(radius);
+        join.max(start_cap.max(end_cap))
     }
 }
 

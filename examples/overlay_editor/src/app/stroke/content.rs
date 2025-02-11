@@ -10,7 +10,7 @@ use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::point::{EditorPoint, MultiIndex};
 use crate::point_editor::widget::PointEditUpdate;
 use i_triangle::i_overlay::buffering::stroke::outline::Outline;
-use i_triangle::i_overlay::buffering::stroke::style::{LineJoin, StrokeStyle};
+use i_triangle::i_overlay::buffering::stroke::style::{LineCap, LineJoin, StrokeStyle};
 use i_triangle::i_overlay::float::source::resource::OverlayResource;
 use i_triangle::i_overlay::i_float::adapter::FloatPointAdapter;
 use i_triangle::i_overlay::i_float::float::rect::FloatRect;
@@ -25,8 +25,10 @@ pub(crate) struct StrokeState {
     pub(crate) test: usize,
     pub(crate) width: f32,
     pub(crate) is_closed: bool,
-    pub(crate) cap: CapOption,
-    pub(crate) cap_value: u8,
+    pub(crate) start_cap: CapOption,
+    pub(crate) start_cap_value: u8,
+    pub(crate) end_cap: CapOption,
+    pub(crate) end_cap_value: u8,
     pub(crate) join: JoinOption,
     pub(crate) join_value: u8,
     pub(crate) workspace: WorkspaceState,
@@ -39,8 +41,10 @@ pub(crate) enum StrokeMessage {
     TestSelected(usize),
     WidthValueUpdated(f32),
     IsClosedUpdated(bool),
-    CapSelected(CapOption),
-    CapValueUpdated(u8),
+    StartCapSelected(CapOption),
+    StartCapValueUpdated(u8),
+    EndCapSelected(CapOption),
+    EndCapValueUpdated(u8),
     JoinSelected(JoinOption),
     JoinValueUpdated(u8),
     PointEdited(PointEditUpdate),
@@ -108,8 +112,10 @@ impl EditorApp {
             StrokeMessage::TestSelected(index) => self.stroke_set_test(index),
             StrokeMessage::IsClosedUpdated(value) => self.stroke_update_is_closed(value),
             StrokeMessage::WidthValueUpdated(value) => self.stroke_update_width(value),
-            StrokeMessage::CapSelected(cap) => self.stroke_update_cap(cap),
-            StrokeMessage::CapValueUpdated(value) => self.stroke_update_cap_value(value),
+            StrokeMessage::StartCapSelected(cap) => self.stroke_update_start_cap(cap),
+            StrokeMessage::StartCapValueUpdated(value) => self.stroke_update_start_cap_value(value),
+            StrokeMessage::EndCapSelected(cap) => self.stroke_update_end_cap(cap),
+            StrokeMessage::EndCapValueUpdated(value) => self.stroke_update_end_cap_value(value),
             StrokeMessage::JoinSelected(join) => self.stroke_update_join(join),
             StrokeMessage::JoinValueUpdated(value) => self.stroke_update_join_value(value),
             StrokeMessage::PointEdited(update) => self.stroke_update_point(update),
@@ -167,13 +173,23 @@ impl EditorApp {
         self.state.stroke.update_solution();
     }
 
-    fn stroke_update_cap(&mut self, cap: CapOption) {
-        self.state.stroke.cap = cap;
+    fn stroke_update_start_cap(&mut self, cap: CapOption) {
+        self.state.stroke.start_cap = cap;
         self.state.stroke.update_solution();
     }
 
-    fn stroke_update_cap_value(&mut self, cap_value: u8) {
-        self.state.stroke.cap_value = cap_value;
+    fn stroke_update_start_cap_value(&mut self, cap_value: u8) {
+        self.state.stroke.start_cap_value = cap_value;
+        self.state.stroke.update_solution();
+    }
+
+    fn stroke_update_end_cap(&mut self, cap: CapOption) {
+        self.state.stroke.end_cap = cap;
+        self.state.stroke.update_solution();
+    }
+
+    fn stroke_update_end_cap_value(&mut self, cap_value: u8) {
+        self.state.stroke.end_cap_value = cap_value;
         self.state.stroke.update_solution();
     }
 
@@ -194,8 +210,10 @@ impl StrokeState {
             test: usize::MAX,
             width: 1.0,
             is_closed: false,
-            cap: CapOption::Butt,
-            cap_value: 50,
+            start_cap: CapOption::Butt,
+            start_cap_value: 50,
+            end_cap: CapOption::Butt,
+            end_cap_value: 50,
             join: JoinOption::Bevel,
             join_value: 50,
             workspace: Default::default(),
@@ -266,7 +284,7 @@ impl StrokeState {
         let mut style = StrokeStyle::new(self.width);
         match self.join {
             JoinOption::Miter => {
-                let ratio = 0.01 * self.join_value as f32;
+                let ratio = 0.03 * self.join_value as f32;
                 style = style.line_join(LineJoin::Miter(ratio))
             },
             JoinOption::Round => {
@@ -274,6 +292,28 @@ impl StrokeState {
                 style = style.line_join(LineJoin::Round(ratio))
             }
             JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
+        }
+
+        match self.start_cap {
+            CapOption::Butt => {
+                style = style.start_cap(LineCap::Butt)
+            },
+            CapOption::Round => {
+                let ratio = 0.01 * self.start_cap_value as f32;
+                style = style.start_cap(LineCap::Round(ratio))
+            }
+            CapOption::Square => style = style.start_cap(LineCap::Square),
+        }
+
+        match self.end_cap {
+            CapOption::Butt => {
+                style = style.end_cap(LineCap::Butt)
+            },
+            CapOption::Round => {
+                let ratio = 0.01 * self.end_cap_value as f32;
+                style = style.end_cap(LineCap::Round(ratio))
+            }
+            CapOption::Square => style = style.end_cap(LineCap::Square),
         }
 
         let float_shapes = float_paths.stroke(style, self.is_closed);
