@@ -36,7 +36,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
 
     pub(super) fn round_points(angle: T, r: T) -> Vec<P> {
         let n = if angle > T::from_float(0.0) {
-            let count = PI * (r / angle).to_f64();
+            let count = PI / angle.to_f64();
             (count as usize).min(1024).max(2)
         } else {
             1024
