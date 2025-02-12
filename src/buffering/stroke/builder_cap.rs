@@ -28,7 +28,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
             LineCap::Butt => None,
             LineCap::Round(ratio) => Some(Self::round_points(ratio, radius)),
             LineCap::Square => Some(Self::square_points(radius)),
-            LineCap::Custom(points) => Some(points)
+            LineCap::Custom(points) => Some(Self::custom_points(points, radius))
         };
 
         Self { points, _phantom: Default::default() }
@@ -57,6 +57,17 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
 
     pub(super) fn square_points(r: T) -> Vec<P> {
         vec![P::from_xy(r, -r), P::from_xy(r, r)]
+    }
+
+    pub(super) fn custom_points(points: Vec<P>, r: T) -> Vec<P> {
+        let mut scaled = points;
+        let mut i = 0;
+        while i < scaled.len() {
+            let p = &scaled[i];
+            scaled[i] = FloatPointMath::scale(p, r);
+            i += 1
+        }
+        scaled
     }
 
     pub(super) fn add_to_start(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {

@@ -11,10 +11,11 @@ pub(crate) enum CapOption {
     Butt,
     Round,
     Square,
+    Arrow,
 }
 
 impl CapOption {
-    const ALL: [CapOption; 3] = [CapOption::Butt, CapOption::Round, CapOption::Square];
+    const ALL: [CapOption; 4] = [CapOption::Butt, CapOption::Round, CapOption::Square, CapOption::Arrow];
 }
 
 impl std::fmt::Display for CapOption {
@@ -26,6 +27,7 @@ impl std::fmt::Display for CapOption {
                 CapOption::Butt => "Butt",
                 CapOption::Round => "Round",
                 CapOption::Square => "Square",
+                CapOption::Arrow => "Arrow",
             }
         )
     }

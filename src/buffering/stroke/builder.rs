@@ -1,4 +1,3 @@
-use std::cmp::max;
 use crate::buffering::stroke::builder_cap::CapBuilder;
 use crate::buffering::stroke::builder_join::{
     BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
@@ -159,17 +158,41 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
-        let mut s0 = Section::section(self.radius, &path[0], &path[1]);
+        // build segments only from points which are not equal in int space
+
+        let n = path.len();
+        let mut ip0 = adapter.float_to_int(&path[0]);
+        let mut ip = adapter.float_to_int(&path[1]);
+        let mut j = 1;
+        while ip == ip0 {
+            j += 1;
+            if j >= n { return; }
+            ip = adapter.float_to_int(&path[j]);
+        }
+
+        let mut s0 = Section::section(self.radius, &path[0], &path[j]);
 
         self.start_cap_builder.add_to_start(&s0, adapter, segments);
 
         segments.add_section(&s0, adapter);
 
-        for b in path.iter().skip(2) {
-            let s1 = Section::section(self.radius, &s0.b, b);
+        ip0 = ip;
+        j += 1;
+        'main_loop:
+        while j < n {
+            let mut p = &path[j];
+            ip = adapter.float_to_int(p);
+            while ip == ip0 {
+                j += 1;
+                if j >= n { break 'main_loop; }
+                p = &path[j];
+                ip = adapter.float_to_int(p);
+            }
+            let s1 = Section::section(self.radius, &s0.b, p);
             self.join_builder.add_join(&s0, &s1, adapter, segments);
             segments.add_section(&s1, adapter);
             s0 = s1;
+            ip0 = ip;
         }
 
         self.end_cap_builder.add_to_end(&s0, adapter, segments);

@@ -288,7 +288,7 @@ impl StrokeState {
                 style = style.line_join(LineJoin::Miter(ratio))
             },
             JoinOption::Round => {
-                let ratio = 0.01 * self.join_value as f32;
+                let ratio = 0.03 * self.join_value as f32;
                 style = style.line_join(LineJoin::Round(ratio))
             }
             JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
@@ -299,10 +299,18 @@ impl StrokeState {
                 style = style.start_cap(LineCap::Butt)
             },
             CapOption::Round => {
-                let ratio = 0.01 * self.start_cap_value as f32;
+                let ratio = 0.03 * self.start_cap_value as f32;
                 style = style.start_cap(LineCap::Round(ratio))
             }
             CapOption::Square => style = style.start_cap(LineCap::Square),
+            CapOption::Arrow => {
+                let points = vec![
+                    [-1.0, -2.0],
+                    [ 3.0,  0.0],
+                    [-1.0,  2.0],
+                ];
+                style = style.start_cap(LineCap::Custom(points))
+            }
         }
 
         match self.end_cap {
@@ -310,10 +318,18 @@ impl StrokeState {
                 style = style.end_cap(LineCap::Butt)
             },
             CapOption::Round => {
-                let ratio = 0.01 * self.end_cap_value as f32;
+                let ratio = 0.03 * self.end_cap_value as f32;
                 style = style.end_cap(LineCap::Round(ratio))
             }
             CapOption::Square => style = style.end_cap(LineCap::Square),
+            CapOption::Arrow => {
+                let points = vec![
+                    [-1.0, -2.0],
+                    [ 3.0,  0.0],
+                    [-1.0,  2.0],
+                ];
+                style = style.end_cap(LineCap::Custom(points))
+            }
         }
 
         let float_shapes = float_paths.stroke(style, self.is_closed);
