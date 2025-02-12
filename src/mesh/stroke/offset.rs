@@ -177,7 +177,7 @@ mod tests {
         ];
 
         let style = StrokeStyle::new(2.0);
-        // let shapes = path.stroke(style, true);
+
         let shapes = path.stroke_with_filter(style, true, ContourFilter { min_area: 0.0, simplify: false });
         assert_eq!(shapes.len(), 1);
 

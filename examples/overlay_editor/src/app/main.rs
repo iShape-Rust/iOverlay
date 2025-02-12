@@ -12,6 +12,9 @@ use crate::app::string::content::StringMessage;
 use crate::app::string::content::StringState;
 use crate::app::stroke::content::StrokeMessage;
 use crate::app::stroke::content::StrokeState;
+use crate::app::outline::content::OutlineMessage;
+use crate::app::outline::content::OutlineState;
+
 
 use crate::app::design::style_separator;
 use crate::app::design::{style_sidebar_button, style_sidebar_button_selected, Design};
@@ -29,6 +32,7 @@ pub(super) struct MainState {
     pub(super) boolean: BooleanState,
     pub(super) string: StringState,
     pub(super) stroke: StrokeState,
+    pub(super) outline: OutlineState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,6 +40,7 @@ pub(crate) enum MainAction {
     Boolean,
     String,
     Stroke,
+    Outline,
 }
 
 impl MainAction {
@@ -43,7 +48,8 @@ impl MainAction {
         match self {
             MainAction::Boolean => "Boolean",
             MainAction::String => "String",
-            MainAction::Stroke => "Stroke"
+            MainAction::Stroke => "Stroke",
+            MainAction::Outline => "Outline"
         }
     }
 }
@@ -59,6 +65,7 @@ pub(crate) enum AppMessage {
     Bool(BooleanMessage),
     String(StringMessage),
     Stroke(StrokeMessage),
+    Outline(OutlineMessage),
     EventOccurred(MainEvent),
 }
 
@@ -66,12 +73,13 @@ impl EditorApp {
 
     pub fn new(mut app_resource: AppResource) -> Self {
         Self {
-            main_actions: vec![MainAction::Boolean, MainAction::String, MainAction::Stroke],
+            main_actions: vec![MainAction::Boolean, MainAction::String, MainAction::Stroke, MainAction::Outline],
             state: MainState {
                 selected_action: MainAction::Boolean,
                 boolean: BooleanState::new(&mut app_resource.boolean),
                 string: StringState::new(&mut app_resource.string),
                 stroke: StrokeState::new(&mut app_resource.stroke),
+                outline: OutlineState::new(&mut app_resource.outline),
             },
             app_resource,
             design: Design::new(),
@@ -84,14 +92,17 @@ impl EditorApp {
             AppMessage::Bool(msg) => self.boolean_update(msg),
             AppMessage::String(msg) => self.string_update(msg),
             AppMessage::Stroke(msg) => self.stroke_update(msg),
+            AppMessage::Outline(msg) => self.outline_update(msg),
             AppMessage::EventOccurred(MainEvent::Keyboard(KeyboardEvent::KeyPressed { key: NamedBox(named @ (Named::ArrowDown | Named::ArrowUp)), .. })) => {
                 match (named, self.state.selected_action.clone()) {
                     (Named::ArrowDown, MainAction::Boolean) => self.boolean_next_test(),
                     (Named::ArrowDown, MainAction::String) => self.string_next_test(),
                     (Named::ArrowDown, MainAction::Stroke) => self.stroke_next_test(),
+                    (Named::ArrowDown, MainAction::Outline) => self.outline_next_test(),
                     (Named::ArrowUp, MainAction::Boolean) => self.boolean_prev_test(),
                     (Named::ArrowUp, MainAction::String) => self.string_prev_test(),
                     (Named::ArrowUp, MainAction::Stroke) => self.stroke_prev_test(),
+                    (Named::ArrowUp, MainAction::Outline) => self.outline_prev_test(),
                     _ => {}
                 }
             }
@@ -111,6 +122,7 @@ impl EditorApp {
                     MainAction::Boolean => self.boolean_init(),
                     MainAction::String => self.string_init(),
                     MainAction::Stroke => self.stroke_init(),
+                    MainAction::Outline => self.outline_init(),
                 }
             }
         }
@@ -144,6 +156,13 @@ impl EditorApp {
                         vertical_rule(1).style(style_separator)
                     )
                     .push(self.stroke_content())
+            }
+            MainAction::Outline => {
+                content
+                    .push(
+                        vertical_rule(1).style(style_separator)
+                    )
+                    .push(self.outline_content())
             }
         };
 

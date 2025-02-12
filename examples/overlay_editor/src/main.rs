@@ -25,7 +25,8 @@ fn run_desktop() -> iced::Result {
     let app_resource = AppResource::with_paths(
         "../../tests/boolean",
         "../../tests/string",
-        "../../tests/stroke"
+        "../../tests/stroke",
+        "../../tests/outline"
     );
 
     let app_initializer = || {
@@ -46,12 +47,14 @@ fn run_wasm() {
     let boolean_file_path = Path::new("../../tests_boolean.json");
     let string_file_path = Path::new("../../tests_string.json");
     let stroke_file_path = Path::new("../../tests_stroke.json");
+    let outline_file_path = Path::new("../../tests_outline.json");
 
     let boolean_data = fs::read_to_string(boolean_file_path).expect("Failed to read boolean JSON file");
     let string_data = fs::read_to_string(string_file_path).expect("Failed to read string JSON file");
     let stroke_data = fs::read_to_string(stroke_file_path).expect("Failed to read string JSON file");
+    let outline_data = fs::read_to_string(outline_file_path).expect("Failed to read string JSON file");
 
-    let app_resource = AppResource::with_content(boolean_data, string_data, stroke_data);
+    let app_resource = AppResource::with_content(boolean_data, string_data, stroke_data, outline_data);
 
     let app_initializer = || {
         let app = EditorApp::new(app_resource);

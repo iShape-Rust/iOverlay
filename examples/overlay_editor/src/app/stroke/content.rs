@@ -7,7 +7,7 @@ use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
 use i_triangle::i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_triangle::i_overlay::mesh::stroke::style::{LineCap, LineJoin, StrokeStyle};
+use i_triangle::i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
