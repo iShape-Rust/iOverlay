@@ -1,4 +1,4 @@
-use crate::buffering::stroke::section::Section;
+use crate::mesh::stroke::section::Section;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
 use i_float::adapter::FloatPointAdapter;
@@ -6,7 +6,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use std::f64::consts::PI;
 use i_float::float::vector::FloatPointMath;
-use crate::buffering::rotator::Rotator;
+use crate::mesh::rotator::Rotator;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn add_join(

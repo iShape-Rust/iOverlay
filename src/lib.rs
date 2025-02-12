@@ -188,7 +188,7 @@
 //! ```
 
 
-pub mod buffering;
+pub mod mesh;
 pub mod fill;
 pub mod core;
 pub mod vector;

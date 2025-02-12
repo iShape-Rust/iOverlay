@@ -1,5 +1,5 @@
 pub mod style;
-pub mod outline;
+pub mod offset;
 mod builder_join;
 mod section;
 mod builder;

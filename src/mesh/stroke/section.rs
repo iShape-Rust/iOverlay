@@ -3,7 +3,7 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
-use crate::buffering::math::Math;
+use crate::mesh::math::Math;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
 

@@ -1,5 +1,5 @@
-use crate::buffering::stroke::builder::StrokeBuilder;
-use crate::buffering::stroke::style::StrokeStyle;
+use crate::mesh::stroke::builder::StrokeBuilder;
+use crate::mesh::stroke::style::StrokeStyle;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
@@ -13,7 +13,7 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
 
-pub trait Outline<P: FloatPointCompatible<T>, T: FloatNumber> {
+pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn stroke(&self, style: StrokeStyle<P, T>, is_closed_path: bool) -> Shapes<P>;
     fn stroke_with_filter_and_scale(
         &self,
@@ -24,7 +24,7 @@ pub trait Outline<P: FloatPointCompatible<T>, T: FloatNumber> {
     ) -> Shapes<P>;
 }
 
-impl<S, P, T> Outline<P, T> for S
+impl<S, P, T> StrokeOffset<P, T> for S
 where
     S: OverlayResource<P, T>,
     P: FloatPointCompatible<T> + 'static,
@@ -83,8 +83,8 @@ where
 #[cfg(test)]
 mod tests {
     use std::f32::consts::PI;
-    use crate::buffering::stroke::outline::Outline;
-    use crate::buffering::stroke::style::{LineJoin, StrokeStyle};
+    use crate::mesh::stroke::offset::StrokeOffset;
+    use crate::mesh::stroke::style::{LineJoin, StrokeStyle};
     use crate::float::filter::ContourFilter;
 
     #[test]

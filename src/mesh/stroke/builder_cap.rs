@@ -5,9 +5,9 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
-use crate::buffering::stroke::section::Section;
-use crate::buffering::stroke::style::LineCap;
-use crate::buffering::rotator::Rotator;
+use crate::mesh::stroke::section::Section;
+use crate::mesh::stroke::style::LineCap;
+use crate::mesh::rotator::Rotator;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
 
