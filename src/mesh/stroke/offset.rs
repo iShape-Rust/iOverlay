@@ -1,5 +1,5 @@
 use crate::mesh::stroke::builder::StrokeBuilder;
-use crate::mesh::stroke::style::StrokeStyle;
+use crate::mesh::style::StrokeStyle;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
@@ -14,7 +14,26 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
+    /// Generates a stroke mesh for paths, contours, or shapes.
+    ///
+    /// - `style`: Defines the stroke properties, including width, line caps, and joins.
+    /// - `is_closed_path`: Specifies whether the path is closed (true) or open (false).
+    ///
+    /// # Returns
+    /// A collection of `Shapes<P>` representing the stroke geometry.
     fn stroke(&self, style: StrokeStyle<P, T>, is_closed_path: bool) -> Shapes<P>;
+
+    /// Generates a stroke mesh for paths, contours, or shapes with optional filtering and scaling.
+    ///
+    /// - `style`: Defines the stroke properties, including width, line caps, and joins.
+    /// - `is_closed_path`: Specifies whether the path is closed (true) or open (false).
+    /// - `filter`: Defines optional contour filtering and simplification:
+    ///     - `min_area`: Retains only contours with an area larger than this value.
+    ///     - `simplify`: If `true`, simplifies contours and removes degenerate edges.
+    /// - `scale`: A scaling factor applied to the stroke geometry.
+    ///
+    /// # Returns
+    /// A collection of `Shapes<P>` representing the stroke geometry.
     fn stroke_with_filter_and_scale(
         &self,
         style: StrokeStyle<P, T>,
@@ -84,7 +103,7 @@ where
 mod tests {
     use std::f32::consts::PI;
     use crate::mesh::stroke::offset::StrokeOffset;
-    use crate::mesh::stroke::style::{LineJoin, StrokeStyle};
+    use crate::mesh::style::{LineJoin, StrokeStyle};
     use crate::float::filter::ContourFilter;
 
     #[test]

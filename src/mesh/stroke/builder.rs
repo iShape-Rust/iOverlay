@@ -3,7 +3,7 @@ use crate::mesh::stroke::builder_join::{
     BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
 };
 use crate::mesh::stroke::section::{Section, SectionToSegment};
-use crate::mesh::stroke::style::{LineJoin, StrokeStyle};
+use crate::mesh::style::{LineJoin, StrokeStyle};
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
 use i_float::adapter::FloatPointAdapter;
