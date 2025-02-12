@@ -131,27 +131,6 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
 }
 
 impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J, P, T> {
-    fn closed_segments<'a>(
-        &self,
-        path: &[P],
-        adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let n = path.len();
-        let start = Section::section(self.radius, &path[n - 1], &path[0]);
-
-        let mut s0 = start.clone();
-        segments.add_section(&s0, adapter);
-        for b in path.iter().skip(1) {
-            let s1 = Section::section(self.radius, &s0.b, b);
-            self.join_builder.add_join(&s0, &s1, adapter, segments);
-            segments.add_section(&s1, adapter);
-            s0 = s1;
-        }
-
-        self.join_builder.add_join(&s0, &start, adapter, segments);
-    }
-
     fn open_segments<'a>(
         &self,
         path: &[P],
@@ -197,4 +176,49 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         self.end_cap_builder.add_to_end(&s0, adapter, segments);
     }
+
+    fn closed_segments<'a>(
+        &self,
+        path: &[P],
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+    ) {
+        if path.len() < 2 { return; }
+
+        // build segments only from points which are not equal in int space
+        let i0 = path.len() - 1;
+        let i1 = Self::next_unique_point(i0, 0, path, adapter);
+        if i1 == usize::MAX { return }
+
+        let start = Section::section(self.radius, &path[i0], &path[i1]);
+        let mut s0 = start.clone();
+        segments.add_section(&s0, adapter);
+
+        let mut i = i1;
+        i = Self::next_unique_point(i, i + 1, path, adapter);
+        while i != usize::MAX {
+            let si = Section::section(self.radius, &s0.b, &path[i]);
+            self.join_builder.add_join(&s0, &si, adapter, segments);
+            segments.add_section(&si, adapter);
+
+            i = Self::next_unique_point(i, i + 1, path, adapter);
+            s0 = si;
+        }
+
+        self.join_builder.add_join(&s0, &start, adapter, segments);
+    }
+
+    #[inline]
+    fn next_unique_point(start: usize, index: usize, path: &[P], adapter: &FloatPointAdapter<P, T>) -> usize {
+        let a = adapter.float_to_int(&path[start]);
+        for (j, p) in path.iter().enumerate().skip(index) {
+            let b = adapter.float_to_int(p);
+            if a != b {
+                return j;
+            }
+        }
+
+        usize::MAX
+    }
+
 }
