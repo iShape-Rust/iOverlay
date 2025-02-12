@@ -9,6 +9,7 @@ pub struct AppResource {
 }
 
 impl AppResource {
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn with_paths(boolean: &str, string: &str, stroke: &str) -> Self {
         Self {
             boolean: BooleanResource::with_path(boolean),
@@ -17,6 +18,7 @@ impl AppResource {
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub fn with_content(boolean: String, string: String, stroke: String) -> Self {
         Self {
             boolean: BooleanResource::with_content(boolean),

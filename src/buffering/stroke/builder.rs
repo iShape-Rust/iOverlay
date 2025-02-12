@@ -11,7 +11,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 
 trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
-    fn build<'a>(
+    fn build(
         &self,
         path: &[P],
         is_closed_path: bool,
@@ -92,8 +92,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
     }
 }
 
-impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBuild<P, T>
-    for Builder<J, P, T>
+impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBuild<P, T> for Builder<J, P, T>
 {
     #[inline]
     fn build(
@@ -113,9 +112,9 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
     #[inline]
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize {
         if is_closed_path {
-            4 * points_count - 2
+            self.join_builder.capacity() * points_count - 2
         } else {
-            4 * (points_count - 1)
+            self.join_builder.capacity() * (points_count - 1)
                 + paths_count
                     * (self.end_cap_builder.capacity() + self.start_cap_builder.capacity())
         }
@@ -131,7 +130,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
 }
 
 impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J, P, T> {
-    fn open_segments<'a>(
+    fn open_segments(
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
@@ -149,7 +148,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
             ip = adapter.float_to_int(&path[j]);
         }
 
-        let mut s0 = Section::section(self.radius, &path[0], &path[j]);
+        let mut s0 = Section::new(self.radius, &path[0], &path[j]);
 
         self.start_cap_builder.add_to_start(&s0, adapter, segments);
 
@@ -167,7 +166,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
                 p = &path[j];
                 ip = adapter.float_to_int(p);
             }
-            let s1 = Section::section(self.radius, &s0.b, p);
+            let s1 = Section::new(self.radius, &s0.b, p);
             self.join_builder.add_join(&s0, &s1, adapter, segments);
             segments.add_section(&s1, adapter);
             s0 = s1;
@@ -177,7 +176,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         self.end_cap_builder.add_to_end(&s0, adapter, segments);
     }
 
-    fn closed_segments<'a>(
+    fn closed_segments(
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
@@ -190,14 +189,14 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         let i1 = Self::next_unique_point(i0, 0, path, adapter);
         if i1 == usize::MAX { return }
 
-        let start = Section::section(self.radius, &path[i0], &path[i1]);
+        let start = Section::new(self.radius, &path[i0], &path[i1]);
         let mut s0 = start.clone();
         segments.add_section(&s0, adapter);
 
         let mut i = i1;
         i = Self::next_unique_point(i, i + 1, path, adapter);
         while i != usize::MAX {
-            let si = Section::section(self.radius, &s0.b, &path[i]);
+            let si = Section::new(self.radius, &s0.b, &path[i]);
             self.join_builder.add_join(&s0, &si, adapter, segments);
             segments.add_section(&si, adapter);
 

@@ -20,7 +20,7 @@ pub(super) struct Section<P: FloatPointCompatible<T>, T: FloatNumber> {
 }
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> Section<P, T> {
-    pub(crate) fn section(radius: T, a: &P, b: &P) -> Self {
+    pub(crate) fn new(radius: T, a: &P, b: &P) -> Self {
         let dir = Math::normal(b, a);
         let t = Math::ortho_and_scale(&dir, radius);
 
@@ -31,8 +31,8 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> Section<P, T> {
         let b_bot = FloatPointMath::sub(b, &t);
 
         Section {
-            a: a.clone(),
-            b: b.clone(),
+            a: *a,
+            b: *b,
             a_top,
             b_top,
             a_bot,

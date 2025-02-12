@@ -69,11 +69,14 @@ pub(crate) struct BooleanResource {
 }
 
 impl BooleanResource {
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn with_path(folder: &str) -> Self {
         let count = BooleanTest::tests_count(folder);
         Self { count, folder: Some(folder.to_string()), tests: Default::default() }
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn with_content(content: String) -> Self {
         let tests_vec: Vec<BooleanTest> = serde_json::from_str(&content).unwrap_or_else(|e| {
             eprintln!("Failed to parse JSON content: {}", e);

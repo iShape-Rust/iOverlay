@@ -70,11 +70,14 @@ pub(crate) struct StringResource {
 }
 
 impl StringResource {
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn with_path(folder: &str) -> Self {
         let count = StringTest::tests_count(folder);
         Self { count, folder: Some(folder.to_string()), tests: Default::default() }
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn with_content(content: String) -> Self {
         let tests_vec: Vec<StringTest> = serde_json::from_str(&content).unwrap_or_else(|e| {
             eprintln!("Failed to parse JSON content: {}", e);

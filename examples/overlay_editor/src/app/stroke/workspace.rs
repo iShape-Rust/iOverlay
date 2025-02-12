@@ -8,11 +8,9 @@ use crate::app::design::{style_sheet_background, Design};
 use crate::app::main::{EditorApp, AppMessage};
 use crate::app::stroke::content::StrokeMessage;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
-use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
 use iced::widget::Stack;
 use iced::widget::Container;
 use iced::{Length, Padding, Size, Vector};
-use crate::draw::varicolored::VaricoloredWidget;
 
 
 pub(crate) struct WorkspaceState {

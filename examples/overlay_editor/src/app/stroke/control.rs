@@ -1,6 +1,4 @@
-use crate::app::fill_option::FillOption;
 use crate::app::main::{AppMessage, EditorApp};
-use crate::app::solver_option::SolverOption;
 use crate::app::stroke::content::StrokeMessage;
 use iced::widget::{checkbox, pick_list, slider, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding};

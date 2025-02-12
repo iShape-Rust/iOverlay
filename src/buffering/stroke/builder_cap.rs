@@ -19,10 +19,6 @@ pub(super) struct CapBuilder<P, T> {
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
 
-    pub(super) fn butt() -> Self {
-        Self { points: None, _phantom: Default::default() }
-    }
-
     pub(super) fn new(cap: LineCap<P, T>, radius: T) -> Self {
         let points = match cap {
             LineCap::Butt => None,
@@ -37,7 +33,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
     pub(super) fn round_points(angle: T, r: T) -> Vec<P> {
         let n = if angle > T::from_float(0.0) {
             let count = PI / angle.to_f64();
-            (count as usize).min(1024).max(2)
+            (count as usize).clamp(2, 1024)
         } else {
             1024
         };

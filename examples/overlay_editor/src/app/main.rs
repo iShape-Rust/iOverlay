@@ -88,8 +88,10 @@ impl EditorApp {
                 match (named, self.state.selected_action.clone()) {
                     (Named::ArrowDown, MainAction::Boolean) => self.boolean_next_test(),
                     (Named::ArrowDown, MainAction::String) => self.string_next_test(),
+                    (Named::ArrowDown, MainAction::Stroke) => self.stroke_next_test(),
                     (Named::ArrowUp, MainAction::Boolean) => self.boolean_prev_test(),
                     (Named::ArrowUp, MainAction::String) => self.string_prev_test(),
+                    (Named::ArrowUp, MainAction::Stroke) => self.stroke_prev_test(),
                     _ => {}
                 }
             }
