@@ -14,7 +14,7 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
-    /// Generates a stroke mesh for paths, contours, or shapes.
+    /// Generates a stroke shapes for paths, contours, or shapes.
     ///
     /// - `style`: Defines the stroke properties, including width, line caps, and joins.
     /// - `is_closed_path`: Specifies whether the path is closed (true) or open (false).
@@ -30,16 +30,14 @@ pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// - `filter`: Defines optional contour filtering and simplification:
     ///     - `min_area`: Retains only contours with an area larger than this value.
     ///     - `simplify`: If `true`, simplifies contours and removes degenerate edges.
-    /// - `scale`: A scaling factor applied to the stroke geometry.
     ///
     /// # Returns
     /// A collection of `Shapes<P>` representing the stroke geometry.
-    fn stroke_with_filter_and_scale(
+    fn stroke_with_filter(
         &self,
         style: StrokeStyle<P, T>,
         is_closed_path: bool,
         filter: ContourFilter<T>,
-        scale: f64,
     ) -> Shapes<P>;
 }
 
@@ -50,15 +48,14 @@ where
     T: FloatNumber + 'static,
 {
     fn stroke(&self, style: StrokeStyle<P, T>, is_closed_path: bool) -> Shapes<P> {
-        self.stroke_with_filter_and_scale(style, is_closed_path, ContourFilter { min_area: T::from_float(0.0), simplify: false }, 0.0)
+        self.stroke_with_filter(style, is_closed_path, ContourFilter { min_area: T::from_float(0.0), simplify: false })
     }
 
-    fn stroke_with_filter_and_scale(
+    fn stroke_with_filter(
         &self,
         style: StrokeStyle<P, T>,
         is_closed_path: bool,
         filter: ContourFilter<T>,
-        scale: f64,
     ) -> Shapes<P> {
         let mut paths_count = 0;
         let mut points_count = 0;
@@ -73,11 +70,7 @@ where
 
         let mut rect = FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(a);
-        let adapter = if scale > 0.0 {
-            FloatPointAdapter::with_scale(rect, scale)
-        } else {
-            FloatPointAdapter::new(rect)
-        };
+        let adapter = FloatPointAdapter::new(rect);
 
         let capacity = builder.capacity(paths_count, points_count, is_closed_path);
         let mut segments = Vec::with_capacity(capacity);
@@ -185,7 +178,7 @@ mod tests {
 
         let style = StrokeStyle::new(2.0);
         // let shapes = path.stroke(style, true);
-        let shapes = path.stroke_with_filter_and_scale(style, true, ContourFilter { min_area: 0.0, simplify: false }, 1.0);
+        let shapes = path.stroke_with_filter(style, true, ContourFilter { min_area: 0.0, simplify: false });
         assert_eq!(shapes.len(), 1);
 
         let shape = shapes.first().unwrap();
