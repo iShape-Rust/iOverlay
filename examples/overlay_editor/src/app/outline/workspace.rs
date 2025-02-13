@@ -1,4 +1,3 @@
-use crate::draw::path::PathWidget;
 use crate::draw::shape::ShapeWidget;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
@@ -54,12 +53,13 @@ impl EditorApp {
                     );
                 }
                 stack = stack.push(
-                    Container::new(PathWidget::with_paths(
+                    Container::new(ShapeWidget::with_paths(
                         &self.state.outline.workspace.outline_input,
                         self.state.outline.workspace.camera,
-                        Design::subject_color(),
+                        None,
+                        None,
+                        Some(Design::subject_color()),
                         1.0,
-                        false,
                     ))
                         .width(Length::Fill)
                         .height(Length::Fill)

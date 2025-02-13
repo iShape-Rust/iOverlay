@@ -9,6 +9,7 @@ use crate::point_editor::widget::PointEditUpdate;
 use i_triangle::i_overlay::mesh::style::{LineJoin, OutlineStyle};
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::mesh::outline::offset::OutlineOffset;
 use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
@@ -140,8 +141,8 @@ impl EditorApp {
         }
     }
 
-    fn outline_update_offset(&mut self, width: f32) {
-        self.state.outline.offset = width;
+    fn outline_update_offset(&mut self, offset: f32) {
+        self.state.outline.offset = offset;
         self.state.outline.update_solution();
     }
 
@@ -160,7 +161,7 @@ impl OutlineState {
     pub(crate) fn new(resource: &mut OutlineResource) -> Self {
         let mut state = OutlineState {
             test: usize::MAX,
-            offset: 1.0,
+            offset: 0.0,
             join: JoinOption::Bevel,
             join_value: 50,
             workspace: Default::default(),
@@ -241,8 +242,7 @@ impl OutlineState {
             JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
         }
 
-        /*
-        let float_shapes = float_paths.outline(style, self.is_closed);
+        let float_shapes = float_paths.outline(style);
 
         let scale = self.workspace.scale;
         let mut int_paths = Vec::with_capacity(float_shapes.len());
@@ -259,7 +259,6 @@ impl OutlineState {
         }
 
         self.workspace.outline_output = int_paths
-        */
     }
 
     pub(super) fn outline_update_point(&mut self, update: PointEditUpdate) {
