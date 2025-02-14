@@ -37,21 +37,18 @@ impl EditorApp {
             );
 
             if self.state.outline.workspace.camera.is_not_empty() {
-                let shapes = &self.state.outline.workspace.outline_output;
-                if !shapes.is_empty() {
-                    stack = stack.push(
-                        Container::new(ShapeWidget::with_paths(
-                            &self.state.outline.workspace.outline_output,
-                            self.state.outline.workspace.camera,
-                            None,
-                            None,
-                            Some(Design::solution_color()),
-                            2.0,
-                        ))
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                    );
-                }
+                stack = stack.push(
+                    Container::new(ShapeWidget::with_paths(
+                        &self.state.outline.workspace.outline_output,
+                        self.state.outline.workspace.camera,
+                        None,
+                        None,
+                        Some(Design::solution_color()),
+                        2.0,
+                    ))
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                );
                 stack = stack.push(
                     Container::new(ShapeWidget::with_paths(
                         &self.state.outline.workspace.outline_input,

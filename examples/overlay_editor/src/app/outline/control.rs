@@ -40,9 +40,9 @@ impl EditorApp {
             )
             .push(
                 Container::new(
-                    slider(0.1f32..=10.0f32, self.state.outline.offset, on_update_offset).step(0.01f32)
+                    slider(-50.0f32..=50.0f32, self.state.outline.offset, on_update_offset).step(0.01f32)
                 )
-                    .width(160)
+                    .width(410)
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
             )

@@ -21,14 +21,6 @@ pub(crate) struct PathWidget {
 }
 
 impl PathWidget {
-    // pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
-    //     let offset = Self::offset_for_shapes(shapes, camera);
-    //     let stroke = Self::stroke_mesh_for_shapes(shapes, camera, offset, stroke_color, stroke_width, arrows);
-    //     Self {
-    //         stroke,
-    //     }
-    // }
-
     pub(crate) fn with_paths(paths: &IntPaths, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
         let offset = Self::offset_for_paths(paths, camera);
         let stroke = Self::stroke_mesh_for_paths(paths, camera, offset, stroke_color, stroke_width, arrows);
@@ -36,25 +28,6 @@ impl PathWidget {
             stroke,
         }
     }
-
-    // fn stroke_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
-    //     if shapes.is_empty() {
-    //         return None;
-    //     }
-    //
-    //     let mut builder = TriangulationBuilder::new();
-    //     for shape in shapes.iter() {
-    //         for path in shape.iter() {
-    //             Self::append_path(&mut builder, camera, path, width, arrows);
-    //         }
-    //     }
-    //     let r = 0.5 * width;
-    //     let offset = Vector::new(offset.x - r, offset.y - r);
-    //
-    //     let triangulation = builder.build();
-    //
-    //     Self::stroke_mesh_for_triangulation(triangulation, offset, color)
-    // }
 
     fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
         if paths.is_empty() {
