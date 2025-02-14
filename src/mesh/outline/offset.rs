@@ -2,6 +2,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::filter::ContourFilter;
+use crate::float::simplify::SimplifyShape;
 use crate::float::source::resource::OverlayResource;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
@@ -51,18 +52,24 @@ where
     }
 
     fn outline_with_filter(&self, style: OutlineStyle<T>, filter: ContourFilter<T>) -> Shapes<P> {
+        let r = style.offset;
+
+        if r.to_f64().abs() < 0.000_0001 {
+            return self.simplify_shape(FillRule::Positive, filter.min_area)
+        }
+
         let mut points_count = 0;
         for path in self.iter_paths() {
             points_count += path.len();
         }
 
-        let r = style.offset;
         let builder = OutlineBuilder::new(style);
         let a = builder.additional_offset(r);
 
         let mut rect =
             FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
-        rect.add_offset(a);
+        rect.add_offset(a.abs());
+
         let adapter = FloatPointAdapter::new(rect);
 
         let capacity = builder.capacity(points_count);

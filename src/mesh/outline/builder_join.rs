@@ -75,6 +75,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for BevelJoin
 
 pub(super) struct MiterJoinBuilder<T> {
     limit_dot_product: T,
+    expand: bool,
     max_offset: T,
     max_length: T,
 }
@@ -88,16 +89,19 @@ impl<T: FloatNumber> MiterJoinBuilder<T> {
         let half_angle = 0.5 * fixed_angle;
         let tan = half_angle.tan();
 
-        let r = radius.to_f64();
+        let r = radius.to_f64().abs();
         let l = r / tan;
+
         // add extra 10% to avoid problems with floating point precision.
         let max_offset = T::from_float(1.1 * (r * r + l * l).sqrt());
         let max_length = T::from_float(l);
 
+        let expand = radius >= T::from_float(0.0);
         Self {
             limit_dot_product,
             max_offset,
-            max_length
+            max_length,
+            expand,
         }
     }
 }
@@ -111,17 +115,29 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
-        if cross_product >= T::from_float(0.0) {
+        let turn = cross_product >= T::from_float(0.0);
+        if turn == self.expand {
+            BevelJoinBuilder::join_top(s0, s1, adapter, segments);
+            return
+        }
+
+        let pa = s0.b_top;
+        let pb = s1.a_top;
+
+        let ia = adapter.float_to_int(&pa);
+        let ib = adapter.float_to_int(&pb);
+
+        let sq_len = ia.sqr_distance(ib);
+        if sq_len < 4 {
             BevelJoinBuilder::join_top(s0, s1, adapter, segments);
             return
         }
 
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
-
         let is_limited = self.limit_dot_product > dot_product;
 
         if is_limited {
-            let (pa, pb, va, vb) = (s0.b_top, s1.a_top, s0.dir, s1.dir);
+            let (va, vb) = (s0.dir, s1.dir);
 
             let ax = pa.x() + self.max_length * va.x();
             let ay = pa.y() + self.max_length * va.y();
@@ -131,8 +147,6 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             let ac = P::from_xy(ax, ay);
             let bc = P::from_xy(bx, by);
 
-            let ia = adapter.float_to_int(&pa);
-            let ib = adapter.float_to_int(&pb);
             let iac = adapter.float_to_int(&ac);
             let ibc = adapter.float_to_int(&bc);
 
@@ -140,8 +154,6 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             segments.push(Segment::subject_ab(iac, ibc));
             segments.push(Segment::subject_ab(ibc, ib));
         } else {
-            let pa = s0.b_top;
-            let pb = s1.a_top;
             let va = s0.dir;
             let vb = s1.dir;
 
@@ -176,6 +188,8 @@ pub(super) struct RoundJoinBuilder<T> {
     average_count: usize,
     radius: T,
     limit_dot_product: T,
+    expand: bool,
+    rot_dir: f64,
 }
 
 impl<T: FloatNumber> RoundJoinBuilder<T> {
@@ -184,11 +198,19 @@ impl<T: FloatNumber> RoundJoinBuilder<T> {
         let fixed_ratio = ratio.to_f64().min(0.25 * PI);
         let limit_dot_product = T::from_float(fixed_ratio.cos());
         let average_count = (0.6 * PI / fixed_ratio) as usize + 2;
+        let (expand, rot_dir) = if radius >= T::from_float(0.0) {
+            (true, -1.0)
+        } else {
+            (false, 1.0)
+        };
+
         Self {
             inv_ratio: 1.0 / fixed_ratio,
             average_count,
             radius,
             limit_dot_product,
+            expand,
+            rot_dir,
         }
     }
 }
@@ -201,7 +223,8 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
-        if cross_product >= T::from_float(0.0) {
+        let turn = cross_product >= T::from_float(0.0);
+        if turn == self.expand {
             BevelJoinBuilder::join_top(s0, s1, adapter, segments);
             return
         }
@@ -219,9 +242,10 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
 
         let start = s0.b_top;
         let end = s1.a_top;
+
         let dir = P::from_xy(-s0.dir.y(), s0.dir.x());
 
-        let rotator = Rotator::<T>::with_angle(-delta_angle);
+        let rotator = Rotator::<T>::with_angle(self.rot_dir * delta_angle);
 
         let center = s0.b;
         let mut v = dir;
