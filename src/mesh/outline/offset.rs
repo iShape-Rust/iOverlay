@@ -1,6 +1,4 @@
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::Overlay;
-use crate::core::overlay_rule::OverlayRule;
 use crate::float::filter::ContourFilter;
 use crate::float::simplify::SimplifyShape;
 use crate::float::source::resource::OverlayResource;
@@ -13,6 +11,7 @@ use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
+use crate::core::graph::OverlayGraph;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -54,10 +53,6 @@ where
     fn outline_with_filter(&self, style: OutlineStyle<T>, filter: ContourFilter<T>) -> Shapes<P> {
         let r = style.offset;
 
-        if r.to_f64().abs() < 0.000_0001 {
-            return self.simplify_shape(FillRule::Positive, filter.min_area)
-        }
-
         let mut points_count = 0;
         for path in self.iter_paths() {
             points_count += path.len();
@@ -72,6 +67,13 @@ where
 
         let adapter = FloatPointAdapter::new(rect);
 
+        let ir= adapter.len_float_to_int(r).abs();
+        if ir <= 1 {
+            // offset is too small
+            return self.simplify_shape(FillRule::Positive, filter.min_area)
+        }
+
+
         let capacity = builder.capacity(points_count);
         let mut segments = Vec::with_capacity(capacity);
 
@@ -79,9 +81,9 @@ where
             builder.build(path, &adapter, &mut segments);
         }
 
-        let shapes = Overlay { segments }
-            .into_graph(FillRule::Positive)
-            .extract_shapes(OverlayRule::Subject);
+        let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
+            .extract_offset_min_area(0);
+
         let mut float = shapes.to_float(&adapter);
 
         if filter.simplify {
@@ -140,5 +142,20 @@ mod tests {
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 8);
+    }
+
+    #[test]
+    fn test_square_offset() {
+        let path = [
+            [-5.0, -5.0f32],
+            [-5.0, 5.0f32],
+            [5.0, 5.0f32],
+            [5.0, -5.0f32],
+        ];
+
+        let style = OutlineStyle::new(-20.0);
+        let shapes = path.outline(style);
+
+        assert_eq!(shapes.len(), 0);
     }
 }

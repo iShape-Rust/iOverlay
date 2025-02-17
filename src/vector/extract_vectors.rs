@@ -22,7 +22,7 @@ impl OverlayGraph {
     }
 
     pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
-        let mut binding = self.links.filter(overlay_rule);
+        let mut binding = self.links.filter_by_rule(overlay_rule);
         let visited = binding.as_mut_slice();
         let mut holes = Vec::new();
         let mut shapes = Vec::new();

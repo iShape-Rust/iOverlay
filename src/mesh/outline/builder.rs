@@ -1,19 +1,20 @@
+use crate::mesh::outline::section::SectionToSegment;
 use std::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use crate::mesh::boolean::OffsetCountBoolean;
 use crate::mesh::outline::builder_join::{JoinBuilder, BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
-use crate::mesh::outline::section::{Section, SectionToSegment};
+use crate::mesh::outline::section::Section;
 use crate::mesh::style::{LineJoin, OutlineStyle};
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::ShapeCountBoolean;
 
 trait OutlineBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn build(
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<OffsetCountBoolean>>,
     );
 
     fn capacity(&self, points_count: usize) -> usize;
@@ -32,7 +33,7 @@ struct Builder<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber>
 
 impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuilder<P, T> {
     pub(super) fn new(style: OutlineStyle<T>) -> OutlineBuilder<P, T> {
-        let radius = T::from_float(0.5) * style.offset;
+        let radius = style.offset;
 
         let builder: Box<dyn OutlineBuild<P, T>> = match style.join {
             LineJoin::Miter(ratio) => Box::new(Builder {
@@ -60,7 +61,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuil
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<OffsetCountBoolean>>,
     ) {
         self.builder.build(path, adapter, segments);
     }
@@ -86,7 +87,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBu
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<OffsetCountBoolean>>,
     ) {
         if path.len() < 2 { return; }
 

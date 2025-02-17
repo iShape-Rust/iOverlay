@@ -5,11 +5,11 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
+use crate::mesh::boolean::OffsetCountBoolean;
 use crate::mesh::stroke::section::Section;
 use crate::mesh::style::LineCap;
 use crate::mesh::rotator::Rotator;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::ShapeCountBoolean;
 
 #[derive(Debug, Clone)]
 pub(super) struct CapBuilder<P, T> {
@@ -66,7 +66,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
         scaled
     }
 
-    pub(super) fn add_to_start(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
+    pub(super) fn add_to_start(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<OffsetCountBoolean>>) {
         let mut a = adapter.float_to_int(&section.a_top);
         if let Some(points) = &self.points {
             let dir = P::from_xy(-section.dir.x(), -section.dir.y());
@@ -75,15 +75,15 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.a);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::subject_ab(b, a));
+                segments.push(Segment::bold_subject_ab(b, a));
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.a_bot);
-        segments.push(Segment::subject_ab(last, a));
+        segments.push(Segment::bold_subject_ab(last, a));
     }
 
-    pub(super) fn add_to_end(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
+    pub(super) fn add_to_end(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<OffsetCountBoolean>>) {
         let mut a = adapter.float_to_int(&section.b_bot);
         if let Some(points) = &self.points {
             let rotator = Rotator::with_vector(&section.dir);
@@ -91,12 +91,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.b);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::subject_ab(b, a));
+                segments.push(Segment::bold_subject_ab(b, a));
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.b_top);
-        segments.push(Segment::subject_ab(last, a));
+        segments.push(Segment::bold_subject_ab(last, a));
     }
 
     #[inline]

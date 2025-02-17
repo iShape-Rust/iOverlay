@@ -1,20 +1,36 @@
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::ShapeCountBoolean;
 use i_float::int::point::IntPoint;
+use crate::mesh::boolean::OffsetCountBoolean;
 
-impl Segment<ShapeCountBoolean> {
+impl Segment<OffsetCountBoolean> {
+
     #[inline]
-    pub(crate) fn subject_ab(p0: IntPoint, p1: IntPoint) -> Self {
+    pub(crate) fn bold_subject_ab(p0: IntPoint, p1: IntPoint) -> Self {
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },
-                count: ShapeCountBoolean::SUBJ_DIRECT,
+                count: OffsetCountBoolean { subj: 1, bold: true },
             }
         } else {
             Self {
                 x_segment: XSegment { a: p1, b: p0 },
-                count: ShapeCountBoolean::SUBJ_INVERT,
+                count: OffsetCountBoolean { subj: -1, bold: true },
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn weak_subject_ab(p0: IntPoint, p1: IntPoint) -> Self {
+        if p0 < p1 {
+            Self {
+                x_segment: XSegment { a: p0, b: p1 },
+                count: OffsetCountBoolean { subj: 1, bold: false },
+            }
+        } else {
+            Self {
+                x_segment: XSegment { a: p1, b: p0 },
+                count: OffsetCountBoolean { subj: -1, bold: false },
             }
         }
     }

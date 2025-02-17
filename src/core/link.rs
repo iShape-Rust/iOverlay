@@ -140,7 +140,7 @@ impl OverlayLinkBuilder {
         links
     }
 
-    fn build_all_links<C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+    pub(crate) fn build_all_links<C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
         let empty_id = IdPoint::new(0, IntPoint::ZERO);
         let empty_link = OverlayLink::new(empty_id, empty_id, 0);
         let mut links = vec![empty_link; fills.len()];

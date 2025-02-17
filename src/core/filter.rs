@@ -4,12 +4,12 @@ use super::overlay_rule::OverlayRule;
 
 /// Read how to apply filter mask [doc](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html)
 pub(crate) trait MaskFilter {
-    fn filter(&self, fill_rule: OverlayRule) -> Vec<bool>;
+    fn filter_by_rule(&self, fill_rule: OverlayRule) -> Vec<bool>;
 }
 
 impl MaskFilter for Vec<OverlayLink> {
     #[inline]
-    fn filter(&self, overlay_rule: OverlayRule) -> Vec<bool> {
+    fn filter_by_rule(&self, overlay_rule: OverlayRule) -> Vec<bool> {
         match overlay_rule {
             OverlayRule::Subject => filter_subject(self),
             OverlayRule::Clip => filter_clip(self),

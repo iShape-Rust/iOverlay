@@ -1,8 +1,5 @@
 use crate::mesh::stroke::builder::StrokeBuilder;
 use crate::mesh::style::StrokeStyle;
-use crate::core::fill_rule::FillRule;
-use crate::core::overlay::Overlay;
-use crate::core::overlay_rule::OverlayRule;
 use crate::float::filter::ContourFilter;
 use crate::float::source::resource::OverlayResource;
 use i_float::adapter::FloatPointAdapter;
@@ -12,6 +9,7 @@ use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
+use crate::core::graph::OverlayGraph;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates a stroke shapes for paths, contours, or shapes.
@@ -72,6 +70,12 @@ where
         rect.add_offset(a);
         let adapter = FloatPointAdapter::new(rect);
 
+        let ir= adapter.len_float_to_int(r).abs();
+        if ir <= 1 {
+            // offset is too small
+            return vec![];
+        }
+
         let capacity = builder.capacity(paths_count, points_count, is_closed_path);
         let mut segments = Vec::with_capacity(capacity);
 
@@ -79,9 +83,9 @@ where
             builder.build(path, is_closed_path, &adapter, &mut segments);
         }
 
-        let shapes = Overlay { segments }
-            .into_graph(FillRule::Positive)
-            .extract_shapes(OverlayRule::Subject);
+        let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
+            .extract_offset_min_area(0);
+
         let mut float = shapes.to_float(&adapter);
 
         if filter.simplify {

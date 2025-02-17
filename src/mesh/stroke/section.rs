@@ -3,9 +3,9 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
+use crate::mesh::boolean::OffsetCountBoolean;
 use crate::mesh::math::Math;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::ShapeCountBoolean;
 
 #[derive(Debug, Clone)]
 pub(super) struct Section<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -47,14 +47,14 @@ pub(crate) trait SectionToSegment<T: FloatNumber, P: FloatPointCompatible<T>> {
     fn add_section(&mut self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>);
 }
 
-impl<T: FloatNumber, P: FloatPointCompatible<T>> SectionToSegment<T, P> for Vec<Segment<ShapeCountBoolean>> {
+impl<T: FloatNumber, P: FloatPointCompatible<T>> SectionToSegment<T, P> for Vec<Segment<OffsetCountBoolean>> {
     fn add_section(&mut self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>) {
         let a_top = adapter.float_to_int(&section.a_top);
         let b_top = adapter.float_to_int(&section.b_top);
         let a_bot = adapter.float_to_int(&section.a_bot);
         let b_bot = adapter.float_to_int(&section.b_bot);
 
-        self.push(Segment::subject_ab(a_top, b_top));
-        self.push(Segment::subject_ab(b_bot, a_bot));
+        self.push(Segment::bold_subject_ab(a_top, b_top));
+        self.push(Segment::bold_subject_ab(b_bot, a_bot));
     }
 }

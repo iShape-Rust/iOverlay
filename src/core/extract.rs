@@ -41,7 +41,7 @@ impl OverlayGraph {
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: usize) -> IntShapes {
-        let visited = self.links.filter(overlay_rule);
+        let visited = self.links.filter_by_rule(overlay_rule);
         self.extract(visited, overlay_rule, min_area)
     }
 
@@ -335,7 +335,7 @@ impl Validate for IntPath {
     }
 }
 
-trait Visit {
+pub(crate) trait Visit {
     fn is_visited(&self, index: usize) -> bool;
     fn is_not_visited(&self, index: usize) -> bool;
     fn visit(&mut self, index: usize);

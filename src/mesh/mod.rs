@@ -4,3 +4,4 @@ pub(crate) mod math;
 mod rotator;
 mod subject;
 pub mod style;
+mod boolean;
