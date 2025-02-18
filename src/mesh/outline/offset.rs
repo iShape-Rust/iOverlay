@@ -1,6 +1,8 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::graph::OverlayGraph;
+use crate::core::overlay::{Overlay, ShapeType};
+use crate::core::overlay_rule::OverlayRule;
 use crate::float::filter::ContourFilter;
-use crate::float::simplify::SimplifyShape;
 use crate::float::source::resource::OverlayResource;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
@@ -10,8 +12,8 @@ use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::area::IntArea;
 use i_shape::float::simple::SimplifyContour;
-use crate::core::graph::OverlayGraph;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -51,38 +53,73 @@ where
     }
 
     fn outline_with_filter(&self, style: OutlineStyle<T>, filter: ContourFilter<T>) -> Shapes<P> {
-        let r = style.offset;
-
         let mut points_count = 0;
         for path in self.iter_paths() {
             points_count += path.len();
         }
 
-        let builder = OutlineBuilder::new(style);
-        let a = builder.additional_offset(r);
+        let outer_builder = OutlineBuilder::new(style.outer_offset, &style.join);
+        let inner_builder = OutlineBuilder::new(-style.inner_offset, &style.join);
+
+        let outer_radius = style.outer_offset;
+        let inner_radius = style.inner_offset;
+
+        let outer_additional_offset = outer_builder.additional_offset(outer_radius);
+        let inner_additional_offset = inner_builder.additional_offset(inner_radius);
+
+        let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
 
         let mut rect =
             FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
-        rect.add_offset(a.abs());
+        rect.add_offset(additional_offset);
 
         let adapter = FloatPointAdapter::new(rect);
 
-        let ir= adapter.len_float_to_int(r).abs();
-        if ir <= 1 {
-            // offset is too small
-            return self.simplify_shape(FillRule::Positive, filter.min_area)
-        }
-
-
-        let capacity = builder.capacity(points_count);
-        let mut segments = Vec::with_capacity(capacity);
+        let total_capacity = outer_builder.capacity(points_count);
+        let mut overlay = Overlay::new(total_capacity);
 
         for path in self.iter_paths() {
-            builder.build(path, &adapter, &mut segments);
+            let area = path.unsafe_int_area(&adapter);
+            if area.abs() <= 1 {
+                continue;
+            }
+            if area > 0 {
+                let capacity = outer_builder.capacity(path.len());
+                let mut segments = Vec::with_capacity(capacity);
+                outer_builder.build(path, &adapter, &mut segments);
+                let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                    .extract_offset_min_area(0);
+                overlay.add_shapes(&shapes, ShapeType::Subject);
+            } else {
+                let mut inverted = Vec::with_capacity(path.len());
+                for p in path.iter().rev() {
+                    inverted.push(*p);
+                }
+
+                let capacity = inner_builder.capacity(inverted.len());
+                let mut segments = Vec::with_capacity(capacity);
+                inner_builder.build(&inverted, &adapter, &mut segments);
+                let mut shapes =
+                    OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                        .extract_offset_min_area(0);
+
+                for shape in shapes.iter_mut() {
+                    for path in shape.iter_mut() {
+                        path.reverse();
+                    }
+                }
+
+                overlay.add_shapes(&shapes, ShapeType::Subject);
+            }
         }
 
-        let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
-            .extract_offset_min_area(0);
+        let min_area = adapter.sqr_float_to_int(filter.min_area);
+        let shapes = overlay.overlay_with_min_area_and_solver(
+            OverlayRule::Subject,
+            FillRule::Positive,
+            min_area,
+            Default::default(),
+        );
 
         let mut float = shapes.to_float(&adapter);
 

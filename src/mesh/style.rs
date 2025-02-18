@@ -46,8 +46,9 @@ pub struct StrokeStyle<P: FloatPointCompatible<T>, T: FloatNumber> {
 /// Defines the outline style for offsetting shapes.
 #[derive(Debug)]
 pub struct OutlineStyle<T: FloatNumber> {
-    pub(crate) offset: T,
-    pub(crate) join: LineJoin<T>,
+    pub outer_offset: T,
+    pub inner_offset: T,
+    pub join: LineJoin<T>,
 }
 
 impl<P: FloatPointCompatible<T>, T: FloatNumber> StrokeStyle<P, T> {
@@ -96,12 +97,25 @@ impl<T: FloatNumber> OutlineStyle<T> {
 
     /// Creates a new `OutlineStyle` with the specified offset.
     pub fn new(offset: T) -> Self {
-        Self { offset, ..Default::default() }
+        Self { outer_offset: offset, inner_offset: offset, ..Default::default() }
     }
 
     /// Sets the offset distance.
     pub fn offset(mut self, offset: T) -> Self {
-        self.offset = offset;
+        self.outer_offset = offset;
+        self.inner_offset = offset;
+        self
+    }
+
+    /// Sets the outer distance.
+    pub fn outer_offset(mut self, outer_offset: T) -> Self {
+        self.outer_offset = outer_offset;
+        self
+    }
+
+    /// Sets the inner distance.
+    pub fn inner_offset(mut self, inner_offset: T) -> Self {
+        self.inner_offset = inner_offset;
         self
     }
 
@@ -115,7 +129,8 @@ impl<T: FloatNumber> OutlineStyle<T> {
 impl<T: FloatNumber> Default for OutlineStyle<T> {
     fn default() -> Self {
         Self {
-            offset: T::from_float(1.0),
+            outer_offset: T::from_float(1.0),
+            inner_offset: T::from_float(1.0),
             join: LineJoin::Bevel
         }
     }

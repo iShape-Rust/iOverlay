@@ -16,7 +16,8 @@ use std::collections::HashMap;
 
 pub(crate) struct OutlineState {
     pub(crate) test: usize,
-    pub(crate) offset: f32,
+    pub(crate) outer_offset: f32,
+    pub(crate) inner_offset: f32,
     pub(crate) join: JoinOption,
     pub(crate) join_value: u8,
     pub(crate) workspace: WorkspaceState,
@@ -27,7 +28,8 @@ pub(crate) struct OutlineState {
 #[derive(Debug, Clone)]
 pub(crate) enum OutlineMessage {
     TestSelected(usize),
-    OffsetValueUpdated(f32),
+    OuterOffsetValueUpdated(f32),
+    InnerOffsetValueUpdated(f32),
     JoinSelected(JoinOption),
     JoinValueUpdated(u8),
     PointEdited(PointEditUpdate),
@@ -93,7 +95,8 @@ impl EditorApp {
     pub(crate) fn outline_update(&mut self, message: OutlineMessage) {
         match message {
             OutlineMessage::TestSelected(index) => self.outline_set_test(index),
-            OutlineMessage::OffsetValueUpdated(value) => self.outline_update_offset(value),
+            OutlineMessage::OuterOffsetValueUpdated(value) => self.outline_update_outer_offset(value),
+            OutlineMessage::InnerOffsetValueUpdated(value) => self.outline_update_inner_offset(value),
             OutlineMessage::JoinSelected(join) => self.outline_update_join(join),
             OutlineMessage::JoinValueUpdated(value) => self.outline_update_join_value(value),
             OutlineMessage::PointEdited(update) => self.outline_update_point(update),
@@ -141,8 +144,13 @@ impl EditorApp {
         }
     }
 
-    fn outline_update_offset(&mut self, offset: f32) {
-        self.state.outline.offset = offset;
+    fn outline_update_outer_offset(&mut self, offset: f32) {
+        self.state.outline.outer_offset = offset;
+        self.state.outline.update_solution();
+    }
+
+    fn outline_update_inner_offset(&mut self, offset: f32) {
+        self.state.outline.inner_offset = offset;
         self.state.outline.update_solution();
     }
 
@@ -161,7 +169,8 @@ impl OutlineState {
     pub(crate) fn new(resource: &mut OutlineResource) -> Self {
         let mut state = OutlineState {
             test: usize::MAX,
-            offset: 0.0,
+            outer_offset: 0.0,
+            inner_offset: 0.0,
             join: JoinOption::Bevel,
             join_value: 50,
             workspace: Default::default(),
@@ -229,7 +238,7 @@ impl OutlineState {
             float_paths.push(float_path);
         }
 
-        let mut style = OutlineStyle::new(self.offset);
+        let mut style = OutlineStyle::new(self.outer_offset).inner_offset(self.inner_offset);
         match self.join {
             JoinOption::Miter => {
                 let ratio = 0.03 * self.join_value as f32;

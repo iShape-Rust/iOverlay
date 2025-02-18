@@ -6,7 +6,7 @@ use i_float::float::number::FloatNumber;
 use crate::mesh::boolean::OffsetCountBoolean;
 use crate::mesh::outline::builder_join::{JoinBuilder, BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
 use crate::mesh::outline::section::Section;
-use crate::mesh::style::{LineJoin, OutlineStyle};
+use crate::mesh::style::LineJoin;
 use crate::segm::segment::Segment;
 
 trait OutlineBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -32,18 +32,17 @@ struct Builder<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber>
 }
 
 impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuilder<P, T> {
-    pub(super) fn new(style: OutlineStyle<T>) -> OutlineBuilder<P, T> {
-        let radius = style.offset;
+    pub(super) fn new(radius: T, join: &LineJoin<T>) -> OutlineBuilder<P, T> {
 
-        let builder: Box<dyn OutlineBuild<P, T>> = match style.join {
+        let builder: Box<dyn OutlineBuild<P, T>> = match join {
             LineJoin::Miter(ratio) => Box::new(Builder {
                 radius,
-                join_builder: MiterJoinBuilder::new(ratio, radius),
+                join_builder: MiterJoinBuilder::new(*ratio, radius),
                 _phantom: Default::default(),
             }),
             LineJoin::Round(ratio) => Box::new(Builder {
                 radius,
-                join_builder: RoundJoinBuilder::new(ratio, radius),
+                join_builder: RoundJoinBuilder::new(*ratio, radius),
                 _phantom: Default::default(),
             }),
             LineJoin::Bevel => Box::new(Builder {

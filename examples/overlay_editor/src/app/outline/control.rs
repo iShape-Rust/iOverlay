@@ -31,16 +31,32 @@ impl std::fmt::Display for JoinOption {
 
 impl EditorApp {
     pub(crate) fn outline_control(&self) -> Column<AppMessage> {
-        let offset_list = Row::new()
+        let outer_offset_list = Row::new()
             .push(
-                Text::new("Outline Offset:")
+                Text::new("Outer Offset:")
                     .width(Length::Fixed(120.0))
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
             )
             .push(
                 Container::new(
-                    slider(-50.0f32..=50.0f32, self.state.outline.offset, on_update_offset).step(0.01f32)
+                    slider(-50.0f32..=50.0f32, self.state.outline.outer_offset, on_update_outer_offset).step(0.01f32)
+                )
+                    .width(410)
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .height(Length::Fixed(40.0));
+        let inner_offset_list = Row::new()
+            .push(
+                Text::new("Inner Offset:")
+                    .width(Length::Fixed(120.0))
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .push(
+                Container::new(
+                    slider(-50.0f32..=50.0f32, self.state.outline.inner_offset, on_update_inner_offset).step(0.01f32)
                 )
                     .width(410)
                     .height(Length::Fill)
@@ -85,14 +101,19 @@ impl EditorApp {
         }
 
         Column::new()
-            .push(offset_list)
+            .push(outer_offset_list)
+            .push(inner_offset_list)
             .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
             .push(join_pick_list)
     }
 }
 
-fn on_update_offset(value: f32) -> AppMessage {
-    AppMessage::Outline(OutlineMessage::OffsetValueUpdated(value))
+fn on_update_outer_offset(value: f32) -> AppMessage {
+    AppMessage::Outline(OutlineMessage::OuterOffsetValueUpdated(value))
+}
+
+fn on_update_inner_offset(value: f32) -> AppMessage {
+    AppMessage::Outline(OutlineMessage::InnerOffsetValueUpdated(value))
 }
 
 fn on_select_join(option: JoinOption) -> AppMessage {
