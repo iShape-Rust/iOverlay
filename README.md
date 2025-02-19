@@ -11,6 +11,20 @@ The iOverlay library provides high-performance boolean operations on polygons, i
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 
+## Table of Contents
+
+- [Features](#features)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+- [Boolean Operations](#boolean-operations)
+  - [Simple Example](#simple-example)
+  - [Overlay Rules](#overlay-rules)
+- [Custom Point Type Support](#custom-point-type-support)
+- [Slicing & Clipping](#slicing--clipping)
+  - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
+  - [Clipping a Polyline by a Polygon](#clipping-a-polyline-by-a-polygon)
+- [Versioning Policy](#versioning-policy)
+
 &nbsp;
 ## Features
 
