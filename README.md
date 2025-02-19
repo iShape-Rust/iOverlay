@@ -238,6 +238,14 @@ println!("result: {:?}", result);
 |------|--------|-------|--------|
 | <img src="readme/line_cap_butt.svg" alt="Butt" style="width:100px;"> | <img src="readme/line_cap_square.svg" alt="Square" style="width:100px;"> | <img src="readme/line_cap_round.svg" alt="Round" style="width:100px;"> | <img src="readme/line_cap_custom.svg" alt="Custom" style="width:100px;"> |
 
+&nbsp;
+### LineJoin
+| Bevel | Mitter | Round |
+|-------|--------|-------|
+| <img src="readme/line_join_bevel.svg" alt="Bevel" style="width:100px;"> | <img src="readme/line_join_mitter.svg" alt="Mitter" style="width:100px;"> | <img src="readme/line_join_round.svg" alt="Round" style="width:100px;"> |
+
+&nbsp;
+
 # Versioning Policy
 
 This crate follows a pragmatic versioning approach:
