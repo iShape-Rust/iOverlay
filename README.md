@@ -9,32 +9,51 @@ The iOverlay library provides high-performance boolean operations on polygons, i
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
 
+Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 
-## [Documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
-Try out iOverlay with an interactive demo:
+## Table of Contents
+
+- [Features](#features)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+- [Boolean Operations](#boolean-operations)
+  - [Simple Example](#simple-example)
+  - [Overlay Rules](#overlay-rules)
+- [Custom Point Type Support](#custom-point-type-support)
+- [Slicing & Clipping](#slicing--clipping)
+  - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
+  - [Clipping a Polyline by a Polygon](#clipping-a-polyline-by-a-polygon)
+- [Versioning Policy](#versioning-policy)
+
+&nbsp;
+## Features
+
+- **Boolean Operations**: union, intersection, difference, and exclusion.
+- **Polyline Operations**: clip and slice.
+- **Polygons**: with holes, self-intersections, and multiple contours.
+- **Simplification**: removes degenerate vertices and merges collinear edges.
+- **Buffering**: offsets paths and polygons.
+- **Fill Rules**: even-odd, non-zero, positive and negative.
+- **Data Types**: Supports i32, f32, and f64 APIs.
+
+&nbsp;
+## Demo
 
 - [Stars Rotation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 - [Shapes Editor](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
 - [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
 
-
-
-## Features
-
-- **Boolean Operations**: union, intersection, difference, and exclusion.
-- **String Line Operations**: clip and slice.
-- **Polygons**: with holes, self-intersections, and multiple contours.
-- **Simplification**: removes degenerate vertices and merges collinear edges.
-- **Fill Rules**: even-odd, non-zero, positive and negative.
-- **Data Types**: Supports i32, f32, and f64 APIs.
-
+&nbsp;
 ## Getting Started
 
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^1.9"
+i_overlay = "^2.0"
 ```
+
+&nbsp;
+## Boolean Operations
 
 ### Simple Example
 
@@ -73,6 +92,8 @@ let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 
 println!("result: {:?}", result);
 ```
+&nbsp;
+
 The result is a vec of shapes:
 ```rust
 [
@@ -94,6 +115,8 @@ The result is a vec of shapes:
     // ... other shapes if present
 ]
 ```
+&nbsp;
+
 The `overlay` function returns a `Vec<Shapes>`:
 
 - `Vec<Shape>`: A collection of shapes.
@@ -102,10 +125,17 @@ The `overlay` function returns a `Vec<Shapes>`:
   - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
 - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 
-**Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours. 
+**Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
 
-### Custom Point ###
+&nbsp;
+### Overlay Rules
+| A,B | A ∪ B | A ∩ B | A - B | B - A | A ⊕ B |
+|---------|---------------|----------------------|----------------|--------------------|----------------|
+| <img src="readme/ab.svg" alt="AB" style="width:100px;"> | <img src="readme/union.svg" alt="Union" style="width:100px;"> | <img src="readme/intersection.svg" alt="Intersection" style="width:100px;"> | <img src="readme/difference_ab.svg" alt="Difference" style="width:100px;"> | <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:100px;"> | <img src="readme/exclusion.svg" alt="Exclusion" style="width:100px;"> |
+
+&nbsp;
+## Custom Point Type Support
 `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 ```rust
 #[derive(Clone, Copy, Debug)]
@@ -145,8 +175,13 @@ let clip = [
 let result = subj.overlay(&clip, OverlayRule::Difference, FillRule::EvenOdd);
 
 println!("result: {:?}", result);
+
 ```
-### Slicing a Polygon by a String Line
+
+&nbsp;
+## Slicing & Clipping
+
+### Slicing a Polygon with a Polyline
 ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
 ```rust
 let polygon = [
@@ -167,7 +202,9 @@ let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 
 println!("result: {:?}", result);
 ```
-### Clip a String Lines by a Polygon
+&nbsp;
+
+### Clipping a Polyline by a Polygon
 ![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
 ```rust
 let polygon = [
@@ -190,6 +227,25 @@ let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
 println!("result: {:?}", result);
 ```
 
+&nbsp;
+
+## Buffering
+### Offseting a Path
+
+&nbsp;
+### LineCap
+| Butt | Square | Round | Custom |
+|------|--------|-------|--------|
+| <img src="readme/line_cap_butt.svg" alt="Butt" style="width:100px;"> | <img src="readme/line_cap_square.svg" alt="Square" style="width:100px;"> | <img src="readme/line_cap_round.svg" alt="Round" style="width:100px;"> | <img src="readme/line_cap_custom.svg" alt="Custom" style="width:100px;"> |
+
+&nbsp;
+### LineJoin
+| Bevel | Mitter | Round |
+|-------|--------|-------|
+| <img src="readme/line_join_bevel.svg" alt="Bevel" style="width:100px;"> | <img src="readme/line_join_mitter.svg" alt="Mitter" style="width:100px;"> | <img src="readme/line_join_round.svg" alt="Round" style="width:100px;"> |
+
+&nbsp;
+
 # Versioning Policy
 
 This crate follows a pragmatic versioning approach:
@@ -199,22 +255,3 @@ This crate follows a pragmatic versioning approach:
     MAJOR updates (e.g., 1.x.x → 2.x.x): Reserved for significant breaking changes or major redesigns.
 
 To minimize disruption, consider pinning dependencies when relying on specific versions.
-
-# Overlay Rules
-
-<img src="readme/ab.svg" alt="AB" style="width:50%;">
-
-### Union, A or B
-<img src="readme/union.svg" alt="Union" style="width:50%;">
-
-### Intersection, A and B
-<img src="readme/intersection.svg" alt="Intersection" style="width:50%;">
-
-### Difference, A - B
-<img src="readme/difference_ab.svg" alt="Difference" style="width:50%;">
-
-### Inverse Difference, B - A
-<img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:50%;">
-
-### Exclusion, A xor B
-<img src="readme/exclusion.svg" alt="Exclusion" style="width:50%;">
