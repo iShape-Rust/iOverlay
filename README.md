@@ -203,6 +203,7 @@ let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 println!("result: {:?}", result);
 ```
 &nbsp;
+
 ### Clipping a Polyline by a Polygon
 ![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
 ```rust
@@ -225,6 +226,17 @@ let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
 
 println!("result: {:?}", result);
 ```
+
+&nbsp;
+
+## Buffering
+### Offseting a Path
+
+&nbsp;
+### LineCap
+| Butt | Square | Round | Custom |
+|------|--------|-------|--------|
+| <img src="readme/line_cap_butt.svg" alt="Butt" style="width:100px;"> | <img src="readme/line_cap_square.svg" alt="Square" style="width:100px;"> | <img src="readme/line_cap_round.svg" alt="Round" style="width:100px;"> | <img src="readme/line_cap_custom.svg" alt="Custom" style="width:100px;"> |
 
 # Versioning Policy
 
