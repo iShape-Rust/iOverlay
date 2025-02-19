@@ -12,22 +12,22 @@ The iOverlay library provides high-performance boolean operations on polygons, i
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 
 &nbsp;
-## Demo
-
-- [Stars Rotation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
-- [Shapes Editor](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
-- [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
-
-&nbsp;
 ## Features
 
 - **Boolean Operations**: union, intersection, difference, and exclusion.
-- **String Line Operations**: clip and slice.
+- **Polyline Operations**: clip and slice.
 - **Polygons**: with holes, self-intersections, and multiple contours.
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Buffering**: offsets paths and polygons.
 - **Fill Rules**: even-odd, non-zero, positive and negative.
 - **Data Types**: Supports i32, f32, and f64 APIs.
+
+&nbsp;
+## Demo
+
+- [Stars Rotation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
+- [Shapes Editor](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
+- [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
 
 &nbsp;
 ## Getting Started
@@ -38,7 +38,7 @@ Add the following to your Cargo.toml:
 i_overlay = "^2.0"
 ```
 
-## Boolean Operation
+## Boolean Operations
 
 ### Simple Example
 
@@ -116,7 +116,7 @@ The `overlay` function returns a `Vec<Shapes>`:
 | <img src="readme/ab.svg" alt="AB" style="width:100px;"> | <img src="readme/union.svg" alt="Union" style="width:100px;"> | <img src="readme/intersection.svg" alt="Intersection" style="width:100px;"> | <img src="readme/difference_ab.svg" alt="Difference" style="width:100px;"> | <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:100px;"> | <img src="readme/exclusion.svg" alt="Exclusion" style="width:100px;"> |
 
 &nbsp;
-## Custom Point
+## Custom Point Type Support
 `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 ```rust
 #[derive(Clone, Copy, Debug)]
@@ -160,9 +160,9 @@ println!("result: {:?}", result);
 ```
 
 &nbsp;
-## Slicing
+## Slicing & Clipping
 
-### Slicing a Polygon by a String Line
+### Slicing a Polygon with a Polyline
 ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
 ```rust
 let polygon = [
@@ -184,7 +184,7 @@ let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 println!("result: {:?}", result);
 ```
 &nbsp;
-### Clip a String Lines by a Polygon
+### Clipping a Polyline by a Polygon
 ![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
 ```rust
 let polygon = [
