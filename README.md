@@ -9,7 +9,7 @@ The iOverlay library provides high-performance boolean operations on polygons, i
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
 
-
+&nbsp;
 ## [Documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 Try out iOverlay with an interactive demo:
 
@@ -17,8 +17,7 @@ Try out iOverlay with an interactive demo:
 - [Shapes Editor](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
 - [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
 
-
-
+&nbsp;
 ## Features
 
 - **Boolean Operations**: union, intersection, difference, and exclusion.
@@ -29,13 +28,16 @@ Try out iOverlay with an interactive demo:
 - **Fill Rules**: even-odd, non-zero, positive and negative.
 - **Data Types**: Supports i32, f32, and f64 APIs.
 
+&nbsp;
 ## Getting Started
 
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^1.9"
+i_overlay = "^2.0"
 ```
+
+## Boolean Operation
 
 ### Simple Example
 
@@ -103,10 +105,17 @@ The `overlay` function returns a `Vec<Shapes>`:
   - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
 - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 
-**Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours. 
+**Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
 
-### Custom Point ###
+&nbsp;
+### Overlay Rules
+| A,B | A ∪ B | A ∩ B | A - B | B - A | A ⊕ B |
+|---------|---------------|----------------------|----------------|--------------------|----------------|
+| <img src="readme/ab.svg" alt="AB" style="width:100px;"> | <img src="readme/union.svg" alt="Union" style="width:100px;"> | <img src="readme/intersection.svg" alt="Intersection" style="width:100px;"> | <img src="readme/difference_ab.svg" alt="Difference" style="width:100px;"> | <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:100px;"> | <img src="readme/exclusion.svg" alt="Exclusion" style="width:100px;"> |
+
+&nbsp;
+## Custom Point
 `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 ```rust
 #[derive(Clone, Copy, Debug)]
@@ -146,7 +155,12 @@ let clip = [
 let result = subj.overlay(&clip, OverlayRule::Difference, FillRule::EvenOdd);
 
 println!("result: {:?}", result);
+
 ```
+
+&nbsp;
+## Slicing
+
 ### Slicing a Polygon by a String Line
 ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
 ```rust
@@ -168,6 +182,7 @@ let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 
 println!("result: {:?}", result);
 ```
+&nbsp;
 ### Clip a String Lines by a Polygon
 ![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
 ```rust
@@ -200,22 +215,3 @@ This crate follows a pragmatic versioning approach:
     MAJOR updates (e.g., 1.x.x → 2.x.x): Reserved for significant breaking changes or major redesigns.
 
 To minimize disruption, consider pinning dependencies when relying on specific versions.
-
-# Overlay Rules
-
-<img src="readme/ab.svg" alt="AB" style="width:50%;">
-
-### Union, A or B
-<img src="readme/union.svg" alt="Union" style="width:50%;">
-
-### Intersection, A and B
-<img src="readme/intersection.svg" alt="Intersection" style="width:50%;">
-
-### Difference, A - B
-<img src="readme/difference_ab.svg" alt="Difference" style="width:50%;">
-
-### Inverse Difference, B - A
-<img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:50%;">
-
-### Exclusion, A xor B
-<img src="readme/exclusion.svg" alt="Exclusion" style="width:50%;">
