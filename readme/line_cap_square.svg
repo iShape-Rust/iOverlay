@@ -27,13 +27,13 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showgrid="true"
-     inkscape:zoom="0.82951275"
-     inkscape:cx="885.45957"
-     inkscape:cy="600.9552"
+     inkscape:zoom="0.85047226"
+     inkscape:cx="885.97834"
+     inkscape:cy="601.43055"
      inkscape:window-width="1872"
      inkscape:window-height="1212"
      inkscape:window-x="688"
-     inkscape:window-y="26"
+     inkscape:window-y="25"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      showguides="false">
@@ -202,7 +202,7 @@
        id="path23"
        sodipodi:nodetypes="cccc" />
     <path
-       style="fill:#ffa500;stroke:#ff8c00;stroke-width:16;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#ffa500;stroke:#ff8c00;stroke-width:12;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
        d="M 384,256 V 640"
        id="path3"
        sodipodi:nodetypes="cc" />
