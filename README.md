@@ -25,6 +25,7 @@ Try out iOverlay with an interactive demo:
 - **String Line Operations**: clip and slice.
 - **Polygons**: with holes, self-intersections, and multiple contours.
 - **Simplification**: removes degenerate vertices and merges collinear edges.
+- **Buffering**: offsets paths and polygons.
 - **Fill Rules**: even-odd, non-zero, positive and negative.
 - **Data Types**: Supports i32, f32, and f64 APIs.
 
