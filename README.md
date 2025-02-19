@@ -78,6 +78,8 @@ let result = subj.overlay(&clip, OverlayRule::Union, FillRule::EvenOdd);
 
 println!("result: {:?}", result);
 ```
+&nbsp;
+
 The result is a vec of shapes:
 ```rust
 [
@@ -99,6 +101,8 @@ The result is a vec of shapes:
     // ... other shapes if present
 ]
 ```
+&nbsp;
+
 The `overlay` function returns a `Vec<Shapes>`:
 
 - `Vec<Shape>`: A collection of shapes.
