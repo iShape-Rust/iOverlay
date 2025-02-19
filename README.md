@@ -23,6 +23,9 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 - [Slicing & Clipping](#slicing--clipping)
   - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
   - [Clipping a Polyline by a Polygon](#clipping-a-polyline-by-a-polygon)
+- [Buffering](#buffering)
+  - [Offseting a Path](#offseting-a-path)
+  - [Offseting a Polygon](#offseting-a-polygon)
 - [Versioning Policy](#versioning-policy)
 
 &nbsp;
@@ -232,6 +235,7 @@ println!("result: {:?}", result);
 &nbsp;
 
 ## Buffering
+
 ### Offseting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
 
@@ -256,6 +260,10 @@ let shapes = path.stroke(style, false);
 
 println!("result: {:?}", shapes);
 ```
+&nbsp;
+
+### Offseting a Polygon
+<img src="readme/example_offseting_polygon.svg" alt="Path Example" style="width:400px;">
 
 &nbsp;
 ### LineCap
