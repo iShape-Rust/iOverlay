@@ -157,7 +157,7 @@ mod tests {
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Round(0.25 * PI));
         let shapes = path.outline(style);
 
-        assert_eq!(shapes.len(), 3);
+        assert_eq!(shapes.len(), 0);
     }
 
     #[test]

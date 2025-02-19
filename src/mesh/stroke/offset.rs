@@ -104,6 +104,19 @@ mod tests {
     use crate::float::filter::ContourFilter;
 
     #[test]
+    fn test_doc() {
+        let path = [
+            [0.0, 0.0],
+            [10.0, 0.0],
+        ];
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
     fn test_simple() {
         let path = [
             [0.0, 0.0],

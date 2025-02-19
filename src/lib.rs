@@ -132,7 +132,7 @@
 //! println!("result: {:?}", result);
 //! ```
 //!
-//! ## Slicing a Polygon by a String Line
+//! ## Slicing a Polygon with a Polyline
 //! ![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
 //!
 //!```rust
@@ -147,18 +147,18 @@
 //!     [4.0, 1.0],
 //! ];
 //!
-//! let slicing_line = [
+//! let polyline = [
 //!     [3.0, 5.0],
 //!     [2.0, 2.0],
 //!     [3.0, 3.0],
 //!     [2.0, 0.0],
 //! ];
 //!
-//! let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
+//! let result = polygon.slice_by(&polyline, FillRule::NonZero);
 //!
 //! println!("result: {:?}", result);
 //! ```
-//! ## Clip a String Lines by a Polygon
+//! ## Clipping a Polyline by a Polygon
 //! ![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
 //!
 //!```rust
@@ -167,7 +167,7 @@
 //! use i_overlay::float::single::SingleFloatOverlay;
 //! use i_overlay::string::clip::ClipRule;
 //!
-//! let string_line = [
+//! let polyline = [
 //!     [3.0, 5.0],
 //!     [2.0, 2.0],
 //!     [3.0, 3.0],
@@ -182,7 +182,7 @@
 //! ];
 //!
 //! let clip_rule = ClipRule { invert: false, boundary_included: false };
-//! let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
+//! let result = polyline.clip_by(&polygon, FillRule::NonZero, clip_rule);
 //!
 //! println!("result: {:?}", result);
 //! ```
