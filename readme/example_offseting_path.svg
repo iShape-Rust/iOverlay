@@ -27,13 +27,13 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showgrid="true"
-     inkscape:zoom="0.27923535"
-     inkscape:cx="1255.2136"
-     inkscape:cy="259.63761"
+     inkscape:zoom="0.54353494"
+     inkscape:cx="828.83356"
+     inkscape:cy="308.16786"
      inkscape:window-width="1872"
      inkscape:window-height="1212"
-     inkscape:window-x="1108"
-     inkscape:window-y="163"
+     inkscape:window-x="1275"
+     inkscape:window-y="73"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      showguides="false">
@@ -111,6 +111,40 @@
     <inkscape:path-effect
        effect="fillet_chamfer"
        id="path-effect49-9"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,5.2415627,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,4,0,1 @ F,0,0,1,0,4.2116687,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,5.6358588,0,1 @ F,0,0,1,0,0,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect25-3"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,5.2415627,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,4,0,1 @ F,0,0,1,0,4.2116687,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,5.6358588,0,1 @ F,0,0,1,0,0,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect27-7"
        is_visible="true"
        lpeversion="1"
        nodesatellites_param="F,0,0,1,0,5.2415627,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,4,0,1 @ F,0,0,1,0,4.2116687,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,5.6358588,0,1 @ F,0,0,1,0,0,0,1"
@@ -234,6 +268,29 @@
          id="path22"
          sodipodi:nodetypes="cc" />
     </g>
+    <g
+       id="g2">
+      <path
+         style="fill:none;stroke:#ff8c00;stroke-width:8;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+         d="M 128,128 V 768 H 768"
+         id="path23" />
+      <path
+         id="path24"
+         style="color:#000000;fill:#ff8c00;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none"
+         d="M 1330,625.24156 V 636 h -110 a 4,4 135 0 0 -4,4 4.1071981,4.1071981 43.523438 0 0 4.2117,4 H 1330 v 10.36414 a 3.5732529,3.5732529 32.375556 0 0 5.0974,3.23188 L 1372.4082,640 1334.7408,622.23579 A 3.3232608,3.3232608 147.62444 0 0 1330,625.24156 Z"
+         sodipodi:nodetypes="cccccccc"
+         transform="translate(-476,128)"
+         inkscape:original-d="m 1330,620 v 16 h -114 v 8 h 114 v 16 l 42.4082,-20 z"
+         inkscape:path-effect="#path-effect25-3" />
+      <path
+         id="path25"
+         style="color:#000000;fill:#ff8c00;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none"
+         d="M 1330,625.24156 V 636 h -110 a 4,4 135 0 0 -4,4 4.1071981,4.1071981 43.523438 0 0 4.2117,4 H 1330 v 10.36414 a 3.5732529,3.5732529 32.375556 0 0 5.0974,3.23188 L 1372.4082,640 1334.7408,622.23579 A 3.3232608,3.3232608 147.62444 0 0 1330,625.24156 Z"
+         sodipodi:nodetypes="cccccccc"
+         transform="rotate(-90,473.20395,985.20425)"
+         inkscape:original-d="m 1330,620 v 16 h -114 v 8 h 114 v 16 l 42.4082,-20 z"
+         inkscape:path-effect="#path-effect27-7" />
+    </g>
     <path
        id="path4"
        style="fill:#1fc71f;fill-opacity:0.196078;stroke:#20c720;stroke-width:8;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
@@ -242,7 +299,7 @@
        id="g3"
        style="opacity:1;fill:#c71585;fill-opacity:1;stroke:none;stroke-opacity:1" />
     <path
-       style="fill:none;stroke:#ff8c00;stroke-width:8;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#ff3333;stroke-width:8;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:0.89803922"
        d="m 384,640 h 384 l 384,-384 h 384 V 640 H 1152 L 768,256 H 384"
        id="path3"
        sodipodi:nodetypes="cccccccc" />
