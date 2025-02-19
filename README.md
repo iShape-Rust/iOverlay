@@ -26,6 +26,8 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 - [Buffering](#buffering)
   - [Offseting a Path](#offseting-a-path)
   - [Offseting a Polygon](#offseting-a-polygon)
+  - [LineCap](#linecap)
+  - [LineJoin](#linejoin)
 - [Versioning Policy](#versioning-policy)
 
 &nbsp;
