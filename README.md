@@ -57,7 +57,7 @@ i_overlay = "^2.0"
 
 ### Simple Example
 
-![Simple Example](readme/example_union.svg)
+<img src="readme/example_union.svg" alt="Simple Example" style="width:400px;">
 Here's an example of performing a union operation between two polygons:
 
 ```rust
@@ -182,7 +182,8 @@ println!("result: {:?}", result);
 ## Slicing & Clipping
 
 ### Slicing a Polygon with a Polyline
-![Slicing Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_slice.svg)
+<img src="readme/example_slice.svg" alt="Slicing Example" style="width:400px;">
+
 ```rust
 let polygon = [
     [1.0, 1.0],
@@ -205,7 +206,8 @@ println!("result: {:?}", result);
 &nbsp;
 
 ### Clipping a Polyline by a Polygon
-![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
+<img src="readme/example_clip.svg" alt="Clip Example" style="width:400px;">
+
 ```rust
 let polygon = [
     [1.0, 1.0],
@@ -231,8 +233,7 @@ println!("result: {:?}", result);
 
 ## Buffering
 ### Offseting a Path
-![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_clip.svg)
-![Path Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_offseting_path.svg)
+<img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
 
 &nbsp;
 ### LineCap
