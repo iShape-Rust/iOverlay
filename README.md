@@ -231,6 +231,7 @@ println!("result: {:?}", result);
 
 ## Buffering
 ### Offseting a Path
+![Clip Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_offseting_path.svg)
 
 &nbsp;
 ### LineCap
