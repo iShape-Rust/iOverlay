@@ -309,6 +309,7 @@ println!("shapes: {:?}", &shapes);
   - There are no self-intersections.
   - Outer boundary contours are in **clockwise** order.
   - Holes are in **counterclockwise** order.
+  
   If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/src/float/simplify.rs) operation before offsetting.  
   [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) on contour orientation.
 
