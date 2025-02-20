@@ -138,6 +138,42 @@ mod tests {
     use std::f32::consts::PI;
 
     #[test]
+    fn test_doc() {
+        let shape = vec![
+            vec![
+                [1.0, 2.0],
+                [1.0, 4.0],
+                [2.0, 5.0],
+                [4.0, 5.0],
+                [5.0, 4.0],
+                [5.0, 3.0],
+                [8.0, 3.0],
+                [8.0, 4.0],
+                [9.0, 4.0],
+                [10.0, 3.0],
+                [11.0, 3.0],
+                [11.0, 4.0],
+                [12.0, 4.0],
+                [12.0, 3.0],
+                [13.0, 3.0],
+                [13.0, 2.0],
+                [5.0, 2.0],
+                [4.0, 1.0],
+                [2.0, 1.0],
+            ],
+            vec![[2.0, 2.0], [4.0, 2.0], [4.0, 4.0], [2.0, 4.0]],
+        ];
+
+        let style = OutlineStyle::new(0.2).line_join(LineJoin::Round(0.1));
+        let shapes = shape.outline(style);
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 2);
+    }
+
+    #[test]
     fn test_triangle_round_corner() {
         let path = [[0.0, 0.0f32], [0.0, 10.0f32], [10.0, 0.0f32]];
 

@@ -24,7 +24,7 @@ pub enum LineJoin<T: FloatNumber> {
     /// The corner is limited by a miter, where the parameter `Angle`
     /// is a minimum sharp angle
     Miter(T),
-    /// Creates an arc corner where two lines meet, with a radius of 1/2 the line’s width.
+    /// Creates an arc corner where two lines meet.
     /// The arc is approximated using a group of segments, where the parameter `Angle`
     /// is defined as `L / R`, with `L` being the maximum segment length and `R` being the arc radius.
     Round(T),

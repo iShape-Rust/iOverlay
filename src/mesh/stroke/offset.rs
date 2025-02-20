@@ -123,7 +123,10 @@ mod tests {
 
         let shapes = path.stroke(style, false);
 
-        println!("result: {:?}", shapes);
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 2);
     }
 
     #[test]
