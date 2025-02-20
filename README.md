@@ -267,6 +267,54 @@ println!("result: {:?}", shapes);
 ### Offseting a Polygon
 <img src="readme/example_offseting_polygon.svg" alt="Path Example" style="width:400px;">
 
+```rust
+let shape = vec![
+    vec![
+        [1.0, 2.0],
+        [1.0, 4.0],
+        [2.0, 5.0],
+        [4.0, 5.0],
+        [5.0, 4.0],
+        [5.0, 3.0],
+        [8.0, 3.0],
+        [8.0, 4.0],
+        [9.0, 4.0],
+        [10.0, 3.0],
+        [11.0, 3.0],
+        [11.0, 4.0],
+        [12.0, 4.0],
+        [12.0, 3.0],
+        [13.0, 3.0],
+        [13.0, 2.0],
+        [5.0, 2.0],
+        [4.0, 1.0],
+        [2.0, 1.0],
+    ],
+    vec![
+        [2.0, 2.0],
+        [4.0, 2.0],
+        [4.0, 4.0],
+        [2.0, 4.0],
+    ],
+];
+
+let style = OutlineStyle::new(0.2).line_join(LineJoin::Round(0.1));
+let shapes = shape.outline(style);
+
+println!("shapes: {:?}", &shapes);
+```
+
+**Note**: 
+- Offsetting a polygon works reliably only with valid polygons. Ensure that:
+  - There are no self-intersections.
+  - Outer boundary contours are in **clockwise** order.
+  - Holes are in **counterclockwise** order.
+  
+  If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/src/float/simplify.rs) operation before offsetting.  
+  [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) on contour orientation.
+
+- Using `LineJoin::Bevel` with a large offset may produce visual artifacts.
+
 &nbsp;
 ### LineCap
 | Butt | Square | Round | Custom |
