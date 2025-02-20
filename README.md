@@ -305,7 +305,7 @@ println!("shapes: {:?}", &shapes);
 ```
 
 **Note**: 
-- Offsetting works reliably only with valid polygons. Ensure that:
+- Offsetting a polygon works reliably only with valid polygons. Ensure that:
   - There are no self-intersections.
   - Outer boundary contours are in **clockwise** order.
   - Holes are in **counterclockwise** order.
