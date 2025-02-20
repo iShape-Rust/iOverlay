@@ -278,6 +278,7 @@ impl StrokeState {
         match self.join {
             JoinOption::Miter => {
                 let ratio = 0.03 * self.join_value as f32;
+                println!("ratio: {}", ratio);
                 style = style.line_join(LineJoin::Miter(ratio))
             },
             JoinOption::Round => {
