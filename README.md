@@ -23,6 +23,11 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 - [Slicing & Clipping](#slicing--clipping)
   - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
   - [Clipping a Polyline by a Polygon](#clipping-a-polyline-by-a-polygon)
+- [Buffering](#buffering)
+  - [Offseting a Path](#offseting-a-path)
+  - [Offseting a Polygon](#offseting-a-polygon)
+  - [LineCap](#linecap)
+  - [LineJoin](#linejoin)
 - [Versioning Policy](#versioning-policy)
 
 &nbsp;
@@ -232,8 +237,35 @@ println!("result: {:?}", result);
 &nbsp;
 
 ## Buffering
+
 ### Offseting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
+
+```rust
+let path = [
+    [ 2.0, 1.0],
+    [ 5.0, 1.0],
+    [ 8.0, 4.0],
+    [11.0, 4.0],
+    [11.0, 1.0],
+    [ 8.0, 1.0],
+    [ 5.0, 4.0],
+    [ 2.0, 4.0],
+];
+
+let style = StrokeStyle::new(1.0)
+    .line_join(LineJoin::Miter(1.0))
+    .start_cap(LineCap::Round(0.1))
+    .end_cap(LineCap::Square);
+
+let shapes = path.stroke(style, false);
+
+println!("result: {:?}", shapes);
+```
+&nbsp;
+
+### Offseting a Polygon
+<img src="readme/example_offseting_polygon.svg" alt="Path Example" style="width:400px;">
 
 &nbsp;
 ### LineCap
