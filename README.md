@@ -45,7 +45,8 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 ## Demo
 
 - [Stars Rotation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
-- [Shapes Editor](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
+- [Boolean Operations](https://ishape-rust.github.io/iShape-js/overlay/shapes_editor.html)
+- [Stroke Offset](https://ishape-rust.github.io/iShape-js/overlay/stroke.html)
 - [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
 
 &nbsp;
