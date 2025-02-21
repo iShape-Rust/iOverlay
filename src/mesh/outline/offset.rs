@@ -58,8 +58,10 @@ where
             points_count += path.len();
         }
 
-        let outer_builder = OutlineBuilder::new(style.outer_offset, &style.join);
-        let inner_builder = OutlineBuilder::new(-style.inner_offset, &style.join);
+        let join = style.join.normalize();
+
+        let outer_builder = OutlineBuilder::new(style.outer_offset, &join);
+        let inner_builder = OutlineBuilder::new(-style.inner_offset, &join);
 
         let outer_radius = style.outer_offset;
         let inner_radius = style.inner_offset;

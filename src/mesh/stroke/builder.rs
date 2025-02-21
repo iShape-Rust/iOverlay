@@ -36,12 +36,12 @@ struct Builder<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber>
 
 impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuilder<P, T> {
     pub(super) fn new(style: StrokeStyle<P, T>) -> StrokeBuilder<P, T> {
-        let radius = T::from_float(0.5) * style.width;
+        let radius = T::from_float(0.5 * style.width.to_f64().max(0.0));
 
-        let start_cap_builder = CapBuilder::new(style.start_cap, radius);
-        let end_cap_builder = CapBuilder::new(style.end_cap, radius);
+        let start_cap_builder = CapBuilder::new(style.start_cap.normalize(), radius);
+        let end_cap_builder = CapBuilder::new(style.end_cap.normalize(), radius);
 
-        let builder: Box<dyn StrokeBuild<P, T>> = match style.join {
+        let builder: Box<dyn StrokeBuild<P, T>> = match style.join.normalize() {
             LineJoin::Miter(ratio) => Box::new(Builder {
                 radius,
                 join_builder: MiterJoinBuilder::new(ratio, radius),

@@ -43,33 +43,6 @@ impl FillStrategy<OffsetCountBoolean> for SubjectOffsetStrategy {
         (top, fill)
     }
 }
-/*
-    fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
-        let subj = bot.subj + this.subj;
-        let top = ShapeCountString { subj, clip: 0 }; // clip not need
-
-        let subj_top = (top.subj != 0) as SegmentFill;
-        let subj_bot = (bot.subj != 0) as SegmentFill;
-
-        let fill = subj_top | (subj_bot << 1) | this.clip << 2;
-
-        (top, fill)
-    }
-    fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
-        let top = bot.add(this);
-        let subj_top = (top.subj < 0) as SegmentFill;
-        let subj_bot = (bot.subj < 0) as SegmentFill;
-        let clip_top = (top.clip < 0) as SegmentFill;
-        let clip_bot = (bot.clip < 0) as SegmentFill;
-
-        let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
-
-        (top, fill)
-    }
-
- */
-
-
 
 impl OverlayLink {
 

@@ -166,6 +166,11 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
 
             let ia = adapter.float_to_int(&pa);
             let ib = adapter.float_to_int(&pb);
+
+            if ia == ib {
+                return;
+            }
+
             let iac = adapter.float_to_int(&ac);
             let ibc = adapter.float_to_int(&bc);
 
@@ -190,14 +195,18 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             let ia = adapter.float_to_int(&pa);
             let ib = adapter.float_to_int(&pb);
 
-            if ia.x == ib.x {
-                if ia.y != ib.y {
-                    segments.push(Segment::bold_subject_ab(ia, ib));
-                }
+            if ia == ib {
                 return;
             }
 
-            let k = (pb.x() - pa.x()) / (va.x() + vb.x());
+            let xx = va.x() + vb.x();
+            let yy = va.y() + vb.y();
+
+            let k = if xx.abs() > yy.abs() {
+                (pb.x() - pa.x()) / xx
+            } else {
+                (pb.y() - pa.y()) / yy
+            };
 
             let x = pa.x() + k * va.x();
             let y = pa.y() + k * va.y();

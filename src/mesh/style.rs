@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 
@@ -51,6 +52,33 @@ pub struct OutlineStyle<T: FloatNumber> {
     pub join: LineJoin<T>,
 }
 
+impl<P: FloatPointCompatible<T>, T: FloatNumber> LineCap<P, T> {
+    pub(crate) fn normalize(self) -> Self {
+        if let LineCap::Round(angle) = self {
+            let a = angle.to_f64().clamp(0.01 * PI, 0.25 * PI);
+            LineCap::Round(T::from_float(a))
+        } else {
+            self
+        }
+    }
+}
+
+impl<T: FloatNumber> LineJoin<T> {
+    pub(crate) fn normalize(self) -> Self {
+        match self {
+            LineJoin::Miter(ratio) => {
+                let a = ratio.to_f64().clamp(0.01 * PI, 0.99 * PI);
+                LineJoin::Miter(T::from_float(a))
+            }
+            LineJoin::Round(angle) => {
+                let a = angle.to_f64().clamp(0.01 * PI, 0.25 * PI);
+                LineJoin::Round(T::from_float(a))
+            }
+            _ => self
+        }
+    }
+}
+
 impl<P: FloatPointCompatible<T>, T: FloatNumber> StrokeStyle<P, T> {
     /// Creates a new `StrokeStyle` with the specified width.
     pub fn new(width: T) -> Self {
@@ -59,25 +87,25 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> StrokeStyle<P, T> {
 
     /// Sets the stroke width.
     pub fn width(mut self, width: T) -> Self {
-        self.width = width;
+        self.width = T::from_float(width.to_f64().max(0.0));
         self
     }
 
     /// Sets the cap style at the start of the stroke.
     pub fn start_cap(mut self, cap: LineCap<P, T>) -> Self {
-        self.start_cap = cap;
+        self.start_cap = cap.normalize();
         self
     }
 
     /// Sets the cap style at the end of the stroke.
     pub fn end_cap(mut self, cap: LineCap<P, T>) -> Self {
-        self.end_cap = cap;
+        self.end_cap = cap.normalize();
         self
     }
 
     /// Sets the line join style.
     pub fn line_join(mut self, join: LineJoin<T>) -> Self {
-        self.join = join;
+        self.join = join.normalize();
         self
     }
 }

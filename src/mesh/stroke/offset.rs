@@ -219,13 +219,30 @@ mod tests {
     }
 
     #[test]
-    fn test_miter() {
+    fn test_miter_0() {
         let path = [
             [550.0, 225.0],
             [500.0, 250.0],
             [450.0, 275.0],
             [500.0, 300.0],
             [550.0, 325.0]
+        ];
+
+        let style = StrokeStyle::new(10.0).line_join(LineJoin::Miter(0.1));
+
+        let shapes = path.stroke_with_filter(style, false, ContourFilter { min_area: 0.0, simplify: false });
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+    }
+
+    #[test]
+    fn test_miter_1() {
+        let path = [
+            [100.0, 100.0],
+            [200.0, 200.0],
+            [150.0, 250.0]
         ];
 
         let style = StrokeStyle::new(10.0).line_join(LineJoin::Miter(0.1));
