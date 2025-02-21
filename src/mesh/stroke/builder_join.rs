@@ -169,9 +169,15 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             let iac = adapter.float_to_int(&ac);
             let ibc = adapter.float_to_int(&bc);
 
-            segments.push(Segment::bold_subject_ab(ia, iac));
-            segments.push(Segment::bold_subject_ab(iac, ibc));
-            segments.push(Segment::bold_subject_ab(ibc, ib));
+            if ia != iac {
+                segments.push(Segment::bold_subject_ab(ia, iac));
+            }
+            if iac != ibc {
+                segments.push(Segment::bold_subject_ab(iac, ibc));
+            }
+            if ibc != ib {
+                segments.push(Segment::bold_subject_ab(ibc, ib));
+            }
         } else {
             let (pa, pb, va, vb) = if turn {
                 BevelJoinBuilder::join_top(s0, s1, adapter, segments);
@@ -197,11 +203,14 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             let y = pa.y() + k * va.y();
             let c = P::from_xy(x, y);
 
-
             let ic = adapter.float_to_int(&c);
 
-            segments.push(Segment::bold_subject_ab(ia, ic));
-            segments.push(Segment::bold_subject_ab(ic, ib));
+            if ia != ic {
+                segments.push(Segment::bold_subject_ab(ia, ic));
+            }
+            if ib != ic {
+                segments.push(Segment::bold_subject_ab(ic, ib));
+            }
         }
     }
 
