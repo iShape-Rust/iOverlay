@@ -121,9 +121,16 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<OffsetCountBoolean>>,
     ) {
-        let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
+        if cross_product.abs() < T::from_float(0.0001) {
+            BevelJoinBuilder::join_top(s0, s1, adapter, segments);
+            BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
+            return;
+        }
+
         let turn = cross_product > T::from_float(0.0);
+
+        let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
 
         let is_limited = self.limit_dot_product > dot_product;
 
@@ -174,13 +181,23 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 (s0.b_top, s1.a_top, s0.dir, s1.dir)
             };
 
+            let ia = adapter.float_to_int(&pa);
+            let ib = adapter.float_to_int(&pb);
+
+            if ia.x == ib.x {
+                if ia.y != ib.y {
+                    segments.push(Segment::bold_subject_ab(ia, ib));
+                }
+                return;
+            }
+
             let k = (pb.x() - pa.x()) / (va.x() + vb.x());
+
             let x = pa.x() + k * va.x();
             let y = pa.y() + k * va.y();
             let c = P::from_xy(x, y);
 
-            let ia = adapter.float_to_int(&pa);
-            let ib = adapter.float_to_int(&pb);
+
             let ic = adapter.float_to_int(&c);
 
             segments.push(Segment::bold_subject_ab(ia, ic));
