@@ -53,83 +53,117 @@ where
     }
 
     fn outline_with_filter(&self, style: OutlineStyle<T>, filter: ContourFilter<T>) -> Shapes<P> {
-        let mut points_count = 0;
-        for path in self.iter_paths() {
-            points_count += path.len();
-        }
+        let (points_count, paths_count) = {
+            let mut points_count = 0;
+            let mut paths_count = 0;
+            for path in self.iter_paths() {
+                points_count += path.len();
+                paths_count += 1;
+            }
+            (points_count, paths_count)
+        };
 
         let join = style.join.normalize();
 
         let outer_builder = OutlineBuilder::new(style.outer_offset, &join);
         let inner_builder = OutlineBuilder::new(-style.inner_offset, &join);
 
-        let outer_radius = style.outer_offset;
-        let inner_radius = style.inner_offset;
+        let adapter = {
+            let outer_radius = style.outer_offset;
+            let inner_radius = style.inner_offset;
 
-        let outer_additional_offset = outer_builder.additional_offset(outer_radius);
-        let inner_additional_offset = inner_builder.additional_offset(inner_radius);
+            let outer_additional_offset = outer_builder.additional_offset(outer_radius);
+            let inner_additional_offset = inner_builder.additional_offset(inner_radius);
 
-        let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
+            let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
 
-        let mut rect =
-            FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
-        rect.add_offset(additional_offset);
+            let mut rect =
+                FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
+            rect.add_offset(additional_offset);
 
-        let adapter = FloatPointAdapter::new(rect);
-
-        let total_capacity = outer_builder.capacity(points_count);
-        let mut overlay = Overlay::new(total_capacity);
-
-        for path in self.iter_paths() {
-            let area = path.unsafe_int_area(&adapter);
-            if area.abs() <= 1 {
-                continue;
-            }
-            if area > 0 {
-                let capacity = outer_builder.capacity(path.len());
-                let mut segments = Vec::with_capacity(capacity);
-                outer_builder.build(path, &adapter, &mut segments);
-                let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                    .extract_offset_min_area(0);
-                overlay.add_shapes(&shapes, ShapeType::Subject);
-            } else {
-                let mut inverted = Vec::with_capacity(path.len());
-                for p in path.iter().rev() {
-                    inverted.push(*p);
-                }
-
-                let capacity = inner_builder.capacity(inverted.len());
-                let mut segments = Vec::with_capacity(capacity);
-                inner_builder.build(&inverted, &adapter, &mut segments);
-                let mut shapes =
-                    OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                        .extract_offset_min_area(0);
-
-                for shape in shapes.iter_mut() {
-                    for path in shape.iter_mut() {
-                        path.reverse();
-                    }
-                }
-
-                overlay.add_shapes(&shapes, ShapeType::Subject);
-            }
-        }
-
-        let min_area = adapter.sqr_float_to_int(filter.min_area);
-        let shapes = overlay.overlay_with_min_area_and_solver(
-            OverlayRule::Subject,
-            FillRule::Positive,
-            min_area,
-            Default::default(),
-        );
-
-        let mut float = shapes.to_float(&adapter);
-
-        if filter.simplify {
-            float.simplify_contour(&adapter);
+            FloatPointAdapter::new(rect)
         };
 
-        float
+        let int_min_area = adapter.sqr_float_to_int(filter.min_area).max(1);
+
+        let shapes = if paths_count <= 1 {
+            // fast solution for a single path
+
+            let path = if let Some(first) = self.iter_paths().next() {
+                first
+            } else {
+                return vec![];
+            };
+
+            let area = path.unsafe_int_area(&adapter);
+            if area <= 1 {
+                // single path must be positive ordered
+                return vec![];
+            }
+
+            let capacity = outer_builder.capacity(path.len());
+            let mut segments = Vec::with_capacity(capacity);
+            outer_builder.build(path, &adapter, &mut segments);
+
+            OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                .extract_offset_min_area(int_min_area)
+        } else {
+            let total_capacity = outer_builder.capacity(points_count);
+
+            let mut overlay = Overlay::new(total_capacity);
+
+            for path in self.iter_paths() {
+                let area = path.unsafe_int_area(&adapter);
+                if area.abs() <= 1 {
+                    // ignore degenerate paths
+                    continue;
+                }
+
+                if area > 0 {
+                    let capacity = outer_builder.capacity(path.len());
+                    let mut segments = Vec::with_capacity(capacity);
+                    outer_builder.build(path, &adapter, &mut segments);
+                    let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                        .extract_offset_min_area(0);
+                    overlay.add_shapes(&shapes, ShapeType::Subject);
+                } else {
+                    let mut inverted = Vec::with_capacity(path.len());
+                    for p in path.iter().rev() {
+                        inverted.push(*p);
+                    }
+
+                    let capacity = inner_builder.capacity(inverted.len());
+                    let mut segments = Vec::with_capacity(capacity);
+                    inner_builder.build(&inverted, &adapter, &mut segments);
+                    let mut shapes =
+                        OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                            .extract_offset_min_area(0);
+
+                    for shape in shapes.iter_mut() {
+                        for path in shape.iter_mut() {
+                            path.reverse();
+                        }
+                    }
+
+                    overlay.add_shapes(&shapes, ShapeType::Subject);
+                }
+            }
+
+            overlay.overlay_with_min_area_and_solver(
+                OverlayRule::Subject,
+                FillRule::Positive,
+                int_min_area,
+                Default::default(),
+            )
+        };
+
+        if filter.simplify {
+            let mut float = shapes.to_float(&adapter);
+            float.simplify_contour(&adapter);
+            float
+        } else {
+            shapes.to_float(&adapter)
+        }
     }
 }
 
@@ -236,12 +270,7 @@ mod tests {
 
     #[test]
     fn test_rhombus_miter() {
-        let path = [
-            [-10.0, 0.0],
-            [0.0, 10.0],
-            [10.0, 0.0],
-            [0.0, -10.0],
-        ];
+        let path = [[-10.0, 0.0], [0.0, 10.0], [10.0, 0.0], [0.0, -10.0]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Miter(0.01));
         let shapes = path.outline(style);
