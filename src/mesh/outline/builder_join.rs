@@ -161,9 +161,9 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 segments.push(Segment::bold_subject_ab(ibc, ib));
             }
         } else {
-            match Miter::sharp(pa, pb, s0.dir, s1.dir, &adapter) {
+            match Miter::sharp(pa, pb, s0.dir, s1.dir, adapter) {
                 SharpMiter::AB(a, b) => segments.push(Segment::bold_subject_ab(a, b)),
-                SharpMiter::ACB(a, c, b) => {
+                SharpMiter::AcB(a, c, b) => {
                     segments.push(Segment::bold_subject_ab(a, c));
                     segments.push(Segment::bold_subject_ab(c, b));
                 },

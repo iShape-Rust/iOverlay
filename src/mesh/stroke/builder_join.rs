@@ -191,9 +191,9 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
                 (s0.b_top, s1.a_top, s0.dir, s1.dir)
             };
-            match Miter::sharp(pa, pb, va, vb, &adapter) {
+            match Miter::sharp(pa, pb, va, vb, adapter) {
                 SharpMiter::AB(a, b) => segments.push(Segment::bold_subject_ab(a, b)),
-                SharpMiter::ACB(a, c, b) => {
+                SharpMiter::AcB(a, c, b) => {
                     segments.push(Segment::bold_subject_ab(a, c));
                     segments.push(Segment::bold_subject_ab(c, b));
                 },

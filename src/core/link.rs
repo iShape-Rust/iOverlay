@@ -233,7 +233,7 @@ impl FillStrategy<ShapeCountString> for EvenOddStrategyString {
         let subj_top = 1 & top.subj as SegmentFill;
         let subj_bot = 1 & bot.subj as SegmentFill;
 
-        let fill = subj_top | (subj_bot << 1) | this.clip << 2;
+        let fill = subj_top | (subj_bot << 1) | (this.clip << 2);
 
         (top, fill)
     }
@@ -248,7 +248,7 @@ impl FillStrategy<ShapeCountString> for NonZeroStrategyString {
         let subj_top = (top.subj != 0) as SegmentFill;
         let subj_bot = (bot.subj != 0) as SegmentFill;
 
-        let fill = subj_top | (subj_bot << 1) | this.clip << 2;
+        let fill = subj_top | (subj_bot << 1) | (this.clip << 2);
 
         (top, fill)
     }
@@ -263,7 +263,7 @@ impl FillStrategy<ShapeCountString> for PositiveStrategyString {
         let subj_top = (top.subj < 0) as SegmentFill;
         let subj_bot = (bot.subj < 0) as SegmentFill;
 
-        let fill = subj_top | (subj_bot << 1) | this.clip << 2;
+        let fill = subj_top | (subj_bot << 1) | (this.clip << 2);
 
         (top, fill)
     }
@@ -278,7 +278,7 @@ impl FillStrategy<ShapeCountString> for NegativeStrategyString {
         let subj_top = (top.subj > 0) as SegmentFill;
         let subj_bot = (bot.subj > 0) as SegmentFill;
 
-        let fill = subj_top | (subj_bot << 1) | this.clip << 2;
+        let fill = subj_top | (subj_bot << 1) | (this.clip << 2);
 
         (top, fill)
     }

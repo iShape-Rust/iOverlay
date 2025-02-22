@@ -8,7 +8,7 @@ pub(super) struct Miter;
 pub(super) enum SharpMiter {
     Degenerate,
     AB(IntPoint, IntPoint),
-    ACB(IntPoint, IntPoint, IntPoint),
+    AcB(IntPoint, IntPoint, IntPoint),
 }
 
 impl Miter {
@@ -54,7 +54,7 @@ impl Miter {
         if ia == ic || ib == ic {
             SharpMiter::AB(ia, ib)
         } else {
-            SharpMiter::ACB(ia, ic, ib)
+            SharpMiter::AcB(ia, ic, ib)
         }
     }
 }

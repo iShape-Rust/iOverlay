@@ -322,7 +322,7 @@ impl RoundDivide for UInt128 {
 
         let dn = divisor.leading_zeros();
         let norm_divisor = divisor << dn;
-        let mut norm_dividend_high = self.high << dn | self.low >> (u64::BITS - dn);
+        let mut norm_dividend_high = (self.high << dn) | (self.low >> (u64::BITS - dn));
         let mut norm_dividend_low = self.low << dn;
 
         let mut quotient = 0;
