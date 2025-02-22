@@ -5,6 +5,7 @@ use i_float::float::number::FloatNumber;
 use std::f64::consts::PI;
 use i_float::float::vector::FloatPointMath;
 use crate::mesh::boolean::OffsetCountBoolean;
+use crate::mesh::miter::{Miter, SharpMiter};
 use crate::mesh::outline::section::Section;
 use crate::mesh::rotator::Rotator;
 
@@ -150,26 +151,25 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             let iac = adapter.float_to_int(&ac);
             let ibc = adapter.float_to_int(&bc);
 
-            segments.push(Segment::bold_subject_ab(ia, iac));
-            segments.push(Segment::bold_subject_ab(iac, ibc));
-            segments.push(Segment::bold_subject_ab(ibc, ib));
+            if ia != iac {
+                segments.push(Segment::bold_subject_ab(ia, iac));
+            }
+            if iac != ibc {
+                segments.push(Segment::bold_subject_ab(iac, ibc));
+            }
+            if ibc != ib {
+                segments.push(Segment::bold_subject_ab(ibc, ib));
+            }
         } else {
-            let va = s0.dir;
-            let vb = s1.dir;
-
-            let k = (pb.x() - pa.x()) / (va.x() + vb.x());
-            let x = pa.x() + k * va.x();
-            let y = pa.y() + k * va.y();
-            let c = P::from_xy(x, y);
-
-            let ia = adapter.float_to_int(&pa);
-            let ib = adapter.float_to_int(&pb);
-            let ic = adapter.float_to_int(&c);
-
-            segments.push(Segment::bold_subject_ab(ia, ic));
-            segments.push(Segment::bold_subject_ab(ic, ib));
+            match Miter::sharp(pa, pb, s0.dir, s1.dir, &adapter) {
+                SharpMiter::AB(a, b) => segments.push(Segment::bold_subject_ab(a, b)),
+                SharpMiter::ACB(a, c, b) => {
+                    segments.push(Segment::bold_subject_ab(a, c));
+                    segments.push(Segment::bold_subject_ab(c, b));
+                },
+                SharpMiter::Degenerate => {}
+            }
         }
-
     }
 
     #[inline]

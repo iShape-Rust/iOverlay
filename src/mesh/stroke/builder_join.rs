@@ -6,6 +6,7 @@ use i_float::float::number::FloatNumber;
 use std::f64::consts::PI;
 use i_float::float::vector::FloatPointMath;
 use crate::mesh::boolean::OffsetCountBoolean;
+use crate::mesh::miter::{Miter, SharpMiter};
 use crate::mesh::rotator::Rotator;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -137,7 +138,6 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         if is_limited {
             let (pa, pb, ac, bc) = if turn {
                 BevelJoinBuilder::join_top(s0, s1, adapter, segments);
-                // (s1.a_bot, s0.b_bot, s1.dir, s0.dir);
                 let (pa, pb, va, vb) = (s1.a_bot, s0.b_bot, s1.dir, s0.dir);
 
                 let ax = pa.x() - self.max_length * va.x();
@@ -191,34 +191,13 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 BevelJoinBuilder::join_bot(s0, s1, adapter, segments);
                 (s0.b_top, s1.a_top, s0.dir, s1.dir)
             };
-
-            let ia = adapter.float_to_int(&pa);
-            let ib = adapter.float_to_int(&pb);
-
-            if ia == ib {
-                return;
-            }
-
-            let xx = va.x() + vb.x();
-            let yy = va.y() + vb.y();
-
-            let k = if xx.abs() > yy.abs() {
-                (pb.x() - pa.x()) / xx
-            } else {
-                (pb.y() - pa.y()) / yy
-            };
-
-            let x = pa.x() + k * va.x();
-            let y = pa.y() + k * va.y();
-            let c = P::from_xy(x, y);
-
-            let ic = adapter.float_to_int(&c);
-
-            if ia != ic {
-                segments.push(Segment::bold_subject_ab(ia, ic));
-            }
-            if ib != ic {
-                segments.push(Segment::bold_subject_ab(ic, ib));
+            match Miter::sharp(pa, pb, va, vb, &adapter) {
+                SharpMiter::AB(a, b) => segments.push(Segment::bold_subject_ab(a, b)),
+                SharpMiter::ACB(a, c, b) => {
+                    segments.push(Segment::bold_subject_ab(a, c));
+                    segments.push(Segment::bold_subject_ab(c, b));
+                },
+                SharpMiter::Degenerate => {}
             }
         }
     }

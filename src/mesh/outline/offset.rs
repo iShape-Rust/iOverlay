@@ -233,4 +233,20 @@ mod tests {
 
         assert_eq!(shapes.len(), 0);
     }
+
+    #[test]
+    fn test_rhombus_miter() {
+        let path = [
+            [-10.0, 0.0],
+            [0.0, 10.0],
+            [10.0, 0.0],
+            [0.0, -10.0],
+        ];
+
+        let style = OutlineStyle::new(5.0).line_join(LineJoin::Miter(0.01));
+        let shapes = path.outline(style);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes.first().unwrap().len(), 1);
+    }
 }
