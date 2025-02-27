@@ -5,6 +5,13 @@ pub(crate) struct LineRange {
 }
 
 impl LineRange {
+    #[inline]
+    pub(crate) fn middle(&self) -> i32 {
+        ((self.max as i64 + self.min as i64) >> 1) as i32
+    }
+}
+
+impl LineRange {
     #[inline(always)]
     pub(crate) fn width(&self) -> i64 {
         self.max as i64 - self.min as i64

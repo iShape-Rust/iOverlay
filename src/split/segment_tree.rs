@@ -319,15 +319,9 @@ impl SegmentTree {
     }
 }
 
-impl LineRange {
-    fn middle(&self) -> i32 {
-        ((self.max as i64 + self.min as i64) >> 1) as i32
-    }
-}
-
 #[cfg(test)]
 impl SegmentTree {
-    fn with_power(range: LineRange, power: usize) -> Self {
+    pub(super) fn with_power(range: LineRange, power: usize) -> Self {
         let nodes = Self::create_nodes(range, power);
         Self { power, nodes, radius: 2 }
     }
