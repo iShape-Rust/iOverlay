@@ -4,7 +4,6 @@ use i_shape::base::data::Shapes;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
-use crate::float::filter;
 use crate::float::filter::ContourFilter;
 use crate::float::overlay::FloatOverlay;
 use crate::float::source::resource::OverlayResource;
