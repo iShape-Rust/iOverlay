@@ -17,12 +17,12 @@ impl WebApp {
     }
 
     #[wasm_bindgen]
-    pub fn start(&self, boolean_data: String, string_data: String) {
+    pub fn start(&self, boolean_data: String, string_data: String, stroke_data: String, outline_data: String) {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
         console_log::init_with_level(log::Level::Debug).expect("error initializing log");
         info!("Starting application...");
 
-        let app_resource = AppResource::with_content(boolean_data, string_data);
+        let app_resource = AppResource::with_content(boolean_data, string_data, stroke_data, outline_data);
 
         let app_initializer = || {
             let app = EditorApp::new(app_resource);
