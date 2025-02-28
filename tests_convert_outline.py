@@ -2,13 +2,13 @@ import os
 import json
 
 # Hardcoded input folder and output file paths
-input_folder = "./tests/boolean"  # Replace with the actual path to your folder
-output_file = "./tests_boolean.json"
+input_folder = "./tests/outline"  # Replace with the actual path to your folder
+output_file = "./tests_outline.json"
 
 def merge_json_files(input_folder, output_file):
     combined_data = []
 
-    for index in range(160):  # Adjust range to include 144
+    for index in range(9):
         filename = f"test_{index}.json"
         filepath = os.path.join(input_folder, filename)
 
@@ -20,8 +20,8 @@ def merge_json_files(input_folder, output_file):
 
                 # Extract only the required properties
                 entry = {
-                    "subjPaths": data.get("subjPaths", []),
-                    "clipPaths": data.get("clipPaths", [])
+                    "scale": data.get("scale", 1000),
+                    "outline": data.get("outline", [])
                 }
 
                 # Add to the combined data list
