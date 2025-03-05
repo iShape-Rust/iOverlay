@@ -195,12 +195,12 @@ pub mod vector;
 pub mod float;
 pub mod string;
 pub mod segm;
+pub mod iso;
 
 pub(crate) mod split;
 pub(crate) mod bind;
 pub(crate) mod geom;
 pub(crate) mod util;
-
 
 pub use i_float;
 pub use i_shape;
