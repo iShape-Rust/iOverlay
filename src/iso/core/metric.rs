@@ -1,5 +1,4 @@
 use i_shape::int::shape::IntContour;
-use crate::iso::math::IsoMath;
 
 pub(super) struct Metric {
     pub(super) min: i32,
@@ -42,7 +41,10 @@ impl Metric {
                 } else if p0.y == p1.y {
                     self.hz_count += 1
                 } else {
-                    if IsoMath::is_diagonal_pos(p0, p1) {
+                    let dp = p1 - p0;
+                    let is_diagonal_pos = dp.x > 0 && dp.y > 0 || dp.x < 0 && dp.y < 0;
+
+                    if is_diagonal_pos {
                         self.dg_pos_count += 1
                     } else {
                         self.dg_neg_count += 1

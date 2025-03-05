@@ -1,7 +1,6 @@
 use crate::core::overlay::ShapeType;
 use crate::geom::line_range::LineRange;
 use crate::iso::core::metric::Metric;
-use crate::iso::math::IsoMath;
 use crate::iso::segment::{DgSegment, HzSegment, VrSegment};
 use crate::segm::winding_count::{ShapeCountBoolean, WindingCount};
 use i_shape::int::shape::IntContour;
@@ -15,7 +14,7 @@ pub(crate) struct IsoData {
 }
 
 impl IsoData {
-    pub(crate) fn new(metric: &Metric) -> Self {
+    pub(super) fn new(metric: &Metric) -> Self {
         Self {
             vr_segments: Vec::with_capacity(metric.vr_count),
             hz_segments: Vec::with_capacity(metric.hz_count),
@@ -75,15 +74,15 @@ impl IsoData {
                         )
                     } else {
                         (
-                            DgSegment { y0: p1.y, xx: LineRange { min: p0.x, max: p1.x }, count: direct },
+                            DgSegment { y0: p1.y, xx: LineRange { min: p1.x, max: p0.x }, count: invert },
                             p1.y < p0.y
                         )
                     };
 
-                    if IsoMath::is_diagonal_pos(p0, p1) {
-                        self.dg_pos_segments.push(segm);
+                    if is_pos {
+                        self.dg_pos_segments.push(dg);
                     } else {
-                        self.dg_neg_segments.push(segm);
+                        self.dg_neg_segments.push(dg);
                     }
                 }
                 p0 = p1;

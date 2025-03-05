@@ -4,11 +4,10 @@ use crate::geom::line_range::LineRange;
 pub(crate) struct Layout {
     power: usize,
     min: i64,
-    max: i64
+    max: i64,
 }
 
 impl Layout {
-
     #[inline]
     pub(crate) fn column_width(&self) -> i32 {
         1 << self.power
@@ -21,7 +20,7 @@ impl Layout {
     }
 
     #[inline]
-    pub(crate) fn index(&self, x: i32) -> usize {
+    pub(crate) fn right_index(&self, x: i32) -> usize {
         let dx = (x as i64 - self.min) as usize;
         dx >> self.power
     }
@@ -34,11 +33,8 @@ impl Layout {
 
     #[inline]
     pub(crate) fn index_border(&self, x: i32) -> (usize, usize) {
-        let dx = (x as i64 - self.min) as usize;
-
-        let left =(dx.saturating_sub(1)) >> self.power;
-        let right = dx >> self.power;;
-
+        let left = self.right_index(x);
+        let right = self.left_index(x);
         (left, right)
     }
 
@@ -54,9 +50,10 @@ impl Layout {
 
         let count_max_power = (0.6 * (count as f64).log2()) as usize;
         let range_max_power = width.ilog2() as usize;
-        let power = count_max_power.min(range_max_power);
+        let count_power = count_max_power.min(range_max_power);
+
+        let power = (width >> count_power).ilog2() as usize;
 
         Self { power, min, max }
     }
-
 }

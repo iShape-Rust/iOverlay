@@ -1,3 +1,3 @@
 pub(crate) mod data;
-mod overlay;
+pub mod overlay;
 mod metric;

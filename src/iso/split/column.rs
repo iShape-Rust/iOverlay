@@ -37,6 +37,8 @@ impl Column {
             .sort_unstable_by(|f0, f1| f0.xx.min.cmp(&f1.xx.min));
 
         self.split_vr_segments(width, &mut result);
+        self.split_hz_segments(width, &mut result);
+        self.split_dgs(width, &mut result);
 
         result
     }

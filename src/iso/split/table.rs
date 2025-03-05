@@ -22,10 +22,10 @@ impl Table {
         let hz_fragments = layout.create_hz_fragments(&data.hz_segments, &mut counter);
 
         counter.iter_mut().for_each(|n| *n = 0);
-        let dg_pos_fragments = layout.create_dg_fragments(&data.dg_pos_segments, &mut counter);
+        let dg_pos_fragments = layout.create_dg_fragments::<PosSegm>(&data.dg_pos_segments, &mut counter);
 
         counter.iter_mut().for_each(|n| *n = 0);
-        let dg_neg_fragments = layout.create_dg_fragments(&data.dg_neg_segments, &mut counter);
+        let dg_neg_fragments = layout.create_dg_fragments::<NegSegm>(&data.dg_neg_segments, &mut counter);
 
         let columns: Vec<_> = vr_fragments
             .into_iter()
@@ -51,16 +51,16 @@ impl Layout {
 
     fn create_vr_fragments(&self, vr_segments: &Vec<VrSegment>, seg_counter: &mut [usize]) -> Vec<Vec<VrFragment>> {
         for s in vr_segments {
-            let (lt, rt) = self.index_border(s.yy.min);
-            for i in lt..rt {
+            let (lt, rt) = self.index_border(s.x);
+            for i in lt..=rt {
                 seg_counter[i] += 1;
             }
         }
 
         let mut fragments: Vec<Vec<VrFragment>> = seg_counter.iter().map(|n|Vec::with_capacity(*n)).collect();
         for (index, s) in vr_segments.iter().enumerate() {
-            let (lt, rt) = self.index_border(s.yy.min);
-            for i in lt..rt {
+            let (lt, rt) = self.index_border(s.x);
+            for i in lt..=rt {
                 fragments[i].push(VrFragment {
                     index,
                     x: s.x,
@@ -74,7 +74,7 @@ impl Layout {
 
     fn create_hz_fragments(&self, segments: &Vec<HzSegment>, seg_counter: &mut [usize]) -> Vec<Vec<HzFragment>> {
         for s in segments {
-            let i0 = self.index(s.xx.min);
+            let i0 = self.right_index(s.xx.min);
             let i1 = self.left_index(s.xx.max);
             for i in i0..=i1 {
                 seg_counter[i] += 1;
@@ -84,7 +84,7 @@ impl Layout {
         let mut fragments: Vec<Vec<HzFragment>> = seg_counter.iter().map(|n|Vec::with_capacity(*n)).collect();
 
         for (index, s) in segments.iter().enumerate() {
-            let i0 = self.index(s.xx.min);
+            let i0 = self.right_index(s.xx.min);
             let i1 = self.left_index(s.xx.max);
             for i in i0..=i1 {
                 fragments[i].push(HzFragment {
@@ -100,7 +100,7 @@ impl Layout {
 
     fn create_dg_fragments<F: YY>(&self, segments: &Vec<DgSegment>, seg_counter: &mut [usize]) -> Vec<Vec<DgFragment>> {
         for s in segments {
-            let i0 = self.index(s.xx.min);
+            let i0 = self.right_index(s.xx.min);
             let i1 = self.left_index(s.xx.max);
             for i in i0..=i1 {
                 seg_counter[i] += 1;
@@ -110,7 +110,7 @@ impl Layout {
         let mut fragments: Vec<Vec<DgFragment>> = seg_counter.iter().map(|n|Vec::with_capacity(*n)).collect();
 
         for (index, s) in segments.iter().enumerate() {
-            let i0 = self.index(s.xx.min);
+            let i0 = self.right_index(s.xx.min);
             let i1 = self.left_index(s.xx.max);
 
             let mut x0 = s.xx.min;
