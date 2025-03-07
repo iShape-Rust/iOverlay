@@ -45,37 +45,38 @@ impl Column {
 
     fn split_vr_segments(&self, width: i32, result: &mut SplitResult) {
         // vr vz vr
-        for (i0, vr0) in self.vr_frags[0..self.vr_frags.len() - 1].iter().enumerate() {
-            for vr1 in self.vr_frags[i0 + 1..].iter() {
-                if vr0.yy.max <= vr1.yy.min {
-                    break;
-                }
-                if vr0.x != vr1.x {
-                    continue;
-                }
-                if vr0.yy.max > vr1.yy.min {
-                    result.vr_points.push(SplitPoint {
-                        index: vr0.index,
-                        xy: vr1.yy.min,
-                    });
-                }
+        if self.vr_frags.len() > 1 {
+            for (i0, vr0) in self.vr_frags[0..self.vr_frags.len() - 1].iter().enumerate() {
+                for vr1 in self.vr_frags[i0 + 1..].iter() {
+                    if vr0.yy.max <= vr1.yy.min {
+                        break;
+                    }
+                    if vr0.x != vr1.x {
+                        continue;
+                    }
+                    if vr0.yy.max > vr1.yy.min {
+                        result.vr_points.push(SplitPoint {
+                            index: vr0.index,
+                            xy: vr1.yy.min,
+                        });
+                    }
 
-                if vr0.yy.max > vr1.yy.max {
-                    result.vr_points.push(SplitPoint {
-                        index: vr0.index,
-                        xy: vr1.yy.max,
-                    });
-                }
+                    if vr0.yy.max > vr1.yy.max {
+                        result.vr_points.push(SplitPoint {
+                            index: vr0.index,
+                            xy: vr1.yy.max,
+                        });
+                    }
 
-                if vr0.yy.max < vr1.yy.max {
-                    result.vr_points.push(SplitPoint {
-                        index: vr1.index,
-                        xy: vr0.yy.max,
-                    })
+                    if vr0.yy.max < vr1.yy.max {
+                        result.vr_points.push(SplitPoint {
+                            index: vr1.index,
+                            xy: vr0.yy.max,
+                        })
+                    }
                 }
             }
         }
-
         // vr vz hz
         let mut index = 0;
 
@@ -110,16 +111,30 @@ impl Column {
         }
 
         // vr vz dg_pos
-        Self::split_vr_vz_dg::<PosFrag>(&self.vr_frags, &self.dg_pos_frags, width, result);
+        Self::split_vr_vz_dg::<PosFrag>(
+            &self.vr_frags,
+            &self.dg_pos_frags,
+            width,
+            &mut result.vr_points,
+            &mut result.dg_pos_points,
+        );
+
         // vr vz dg_neg
-        Self::split_vr_vz_dg::<NegFrag>(&self.vr_frags, &self.dg_neg_frags, width, result);
+        Self::split_vr_vz_dg::<NegFrag>(
+            &self.vr_frags,
+            &self.dg_neg_frags,
+            width,
+            &mut result.vr_points,
+            &mut result.dg_neg_points,
+        );
     }
 
     fn split_vr_vz_dg<F: GetXY>(
         vr_frags: &[VrFragment],
         dg_frags: &[DgFragment],
         width: i32,
-        result: &mut SplitResult,
+        vr_points: &mut Vec<SplitPoint>,
+        dg_points: &mut Vec<SplitPoint>,
     ) {
         let mut index = 0;
 
@@ -145,14 +160,14 @@ impl Column {
                 }
 
                 if vr.yy.min < y && y < vr.yy.max {
-                    result.vr_points.push(SplitPoint {
+                    vr_points.push(SplitPoint {
                         index: vr.index,
                         xy: y,
                     });
                 }
 
                 if dg.xx.min < vr.x && vr.x < dg.xx.max {
-                    result.dg_pos_points.push(SplitPoint {
+                    dg_points.push(SplitPoint {
                         index: dg.index,
                         xy: vr.x,
                     });
@@ -164,16 +179,29 @@ impl Column {
     #[inline]
     fn split_hz_segments(&self, width: i32, result: &mut SplitResult) {
         // hz vz dg_pos
-        Self::split_hz_vz_dg::<PosFrag>(&self.hz_frags, &self.dg_pos_frags, width, result);
+        Self::split_hz_vz_dg::<PosFrag>(
+            &self.hz_frags,
+            &self.dg_pos_frags,
+            width,
+            &mut result.hz_points,
+            &mut result.dg_pos_points,
+        );
         // hz vz dg_neg
-        Self::split_hz_vz_dg::<NegFrag>(&self.hz_frags, &self.dg_neg_frags, width, result);
+        Self::split_hz_vz_dg::<NegFrag>(
+            &self.hz_frags,
+            &self.dg_neg_frags,
+            width,
+            &mut result.hz_points,
+            &mut result.dg_neg_points,
+        );
     }
 
     fn split_hz_vz_dg<F: GetXY>(
         hz_frags: &[HzFragment],
         dg_frags: &[DgFragment],
         width: i32,
-        result: &mut SplitResult,
+        vr_points: &mut Vec<SplitPoint>,
+        dg_points: &mut Vec<SplitPoint>,
     ) {
         let mut index = 0;
 
@@ -199,14 +227,14 @@ impl Column {
                 }
 
                 if hz.xx.min < x && x < hz.xx.max {
-                    result.vr_points.push(SplitPoint {
+                    vr_points.push(SplitPoint {
                         index: hz.index,
                         xy: x,
                     });
                 }
 
                 if dg.xx.min < x && x < dg.xx.max {
-                    result.dg_pos_points.push(SplitPoint {
+                    dg_points.push(SplitPoint {
                         index: dg.index,
                         xy: x,
                     });
@@ -236,7 +264,8 @@ impl Column {
 
                 let x = (dg_neg.neg_b() - dg_pos.pos_b()) / 2;
 
-                if x < dg_pos.xx.min || dg_pos.xx.max < x || x < dg_neg.xx.min || dg_neg.xx.max < x {
+                if x < dg_pos.xx.min || dg_pos.xx.max < x || x < dg_neg.xx.min || dg_neg.xx.max < x
+                {
                     continue;
                 }
 

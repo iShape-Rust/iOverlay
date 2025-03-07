@@ -1,6 +1,6 @@
 use crate::geom::line_range::LineRange;
 use crate::iso::core::data::IsoData;
-use crate::iso::layout::Layout;
+use crate::iso::layout::FragLayout;
 use crate::iso::segment::{DgSegment, HzSegment, VrSegment};
 use crate::iso::split::column::Column;
 use crate::iso::split::diagonal::Diagonal;
@@ -8,11 +8,11 @@ use crate::iso::split::fragment::{DgFragment, HzFragment, VrFragment};
 
 pub(crate) struct Table {
     pub(crate) columns: Vec<Column>,
-    pub(crate) layout: Layout
+    pub(crate) layout: FragLayout
 }
 
 impl Table {
-    pub(super) fn new(layout: Layout, data: &IsoData) -> Self {
+    pub(super) fn new(layout: FragLayout, data: &IsoData) -> Self {
         let count = layout.count();
 
         let mut counter = vec![0; count];
@@ -47,7 +47,7 @@ impl Table {
     }
 }
 
-impl Layout {
+impl FragLayout {
 
     fn create_vr_fragments(&self, vr_segments: &Vec<VrSegment>, seg_counter: &mut [usize]) -> Vec<Vec<VrFragment>> {
         for s in vr_segments {
@@ -158,8 +158,8 @@ impl YY for NegSegm {
     #[inline(always)]
     fn yy(s: &DgSegment, x0: i32, x1: i32) -> LineRange {
         let b = s.neg_b();
-        let min = b.wrapping_sub(x0);
-        let max = b.wrapping_sub(x1);
+        let max = b.wrapping_sub(x0);
+        let min = b.wrapping_sub(x1);
         LineRange { min, max }
     }
 }

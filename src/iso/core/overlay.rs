@@ -55,6 +55,7 @@ impl IsoOverlay {
         Self { data, x_range: LineRange { min: metric.min, max: metric.max } }
     }
 
+    #[inline]
     pub fn into_segments(self, solver: Solver) -> Vec<Segment<ShapeCountBoolean>> {
         self.data.into_segments(&solver, self.x_range)
     }
@@ -108,5 +109,27 @@ mod tests {
 
         assert_eq!(overlay.data.dg_pos_segments.len(), 4);
         assert_eq!(overlay.data.dg_neg_segments.len(), 4);
+    }
+
+    #[test]
+    fn test_init_2() {
+        let subj = vec![vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(0, 10),
+            IntPoint::new(10, 10),
+            IntPoint::new(10, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(5, 5),
+            IntPoint::new(5, 15),
+            IntPoint::new(15, 15),
+            IntPoint::new(15, 5),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+
+        assert_eq!(overlay.data.vr_segments.len(), 4);
+        assert_eq!(overlay.data.hz_segments.len(), 4);
     }
 }

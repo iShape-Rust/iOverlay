@@ -1,7 +1,7 @@
 use crate::core::solver::Solver;
 use crate::geom::line_range::LineRange;
 use crate::iso::core::data::IsoData;
-use crate::iso::layout::Layout;
+use crate::iso::layout::FragLayout;
 use crate::iso::split::column::SplitResult;
 use crate::iso::split::table::Table;
 use crate::segm::merge::ShapeSegmentsMerge;
@@ -14,7 +14,7 @@ impl IsoData {
         let cnt_xy = self.hz_segments.len().max(self.vr_segments.len());
         let cnt_dg = self.dg_pos_segments.len().max(self.dg_neg_segments.len());
         let count = cnt_xy.max(cnt_dg);
-        let layout = Layout::new(count, range);
+        let layout = FragLayout::new(count, range);
 
         let result = Table::new(layout, &self).split();
 
@@ -61,7 +61,7 @@ mod tests {
     use crate::iso::core::overlay::IsoOverlay;
 
     #[test]
-    fn test_into_segments() {
+    fn test_into_segments_0() {
         let subj = vec![vec![
             IntPoint::new(0, 0),
             IntPoint::new(0, 10),
@@ -83,7 +83,7 @@ mod tests {
     }
 
     #[test]
-    fn test_init_1() {
+    fn test_into_segments_1() {
         let subj = vec![vec![
             IntPoint::new(0, 5),
             IntPoint::new(5, 10),
@@ -102,5 +102,285 @@ mod tests {
         let segments = overlay.into_segments(Solver::default());
 
         assert_eq!(segments.len(), 8);
+    }
+
+    #[test]
+    fn test_into_segments_2() {
+        let subj = vec![vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(0, 10),
+            IntPoint::new(10, 10),
+            IntPoint::new(10, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(5, 5),
+            IntPoint::new(5, 15),
+            IntPoint::new(15, 15),
+            IntPoint::new(15, 5),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 12);
+    }
+
+    #[test]
+    fn test_into_segments_3() {
+        let subj = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(0, 10),
+            IntPoint::new(10, 0),
+            IntPoint::new(0, -10),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(-5, -5),
+            IntPoint::new(-5, 5),
+            IntPoint::new(5, 5),
+            IntPoint::new(5, -5),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 12);
+    }
+
+    #[test]
+    fn test_into_segments_4() {
+        let subj = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(0, 10),
+            IntPoint::new(10, 10),
+            IntPoint::new(10, 0),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 7);
+    }
+
+    #[test]
+    fn test_into_segments_5() {
+        let subj = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, 20),
+            IntPoint::new(0, 20),
+            IntPoint::new(0, 10),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 7);
+    }
+
+    #[test]
+    fn test_into_segments_6() {
+        let subj = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 4);
+    }
+
+    #[test]
+    fn test_into_segments_7() {
+        let subj = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 4);
+    }
+
+    #[test]
+    fn test_into_segments_8() {
+        let subj = vec![vec![
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0),
+        ]];
+
+        let clip = vec![vec![
+            IntPoint::new(0, 2),
+            IntPoint::new(0, 8),
+            IntPoint::new(10, 8),
+            IntPoint::new(10, 2),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 9);
+    }
+
+    #[test]
+    fn test_into_segments_9() {
+        let subj = vec![
+            vec![
+                IntPoint::new(-10, 0),
+                IntPoint::new(-10, 10),
+                IntPoint::new(-2, 10),
+                IntPoint::new(-2, 0),
+            ],
+            vec![
+                IntPoint::new(-8, 5),
+                IntPoint::new(-5, 8),
+                IntPoint::new(-2, 5),
+                IntPoint::new(-5, 2),
+            ]
+        ];
+
+        let clip = vec![vec![
+            IntPoint::new(0, -10),
+            IntPoint::new(0, -5),
+            IntPoint::new(16, -5),
+            IntPoint::new(16, -10),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 13);
+    }
+
+    #[test]
+    fn test_into_segments_10() {
+        let subj = vec![
+            vec![
+                IntPoint::new(-10, 0),
+                IntPoint::new(-10, 10),
+                IntPoint::new(-2, 10),
+                IntPoint::new(-2, 0),
+            ],
+            vec![
+                IntPoint::new(-2, 5),
+                IntPoint::new(3, 10),
+                IntPoint::new(8, 5),
+                IntPoint::new(3, 0),
+            ]
+        ];
+
+        let clip = vec![vec![
+            IntPoint::new(0, -10),
+            IntPoint::new(0, -5),
+            IntPoint::new(16, -5),
+            IntPoint::new(16, -10),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 13);
+    }
+
+    #[test]
+    fn test_into_segments_11() {
+        let subj = vec![
+            vec![
+                IntPoint::new(-10, 0),
+                IntPoint::new(-10, 10),
+                IntPoint::new(-2, 10),
+                IntPoint::new(-2, 0),
+            ],
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(0, 10),
+                IntPoint::new(8, 10),
+                IntPoint::new(8, 0),
+            ],
+            vec![
+                IntPoint::new(10, 0),
+                IntPoint::new(10, 10),
+                IntPoint::new(12, 10),
+                IntPoint::new(12, 0),
+            ]
+        ];
+
+        let clip = vec![vec![
+            IntPoint::new(0, -10),
+            IntPoint::new(0, -5),
+            IntPoint::new(10, -5),
+            IntPoint::new(10, -10),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 16);
+    }
+
+    #[test]
+    fn test_into_segments_12() {
+        let subj = vec![
+            vec![
+                IntPoint::new(-10, 0),
+                IntPoint::new(-10, 10),
+                IntPoint::new(-2, 10),
+                IntPoint::new(-2, 0),
+            ],
+            vec![
+                IntPoint::new(10, 0),
+                IntPoint::new(22, 10),
+                IntPoint::new(22, 10),
+                IntPoint::new(10, 0),
+            ]
+        ];
+
+        let clip = vec![vec![
+            IntPoint::new(0, -10),
+            IntPoint::new(0, -5),
+            IntPoint::new(16, -5),
+            IntPoint::new(16, -10),
+        ]];
+
+        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let segments = overlay.into_segments(Solver::default());
+
+        assert_eq!(segments.len(), 12);
     }
 }

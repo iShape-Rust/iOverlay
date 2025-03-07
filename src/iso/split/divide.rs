@@ -22,7 +22,7 @@ impl IsoData {
         Self::divide_vr(&self.vr_segments, split.vr_points, &mut segments);
         Self::divide_hz(&self.hz_segments, split.hz_points, &mut segments);
         Self::divide_dg::<PosDiagonal>(&self.dg_pos_segments, split.dg_pos_points, &mut segments);
-        Self::divide_dg::<NegDiagonal>(&self.dg_pos_segments, split.dg_neg_points, &mut segments);
+        Self::divide_dg::<NegDiagonal>(&self.dg_neg_segments, split.dg_neg_points, &mut segments);
 
         segments
     }
@@ -41,18 +41,21 @@ impl IsoData {
             let vr = &vr_segments[index];
             let mut y = vr.yy.min;
             while i < vr_points.len() && vr_points[i].index == index {
-                let sp = &vr_points[i];
-                if y != sp.xy {
-                    segments.push(Segment {
-                        x_segment: XSegment {
-                            a: IntPoint::new(vr.x, y),
-                            b: IntPoint::new(vr.x, sp.xy),
-                        },
-                        count: vr.count,
-                    });
-                    y = sp.xy;
+                let yi = vr_points[i].xy;
+                i += 1;
+                if yi == y {
+                    continue;
                 }
+                segments.push(Segment {
+                    x_segment: XSegment {
+                        a: IntPoint::new(vr.x, y),
+                        b: IntPoint::new(vr.x, yi),
+                    },
+                    count: vr.count,
+                });
+                y = yi;
             }
+
             if y != vr.yy.max {
                 segments.push(Segment {
                     x_segment: XSegment {
@@ -65,10 +68,8 @@ impl IsoData {
 
             if j < index {
                 Self::create_vr_segments(&vr_segments[j..index], segments);
-                j = index + 1;
             }
-
-            i += 1
+            j = index + 1;
         }
 
         if j < vr_segments.len() {
@@ -91,17 +92,19 @@ impl IsoData {
             let mut x = hz.xx.min;
             while i < hz_points.len() && hz_points[i].index == index {
                 let xi = hz_points[i].xy;
-                if x != xi {
-                    segments.push(Segment {
-                        x_segment: XSegment {
-                            a: IntPoint::new(x, hz.y),
-                            b: IntPoint::new(xi, hz.y),
-                        },
-                        count: hz.count,
-                    });
-                    x = xi;
+                i += 1;
+                if xi == x {
+                    continue;
                 }
-                i += 1
+
+                segments.push(Segment {
+                    x_segment: XSegment {
+                        a: IntPoint::new(x, hz.y),
+                        b: IntPoint::new(xi, hz.y),
+                    },
+                    count: hz.count,
+                });
+                x = xi;
             }
             if x != hz.xx.max {
                 segments.push(Segment {
@@ -115,8 +118,8 @@ impl IsoData {
 
             if j < index {
                 Self::create_hz_segments(&hz_segments[j..index], segments);
-                j = index + 1;
             }
+            j = index + 1;
         }
 
         if j < hz_segments.len() {
@@ -140,19 +143,21 @@ impl IsoData {
             let mut y = dg.y0;
             while i < dg_points.len() && dg_points[i].index == index {
                 let xi = dg_points[i].xy;
-                if x != xi {
-                    let yi = F::get_y(dg, xi);
-                    segments.push(Segment {
-                        x_segment: XSegment {
-                            a: IntPoint::new(x, y),
-                            b: IntPoint::new(xi, yi),
-                        },
-                        count: dg.count,
-                    });
-                    x = xi;
-                    y = yi;
+                i += 1;
+                if xi == x {
+                    continue;
                 }
-                i += 1
+
+                let yi = F::get_y(dg, xi);
+                segments.push(Segment {
+                    x_segment: XSegment {
+                        a: IntPoint::new(x, y),
+                        b: IntPoint::new(xi, yi),
+                    },
+                    count: dg.count,
+                });
+                x = xi;
+                y = yi;
             }
             if x != dg.xx.max {
                 segments.push(Segment {
@@ -166,8 +171,12 @@ impl IsoData {
 
             if j < index {
                 Self::create_dg_segments::<F>(&dg_segments[j..index], segments);
-                j = index + 1;
             }
+            j = index + 1;
+        }
+
+        if j < dg_segments.len() {
+            Self::create_dg_segments::<F>(&dg_segments[j..], segments);
         }
     }
 
