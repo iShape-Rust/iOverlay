@@ -23,18 +23,18 @@ impl MaskFilter for Vec<OverlayLink> {
 }
 
 
-pub(super) trait InclusionFilterStrategy {
+pub(crate) trait InclusionFilterStrategy {
     fn is_included(fill: SegmentFill) -> bool;
 }
 
-pub(super) struct SubjectFilter;
-pub(super) struct ClipFilter;
-pub(super) struct IntersectFilter;
-pub(super) struct UnionFilter;
-pub(super) struct DifferenceFilter;
-pub(super) struct InverseDifferenceFilter;
-pub(super) struct XorFilter;
-pub(super) struct FillerFilter;
+pub(crate) struct SubjectFilter;
+pub(crate) struct ClipFilter;
+pub(crate) struct IntersectFilter;
+pub(crate) struct UnionFilter;
+pub(crate) struct DifferenceFilter;
+pub(crate) struct InverseDifferenceFilter;
+pub(crate) struct XorFilter;
+pub(crate) struct FillerFilter;
 
 pub(super) struct StringClipInsideBoundaryExcludedFilter;
 pub(super) struct StringClipInsideBoundaryIncludedFilter;

@@ -1,11 +1,17 @@
 use i_shape::int::shape::{IntContour, IntShape};
+use crate::core::fill_rule::FillRule;
+use crate::core::filter::{ClipFilter, DifferenceFilter, FillerFilter, InclusionFilterStrategy, IntersectFilter, InverseDifferenceFilter, SubjectFilter, UnionFilter, XorFilter};
+use crate::core::graph::OverlayGraph;
+use crate::core::link::{OverlayLink, OverlayLinkBuilder};
 use crate::core::overlay::ShapeType;
+use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::geom::line_range::LineRange;
 use crate::iso::core::data::IsoData;
 use crate::iso::core::metric::Metric;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
+use crate::split::solver::SplitSegments;
 
 #[derive(Clone)]
 pub struct IsoOverlay {
@@ -58,6 +64,53 @@ impl IsoOverlay {
     #[inline]
     pub fn into_segments(self, solver: Solver) -> Vec<Segment<ShapeCountBoolean>> {
         self.data.into_segments(&solver, self.x_range)
+    }
+
+    /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
+    /// - `solver`: Type of solver to use.
+    #[inline]
+    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
+        let segments = self.into_segments(solver);
+        let links = OverlayLinkBuilder::build_iso_with_filler_filter(segments, fill_rule, solver);
+        OverlayGraph::new(solver, links)
+    }
+
+}
+
+impl OverlayLinkBuilder {
+    #[inline]
+    fn build_iso_without_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_all_links(&segments, &fills)
+    }
+
+    #[inline]
+    fn build_iso_with_filler_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_links::<FillerFilter, ShapeCountBoolean>(&segments, &fills)
+    }
+
+    #[inline]
+    fn build_iso_with_overlay_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<OverlayLink> {
+        match overlay_rule {
+            OverlayRule::Subject => Self::build_iso_boolean::<SubjectFilter>(segments, fill_rule, solver),
+            OverlayRule::Clip => Self::build_iso_boolean::<ClipFilter>(segments, fill_rule, solver),
+            OverlayRule::Intersect => Self::build_iso_boolean::<IntersectFilter>(segments, fill_rule, solver),
+            OverlayRule::Union => Self::build_iso_boolean::<UnionFilter>(segments, fill_rule, solver),
+            OverlayRule::Difference => Self::build_iso_boolean::<DifferenceFilter>(segments, fill_rule, solver),
+            OverlayRule::InverseDifference => Self::build_iso_boolean::<InverseDifferenceFilter>(segments, fill_rule, solver),
+            OverlayRule::Xor => Self::build_iso_boolean::<XorFilter>(segments, fill_rule, solver),
+        }
+    }
+
+    #[inline]
+    fn build_iso_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_links::<F, ShapeCountBoolean>(&segments, &fills)
     }
 }
 

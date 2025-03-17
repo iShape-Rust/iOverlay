@@ -93,7 +93,7 @@ impl OverlayLinkBuilder {
         }
     }
 
-    fn fill_boolean(segments: &[Segment<ShapeCountBoolean>], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
+    pub(crate) fn fill_boolean(segments: &[Segment<ShapeCountBoolean>], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
         let is_list = solver.is_list_fill(segments);
         match fill_rule {
             FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy, ShapeCountBoolean>(is_list, segments),
@@ -119,7 +119,7 @@ impl OverlayLinkBuilder {
         Self::build_all_links(&segments, &fills)
     }
 
-    fn build_links<F: InclusionFilterStrategy, C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+    pub(crate) fn build_links<F: InclusionFilterStrategy, C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
         let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
 
         let empty_id = IdPoint::new(0, IntPoint::ZERO);
