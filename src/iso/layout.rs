@@ -3,6 +3,7 @@ use crate::geom::line_range::LineRange;
 #[derive(Clone)]
 pub(crate) struct FragLayout {
     power: usize,
+    count: usize,
     min: i64,
     max: i64,
 }
@@ -15,15 +16,13 @@ impl FragLayout {
 
     #[inline]
     pub(crate) fn count(&self) -> usize {
-        let dx = (self.max - self.min) as usize;
-        let w = dx.saturating_sub(1);
-        (w >> self.power) + 1
+        self.count
     }
 
     #[inline]
     pub(crate) fn right_index(&self, x: i32) -> usize {
         let dx = (x as i64 - self.min) as usize;
-        dx >> self.power
+        (dx >> self.power).min(self.count - 1)
     }
 
     #[inline]
@@ -54,7 +53,8 @@ impl FragLayout {
         let count_power = count_max_power.min(range_max_power);
 
         let power = (width >> count_power).ilog2() as usize;
+        let count = (width >> power) + 1;
 
-        Self { power, min, max }
+        Self { count, power, min, max }
     }
 }
