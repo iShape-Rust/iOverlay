@@ -407,6 +407,24 @@ mod tests {
     }
 
     #[test]
+    fn test_5() {
+        let path = [
+            IntPoint::new( 1, -1),
+            IntPoint::new(-1, -1),
+            IntPoint::new(-2, -1)
+        ];
+
+        let lines = [
+            [IntPoint::new(1, 1), IntPoint::new(0, 0)],
+            [IntPoint::new(-1, -1), IntPoint::new(2, 2)]
+        ].to_vec();
+
+        let result = path.slice_by_lines(&lines, FillRule::NonZero);
+
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
     fn test_random_0() {
         for _ in 0..5000 {
             let path = random_polygon(5, 3);

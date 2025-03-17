@@ -48,6 +48,16 @@ impl XSegment {
     }
 
     #[inline(always)]
+    pub(crate) fn is_under_segment_order(&self, other: &XSegment) -> Ordering {
+        match self.a.cmp(&other.a) {
+            Ordering::Less => Self::clockwise_order(self.a, other.a, self.b),
+            Ordering::Equal => Self::clockwise_order(self.a, other.b, self.b),
+            Ordering::Greater => Self::clockwise_order(other.a, other.b, self.a),
+        }
+    }
+
+
+    #[inline(always)]
     pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
         range.min > self.a.y && range.min > self.b.y || range.max < self.a.y && range.max < self.b.y
     }
@@ -62,6 +72,11 @@ impl XSegment {
         0.cmp(&cross)
     }
 
+    #[inline(always)]
+    fn clockwise_order(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> Ordering {
+        let area = Triangle::area_two_point(p0, p1, p2);
+        0.cmp(&area)
+    }
 }
 
 impl PartialOrd for XSegment {

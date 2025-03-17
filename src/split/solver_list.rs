@@ -10,7 +10,7 @@ impl SplitSolver {
 
         let mut snap_radius = snap_radius;
 
-        while need_to_fix && segments.len() > 2 {
+        while need_to_fix && segments.len() > 1 {
             need_to_fix = false;
             marks.clear();
 
