@@ -11,7 +11,6 @@ use crate::iso::core::data::IsoData;
 use crate::iso::core::metric::Metric;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
-use crate::split::solver::SplitSegments;
 
 #[derive(Clone)]
 pub struct IsoOverlay {

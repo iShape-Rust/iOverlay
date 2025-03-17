@@ -5,6 +5,8 @@ mod tests {
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_shape::int::path::IntPath;
+    use i_overlay::core::solver::Solver;
+    use i_overlay::iso::core::overlay::IsoOverlay;
 
     #[test]
     fn test_0() {
@@ -35,6 +37,15 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_iso_n() {
+        for i in 1..20 {
+            let s = i * i + (i - 1) * (i - 1);
+            assert_eq!(s, test(i, OverlayRule::Xor));
+        }
+    }
+
+
     fn test(n: usize, rule: OverlayRule) -> usize {
         let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
@@ -44,6 +55,17 @@ mod tests {
         overlay.add_contours(&clip_paths, ShapeType::Clip);
 
         let graph = overlay.into_graph(FillRule::NonZero);
+        let result = graph.extract_shapes(rule);
+
+        result.len()
+    }
+
+    fn test_iso(n: usize, rule: OverlayRule) -> usize {
+        let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
+        let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
+
+        let mut overlay = IsoOverlay::with_contours(&subj_paths, &clip_paths);
+        let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::default());
         let result = graph.extract_shapes(rule);
 
         result.len()

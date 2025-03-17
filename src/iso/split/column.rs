@@ -28,13 +28,13 @@ impl Column {
             dg_neg_points: vec![],
         };
 
-        self.vr_frags.sort_unstable_by(|f0, f1| f0.x.cmp(&f1.x));
+        self.vr_frags.sort_unstable_by(|f0, f1| f0.yy.min.cmp(&f1.yy.min));
         self.hz_frags
-            .sort_unstable_by(|f0, f1| f0.xx.min.cmp(&f1.xx.min));
+            .sort_unstable_by(|f0, f1| f0.y.cmp(&f1.y));
         self.dg_pos_frags
-            .sort_unstable_by(|f0, f1| f0.xx.min.cmp(&f1.xx.min));
+            .sort_unstable_by(|f0, f1| f0.yy.min.cmp(&f1.yy.min));
         self.dg_neg_frags
-            .sort_unstable_by(|f0, f1| f0.xx.min.cmp(&f1.xx.min));
+            .sort_unstable_by(|f0, f1| f0.yy.min.cmp(&f1.yy.min));
 
         self.split_vr_segments(width, &mut result);
         self.split_hz_segments(width, &mut result);
@@ -44,39 +44,6 @@ impl Column {
     }
 
     fn split_vr_segments(&self, width: i32, result: &mut SplitResult) {
-        // vr vz vr
-        if self.vr_frags.len() > 1 {
-            for (i0, vr0) in self.vr_frags[0..self.vr_frags.len() - 1].iter().enumerate() {
-                for vr1 in self.vr_frags[i0 + 1..].iter() {
-                    if vr0.yy.max <= vr1.yy.min {
-                        break;
-                    }
-                    if vr0.x != vr1.x {
-                        continue;
-                    }
-                    if vr0.yy.max > vr1.yy.min {
-                        result.vr_points.push(SplitPoint {
-                            index: vr0.index,
-                            xy: vr1.yy.min,
-                        });
-                    }
-
-                    if vr0.yy.max > vr1.yy.max {
-                        result.vr_points.push(SplitPoint {
-                            index: vr0.index,
-                            xy: vr1.yy.max,
-                        });
-                    }
-
-                    if vr0.yy.max < vr1.yy.max {
-                        result.vr_points.push(SplitPoint {
-                            index: vr1.index,
-                            xy: vr0.yy.max,
-                        })
-                    }
-                }
-            }
-        }
         // vr vz hz
         let mut index = 0;
 
@@ -136,11 +103,14 @@ impl Column {
         vr_points: &mut Vec<SplitPoint>,
         dg_points: &mut Vec<SplitPoint>,
     ) {
+        // vr and dg sorted by yy.min
         let mut index = 0;
 
         for vr in vr_frags.iter() {
             let min_y = vr.yy.min.saturating_sub(width);
-            while index < dg_frags.len() && dg_frags[index].yy.min < min_y {
+
+            // scroll to the first y-overlap
+            while index < dg_frags.len() && dg_frags[index].yy.max < min_y {
                 index += 1;
             }
 
@@ -207,7 +177,9 @@ impl Column {
 
         for hz in hz_frags.iter() {
             let min_y = hz.y.saturating_sub(width);
-            while index < dg_frags.len() && dg_frags[index].yy.min < min_y {
+
+            // scroll to the first y-overlap
+            while index < dg_frags.len() && dg_frags[index].yy.max < min_y {
                 index += 1;
             }
 
@@ -248,9 +220,10 @@ impl Column {
         let mut index = 0;
 
         for dg_pos in self.dg_pos_frags.iter() {
-            let start_y = dg_pos.yy.min.saturating_sub(width);
+            let min_y = dg_pos.yy.min.saturating_sub(width);
 
-            while index < self.dg_neg_frags.len() && self.dg_neg_frags[index].yy.max < start_y {
+            // scroll to the first y-overlap
+            while index < self.dg_neg_frags.len() && self.dg_neg_frags[index].yy.max < min_y {
                 index += 1;
             }
 

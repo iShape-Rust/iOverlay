@@ -270,4 +270,43 @@ mod tests {
         assert_eq!(result[0].len(), 1);
         assert_eq!(result[0][0].len(), 16);
     }
+
+    #[test]
+    fn test_7() {
+        let mut rect =
+            [
+                IntPoint::new(-2, -2),
+                IntPoint::new(-2, -1),
+                IntPoint::new(-2, 0),
+                IntPoint::new(-2, 1),
+                IntPoint::new(-2, 2),
+                IntPoint::new(-1, 2),
+                IntPoint::new( 0, 2),
+                IntPoint::new( 1, 2),
+                IntPoint::new( 2, 2),
+                IntPoint::new( 2, 1),
+                IntPoint::new( 2, 0),
+                IntPoint::new( 2,-1),
+                IntPoint::new( 2,-2),
+                IntPoint::new( 1,-2),
+                IntPoint::new( 0,-2),
+                IntPoint::new(-1,-2),
+            ].to_vec();
+
+        let clip = vec![];
+        for i in 0..16 {
+            let subj = vec![rect.clone()];
+
+            let overlay = IsoOverlay::with_contours(&subj, &clip);
+            let result = overlay
+                .into_graph_with_solver(FillRule::NonZero, Solver::default())
+                .extract_shapes(OverlayRule::Subject);
+
+            assert_eq!(result.len(), 1);
+            assert_eq!(result[0].len(), 1);
+            assert_eq!(result[0][0].len(), 4);
+
+            rect.rotate_left(1);
+        }
+    }
 }

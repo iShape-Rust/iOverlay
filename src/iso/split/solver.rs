@@ -381,6 +381,6 @@ mod tests {
         let overlay = IsoOverlay::with_contours(&subj, &clip);
         let segments = overlay.into_segments(Solver::default());
 
-        assert_eq!(segments.len(), 12);
+        assert_eq!(segments.len(), 8);
     }
 }
