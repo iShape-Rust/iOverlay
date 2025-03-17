@@ -137,6 +137,8 @@ impl Solver {
         }),
     };
 
+    const MAX_SPLIT_LIST_COUNT: usize = 4_000;
+    const MIN_FRAGMENT_COUNT: usize = 8_000;
     const MAX_FILL_LIST_COUNT: usize = 8_000;
 
     pub fn with_precision(precision: Precision) -> Self {
@@ -157,6 +159,18 @@ impl Solver {
                 par_sort_min_size: MultithreadOptions::DEFAULT_PAR_SORT_MIN_SIZE,
             }),
         }
+    }
+
+    pub(crate) fn is_list_split<C: Send>(&self, segments: &[Segment<C>]) -> bool {
+        match self.strategy {
+            List => true,
+            Tree | Frag => false,
+            Auto => segments.len() < Self::MAX_SPLIT_LIST_COUNT,
+        }
+    }
+
+    pub(crate) fn is_fragmentation_required<C: Send>(&self, segments: &[Segment<C>]) -> bool {
+        segments.len() > Self::MIN_FRAGMENT_COUNT || self.strategy == Frag
     }
 
     pub(crate) fn is_list_fill<C: Send>(&self, segments: &[Segment<C>]) -> bool {

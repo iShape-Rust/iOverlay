@@ -1,17 +1,25 @@
+use crate::split::solver::SplitSolver;
+
 pub(super) struct SnapRadius {
-    pub(super) current: usize,
-    pub(super) step: usize,
+    current: usize,
+    step: usize,
 }
 
 impl SnapRadius {
-
-    #[inline]
     pub(super) fn increment(&mut self) {
         self.current = 60.min(self.current + self.step);
     }
 
-    #[inline]
     pub(super) fn radius(&self) -> i64 {
         1 << self.current
+    }
+}
+
+impl SplitSolver {
+    pub(super) fn snap_radius(&self) -> SnapRadius {
+        SnapRadius {
+            current: self.solver.precision.start,
+            step: self.solver.precision.progression,
+        }
     }
 }

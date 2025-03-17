@@ -2,15 +2,12 @@ use i_float::int::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_key_sort::key_sort::Bin;
 use crate::core::solver::Solver;
-use crate::core::solver::Strategy::{Auto, List, Tree};
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 use crate::split::cross_solver::{CrossType, CrossSolver, EndMask};
 use crate::split::line_mark::LineMark;
 use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
-use crate::split::grid_layout::GridLayout;
-use crate::split::snap_radius::SnapRadius;
 use crate::util::sort::SmartBinSort;
 
 pub(crate) trait SplitSegments<C: WindingCount> {
@@ -40,33 +37,18 @@ impl SplitSolver {
 
     #[inline]
     pub(crate) fn split<C: WindingCount>(&self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
-        let snap_radius = SnapRadius {
-            current: self.solver.precision.start,
-            step: self.solver.precision.progression,
-        };
+        let is_list = self.solver.is_list_split(&segments);
+        let snap_radius = self.snap_radius();
+        if is_list {
+            return self.list_split(snap_radius, segments);
+        }
 
-        let count = segments.len();
+        let is_fragmentation = self.solver.is_fragmentation_required(&segments);
 
-        let grid_layout = match self.solver.strategy {
-            List | Tree => None,
-            _ => {
-                // for small data we prefer list or tree solver
-                if self.solver.strategy == Auto && count < 12000 {
-                    None
-                } else {
-                    GridLayout::new(segments.iter().map(|it| it.x_segment), count)
-                }
-            }
-        };
-
-        if let Some(layout) = grid_layout {
-            self.fragment_split(layout, snap_radius, segments)
+        if is_fragmentation {
+            self.fragment_split(snap_radius, segments)
         } else {
-            if count <= 3000 || self.solver.strategy == List {
-                self.list_split(snap_radius, segments)
-            } else {
-                self.tree_split(snap_radius, segments)
-            }
+            self.tree_split(snap_radius, segments)
         }
     }
 
