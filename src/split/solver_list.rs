@@ -1,6 +1,5 @@
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
-use crate::split::grid_layout::GridLayout;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 
@@ -11,14 +10,7 @@ impl SplitSolver {
 
         let mut snap_radius = snap_radius;
 
-        while need_to_fix && segments.len() > 2 {
-            if segments.len() > 5000 {
-                // continue with fragment solver
-                if let Some(layout) = GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len()) {
-                    return self.fragment_split(layout, snap_radius, segments);
-                }
-            }
-
+        while need_to_fix && segments.len() > 1 {
             need_to_fix = false;
             marks.clear();
 
@@ -49,6 +41,11 @@ impl SplitSolver {
             segments = self.apply(&mut marks, segments, need_to_fix);
 
             snap_radius.increment();
+
+            if need_to_fix && !self.solver.is_list_split(&segments) {
+                // finish with tree solver if edges is become large
+                return self.tree_split(snap_radius, segments);
+            }
         }
 
         segments

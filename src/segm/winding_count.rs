@@ -88,7 +88,6 @@ impl WindingCount for ShapeCountString {
 
     #[inline(always)]
     fn with_shape_type(shape_type: ShapeType) -> (Self, Self) {
-        // todo!!! remove
         match shape_type {
             ShapeType::Subject => (Self { subj: 1, clip: 0 }, Self { subj: -1, clip: 0 }),
             ShapeType::Clip => (Self { subj: 0, clip: STRING_FORWARD_CLIP }, Self { subj: 0, clip: STRING_BACK_CLIP })

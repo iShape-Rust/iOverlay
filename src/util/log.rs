@@ -37,4 +37,13 @@ mod tests {
         }
     }
 
+    // #[test]
+    // fn test_1() {
+    //     let mut n = 10usize;
+    //     while n < 10_000_000 {
+    //         println!("a: {}, x: {}", n, n.log2_sqrt());
+    //         n *= 10;
+    //     }
+    // }
+
 }

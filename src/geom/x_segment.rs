@@ -33,6 +33,13 @@ impl XSegment {
     }
 
     #[inline(always)]
+    pub(crate) fn is_under_point_order(&self, p: IntPoint) -> Ordering {
+        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
+        debug_assert!(p != self.a && p != self.b);
+        0.cmp(&Triangle::area_two_point(self.a, p, self.b))
+    }
+
+    #[inline(always)]
     pub(crate) fn is_under_segment(&self, other: &XSegment) -> bool {
         match self.a.cmp(&other.a) {
             Ordering::Less => {
@@ -44,6 +51,15 @@ impl XSegment {
             Ordering::Greater => {
                 Triangle::is_clockwise_point(other.a, other.b, self.a)
             }
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn is_under_segment_order(&self, other: &XSegment) -> Ordering {
+        match self.a.cmp(&other.a) {
+            Ordering::Less => Self::clockwise_order(self.a, other.a, self.b),
+            Ordering::Equal => Self::clockwise_order(self.a, other.b, self.b),
+            Ordering::Greater => Self::clockwise_order(other.a, other.b, self.a),
         }
     }
 
@@ -62,6 +78,11 @@ impl XSegment {
         0.cmp(&cross)
     }
 
+    #[inline(always)]
+    fn clockwise_order(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> Ordering {
+        let area = Triangle::area_two_point(p0, p1, p2);
+        0.cmp(&area)
+    }
 }
 
 impl PartialOrd for XSegment {

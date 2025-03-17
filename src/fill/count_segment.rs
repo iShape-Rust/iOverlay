@@ -10,12 +10,14 @@ pub(super) struct CountSegment<C> {
 impl<C> Eq for CountSegment<C> {}
 
 impl<C> PartialEq<Self> for CountSegment<C> {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
     }
 }
 
 impl<C> PartialOrd<Self> for CountSegment<C> {
+    #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
@@ -24,10 +26,6 @@ impl<C> PartialOrd<Self> for CountSegment<C> {
 impl<C> Ord for CountSegment<C> {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.x_segment.is_under_segment(&other.x_segment) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
+        self.x_segment.is_under_segment_order(&other.x_segment)
     }
 }

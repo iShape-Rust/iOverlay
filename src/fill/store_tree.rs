@@ -1,13 +1,9 @@
-use std::cmp::Ordering;
 use i_float::int::point::IntPoint;
-use i_float::triangle::Triangle;
 use i_tree::node::{Color, EMPTY_REF};
 use i_tree::tree::Tree;
 use crate::fill::count_segment::CountSegment;
-use crate::fill::solver::{FillSolver, FillStrategy};
-use crate::geom::end::End;
+use crate::fill::solver::ScanFillStore;
 use crate::geom::x_segment::XSegment;
-use crate::segm::segment::{Segment, SegmentFill, NONE};
 use crate::segm::winding_count::WindingCount;
 use crate::util::log::Int;
 
@@ -23,8 +19,12 @@ impl<C: WindingCount> ScanFillTree<C> {
         let x_segment = XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO };
         Self { tree: Tree::new(CountSegment { count, x_segment }, capacity) }
     }
+}
 
-    pub(super) fn insert(&mut self, segment: CountSegment<C>) {
+impl<C: WindingCount> ScanFillStore<C> for ScanFillTree<C> {
+
+    #[inline]
+    fn insert(&mut self, segment: CountSegment<C>) {
         let stop = segment.x_segment.a.x;
         let mut index = self.tree.root;
         let mut p_index = EMPTY_REF;
@@ -75,6 +75,7 @@ impl<C: WindingCount> ScanFillTree<C> {
         }
     }
 
+    #[inline]
     fn find_under_and_nearest(&mut self, p: IntPoint) -> C {
         let mut index = self.tree.root;
         let mut result = C::new(0, 0);
@@ -94,54 +95,6 @@ impl<C: WindingCount> ScanFillTree<C> {
             } else {
                 index = node.left;
             }
-        }
-
-        result
-    }
-}
-
-
-impl FillSolver {
-    pub(super) fn tree_fill<F: FillStrategy<C>, C: WindingCount>(segments: &[Segment<C>]) -> Vec<SegmentFill> {
-        // Mark. self is sorted by x_segment.a
-        let mut scan_list = ScanFillTree::new(segments.len());
-        let mut buf = Vec::with_capacity(4);
-
-        let n = segments.len();
-        let mut result = vec![NONE; n];
-        let mut i = 0;
-
-        while i < n {
-            let p = segments[i].x_segment.a;
-
-            buf.push(End { index: i, point: segments[i].x_segment.b });
-            i += 1;
-
-            while i < n && segments[i].x_segment.a == p {
-                buf.push(End { index: i, point: segments[i].x_segment.b });
-                i += 1;
-            }
-
-            buf.sort_by(|s0, s1|
-            if Triangle::is_clockwise_point(p, s1.point, s0.point) {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            });
-
-            let mut sum_count = scan_list.find_under_and_nearest(p);
-            let mut fill: SegmentFill;
-
-            for se in buf.iter() {
-                let sid = unsafe { segments.get_unchecked(se.index) };
-                (sum_count, fill) = F::add_and_fill(sid.count, sum_count);
-                *unsafe { result.get_unchecked_mut(se.index) } = fill;
-                if sid.x_segment.is_not_vertical() {
-                    scan_list.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
-                }
-            }
-
-            buf.clear();
         }
 
         result
