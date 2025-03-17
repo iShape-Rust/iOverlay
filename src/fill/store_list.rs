@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use i_float::int::point::IntPoint;
 use crate::fill::count_segment::CountSegment;
 use crate::fill::solver::ScanFillStore;
@@ -37,30 +36,23 @@ impl<C: WindingCount> ScanFillStore<C> for ScanFillList<C> {
     #[inline(always)]
     fn insert(&mut self, segment: CountSegment<C>) {
         self.min_x = self.min_x.min(segment.x_segment.b.x);
-        match self.buffer.binary_search(&segment) {
-            Ok(_) => unreachable!("Buffer can only contain unique elements"),
-            Err(index) => self.buffer.insert(index, segment)
+        if let Err(index) = self.buffer.binary_search(&segment) {
+            self.buffer.insert(index, segment)
         }
     }
 
     #[inline(always)]
     fn find_under_and_nearest(&mut self, p: IntPoint) -> C {
         self.clear(p.x);
-        match self.buffer.binary_search_by(|s|
-        if s.x_segment.is_under_point(p) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
-        ) {
-            Ok(_) => unreachable!("This condition should never occur"),
-            Err(index) => {
-                if index == 0 {
-                    C::new(0, 0)
-                } else {
-                    unsafe { self.buffer.get_unchecked(index - 1) }.count
-                }
+        if let Err(index) = self.buffer.binary_search_by(|s| s.x_segment.is_under_point_order(p)) {
+            if index == 0 {
+                C::new(0, 0)
+            } else {
+                unsafe { self.buffer.get_unchecked(index - 1) }.count
             }
+        } else {
+            debug_assert!(false, "This condition should never occur");
+            C::new(0, 0)
         }
     }
 }

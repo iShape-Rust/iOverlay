@@ -40,11 +40,7 @@ impl PartialOrd for IdSegment {
 impl Ord for IdSegment {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.x_segment.is_under_segment(&other.x_segment) {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
+        self.x_segment.is_under_segment_order(&other.x_segment)
     }
 }
 
@@ -55,16 +51,20 @@ pub(crate) trait IdSegments {
 }
 
 impl IdSegments for IntPath {
+
+    #[inline]
     fn append_hole_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
         let id= (index << 1) | 1;
         self.append_id_segments(buffer, id, x_min, x_max);
     }
 
+    #[inline]
     fn append_hull_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
         let id= index << 1;
         self.append_id_segments(buffer, id, x_min, x_max);
     }
 
+    #[inline]
     fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id: usize, x_min: i32, x_max: i32) {
         let mut b = self[self.len() - 1];
         for &a in self.iter() {
@@ -78,16 +78,20 @@ impl IdSegments for IntPath {
 
 
 impl IdSegments for VectorPath {
+
+    #[inline]
     fn append_hole_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
         let id= (index << 1) + 1;
         self.append_id_segments(buffer, id, x_min, x_max);
     }
 
+    #[inline]
     fn append_hull_segments(&self, buffer: &mut Vec<IdSegment>, index: usize, x_min: i32, x_max: i32) {
         let id= index << 1;
         self.append_id_segments(buffer, id, x_min, x_max);
     }
 
+    #[inline]
     fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id: usize, x_min: i32, x_max: i32) {
         for vec in self.iter() {
             if vec.a.x < vec.b.x && x_min < vec.b.x && vec.a.x <= x_max {
