@@ -23,10 +23,11 @@ impl FillSolver {
 
     #[inline]
     pub(crate) fn fill<F: FillStrategy<C>, C: WindingCount>(is_list: bool, segments: &[Segment<C>]) -> Vec<SegmentFill> {
+        let count = segments.len();
         if is_list {
-            Self::solve::<F, ScanFillList<C>, C>(ScanFillList::<C>::new(segments.len()), segments)
+            Self::solve::<F, ScanFillList<C>, C>(ScanFillList::<C>::new(count), segments)
         } else {
-            Self::solve::<F, ScanFillTree<C>, C>(ScanFillTree::<C>::new(segments.len()), segments)
+            Self::solve::<F, ScanFillTree<C>, C>(ScanFillTree::<C>::new(count), segments)
         }
     }
 

@@ -1,7 +1,7 @@
 #[cfg(feature = "allow_multithreading")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
-use i_key_sort::index::{BinKey, Offset};
+use i_key_sort::index::{BinKey, BinLayoutOp};
 use crate::core::solver::Solver;
 use i_key_sort::key_sort::KeyBinSort;
 
@@ -16,7 +16,7 @@ pub(crate) trait SmartBinSort<U> {
 impl<T, U> SmartBinSort<U> for [T]
 where
     T: BinKey<U> + Clone + Send,
-    U: Copy + Ord + Offset,
+    U: Copy + Ord + BinLayoutOp,
 {
     fn smart_bin_sort_by<F>(&mut self, _solver: &Solver, compare: F)
     where
