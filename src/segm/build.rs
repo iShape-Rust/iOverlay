@@ -97,7 +97,7 @@ mod tests {
     use crate::core::overlay::ShapeType;
     use crate::core::overlay_rule::OverlayRule;
     use crate::core::solver::Solver;
-    use crate::iso::core::overlay::IsoOverlay;
+    use crate::core::iso::IsoOverlay;
     use crate::segm::build::BuildSegments;
     use crate::segm::merge::ShapeSegmentsMerge;
     use crate::segm::segment::Segment;

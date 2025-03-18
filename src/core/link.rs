@@ -8,6 +8,7 @@ use crate::geom::id_point::IdPoint;
 use crate::segm::segment::{Segment, SegmentFill};
 use crate::segm::winding_count::{WindingCount, ShapeCountBoolean, ShapeCountString};
 use crate::split::solver::SplitSegments;
+use crate::split::iso_solver::IsoSplitSegments;
 use crate::string::clip::ClipRule;
 
 #[derive(Debug, Clone, Copy)]
@@ -45,6 +46,11 @@ impl OverlayLinkBuilder {
     #[inline]
     pub(super) fn build_with_filler_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
         Self::build_boolean::<FillerFilter>(segments, fill_rule, solver)
+    }
+
+    #[inline]
+    pub(super) fn iso_build_with_filler_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        Self::iso_build_boolean::<FillerFilter>(segments, fill_rule, solver)
     }
 
     #[inline]
@@ -101,6 +107,14 @@ impl OverlayLinkBuilder {
             FillRule::Positive => FillSolver::fill::<PositiveStrategy, ShapeCountBoolean>(is_list, segments),
             FillRule::Negative => FillSolver::fill::<NegativeStrategy, ShapeCountBoolean>(is_list, segments),
         }
+    }
+
+    fn iso_build_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let segments = segments.iso_split_segments(solver);
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_links::<F, ShapeCountBoolean>(&segments, &fills)
     }
 
     fn build_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {

@@ -6,7 +6,6 @@ mod tests {
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_shape::int::path::IntPath;
     use i_overlay::core::solver::Solver;
-    use i_overlay::iso::core::overlay::IsoOverlay;
 
     #[test]
     fn test_1() {
@@ -28,6 +27,11 @@ mod tests {
         for i in 1..20 {
             test(i, OverlayRule::Xor)
         }
+    }
+
+    #[test]
+    fn test_iso_1() {
+        test_iso(1, OverlayRule::Xor)
     }
 
     #[test]
@@ -67,8 +71,8 @@ mod tests {
         let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
-        let mut overlay = IsoOverlay::with_contours(&subj_paths, &clip_paths);
-        let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::default());
+        let mut overlay = Overlay::with_contours(&subj_paths, &clip_paths);
+        let graph = overlay.into_iso_graph_with_solver(FillRule::NonZero, Solver::default());
         let result = graph.extract_shapes(rule);
 
         let s = n * n + (n - 1) * (n - 1);

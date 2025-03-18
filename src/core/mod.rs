@@ -10,3 +10,4 @@ pub(crate) mod node;
 pub(crate) mod filter;
 pub(crate) mod nearest_vector;
 pub mod divide;
+pub mod iso;

@@ -1,9 +1,10 @@
+use i_float::int::point::IntPoint;
 use crate::bind::segment::IdSegment;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
-use crate::split::fragment::Fragment;
-use crate::split::grid_layout::{FragmentBuffer, GridLayout};
+use crate::split::fragment::{Fragment, FragmentBuffer};
+use crate::split::grid_layout::GridLayout;
 use crate::split::line_mark::LineMark;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
@@ -163,28 +164,29 @@ impl SplitSolver {
     }
 
     fn on_border_split(border_x: i32, fragments: &[Fragment], vertical_segments: &mut [IdSegment], marks: &mut Vec<LineMark>) {
-        let mut points = Vec::new();
+        let mut yy = Vec::new();
         for fragment in fragments.iter() {
             if fragment.x_segment.b.x == border_x {
-                points.push(fragment.x_segment.b)
+                yy.push(fragment.x_segment.b.y)
             }
         }
 
-        if points.is_empty() {
+        if yy.is_empty() {
             return;
         }
 
-        points.sort_unstable_by(|p0, p1| p0.y.cmp(&p1.y));
-        vertical_segments.sort_by(|s0, s1| s0.x_segment.a.y.cmp(&s1.x_segment.a.y));
+        yy.sort_unstable();
+        vertical_segments.sort_unstable_by(|s0, s1| s0.x_segment.a.y.cmp(&s1.x_segment.a.y));
 
         let mut i = 0;
         for s in vertical_segments.iter() {
-            while i < points.len() && points[i].y <= s.x_segment.a.y {
+            // scroll by y to first overlap
+            while i < yy.len() && yy[i] <= s.x_segment.a.y {
                 i += 1;
             }
             let mut j = i;
-            while j < points.len() && points[j].y < s.x_segment.b.y {
-                marks.push(LineMark { index: s.id, point: points[j] });
+            while j < yy.len() && yy[j] < s.x_segment.b.y {
+                marks.push(LineMark { index: s.id, point: IntPoint::new(border_x, yy[j]) });
                 j += 1;
             }
         }

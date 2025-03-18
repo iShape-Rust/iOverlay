@@ -195,7 +195,6 @@ pub mod vector;
 pub mod float;
 pub mod string;
 pub mod segm;
-pub mod iso;
 
 pub(crate) mod split;
 pub(crate) mod bind;

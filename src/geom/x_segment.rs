@@ -26,6 +26,11 @@ impl XSegment {
     }
 
     #[inline(always)]
+    pub(crate) fn is_horizontal(&self) -> bool {
+        self.a.y == self.b.y
+    }
+
+    #[inline(always)]
     pub(crate) fn is_under_point(&self, p: IntPoint) -> bool {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
