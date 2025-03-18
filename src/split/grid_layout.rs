@@ -34,7 +34,6 @@ impl FragmentBuffer {
             }
         }
 
-
         for (i, group) in self.groups.iter_mut().enumerate() {
             group.reserve(counts[i]);
         }
@@ -134,6 +133,66 @@ impl FragmentBuffer {
             IntRect { min_x: prev_x, max_x: s.b.x, min_y: prev_y, max_y: s.b.y }
         } else {
             IntRect { min_x: prev_x, max_x: s.b.x, min_y: s.b.y, max_y: prev_y }
+        };
+
+        self.insert(Fragment { index: segment_index, rect, x_segment: s }, i1);
+    }
+
+    #[inline]
+    pub(super) fn add_iso_segment(&mut self, segment_index: usize, s: XSegment) {
+        if s.a.y == s.b.y {
+            self.add_horizontal(segment_index, s);
+            return;
+        }
+
+        let i0 = self.layout.index(s.a.x);
+        if s.a.x == s.b.x {
+            self.insert_vertical(Fragment::with_index_and_segment(segment_index, s), i0);
+            return;
+        }
+
+        let i1 = self.layout.index(s.b.x - 1);
+        if i0 >= i1 {
+            self.insert(Fragment::with_index_and_segment(segment_index, s), i0);
+            return;
+        }
+
+        let mut x0 = s.a.x;
+        let x1 = self.layout.pos(i0 + 1);
+        let dx = 1 << self.layout.power;
+
+        let (dy, mut min_y, mut max_y) = if s.a.y < s.b.y {
+            let min_y = s.a.y;
+            let max_y = min_y + x1 - x0;
+            (dx, min_y, max_y)
+        } else {
+            let max_y = s.a.y;
+            let min_y = max_y - (x1 - x0);
+            (-dx, min_y, max_y)
+        };
+
+        let rect = IntRect { min_x: x0, max_x: x1, min_y, max_y };
+
+        self.insert(Fragment { index: segment_index, rect, x_segment: s }, i0);
+
+        let mut i = i0 + 1;
+        x0 = x1;
+        while i < i1 {
+            let xi = x0 = dx;
+            min_y += dy;
+            max_y += dy;
+
+            let rect = IntRect { min_x: x0, max_x: xi, min_y, max_y };
+            self.insert(Fragment { index: segment_index, rect, x_segment: s }, i);
+
+            x0 = xi;
+            i += 1
+        }
+
+        let rect = if s.a.y < s.b.y {
+            IntRect { min_x: x0, max_x: s.b.x, min_y: max_y, max_y: s.b.y };
+        } else {
+            IntRect { min_x: x0, max_x: s.b.x, min_y: s.b.y, max_y: min_y };
         };
 
         self.insert(Fragment { index: segment_index, rect, x_segment: s }, i1);

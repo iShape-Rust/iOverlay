@@ -9,44 +9,46 @@ mod tests {
     use i_overlay::iso::core::overlay::IsoOverlay;
 
     #[test]
-    fn test_0() {
-        assert_eq!(1, test(1, OverlayRule::Xor));
-    }
-
-    #[test]
     fn test_1() {
-        assert_eq!(5, test(2, OverlayRule::Xor));
+        test(1, OverlayRule::Xor);
     }
 
     #[test]
     fn test_2() {
-        assert_eq!(9 + 4, test(3, OverlayRule::Xor));
+        test(2, OverlayRule::Xor);
     }
 
     #[test]
     fn test_12() {
-        let s = 12 * 12 + 11 * 11;
-        assert_eq!(s, test(12, OverlayRule::Xor));
+        test(12, OverlayRule::Xor)
     }
 
     #[test]
     fn test_n() {
         for i in 1..20 {
-            let s = i * i + (i - 1) * (i - 1);
-            assert_eq!(s, test(i, OverlayRule::Xor));
+            test(i, OverlayRule::Xor)
         }
+    }
+
+    #[test]
+    fn test_iso_3() {
+        test_iso(3, OverlayRule::Xor)
+    }
+
+    #[test]
+    fn test_iso_100() {
+        test_iso(100, OverlayRule::Xor)
     }
 
     #[test]
     fn test_iso_n() {
         for i in 1..20 {
-            let s = i * i + (i - 1) * (i - 1);
-            assert_eq!(s, test(i, OverlayRule::Xor));
+            test_iso(i, OverlayRule::Xor)
         }
     }
 
 
-    fn test(n: usize, rule: OverlayRule) -> usize {
+    fn test(n: usize, rule: OverlayRule) {
         let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
@@ -57,10 +59,11 @@ mod tests {
         let graph = overlay.into_graph(FillRule::NonZero);
         let result = graph.extract_shapes(rule);
 
-        result.len()
+        let s = n * n + (n - 1) * (n - 1);
+        assert_eq!(s, result.len());
     }
 
-    fn test_iso(n: usize, rule: OverlayRule) -> usize {
+    fn test_iso(n: usize, rule: OverlayRule) {
         let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
@@ -68,7 +71,8 @@ mod tests {
         let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::default());
         let result = graph.extract_shapes(rule);
 
-        result.len()
+        let s = n * n + (n - 1) * (n - 1);
+        assert_eq!(s, result.len());
     }
 
     fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {

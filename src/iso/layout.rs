@@ -48,7 +48,7 @@ impl FragLayout {
         let dif = (max - min)as usize;
         let width = dif.saturating_sub(1);
 
-        let count_max_power = (0.6 * (count as f64).log2()) as usize;
+        let count_max_power = (0.2 * (count as f64).log2()) as usize;
         let range_max_power = width.ilog2() as usize;
         let count_power = count_max_power.min(range_max_power);
 
