@@ -527,8 +527,8 @@ mod tests {
         let max_y = 10;
 
         let layout = GridLayout {
-            min_x,
-            max_x,
+            min_x: min_x,
+            max_x: max_x,
             power: 1,
         };
 
@@ -566,8 +566,8 @@ mod tests {
         let max_y = 20;
 
         let layout = GridLayout {
-            min_x,
-            max_x,
+            min_x: min_x,
+            max_x: max_x,
             power: 2,
         };
 
@@ -605,8 +605,8 @@ mod tests {
         let max_y = 20;
 
         let layout = GridLayout {
-            min_x,
-            max_x,
+            min_x: min_x,
+            max_x: max_x,
             power: 3,
         };
 
@@ -644,8 +644,8 @@ mod tests {
         let max_y = 20;
 
         let layout = GridLayout {
-            min_x,
-            max_x,
+            min_x: min_x,
+            max_x: max_x,
             power: 4,
         };
 

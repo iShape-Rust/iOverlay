@@ -8,7 +8,6 @@ pub(super) struct DgLine {
     pub(super) index: usize,
     pub(super) rect: IntRect,
     pub(super) full: IntRect,
-    pub(super) y0: i32,
     pub(super) k: i32,
     pub(super) b: i32,
 }
@@ -38,7 +37,6 @@ pub(super) struct Group {
 pub(super) struct IsoFragmentBuffer {
     pub(super) layout: GridLayout,
     pub(super) groups: Vec<Group>,
-    pub(super) vr_lines: Vec<VrLine>,
     pub(super) on_border: HashMap<usize, Vec<VrLine>>,
 }
 
@@ -57,7 +55,7 @@ impl IsoFragmentBuffer {
     #[inline]
     pub(super) fn new(layout: GridLayout) -> Self {
         let n = layout.index(layout.max_x) + 1;
-        Self { layout, groups: vec![Group::new(); n], vr_lines: vec![], on_border: HashMap::new() }
+        Self { layout, groups: vec![Group::new(); n], on_border: HashMap::new() }
     }
 
     pub(super) fn init_fragment_buffer<I>(&mut self, iter: I) -> usize
@@ -142,7 +140,7 @@ impl IsoFragmentBuffer {
         let rect = IntRect { min_x: x0, max_x: x1, min_y, max_y };
         let full = s.rect();
 
-        self.insert(DgLine { index: segment_index, rect, full: full.clone(), y0, k, b }, i0);
+        self.insert(DgLine { index: segment_index, rect, full: full.clone(), k, b }, i0);
 
         let mut i = i0 + 1;
         x0 = x1;
@@ -152,7 +150,7 @@ impl IsoFragmentBuffer {
             max_y += dy;
 
             let rect = IntRect { min_x: x0, max_x: xi, min_y, max_y };
-            self.insert(DgLine { index: segment_index, rect, full: full.clone(), y0, k, b }, i);
+            self.insert(DgLine { index: segment_index, rect, full: full.clone(), k, b }, i);
 
             x0 = xi;
             i += 1
@@ -164,7 +162,7 @@ impl IsoFragmentBuffer {
             IntRect { min_x: x0, max_x: s.b.x, min_y: s.b.y, max_y: min_y }
         };
 
-        self.insert(DgLine { index: segment_index, rect, full: full.clone(), y0, k, b }, i1);
+        self.insert(DgLine { index: segment_index, rect, full: full.clone(), k, b }, i1);
     }
 
 }
@@ -188,8 +186,7 @@ impl DgLine {
             max_y,
         };
 
-        let y0 = x_segment.a.y;
-        Self { index, full: rect.clone(), rect, y0, k, b }
+        Self { index, full: rect.clone(), rect, k, b }
     }
 }
 

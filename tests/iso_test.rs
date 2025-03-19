@@ -2,9 +2,9 @@
 mod tests {
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::Overlay;
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
-    use i_overlay::core::iso::IsoOverlay;
 
     #[test]
     fn test_0() {
@@ -19,9 +19,9 @@ mod tests {
             ].to_vec();
         let clip = vec![];
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(result.len(), 1);
@@ -50,9 +50,9 @@ mod tests {
                 ].to_vec()
             ].to_vec();
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(result.len(), 1);
@@ -98,9 +98,9 @@ mod tests {
 
         let clip = vec![];
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(result.len(), 1);
@@ -146,9 +146,9 @@ mod tests {
 
         let clip = vec![];
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(result.len(), 5);
@@ -173,9 +173,9 @@ mod tests {
 
         let clip = vec![];
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(result.len(), 1);
@@ -198,16 +198,6 @@ mod tests {
                     IntPoint::new(-2, 1),
                     IntPoint::new(-2, -1)
                 ].to_vec(),
-                // [
-                //     IntPoint::new(3, 0),
-                //     IntPoint::new(2, -1),
-                //     IntPoint::new(2, 1)
-                // ].to_vec(),
-                // [
-                //     IntPoint::new(0, 3),
-                //     IntPoint::new(1, 2),
-                //     IntPoint::new(-1, 2)
-                // ].to_vec(),
                 [
                     IntPoint::new(0, -3),
                     IntPoint::new(-1, -2),
@@ -217,9 +207,9 @@ mod tests {
 
         let clip = vec![];
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(result.len(), 1);
@@ -261,9 +251,9 @@ mod tests {
 
         let clip = vec![];
 
-        let overlay = IsoOverlay::with_contours(&subj, &clip);
+        let overlay = Overlay::with_contours(&subj, &clip);
         let result = overlay
-            .into_graph_with_solver(FillRule::NonZero, Solver::default())
+            .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(result.len(), 1);
@@ -294,12 +284,13 @@ mod tests {
             ].to_vec();
 
         let clip = vec![];
-        for i in 0..16 {
+
+        for _ in 0..16 {
             let subj = vec![rect.clone()];
 
-            let overlay = IsoOverlay::with_contours(&subj, &clip);
+            let overlay = Overlay::with_contours(&subj, &clip);
             let result = overlay
-                .into_graph_with_solver(FillRule::NonZero, Solver::default())
+                .into_45geom_graph_with_solver(FillRule::NonZero, Solver::default())
                 .extract_shapes(OverlayRule::Subject);
 
             assert_eq!(result.len(), 1);

@@ -35,6 +35,11 @@ mod tests {
     }
 
     #[test]
+    fn test_iso_2() {
+        test_iso(2, OverlayRule::Xor)
+    }
+
+    #[test]
     fn test_iso_3() {
         test_iso(3, OverlayRule::Xor)
     }
@@ -71,8 +76,8 @@ mod tests {
         let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
-        let mut overlay = Overlay::with_contours(&subj_paths, &clip_paths);
-        let graph = overlay.into_iso_graph_with_solver(FillRule::NonZero, Solver::default());
+        let overlay = Overlay::with_contours(&subj_paths, &clip_paths);
+        let graph = overlay.into_45geom_graph_with_solver(FillRule::NonZero, Solver::default());
         let result = graph.extract_shapes(rule);
 
         let s = n * n + (n - 1) * (n - 1);

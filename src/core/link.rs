@@ -49,11 +49,6 @@ impl OverlayLinkBuilder {
     }
 
     #[inline]
-    pub(super) fn iso_build_with_filler_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        Self::iso_build_boolean::<FillerFilter>(segments, fill_rule, solver)
-    }
-
-    #[inline]
     pub(super) fn build_with_overlay_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<OverlayLink> {
         match overlay_rule {
             OverlayRule::Subject => Self::build_boolean::<SubjectFilter>(segments, fill_rule, solver),
@@ -109,14 +104,6 @@ impl OverlayLinkBuilder {
         }
     }
 
-    fn iso_build_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() { return vec![]; }
-        let segments = segments.iso_split_segments(solver);
-        if segments.is_empty() { return vec![]; }
-        let fills = Self::fill_boolean(&segments, fill_rule, solver);
-        Self::build_links::<F, ShapeCountBoolean>(&segments, &fills)
-    }
-
     fn build_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
         if segments.is_empty() { return vec![]; }
         let segments = segments.split_segments(solver);
@@ -165,6 +152,32 @@ impl OverlayLinkBuilder {
         }
 
         links
+    }
+
+    #[inline]
+    pub(super) fn iso_build_with_overlay_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<OverlayLink> {
+        match overlay_rule {
+            OverlayRule::Subject => Self::iso_build_boolean::<SubjectFilter>(segments, fill_rule, solver),
+            OverlayRule::Clip => Self::iso_build_boolean::<ClipFilter>(segments, fill_rule, solver),
+            OverlayRule::Intersect => Self::iso_build_boolean::<IntersectFilter>(segments, fill_rule, solver),
+            OverlayRule::Union => Self::iso_build_boolean::<UnionFilter>(segments, fill_rule, solver),
+            OverlayRule::Difference => Self::iso_build_boolean::<DifferenceFilter>(segments, fill_rule, solver),
+            OverlayRule::InverseDifference => Self::iso_build_boolean::<InverseDifferenceFilter>(segments, fill_rule, solver),
+            OverlayRule::Xor => Self::iso_build_boolean::<XorFilter>(segments, fill_rule, solver),
+        }
+    }
+
+    fn iso_build_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        if segments.is_empty() { return vec![]; }
+        let segments = segments.iso_split_segments(solver);
+        if segments.is_empty() { return vec![]; }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Self::build_links::<F, ShapeCountBoolean>(&segments, &fills)
+    }
+
+    #[inline]
+    pub(super) fn iso_build_with_filler_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+        Self::iso_build_boolean::<FillerFilter>(segments, fill_rule, solver)
     }
 }
 
