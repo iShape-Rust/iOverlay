@@ -25,6 +25,10 @@ impl XSegment {
         self.a.x != self.b.x
     }
 
+    pub(crate) fn is_vertical(&self) -> bool {
+        self.a.x == self.b.x
+    }
+
     #[inline(always)]
     pub(crate) fn is_horizontal(&self) -> bool {
         self.a.y == self.b.y

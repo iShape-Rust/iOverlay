@@ -110,7 +110,7 @@ impl IsoFragmentBuffer {
     pub(super) fn add_segment(&mut self, segment_index: usize, s: XSegment) {
         let i0 = self.layout.index(s.a.x);
         if s.a.x == s.b.x {
-            self.insert_vertical(VrLine::new(segment_index, s), i0);
+            self.insert_vertical(VrLine::new(segment_index, &s), i0);
             return;
         }
 
@@ -192,7 +192,7 @@ impl DgLine {
 
 impl VrLine {
     #[inline(always)]
-    fn new(index: usize, x_segment: XSegment) -> Self {
+    pub(crate) fn new(index: usize, x_segment: &XSegment) -> Self {
         let (min_y, max_y) = if x_segment.a.y < x_segment.b.y {
             (x_segment.a.y, x_segment.b.y)
         } else {
