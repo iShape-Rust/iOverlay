@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::mem;
-use expiration_tree::ExpiredKey;
+use i_tree::ExpiredKey;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::geom::x_segment::XSegment;
@@ -27,6 +27,31 @@ impl VSegment {
         debug_assert!(p != self.a && p != self.b);
 
         Triangle::clock_order_point(self.a, p, self.b)
+    }
+
+    #[inline(always)]
+    pub(crate) fn is_under_segment(&self, other: &VSegment) -> bool {
+        match self.a.cmp(&other.a) {
+            Ordering::Less => {
+                Triangle::is_clockwise_point(self.a, other.a, self.b)
+            }
+            Ordering::Equal => {
+                Triangle::is_clockwise_point(self.a, other.b, self.b)
+            }
+            Ordering::Greater => {
+                Triangle::is_clockwise_point(other.a, other.b, self.a)
+            }
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn cmp_by_angle(&self, other: &Self) -> Ordering {
+        // sort angles counterclockwise
+        debug_assert!(self.a == other.a);
+        let v0 = self.b.subtract(self.a);
+        let v1 = other.b.subtract(other.a);
+        let cross = v0.cross_product(v1);
+        0.cmp(&cross)
     }
 }
 

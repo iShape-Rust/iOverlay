@@ -3,10 +3,10 @@ use crate::geom::v_segment::VSegment;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::winding_count::WindingCount;
 use crate::util::log::Int;
-use expiration_tree::key::exp::KeyExpCollection;
-use expiration_tree::key::list::KeyExpList;
-use expiration_tree::key::tree::KeyExpTree;
 use i_float::triangle::Triangle;
+use i_tree::key::exp::KeyExpCollection;
+use i_tree::key::list::KeyExpList;
+use i_tree::key::tree::KeyExpTree;
 
 pub(crate) trait FillStrategy<C> {
     fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
@@ -22,9 +22,10 @@ impl FillSolver {
     ) -> Vec<SegmentFill> {
         let count = segments.len();
         if is_list {
-            Self::solve::<F, KeyExpList<VSegment, i32, C>, C>(KeyExpList::new(count), segments)
+            let capacity = count.log2_sqrt().max(4) * 2;
+            Self::solve::<F, KeyExpList<VSegment, i32, C>, C>(KeyExpList::new(capacity), segments)
         } else {
-            let capacity = (count.log2_sqrt() >> 2).max(8);
+            let capacity = count.log2_sqrt().max(8);
             Self::solve::<F, KeyExpTree<VSegment, i32, C>, C>(KeyExpTree::new(capacity), segments)
         }
     }

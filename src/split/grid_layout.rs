@@ -1,13 +1,18 @@
 use std::collections::HashMap;
 use i_float::int::rect::IntRect;
-use crate::bind::segment::IdSegment;
+use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
 use crate::split::fragment::Fragment;
+
+pub(super) struct BorderVSegment {
+    pub(super) id: usize,
+    pub(super) y_range: LineRange,
+}
 
 pub(super) struct FragmentBuffer {
     pub(super) layout: GridLayout,
     pub(super) groups: Vec<Vec<Fragment>>,
-    pub(super) on_border: HashMap<usize, Vec<IdSegment>>,
+    pub(super) on_border: HashMap<usize, Vec<BorderVSegment>>,
 }
 
 impl FragmentBuffer {
@@ -48,11 +53,11 @@ impl FragmentBuffer {
     #[inline]
     fn insert_vertical(&mut self, fragment: Fragment, bin_index: usize) {
         if bin_index > 0 && fragment.x_segment.a.x == self.layout.pos(bin_index) {
-            let id_segment = IdSegment { id: fragment.index, x_segment: fragment.x_segment };
+            let bvs = BorderVSegment { id: fragment.index, y_range: fragment.x_segment.y_range() };
             if let Some(segments) = self.on_border.get_mut(&bin_index) {
-                segments.push(id_segment);
+                segments.push(bvs);
             } else {
-                self.on_border.insert(bin_index, vec![id_segment]);
+                self.on_border.insert(bin_index, vec![bvs]);
             }
         }
         self.insert(fragment, bin_index);

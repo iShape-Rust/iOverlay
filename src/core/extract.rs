@@ -6,12 +6,12 @@ use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::node::OverlayNode;
-use crate::geom::x_segment::XSegment;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
 use i_shape::int::simple::Simplify;
+use crate::geom::v_segment::VSegment;
 
 impl OverlayGraph {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -80,21 +80,21 @@ impl OverlayGraph {
             }
 
             if is_hole {
-                let mut x_segment = XSegment {
+                let mut v_segment = VSegment {
                     a: path[1],
                     b: path[2],
                 };
                 if is_modified {
                     let most_left = path.left_bottom_segment();
-                    if most_left != x_segment {
-                        x_segment = most_left;
+                    if most_left != v_segment {
+                        v_segment = most_left;
                         is_all_anchors_sorted = false;
                     }
                 };
 
-                debug_assert_eq!(x_segment, path.left_bottom_segment());
+                debug_assert_eq!(v_segment, path.left_bottom_segment());
                 let id = holes.len();
-                anchors.push(IdSegment { id, x_segment });
+                anchors.push(IdSegment { id, v_segment });
                 holes.push(path);
             } else {
                 shapes.push(vec![path]);
@@ -102,7 +102,7 @@ impl OverlayGraph {
         }
 
         if !is_all_anchors_sorted {
-            anchors.sort_by(|s0, s1| s0.x_segment.a.cmp(&s1.x_segment.a));
+            anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
         shapes.join_sorted_holes(&self.solver, holes, anchors);

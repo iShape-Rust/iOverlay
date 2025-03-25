@@ -7,7 +7,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::MaskFilter;
 use crate::core::node::OverlayNode;
 use crate::core::solver::Solver;
-use crate::geom::x_segment::XSegment;
+use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
 use crate::util::sort::SmartBinSort;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
@@ -142,28 +142,28 @@ impl JoinHoles for Vec<VectorShape> {
         let hole_segments: Vec<_> = holes.iter().enumerate()
             .map(|(id, path)| {
                 let v = path[1];
-                let x_segment = if v.a < v.b {
-                        XSegment { a: v.a, b: v.b}
+                let v_segment = if v.a < v.b {
+                        VSegment { a: v.a, b: v.b}
                     } else {
-                        XSegment { a: v.b, b: v.a }
+                        VSegment { a: v.b, b: v.a }
                 };
-                debug_assert_eq!(x_segment, most_left_bottom(path));
-                IdSegment { id, x_segment }
+                debug_assert_eq!(v_segment, most_left_bottom(path));
+                IdSegment { id, v_segment }
             })
             .collect();
 
         debug_assert!(is_sorted(&hole_segments));
 
 
-        let x_min = hole_segments[0].x_segment.a.x;
-        let x_max = hole_segments[hole_segments.len() - 1].x_segment.a.x;
+        let x_min = hole_segments[0].v_segment.a.x;
+        let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 
         let mut segments = Vec::new();
         for (i, shape) in self.iter().enumerate() {
             shape[0].append_id_segments(&mut segments, i, x_min, x_max);
         }
 
-        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.a.x.cmp(&b.x_segment.a.x));
+        segments.smart_bin_sort_by(solver, |a, b| a.v_segment.a.x.cmp(&b.v_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 
@@ -179,7 +179,7 @@ impl JoinHoles for Vec<VectorShape> {
 }
 
 #[inline]
-fn most_left_bottom(path: &VectorPath) -> XSegment {
+fn most_left_bottom(path: &VectorPath) -> VSegment {
     let mut index = 0;
     let mut a = path[0].a;
     for (i, &e) in path.iter().enumerate().skip(1) {
@@ -192,13 +192,13 @@ fn most_left_bottom(path: &VectorPath) -> XSegment {
     let b0 = path[index].b;
     let b1 = path[(index + n - 1) % n].a;
 
-    let s0 = XSegment { a, b: b0 };
-    let s1 = XSegment { a, b: b1 };
+    let s0 = VSegment { a, b: b0 };
+    let s1 = VSegment { a, b: b1 };
 
     if s0.is_under_segment(&s1) { s0 } else { s1 }
 }
 
 #[inline]
 fn is_sorted(segments: &[IdSegment]) -> bool {
-    segments.windows(2).all(|slice| slice[0].x_segment.a <= slice[1].x_segment.a)
+    segments.windows(2).all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
 }

@@ -1,14 +1,13 @@
-use std::cmp::Ordering;
 use i_float::int::point::IntPoint;
 use i_key_sort::index::{BinKey, BinLayout};
 use i_shape::int::path::IntPath;
-use crate::geom::x_segment::XSegment;
+use crate::geom::v_segment::VSegment;
 use crate::vector::edge::VectorPath;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct IdSegment {
     pub(crate) id: usize,
-    pub(crate) x_segment: XSegment,
+    pub(crate) v_segment: VSegment,
 }
 
 impl IdSegment {
@@ -16,31 +15,8 @@ impl IdSegment {
     fn new(id: usize, a: IntPoint, b: IntPoint) -> Self {
         Self {
             id,
-            x_segment: XSegment { a, b },
+            v_segment: VSegment { a, b },
         }
-    }
-}
-
-impl PartialEq<Self> for IdSegment {
-    #[inline(always)]
-    fn eq(&self, other: &Self) -> bool {
-        self.x_segment == other.x_segment
-    }
-}
-
-impl Eq for IdSegment {}
-
-impl PartialOrd for IdSegment {
-    #[inline(always)]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for IdSegment {
-    #[inline(always)]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.x_segment.is_under_segment_order(&other.x_segment)
     }
 }
 
@@ -104,11 +80,11 @@ impl IdSegments for VectorPath {
 impl BinKey<i32> for IdSegment {
     #[inline(always)]
     fn bin_key(&self) -> i32 {
-        self.x_segment.a.x
+        self.v_segment.a.x
     }
 
     #[inline(always)]
     fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
-        layout.index(self.x_segment.a.x)
+        layout.index(self.v_segment.a.x)
     }
 }

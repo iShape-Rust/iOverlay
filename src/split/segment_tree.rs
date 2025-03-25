@@ -2,7 +2,6 @@ use crate::geom::line_range::LineRange;
 use crate::split::fragment::Fragment;
 use crate::split::line_mark::LineMark;
 use crate::split::solver::SplitSolver;
-use crate::util::remove::SwapRemoveIndex;
 
 #[derive(Debug, Clone)]
 struct IntervalNode {
@@ -280,7 +279,13 @@ impl SegmentTree {
 
             if scan.rect.max_x < swipe_line {
                 // remove item if it outside
-                self.nodes[index].fragments.swap_remove_index(j);
+                let fragments = &mut self.nodes[index].fragments;
+                if j + 1 < fragments.len() {
+                    fragments.swap_remove(j);
+                } else {
+                    fragments.pop();
+                }
+
                 continue;
             }
 

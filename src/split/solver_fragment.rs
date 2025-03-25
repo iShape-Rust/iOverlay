@@ -1,9 +1,8 @@
-use crate::bind::segment::IdSegment;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::fragment::Fragment;
-use crate::split::grid_layout::{FragmentBuffer, GridLayout};
+use crate::split::grid_layout::{BorderVSegment, FragmentBuffer, GridLayout};
 use crate::split::line_mark::LineMark;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
@@ -162,7 +161,7 @@ impl SplitSolver {
         any_round
     }
 
-    fn on_border_split(border_x: i32, fragments: &[Fragment], vertical_segments: &mut [IdSegment], marks: &mut Vec<LineMark>) {
+    fn on_border_split(border_x: i32, fragments: &[Fragment], vertical_segments: &mut [BorderVSegment], marks: &mut Vec<LineMark>) {
         let mut points = Vec::new();
         for fragment in fragments.iter() {
             if fragment.x_segment.b.x == border_x {
@@ -175,15 +174,15 @@ impl SplitSolver {
         }
 
         points.sort_unstable_by(|p0, p1| p0.y.cmp(&p1.y));
-        vertical_segments.sort_by(|s0, s1| s0.x_segment.a.y.cmp(&s1.x_segment.a.y));
+        vertical_segments.sort_by(|s0, s1| s0.y_range.min.cmp(&s1.y_range.min));
 
         let mut i = 0;
         for s in vertical_segments.iter() {
-            while i < points.len() && points[i].y <= s.x_segment.a.y {
+            while i < points.len() && points[i].y <= s.y_range.min {
                 i += 1;
             }
             let mut j = i;
-            while j < points.len() && points[j].y < s.x_segment.b.y {
+            while j < points.len() && points[j].y < s.y_range.max {
                 marks.push(LineMark { index: s.id, point: points[j] });
                 j += 1;
             }
@@ -247,8 +246,5 @@ impl SplitSolver {
 
         cross.is_round
     }
-
-
-
 
 }

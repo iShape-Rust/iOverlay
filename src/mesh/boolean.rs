@@ -11,7 +11,7 @@ use crate::core::overlay::ShapeType;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
-use crate::geom::x_segment::XSegment;
+use crate::geom::v_segment::VSegment;
 use crate::segm::segment::{Segment, SegmentFill, SUBJ_TOP};
 use crate::segm::winding_count::WindingCount;
 use crate::split::solver::SplitSegments;
@@ -147,21 +147,21 @@ impl OverlayGraph {
             }
 
             if is_hole {
-                let mut x_segment = XSegment {
+                let mut v_segment = VSegment {
                     a: path[1],
                     b: path[2],
                 };
                 if is_modified {
                     let most_left = path.left_bottom_segment();
-                    if most_left != x_segment {
-                        x_segment = most_left;
+                    if most_left != v_segment {
+                        v_segment = most_left;
                         is_all_anchors_sorted = false;
                     }
                 };
 
-                debug_assert_eq!(x_segment, path.left_bottom_segment());
+                debug_assert_eq!(v_segment, path.left_bottom_segment());
                 let id = holes.len();
-                anchors.push(IdSegment { id, x_segment });
+                anchors.push(IdSegment { id, v_segment });
                 holes.push(path);
             } else {
                 shapes.push(vec![path]);
@@ -169,7 +169,7 @@ impl OverlayGraph {
         }
 
         if !is_all_anchors_sorted {
-            anchors.sort_by(|s0, s1| s0.x_segment.a.cmp(&s1.x_segment.a));
+            anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
         shapes.join_sorted_holes(&self.solver, holes, anchors);
