@@ -26,20 +26,6 @@ impl XSegment {
     }
 
     #[inline(always)]
-    pub(crate) fn is_under_point(&self, p: IntPoint) -> bool {
-        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
-        debug_assert!(p != self.a && p != self.b);
-        Triangle::area_two_point(self.a, p, self.b) > 0
-    }
-
-    #[inline(always)]
-    pub(crate) fn is_under_point_order(&self, p: IntPoint) -> Ordering {
-        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
-        debug_assert!(p != self.a && p != self.b);
-        0.cmp(&Triangle::area_two_point(self.a, p, self.b))
-    }
-
-    #[inline(always)]
     pub(crate) fn is_under_segment(&self, other: &XSegment) -> bool {
         match self.a.cmp(&other.a) {
             Ordering::Less => {
@@ -62,6 +48,7 @@ impl XSegment {
             Ordering::Greater => Self::clockwise_order(other.a, other.b, self.a),
         }
     }
+
 
     #[inline(always)]
     pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {

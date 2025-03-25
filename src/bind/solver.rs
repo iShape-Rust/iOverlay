@@ -58,7 +58,7 @@ impl ShapeBinder {
                 j += 1
             }
 
-            // debug_assert!(!scan_store.is_emmpty(), "scan_store can not be empty!");
+            // debug_assert!(!scan_store.is_empty(), "scan_store can not be empty!");
 
             let target_id = scan_store.find_under_and_nearest(anchor.x_segment);
             let is_shape = target_id & 1 == 0;

@@ -1,17 +1,12 @@
-use std::cmp::Ordering;
-use i_float::int::point::IntPoint;
-use i_float::triangle::Triangle;
-use crate::fill::count_segment::CountSegment;
-use crate::fill::store_list::ScanFillList;
-use crate::fill::store_tree::ScanFillTree;
 use crate::geom::end::End;
-use crate::segm::segment::{Segment, SegmentFill, NONE};
+use crate::geom::v_segment::VSegment;
+use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::winding_count::WindingCount;
-
-pub(super) trait ScanFillStore<C> {
-    fn insert(&mut self, segment: CountSegment<C>);
-    fn find_under_and_nearest(&mut self, p: IntPoint) -> C;
-}
+use crate::util::log::Int;
+use expiration_tree::key::exp::KeyExpCollection;
+use expiration_tree::key::list::KeyExpList;
+use expiration_tree::key::tree::KeyExpTree;
+use i_float::triangle::Triangle;
 
 pub(crate) trait FillStrategy<C> {
     fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
@@ -20,19 +15,25 @@ pub(crate) trait FillStrategy<C> {
 pub(crate) struct FillSolver;
 
 impl FillSolver {
-
     #[inline]
-    pub(crate) fn fill<F: FillStrategy<C>, C: WindingCount>(is_list: bool, segments: &[Segment<C>]) -> Vec<SegmentFill> {
+    pub(crate) fn fill<F: FillStrategy<C>, C: WindingCount>(
+        is_list: bool,
+        segments: &[Segment<C>],
+    ) -> Vec<SegmentFill> {
         let count = segments.len();
         if is_list {
-            Self::solve::<F, ScanFillList<C>, C>(ScanFillList::<C>::new(count), segments)
+            Self::solve::<F, KeyExpList<VSegment, i32, C>, C>(KeyExpList::new(count), segments)
         } else {
-            Self::solve::<F, ScanFillTree<C>, C>(ScanFillTree::<C>::new(count), segments)
+            let capacity = (count.log2_sqrt() >> 2).max(8);
+            Self::solve::<F, KeyExpTree<VSegment, i32, C>, C>(KeyExpTree::new(capacity), segments)
         }
     }
 
     #[inline]
-    fn solve<F: FillStrategy<C>, S: ScanFillStore<C>, C: WindingCount>(mut scan_store: S, segments: &[Segment<C>]) -> Vec<SegmentFill> {
+    fn solve<F: FillStrategy<C>, S: KeyExpCollection<VSegment, i32, C>, C: WindingCount>(
+        mut scan_list: S,
+        segments: &[Segment<C>],
+    ) -> Vec<SegmentFill> {
         let mut buf = Vec::with_capacity(4);
 
         let n = segments.len();
@@ -42,19 +43,26 @@ impl FillSolver {
         while i < n {
             let p = segments[i].x_segment.a;
 
-            buf.push(End { index: i, point: segments[i].x_segment.b });
+            buf.push(End {
+                index: i,
+                point: segments[i].x_segment.b,
+            });
             i += 1;
 
             while i < n && segments[i].x_segment.a == p {
-                buf.push(End { index: i, point: segments[i].x_segment.b });
+                buf.push(End {
+                    index: i,
+                    point: segments[i].x_segment.b,
+                });
                 i += 1;
             }
 
             if buf.len() > 1 {
-                buf.sort_by(|s0, s1|Self::clockwise_order(p, s1.point, s0.point));
+                buf.sort_by(|s0, s1| Triangle::clock_order_point(p, s1.point, s0.point));
             }
 
-            let mut sum_count = scan_store.find_under_and_nearest(p);
+            let mut sum_count =
+                scan_list.first_less_by(p.x, C::new(0, 0), |s| s.is_under_point_order(p));
             let mut fill: SegmentFill;
 
             for se in buf.iter() {
@@ -62,7 +70,7 @@ impl FillSolver {
                 (sum_count, fill) = F::add_and_fill(sid.count, sum_count);
                 *unsafe { result.get_unchecked_mut(se.index) } = fill;
                 if sid.x_segment.is_not_vertical() {
-                    scan_store.insert(CountSegment { count: sum_count, x_segment: sid.x_segment });
+                    scan_list.insert(sid.x_segment.into(), sum_count, p.x);
                 }
             }
 
@@ -70,11 +78,5 @@ impl FillSolver {
         }
 
         result
-    }
-
-    #[inline(always)]
-    fn clockwise_order(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> Ordering {
-        let area = Triangle::area_two_point(p0, p1, p2);
-        0.cmp(&area)
     }
 }
