@@ -851,9 +851,9 @@ mod tests {
     // }
     //
     //
-    // #[test]
-    // fn test_debug_2() {
-    //     debug_execute(161, OverlayRule::Subject, FillRule::NonZero, Solver::AUTO)
-    //     // print_json(136, FillRule::NonZero)
-    // }
+    #[test]
+    fn test_debug_2() {
+        debug_execute(3, OverlayRule::Union, FillRule::NonZero, Solver::TREE)
+        // print_json(136, FillRule::NonZero)
+    }
 }

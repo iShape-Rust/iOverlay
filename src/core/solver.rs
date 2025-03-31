@@ -138,7 +138,7 @@ impl Solver {
     };
 
     const MAX_SPLIT_LIST_COUNT: usize = 4_000;
-    const MIN_FRAGMENT_COUNT: usize = 8_000;
+    const MIN_FRAGMENT_COUNT: usize = 16_000;
     const MAX_FILL_LIST_COUNT: usize = 8_000;
 
     pub fn with_precision(precision: Precision) -> Self {

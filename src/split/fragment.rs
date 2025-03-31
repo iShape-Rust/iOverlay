@@ -1,5 +1,4 @@
 use i_float::int::rect::IntRect;
-use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
 
 #[derive(Debug, Clone)]
@@ -10,6 +9,8 @@ pub(super) struct Fragment {
 }
 
 impl Fragment {
+
+    #[inline]
     pub(super) fn with_index_and_segment(index: usize, x_segment: XSegment) -> Self {
         let (min_y, max_y) = if x_segment.a.y < x_segment.b.y {
             (x_segment.a.y, x_segment.b.y)
@@ -29,10 +30,5 @@ impl Fragment {
             rect,
             x_segment,
         }
-    }
-
-    #[inline(always)]
-    pub(super) fn y_range(&self) -> LineRange {
-        LineRange { min: self.rect.min_y, max: self.rect.max_y }
     }
 }
