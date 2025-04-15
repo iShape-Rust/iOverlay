@@ -1,9 +1,9 @@
+use i_mesh::path::butt::ButtStrokeBuilder;
+use i_mesh::path::style::StrokeStyle;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
 use i_triangle::triangulation::float::Triangulation;
-use i_triangle::stroke::butt::ButtStrokeBuilder;
-use i_triangle::stroke::style::StrokeStyle;
 use i_triangle::triangulation::float::TriangulationBuilder;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};

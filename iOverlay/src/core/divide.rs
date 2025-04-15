@@ -28,11 +28,11 @@ impl SubPath {
     }
 }
 
-pub trait DecompositeContour {
+pub trait ContourDecomposition {
     fn decompose_contours(&self) -> Option<Vec<IntContour>>;
 }
 
-impl DecompositeContour for IntContour {
+impl ContourDecomposition for IntContour {
     fn decompose_contours(&self) -> Option<Vec<IntContour>> {
         if self.len() < 3 {
             return None;
@@ -121,7 +121,7 @@ impl DecompositeContour for IntContour {
 mod tests {
     use i_float::int::point::IntPoint;
     use i_shape::int::shape::IntContour;
-    use crate::core::divide::DecompositeContour;
+    use crate::core::divide::ContourDecomposition;
 
     #[test]
     fn test_0() {

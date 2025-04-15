@@ -1,6 +1,6 @@
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
-use crate::core::overlay::{Overlay, ShapeType};
+use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::filter::ContourFilter;
 use crate::float::source::resource::OverlayResource;
@@ -149,9 +149,10 @@ where
                 }
             }
 
-            overlay.overlay_with_min_area_and_solver(
+            overlay.overlay_custom(
                 OverlayRule::Subject,
                 FillRule::Positive,
+                ContourDirection::CounterClockWise,
                 int_min_area,
                 Default::default(),
             )

@@ -208,7 +208,7 @@ impl BooleanState {
                 let overlay_rule = self.mode.overlay_rule().unwrap();
                 let solution = Overlay::with_contours(subj, clip)
                     .into_graph(fill_rule)
-                    .extract_shapes_min_area(overlay_rule, 0);
+                    .extract_shapes(overlay_rule);
                 self.workspace.solution = solution;
             }
         }

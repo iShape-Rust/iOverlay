@@ -1,6 +1,7 @@
 #[cfg(test)]
 pub mod overlay {
     use std::path::PathBuf;
+    use i_shape::float::reverse::ContourReverse;
     use i_shape::int::path::IntPaths;
     use i_shape::int::shape::{IntContour, IntShapes};
     use serde::{Deserialize, Deserializer};
@@ -56,13 +57,23 @@ pub mod overlay {
             };
 
             let result: Result<BooleanTest, _> = serde_json::from_str(&data);
-            match result {
+            let mut test = match result {
                 Ok(test) => test,
                 Err(e) => {
                     eprintln!("Failed to parse JSON: {}", e);
                     panic!("can not parse file");
                 }
-            }
+            };
+
+            test.clip.reverse_contours();
+            test.subject.reverse_contours();
+            test.intersect.reverse_contours();
+            test.union.reverse_contours();
+            test.difference.reverse_contours();
+            test.inverse_difference.reverse_contours();
+            test.xor.reverse_contours();
+
+            test
         }
     }
 

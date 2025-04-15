@@ -62,6 +62,10 @@ where
             points_count += path.len();
         }
 
+        if paths_count == 0 {
+            return vec![]
+        }
+
         let r = T::from_float(0.5 * style.width.to_f64());
         let builder = StrokeBuilder::new(style);
         let a = builder.additional_offset(r);

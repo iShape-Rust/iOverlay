@@ -853,7 +853,7 @@ mod tests {
     //
     #[test]
     fn test_debug_2() {
-        debug_execute(3, OverlayRule::Union, FillRule::NonZero, Solver::TREE)
-        // print_json(136, FillRule::NonZero)
+        debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::TREE);
+        // print_json(0, FillRule::NonZero)
     }
 }

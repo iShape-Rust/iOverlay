@@ -2,6 +2,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use crate::core::fill_rule::FillRule;
+use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::filter::ContourFilter;
@@ -36,15 +37,17 @@ where
     #[inline]
     fn simplify_shape(&self, fill_rule: FillRule, min_area: T) -> Shapes<P> {
         let filter = ContourFilter { min_area, simplify: true };
+        let direction = ContourDirection::Clockwise;
         FloatOverlay::with_subj(self)
-            .overlay_with_filter_and_solver(OverlayRule::Subject, fill_rule, filter, Default::default())
+            .overlay_custom(OverlayRule::Subject, fill_rule, direction, filter, Default::default())
     }
 
     #[inline]
     fn simplify_shape_with_solver(&self, fill_rule: FillRule, min_area: T, solver: Solver) -> Shapes<P> {
         let filter = ContourFilter { min_area, simplify: true };
+        let direction = ContourDirection::Clockwise;
         FloatOverlay::with_subj(self)
-            .overlay_with_filter_and_solver(OverlayRule::Subject, fill_rule, filter, solver)
+            .overlay_custom(OverlayRule::Subject, fill_rule, direction, filter, solver)
     }
 }
 

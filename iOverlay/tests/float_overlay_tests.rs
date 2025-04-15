@@ -4,7 +4,7 @@ mod tests {
     use i_float::float::compatible::FloatPointCompatible;
     use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::ShapeType;
+    use i_overlay::core::overlay::{ContourDirection, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::float::clip::FloatClip;
     use i_overlay::float::filter::ContourFilter;
@@ -674,7 +674,7 @@ mod tests {
             .overlay(OverlayRule::Intersect, FillRule::EvenOdd );
 
         let result_with_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .overlay_with_filter_and_solver(OverlayRule::Intersect, FillRule::EvenOdd, ContourFilter { min_area: 0.0, simplify: false }, Default::default() );
+            .overlay_custom(OverlayRule::Intersect, FillRule::EvenOdd, ContourDirection::CounterClockWise, ContourFilter { min_area: 0.0, simplify: false }, Default::default() );
 
 
         assert_eq!(result_no_filter.len(), 1);

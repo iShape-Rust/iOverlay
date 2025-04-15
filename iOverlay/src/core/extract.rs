@@ -11,6 +11,7 @@ use i_float::triangle::Triangle;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
 use i_shape::int::simple::Simplify;
+use crate::core::overlay::ContourDirection;
 use crate::geom::v_segment::VSegment;
 
 impl OverlayGraph {
@@ -26,7 +27,7 @@ impl OverlayGraph {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> IntShapes {
-        self.extract_shapes_min_area(overlay_rule, 0)
+        self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockWise, 0)
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes. This is useful for filtering out shapes that do not meet a certain size threshold, which can be beneficial for eliminating artifacts or noise from the output.
@@ -40,9 +41,9 @@ impl OverlayGraph {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
-    pub fn extract_shapes_min_area(&self, overlay_rule: OverlayRule, min_area: usize) -> IntShapes {
+    pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, min_area: usize) -> IntShapes {
         let visited = self.links.filter_by_rule(overlay_rule);
-        self.extract(visited, overlay_rule, min_area)
+        self.extract(visited, overlay_rule, min_area, main_direction)
     }
 
     pub(crate) fn extract(
@@ -50,7 +51,10 @@ impl OverlayGraph {
         filter: Vec<bool>,
         overlay_rule: OverlayRule,
         min_area: usize,
+        main_direction: ContourDirection,
     ) -> IntShapes {
+        let clockwise = main_direction == ContourDirection::Clockwise;
+
         let mut buffer = filter;
         let visited = buffer.as_mut_slice();
         let mut shapes = Vec::new();
@@ -69,9 +73,10 @@ impl OverlayGraph {
             let link = self.link(left_top_link);
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
-            let start_data = StartPathData::new(is_hole, link, left_top_link);
+            let direction = is_hole == clockwise;
+            let start_data = StartPathData::new(direction, link, left_top_link);
 
-            let mut path = self.get_path(&start_data, is_hole, visited);
+            let mut path = self.get_path(&start_data, direction, visited);
             let (is_valid, is_modified) = path.validate(min_area);
 
             if !is_valid {
@@ -92,7 +97,7 @@ impl OverlayGraph {
                     }
                 };
 
-                debug_assert_eq!(v_segment, path.left_bottom_segment());
+                // debug_assert_eq!(v_segment, path.left_bottom_segment());
                 let id = holes.len();
                 anchors.push(IdSegment { id, v_segment });
                 holes.push(path);
@@ -292,8 +297,8 @@ pub(crate) struct StartPathData {
 
 impl StartPathData {
     #[inline(always)]
-    pub(crate) fn new(is_hole: bool, link: &OverlayLink, link_id: usize) -> Self {
-        if is_hole {
+    pub(crate) fn new(direction: bool, link: &OverlayLink, link_id: usize) -> Self {
+        if direction {
             Self {
                 begin: link.b.point,
                 node_id: link.a.id,

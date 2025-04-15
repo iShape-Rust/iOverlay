@@ -9,7 +9,7 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::{Overlay, ShapeType};
+use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::filter::ContourFilter;
@@ -160,7 +160,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        self.overlay_with_filter_and_solver(overlay_rule, fill_rule, Default::default(), Default::default())
+        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockWise, Default::default(), Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
@@ -188,9 +188,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay_with_filter_and_solver(self, overlay_rule: OverlayRule, fill_rule: FillRule, filter: ContourFilter<T>, solver: Solver) -> Shapes<P> {
+    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, filter: ContourFilter<T>, solver: Solver) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.overlay.overlay_with_min_area_and_solver(overlay_rule, fill_rule, area, solver);
+        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, main_direction, area, solver);
         let mut float = shapes.to_float(&self.adapter);
 
         if filter.simplify {

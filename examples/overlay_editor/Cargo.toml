@@ -26,4 +26,5 @@ console_error_panic_hook = "^0"
 
 #i_triangle = "^0.28.0"
 
-i_triangle = { path = "../../../../iShape/iTriangle" }
+i_triangle = { path = "../../../../iShape/iTriangle/iTriangle" }
+i_mesh = { path = "../../../../iShape/iMesh/iMesh" }
