@@ -24,10 +24,10 @@ mod tests {
         assert_eq!(non_zero.len(), 1);
         assert_eq!(non_zero[0].len(), 1);
 
-        assert_eq!(positive.len(), 1);
-        assert_eq!(positive[0].len(), 1);
+        assert_eq!(negative.len(), 1);
+        assert_eq!(negative[0].len(), 1);
 
-        assert_eq!(negative.len(), 0);
+        assert_eq!(positive.len(), 0);
     }
 
     #[test]
@@ -48,10 +48,10 @@ mod tests {
         assert_eq!(non_zero.len(), 1);
         assert_eq!(non_zero[0].len(), 1);
 
-        assert_eq!(positive.len(), 0);
+        assert_eq!(negative.len(), 0);
 
-        assert_eq!(negative.len(), 1);
-        assert_eq!(negative[0].len(), 1);
+        assert_eq!(positive.len(), 1);
+        assert_eq!(positive[0].len(), 1);
     }
 
     #[test]
@@ -72,10 +72,10 @@ mod tests {
         assert_eq!(non_zero.len(), 1);
         assert_eq!(non_zero[0].len(), 2);
 
-        assert_eq!(positive.len(), 1);
-        assert_eq!(positive[0].len(), 2);
+        assert_eq!(negative.len(), 1);
+        assert_eq!(negative[0].len(), 2);
 
-        assert_eq!(negative.len(), 0);
+        assert_eq!(positive.len(), 0);
     }
 
     #[test]
@@ -96,10 +96,10 @@ mod tests {
         assert_eq!(non_zero.len(), 1);
         assert_eq!(non_zero[0].len(), 2);
 
-        assert_eq!(positive.len(), 0);
+        assert_eq!(negative.len(), 0);
 
-        assert_eq!(negative.len(), 1);
-        assert_eq!(negative[0].len(), 2);
+        assert_eq!(positive.len(), 1);
+        assert_eq!(positive[0].len(), 2);
     }
 
     fn square(radius: i32, is_clockwise: bool) -> IntPath {

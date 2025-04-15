@@ -36,7 +36,12 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn outline_custom(&self, style: OutlineStyle<T>, main_direction: ContourDirection, filter: ContourFilter<T>) -> Shapes<P>;
+    fn outline_custom(
+        &self,
+        style: OutlineStyle<T>,
+        main_direction: ContourDirection,
+        filter: ContourFilter<T>,
+    ) -> Shapes<P>;
 }
 
 impl<S, P, T> OutlineOffset<P, T> for S
@@ -56,7 +61,12 @@ where
         )
     }
 
-    fn outline_custom(&self, style: OutlineStyle<T>, main_direction: ContourDirection, filter: ContourFilter<T>) -> Shapes<P> {
+    fn outline_custom(
+        &self,
+        style: OutlineStyle<T>,
+        main_direction: ContourDirection,
+        filter: ContourFilter<T>,
+    ) -> Shapes<P> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
             let mut paths_count = 0;
@@ -127,8 +137,9 @@ where
                     let capacity = outer_builder.capacity(path.len());
                     let mut segments = Vec::with_capacity(capacity);
                     outer_builder.build(path, &adapter, &mut segments);
-                    let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                        .extract_offset_min_area(0);
+                    let shapes =
+                        OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                            .extract_offset_min_area(0);
                     overlay.add_shapes(&shapes, ShapeType::Subject);
                 } else {
                     let mut inverted = Vec::with_capacity(path.len());
@@ -182,27 +193,27 @@ mod tests {
     fn test_doc() {
         let shape = vec![
             vec![
-                [1.0, 2.0],
-                [1.0, 4.0],
-                [2.0, 5.0],
-                [4.0, 5.0],
-                [5.0, 4.0],
-                [5.0, 3.0],
-                [8.0, 3.0],
-                [8.0, 4.0],
-                [9.0, 4.0],
-                [10.0, 3.0],
-                [11.0, 3.0],
-                [11.0, 4.0],
-                [12.0, 4.0],
-                [12.0, 3.0],
-                [13.0, 3.0],
-                [13.0, 2.0],
-                [5.0, 2.0],
-                [4.0, 1.0],
                 [2.0, 1.0],
+                [4.0, 1.0],
+                [5.0, 2.0],
+                [13.0, 2.0],
+                [13.0, 3.0],
+                [12.0, 3.0],
+                [12.0, 4.0],
+                [11.0, 4.0],
+                [11.0, 3.0],
+                [10.0, 3.0],
+                [9.0, 4.0],
+                [8.0, 4.0],
+                [8.0, 3.0],
+                [5.0, 3.0],
+                [5.0, 4.0],
+                [4.0, 5.0],
+                [2.0, 5.0],
+                [1.0, 4.0],
+                [1.0, 2.0],
             ],
-            vec![[2.0, 2.0], [4.0, 2.0], [4.0, 4.0], [2.0, 4.0]],
+            vec![[2.0, 4.0], [4.0, 4.0], [4.0, 2.0], [2.0, 2.0]],
         ];
 
         let style = OutlineStyle::new(0.2).line_join(LineJoin::Round(0.1));
