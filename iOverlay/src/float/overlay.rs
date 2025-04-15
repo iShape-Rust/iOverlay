@@ -160,7 +160,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockWise, Default::default(), Default::default())
+        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockwise, Default::default(), Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.

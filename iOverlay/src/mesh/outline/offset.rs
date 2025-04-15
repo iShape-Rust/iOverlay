@@ -152,7 +152,7 @@ where
             overlay.overlay_custom(
                 OverlayRule::Subject,
                 FillRule::Positive,
-                ContourDirection::CounterClockWise,
+                ContourDirection::CounterClockwise,
                 int_min_area,
                 Default::default(),
             )

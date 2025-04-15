@@ -27,7 +27,7 @@ impl OverlayGraph {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> IntShapes {
-        self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockWise, 0)
+        self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockwise, 0)
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes. This is useful for filtering out shapes that do not meet a certain size threshold, which can be beneficial for eliminating artifacts or noise from the output.
@@ -85,9 +85,16 @@ impl OverlayGraph {
             }
 
             if is_hole {
-                let mut v_segment = VSegment {
-                    a: path[1],
-                    b: path[2],
+                let mut v_segment = if clockwise {
+                    VSegment {
+                        a: path[1],
+                        b: path[2],
+                    }
+                } else {
+                    VSegment {
+                        a: path[0],
+                        b: path[path.len() - 1],
+                    }
                 };
                 if is_modified {
                     let most_left = path.left_bottom_segment();
@@ -97,7 +104,7 @@ impl OverlayGraph {
                     }
                 };
 
-                // debug_assert_eq!(v_segment, path.left_bottom_segment());
+                debug_assert_eq!(v_segment, path.left_bottom_segment());
                 let id = holes.len();
                 anchors.push(IdSegment { id, v_segment });
                 holes.push(path);

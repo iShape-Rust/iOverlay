@@ -20,7 +20,7 @@ mod tests {
                 ].to_vec()
             ].to_vec();
 
-        let simplified = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockWise, 0);
+        let simplified = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0);
 
         assert_eq!(simplified.len(), 1);
         assert_eq!(simplified[0].len(), 1);
@@ -40,7 +40,7 @@ mod tests {
                 square(IntPoint::new(10, 10))
             ].to_vec();
 
-        let simplified = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockWise, 0);
+        let simplified = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0);
 
         assert_eq!(simplified.len(), 1);
         assert_eq!(simplified[0].len(), 2);
@@ -60,7 +60,7 @@ mod tests {
                 square_shape(IntPoint::new(10, 10))
             ].to_vec();
 
-        let simplified = shapes.simplify(FillRule::NonZero, ContourDirection::CounterClockWise, 0);
+        let simplified = shapes.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0);
 
         assert_eq!(simplified.len(), 1);
         assert_eq!(simplified[0].len(), 2);

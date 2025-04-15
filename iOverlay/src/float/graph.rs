@@ -55,7 +55,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Shapes<P> {
-        self.extract_shapes_custom(overlay_rule, Default::default(), ContourDirection::CounterClockWise)
+        self.extract_shapes_custom(overlay_rule, Default::default(), ContourDirection::CounterClockwise)
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes.

@@ -29,7 +29,7 @@ pub enum ShapeType {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContourDirection {
-    CounterClockWise,
+    CounterClockwise,
     Clockwise
 }
 
@@ -202,7 +202,7 @@ impl Overlay {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
-        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockWise, 0, Default::default())
+        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockwise, 0, Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.

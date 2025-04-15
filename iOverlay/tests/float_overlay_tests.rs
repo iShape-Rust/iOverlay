@@ -674,7 +674,7 @@ mod tests {
             .overlay(OverlayRule::Intersect, FillRule::EvenOdd );
 
         let result_with_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .overlay_custom(OverlayRule::Intersect, FillRule::EvenOdd, ContourDirection::CounterClockWise, ContourFilter { min_area: 0.0, simplify: false }, Default::default() );
+            .overlay_custom(OverlayRule::Intersect, FillRule::EvenOdd, ContourDirection::CounterClockwise, ContourFilter { min_area: 0.0, simplify: false }, Default::default() );
 
 
         assert_eq!(result_no_filter.len(), 1);
