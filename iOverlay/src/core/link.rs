@@ -193,10 +193,10 @@ impl FillStrategy<ShapeCountBoolean> for PositiveStrategy {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
-        let subj_top = (top.subj < 0) as SegmentFill;
-        let subj_bot = (bot.subj < 0) as SegmentFill;
-        let clip_top = (top.clip < 0) as SegmentFill;
-        let clip_bot = (bot.clip < 0) as SegmentFill;
+        let subj_top = (top.subj > 0) as SegmentFill;
+        let subj_bot = (bot.subj > 0) as SegmentFill;
+        let clip_top = (top.clip > 0) as SegmentFill;
+        let clip_bot = (bot.clip > 0) as SegmentFill;
 
         let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
 
@@ -208,10 +208,10 @@ impl FillStrategy<ShapeCountBoolean> for NegativeStrategy {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
-        let subj_top = (top.subj > 0) as SegmentFill;
-        let subj_bot = (bot.subj > 0) as SegmentFill;
-        let clip_top = (top.clip > 0) as SegmentFill;
-        let clip_bot = (bot.clip > 0) as SegmentFill;
+        let subj_top = (top.subj < 0) as SegmentFill;
+        let subj_bot = (bot.subj < 0) as SegmentFill;
+        let clip_top = (top.clip < 0) as SegmentFill;
+        let clip_bot = (bot.clip < 0) as SegmentFill;
 
         let fill = subj_top | (subj_bot << 1) | (clip_top << 2) | (clip_bot << 3);
 
@@ -260,8 +260,8 @@ impl FillStrategy<ShapeCountString> for PositiveStrategyString {
         let subj = bot.subj + this.subj;
         let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
-        let subj_top = (top.subj < 0) as SegmentFill;
-        let subj_bot = (bot.subj < 0) as SegmentFill;
+        let subj_top = (top.subj > 0) as SegmentFill;
+        let subj_bot = (bot.subj > 0) as SegmentFill;
 
         let fill = subj_top | (subj_bot << 1) | (this.clip << 2);
 
@@ -275,8 +275,8 @@ impl FillStrategy<ShapeCountString> for NegativeStrategyString {
         let subj = bot.subj + this.subj;
         let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
-        let subj_top = (top.subj > 0) as SegmentFill;
-        let subj_bot = (bot.subj > 0) as SegmentFill;
+        let subj_top = (top.subj < 0) as SegmentFill;
+        let subj_bot = (bot.subj < 0) as SegmentFill;
 
         let fill = subj_top | (subj_bot << 1) | (this.clip << 2);
 
