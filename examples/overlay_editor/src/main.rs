@@ -23,10 +23,10 @@ fn main() {
 fn run_desktop() -> iced::Result {
 
     let app_resource = AppResource::with_paths(
-        "../../tests/boolean",
-        "../../tests/string",
-        "../../tests/stroke",
-        "../../tests/outline"
+        "../../iOverlay/tests/boolean",
+        "../../iOverlay/tests/string",
+        "../../iOverlay/tests/stroke",
+        "../../iOverlay/tests/outline"
     );
 
     let app_initializer = || {
