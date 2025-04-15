@@ -27,6 +27,7 @@ pub enum ShapeType {
     Clip,
 }
 
+/// Represents the winding direction of a contour.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContourDirection {
     CounterClockwise,
@@ -169,7 +170,7 @@ impl Overlay {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// ### Defaults:
     /// - `main_direction` is set to `ContourDirection::CounterClockWise`.
-    ///   Holes will automatically use the opposite direction (clockwise).
+    ///   Holes will automatically use the opposite direction (clockwise). Impact on **output** only!
     /// - `min_area` is `0`, meaning no area filtering is applied.
     /// - `solver` uses `Default::default()`
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
@@ -179,6 +180,7 @@ impl Overlay {
     /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     /// ### Usage:
     /// This function is suitable when a single, optimized Boolean operation is required on the provided
     /// geometry. For example:
@@ -214,7 +216,7 @@ impl Overlay {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
-    /// - `main_direction`: Winding direction for the main (outer) contour. All hole contours will automatically use the opposite direction.
+    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
@@ -226,6 +228,8 @@ impl Overlay {
     /// This method is particularly useful in scenarios where the geometry only needs one overlay operation
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
+    ///
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
     pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, min_area: usize, solver: Solver) -> IntShapes {
         let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);

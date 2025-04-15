@@ -72,13 +72,14 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::ContourDirection;
     use crate::float::simplify::SimplifyShape;
 
     #[test]
     fn test_contour_slice() {
         let rect = [[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
-        let shapes = rect.as_slice().simplify_shape(FillRule::NonZero, 0.0);
+        let shapes = rect.as_slice().simplify_shape(FillRule::NonZero, ContourDirection::CounterClockwise, 0.0);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -89,7 +90,7 @@ mod tests {
     fn test_contour_vec() {
         let rect = vec![[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
-        let shapes = rect.simplify_shape(FillRule::NonZero, 0.0);
+        let shapes = rect.simplify_shape(FillRule::NonZero, ContourDirection::CounterClockwise, 0.0);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

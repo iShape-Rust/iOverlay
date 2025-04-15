@@ -187,7 +187,6 @@ impl OverlayGraph {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
-        // let mut is_any_contour = false;
 
         visited.visit(link_id);
 

@@ -58,7 +58,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
     #[inline]
     pub fn extract_shapes_with_filter(&self, string_rule: StringRule, filter: ContourFilter<T>) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.graph.extract_shapes_min_area(string_rule, area);
+        let shapes = self.graph.extract_custom(string_rule, area);
         let mut float = shapes.to_float(&self.adapter);
 
         if filter.simplify {

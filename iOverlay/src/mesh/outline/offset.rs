@@ -22,18 +22,21 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     ///
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     fn outline(&self, style: OutlineStyle<T>) -> Shapes<P>;
 
     /// Generates an outline shapes for contours, or shapes with optional filtering.
     ///
     /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `filter`: Defines optional contour filtering and simplification:
     ///     - `min_area`: Retains only contours with an area larger than this value.
     ///     - `simplify`: If `true`, simplifies contours and removes degenerate edges.
     ///
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
-    fn outline_with_filter(&self, style: OutlineStyle<T>, filter: ContourFilter<T>) -> Shapes<P>;
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
+    fn outline_custom(&self, style: OutlineStyle<T>, main_direction: ContourDirection, filter: ContourFilter<T>) -> Shapes<P>;
 }
 
 impl<S, P, T> OutlineOffset<P, T> for S
@@ -43,8 +46,9 @@ where
     T: FloatNumber + 'static,
 {
     fn outline(&self, style: OutlineStyle<T>) -> Shapes<P> {
-        self.outline_with_filter(
+        self.outline_custom(
             style,
+            ContourDirection::CounterClockwise,
             ContourFilter {
                 min_area: T::from_float(0.0),
                 simplify: false,
@@ -52,7 +56,7 @@ where
         )
     }
 
-    fn outline_with_filter(&self, style: OutlineStyle<T>, filter: ContourFilter<T>) -> Shapes<P> {
+    fn outline_custom(&self, style: OutlineStyle<T>, main_direction: ContourDirection, filter: ContourFilter<T>) -> Shapes<P> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
             let mut paths_count = 0;
@@ -152,7 +156,7 @@ where
             overlay.overlay_custom(
                 OverlayRule::Subject,
                 FillRule::Positive,
-                ContourDirection::CounterClockwise,
+                main_direction,
                 int_min_area,
                 Default::default(),
             )

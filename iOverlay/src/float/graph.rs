@@ -52,10 +52,10 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
     /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
     ///
-    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Shapes<P> {
-        self.extract_shapes_custom(overlay_rule, Default::default(), ContourDirection::CounterClockwise)
+        self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockwise, Default::default())
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes.
@@ -63,6 +63,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// # Parameters
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
     ///     - `min_area`: Only retain contours with an area larger than this.
     ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
@@ -76,9 +77,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
     /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
     ///
-    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
-    pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, filter: ContourFilter<T>, main_direction: ContourDirection) -> Shapes<P> {
+    pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, filter: ContourFilter<T>,) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
         let shapes = self.graph.extract_shapes_custom(overlay_rule, main_direction, area);
         let mut float = shapes.to_float(&self.adapter);

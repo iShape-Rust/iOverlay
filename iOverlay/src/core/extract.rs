@@ -24,7 +24,7 @@ impl OverlayGraph {
     /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
-    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> IntShapes {
         self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockwise, 0)
@@ -32,6 +32,7 @@ impl OverlayGraph {
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes. This is useful for filtering out shapes that do not meet a certain size threshold, which can be beneficial for eliminating artifacts or noise from the output.
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
+    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
@@ -40,7 +41,7 @@ impl OverlayGraph {
     /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
-    /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, min_area: usize) -> IntShapes {
         let visited = self.links.filter_by_rule(overlay_rule);
         self.extract(visited, overlay_rule, min_area, main_direction)
@@ -223,7 +224,7 @@ impl OverlayGraph {
         vector_solver.best_id
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn find_left_top_link(&self, link_index: usize, visited: &[bool]) -> usize {
         let top = self.link(link_index);
         debug_assert!(top.is_direct());

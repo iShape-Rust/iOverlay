@@ -20,7 +20,7 @@ impl StringGraph {
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
-        self.extract_shapes_min_area(string_rule, 0)
+        self.extract_custom(string_rule, 0)
     }
 
     /// Extracts shapes from the graph with a minimum area constraint.
@@ -33,7 +33,7 @@ impl StringGraph {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a clockwise order, and holes have a counterclockwise order.
-    pub fn extract_shapes_min_area(&self, string_rule: StringRule, min_area: usize) -> IntShapes {
+    pub fn extract_custom(&self, string_rule: StringRule, min_area: usize) -> IntShapes {
         let mut binding = self.filter(string_rule);
         let visited = binding.as_mut_slice();
         let mut shapes = Vec::new();
