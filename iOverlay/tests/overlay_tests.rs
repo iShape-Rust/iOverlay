@@ -3,20 +3,15 @@ mod util;
 
 #[cfg(test)]
 mod tests {
-    use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::Overlay;
-    use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::core::solver::Solver;
     use crate::data::overlay::BooleanTest;
     use crate::util::overlay;
     use crate::util::overlay::JsonPrint;
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::{ContourDirection, Overlay};
+    use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::core::solver::Solver;
 
-    const SOLVERS: [Solver; 4] = [
-        Solver::LIST,
-        Solver::TREE,
-        Solver::FRAG,
-        Solver::AUTO
-    ];
+    const SOLVERS: [Solver; 4] = [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO];
 
     fn execute(index: usize) {
         let test = BooleanTest::load(index);
@@ -25,26 +20,81 @@ mod tests {
             let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
             let graph = overlay.clone().into_graph_with_solver(fill_rule, solver);
 
-            let subject_0 = graph.extract_shapes(OverlayRule::Subject);
-            let subject_1 = overlay.clone().overlay(OverlayRule::Subject, fill_rule);
+            let subject_0 =
+                graph.extract_shapes_custom(OverlayRule::Subject, ContourDirection::Clockwise, 0);
+            let subject_1 = overlay.clone().overlay_custom(
+                OverlayRule::Subject,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
-            let clip_0 = graph.extract_shapes(OverlayRule::Clip);
-            let clip_1 = overlay.clone().overlay(OverlayRule::Clip, fill_rule);
+            let clip_0 =
+                graph.extract_shapes_custom(OverlayRule::Clip, ContourDirection::Clockwise, 0);
+            let clip_1 = overlay.clone().overlay_custom(
+                OverlayRule::Clip,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
-            let difference_0 = graph.extract_shapes(OverlayRule::Difference);
-            let difference_1 = overlay.clone().overlay(OverlayRule::Difference, fill_rule);
+            let difference_0 = graph.extract_shapes_custom(
+                OverlayRule::Difference,
+                ContourDirection::Clockwise,
+                0,
+            );
+            let difference_1 = overlay.clone().overlay_custom(
+                OverlayRule::Difference,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
-            let inverse_difference_0 = graph.extract_shapes(OverlayRule::InverseDifference);
-            let inverse_difference_1 = overlay.clone().overlay(OverlayRule::InverseDifference, fill_rule);
+            let inverse_difference_0 = graph.extract_shapes_custom(
+                OverlayRule::InverseDifference,
+                ContourDirection::Clockwise,
+                0,
+            );
+            let inverse_difference_1 = overlay.clone().overlay_custom(
+                OverlayRule::InverseDifference,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
-            let intersect_0 = graph.extract_shapes(OverlayRule::Intersect);
-            let intersect_1 = overlay.clone().overlay(OverlayRule::Intersect, fill_rule);
+            let intersect_0 =
+                graph.extract_shapes_custom(OverlayRule::Intersect, ContourDirection::Clockwise, 0);
+            let intersect_1 = overlay.clone().overlay_custom(
+                OverlayRule::Intersect,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
-            let union_0 = graph.extract_shapes(OverlayRule::Union);
-            let union_1 = overlay.clone().overlay(OverlayRule::Union, fill_rule);
+            let union_0 =
+                graph.extract_shapes_custom(OverlayRule::Union, ContourDirection::Clockwise, 0);
+            let union_1 = overlay.clone().overlay_custom(
+                OverlayRule::Union,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
-            let xor_0 = graph.extract_shapes(OverlayRule::Xor);
-            let xor_1 = overlay.clone().overlay(OverlayRule::Xor, fill_rule);
+            let xor_0 =
+                graph.extract_shapes_custom(OverlayRule::Xor, ContourDirection::Clockwise, 0);
+            let xor_1 = overlay.clone().overlay_custom(
+                OverlayRule::Xor,
+                fill_rule,
+                ContourDirection::Clockwise,
+                0,
+                Default::default(),
+            );
 
             assert_eq!(subject_0, subject_1);
             assert_eq!(clip_0, clip_1);
@@ -54,12 +104,30 @@ mod tests {
             assert_eq!(union_0, union_1);
             assert_eq!(xor_0, xor_1);
 
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&clip_0, &test.clip));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&subject_0, &test.subject));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&difference_0, &test.difference));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&inverse_difference_0, &test.inverse_difference));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&intersect_0, &test.intersect));
-            assert_eq!(true, overlay::is_group_of_shapes_one_of(&union_0, &test.union));
+            assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&clip_0, &test.clip)
+            );
+            assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&subject_0, &test.subject)
+            );
+            assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&difference_0, &test.difference)
+            );
+            assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&inverse_difference_0, &test.inverse_difference)
+            );
+            assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&intersect_0, &test.intersect)
+            );
+            assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&union_0, &test.union)
+            );
             assert_eq!(true, overlay::is_group_of_shapes_one_of(&xor_0, &test.xor));
         }
     }
@@ -73,13 +141,33 @@ mod tests {
 
         println!("{}: {}", &overlay_rule, result.json_print());
         match overlay_rule {
-            OverlayRule::Subject => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject)),
-            OverlayRule::Clip => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.clip)),
-            OverlayRule::Intersect => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.intersect)),
-            OverlayRule::Union => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.union)),
-            OverlayRule::Difference => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.difference)),
-            OverlayRule::InverseDifference => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.inverse_difference)),
-            OverlayRule::Xor => assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.xor)),
+            OverlayRule::Subject => assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&result, &test.subject)
+            ),
+            OverlayRule::Clip => assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&result, &test.clip)
+            ),
+            OverlayRule::Intersect => assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&result, &test.intersect)
+            ),
+            OverlayRule::Union => assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&result, &test.union)
+            ),
+            OverlayRule::Difference => assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&result, &test.difference)
+            ),
+            OverlayRule::InverseDifference => assert_eq!(
+                true,
+                overlay::is_group_of_shapes_one_of(&result, &test.inverse_difference)
+            ),
+            OverlayRule::Xor => {
+                assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.xor))
+            }
         }
     }
 
@@ -97,7 +185,10 @@ mod tests {
         let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference);
         let xor = graph.extract_shapes(OverlayRule::Xor);
 
-        println!("\"fillRule\": {},", if fill_rule == FillRule::EvenOdd { 0 } else { 1 });
+        println!(
+            "\"fillRule\": {},",
+            if fill_rule == FillRule::EvenOdd { 0 } else { 1 }
+        );
         println!("\"subjPaths\": {},", test.subj_paths.json_print());
         println!("\"clipPaths\": {},", test.clip_paths.json_print());
         println!("\"subject\": [{}],", subject.json_print());
@@ -105,7 +196,10 @@ mod tests {
         println!("\"union\": [{}],", union.json_print());
         println!("\"intersect\": [{}],", intersect.json_print());
         println!("\"difference\": [{}],", difference.json_print());
-        println!("\"inverseDifference\": [{}],", inverse_difference.json_print());
+        println!(
+            "\"inverseDifference\": [{}],",
+            inverse_difference.json_print()
+        );
         println!("\"xor\": [{}]", xor.json_print());
     }
 
@@ -851,9 +945,9 @@ mod tests {
     // }
     //
     //
-    #[test]
-    fn test_debug_2() {
-        debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::TREE);
+    // #[test]
+    // fn test_debug_2() {
+        // debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::TREE);
         // print_json(0, FillRule::NonZero)
-    }
+    // }
 }
