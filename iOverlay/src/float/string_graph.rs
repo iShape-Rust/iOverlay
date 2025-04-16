@@ -6,7 +6,6 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::simple::SimplifyContour;
 use crate::core::overlay::ContourDirection;
 use crate::float::filter::ContourFilter;
-use crate::string::extract::SliceResultType;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 
@@ -37,7 +36,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, string_rule: StringRule) -> Shapes<P> {
-        self.extract_shapes_custom(string_rule, ContourDirection::CounterClockwise, SliceResultType::All, Default::default())
+        self.extract_shapes_custom(string_rule, ContourDirection::CounterClockwise, Default::default())
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes.
@@ -46,7 +45,6 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
     /// # Parameters
     /// - `string_rule`: The string operation rule to apply when extracting shapes from the graph, such as slice.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `result_type`: What to include in a result.
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     ///
     /// # Returns
@@ -60,9 +58,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
-    pub fn extract_shapes_custom(&self, string_rule: StringRule, main_direction: ContourDirection, result_type: SliceResultType, filter: ContourFilter<T>) -> Shapes<P> {
+    pub fn extract_shapes_custom(&self, string_rule: StringRule, main_direction: ContourDirection, filter: ContourFilter<T>) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.graph.extract_shapes_custom(string_rule, main_direction, result_type, area);
+        let shapes = self.graph.extract_shapes_custom(string_rule, main_direction, area);
         let mut float = shapes.to_float(&self.adapter);
 
         if filter.simplify {
