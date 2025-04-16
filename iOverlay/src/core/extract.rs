@@ -1,6 +1,6 @@
 use super::filter::MaskFilter;
 use super::overlay_rule::OverlayRule;
-use crate::bind::segment::IdSegment;
+use crate::bind::segment::{IdData, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
@@ -106,8 +106,8 @@ impl OverlayGraph {
                 };
 
                 debug_assert_eq!(v_segment, path.left_bottom_segment());
-                let id = holes.len();
-                anchors.push(IdSegment { id, v_segment });
+                let id_data = IdData::new_hole(holes.len());
+                anchors.push(IdSegment::with_segment( id_data, v_segment));
                 holes.push(path);
             } else {
                 shapes.push(vec![path]);

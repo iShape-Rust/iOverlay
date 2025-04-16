@@ -1,14 +1,14 @@
-use std::cmp::Ordering;
-use i_tree::key::exp::KeyExpCollection;
-use i_tree::key::list::KeyExpList;
-use i_tree::key::tree::KeyExpTree;
-use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntContour, IntShape};
-use crate::bind::segment::{IdSegment, IdSegments};
+use crate::bind::segment::{IdData, IdSegment, IdSegments};
 use crate::core::solver::Solver;
 use crate::geom::v_segment::VSegment;
 use crate::util::log::Int;
 use crate::util::sort::SmartBinSort;
+use i_shape::int::path::IntPath;
+use i_shape::int::shape::{IntContour, IntShape};
+use i_tree::key::exp::KeyExpCollection;
+use i_tree::key::list::KeyExpList;
+use i_tree::key::tree::KeyExpTree;
+use std::cmp::Ordering;
 
 pub(crate) struct BindSolution {
     pub(crate) parent_for_child: Vec<usize>,
@@ -19,19 +19,38 @@ pub(crate) struct ShapeBinder;
 
 impl ShapeBinder {
     #[inline]
-    pub(crate) fn bind(shape_count: usize, hole_segments: Vec<IdSegment>, segments: Vec<IdSegment>) -> BindSolution {
+    pub(crate) fn bind(
+        shape_count: usize,
+        hole_segments: Vec<IdSegment>,
+        segments: Vec<IdSegment>,
+    ) -> BindSolution {
         if shape_count < 32 {
             let capacity = segments.len().log2_sqrt().max(4) * 2;
             let list = KeyExpList::new(capacity);
-            Self::private_solve::<KeyExpList<VSegment, i32, usize>>(list, shape_count, hole_segments, segments)
+            Self::private_solve::<KeyExpList<VSegment, i32, IdData>>(
+                list,
+                shape_count,
+                hole_segments,
+                segments,
+            )
         } else {
             let capacity = segments.len().log2_sqrt().max(8);
             let list = KeyExpTree::new(capacity);
-            Self::private_solve::<KeyExpTree<VSegment, i32, usize>>(list, shape_count, hole_segments, segments)
+            Self::private_solve::<KeyExpTree<VSegment, i32, IdData>>(
+                list,
+                shape_count,
+                hole_segments,
+                segments,
+            )
         }
     }
 
-    fn private_solve<S: KeyExpCollection<VSegment, i32, usize>>(mut scan_list: S, shape_count: usize, anchors: Vec<IdSegment>, segments: Vec<IdSegment>) -> BindSolution {
+    fn private_solve<S: KeyExpCollection<VSegment, i32, IdData>>(
+        mut scan_list: S,
+        shape_count: usize,
+        anchors: Vec<IdSegment>,
+        segments: Vec<IdSegment>,
+    ) -> BindSolution {
         let children_count = anchors.len();
 
         let mut parent_for_child = vec![0; children_count];
@@ -49,35 +68,42 @@ impl ShapeBinder {
                 }
 
                 if id_segment.v_segment.b.x > p.x {
-                    scan_list.insert(id_segment.v_segment, id_segment.id, p.x);
+                    scan_list.insert(id_segment.v_segment, id_segment.data, p.x);
                 }
                 j += 1
             }
 
-            let target_id = scan_list.first_less(anchor.v_segment.a.x, usize::MAX, anchor.v_segment);
-            let is_shape = target_id & 1 == 0;
-            let index = target_id >> 1;
-            let parent_index = if is_shape {
-                index
-            } else {
+            let target_id =
+                scan_list.first_less(anchor.v_segment.a.x, IdData::EMPTY, anchor.v_segment);
+            let parent_index = if target_id.is_hole() {
                 // index is a hole index
                 // at this moment this hole parent is known
-                parent_for_child[index]
+                parent_for_child[target_id.index()]
+            } else {
+                target_id.index()
             };
 
-            let child_index = anchor.id;
+            let child_index = anchor.data.index();
 
             parent_for_child[child_index] = parent_index;
             children_count_for_parent[parent_index] += 1;
         }
 
-        BindSolution { parent_for_child, children_count_for_parent }
+        BindSolution {
+            parent_for_child,
+            children_count_for_parent,
+        }
     }
 }
 
 pub(crate) trait JoinHoles {
     fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>);
-    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, anchors: Vec<IdSegment>);
+    fn join_sorted_holes(
+        &mut self,
+        solver: &Solver,
+        holes: Vec<IntContour>,
+        anchors: Vec<IdSegment>,
+    );
     fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>);
 }
 
@@ -95,8 +121,13 @@ impl JoinHoles for Vec<IntShape> {
             return;
         }
 
-        let mut hole_segments: Vec<_> = holes.iter().enumerate()
-            .map(|(id, path)| IdSegment { id, v_segment: path.left_bottom_segment() })
+        let mut hole_segments: Vec<_> = holes
+            .iter()
+            .enumerate()
+            .map(|(id, path)| IdSegment {
+                data: IdData::new_hole(id),
+                v_segment: path.left_bottom_segment(),
+            })
             .collect();
 
         hole_segments.sort_by_a_then_by_angle(solver);
@@ -105,7 +136,12 @@ impl JoinHoles for Vec<IntShape> {
     }
 
     #[inline]
-    fn join_sorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, anchors: Vec<IdSegment>) {
+    fn join_sorted_holes(
+        &mut self,
+        solver: &Solver,
+        holes: Vec<IntContour>,
+        anchors: Vec<IdSegment>,
+    ) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -178,7 +214,9 @@ impl LeftBottomSegment for IntContour {
 
 #[inline]
 fn is_sorted(segments: &[IdSegment]) -> bool {
-    segments.windows(2).all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
+    segments
+        .windows(2)
+        .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
 }
 
 impl IdSegment {
@@ -197,7 +235,6 @@ pub(crate) trait SortByAngle {
 }
 
 impl SortByAngle for [IdSegment] {
-
     #[inline]
     fn sort_by_a_then_by_angle(&mut self, solver: &Solver) {
         self.smart_bin_sort_by(solver, |s0, s1| s0.cmp_by_a_then_by_angle(s1));
@@ -229,9 +266,9 @@ impl SortByAngle for [IdSegment] {
 mod tests {
     use crate::bind::solver::JoinHoles;
     use crate::core::solver::Solver;
+    use crate::geom::v_segment::VSegment;
     use i_float::int::point::IntPoint;
     use std::cmp::Ordering;
-    use crate::geom::v_segment::VSegment;
 
     #[test]
     fn test_0() {

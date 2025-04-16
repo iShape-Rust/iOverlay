@@ -1,6 +1,6 @@
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntShapes;
-use crate::bind::segment::IdSegment;
+use crate::bind::segment::{IdData, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::extract::{StartPathData, Validate, Visit};
 use crate::core::filter::MaskFilter;
@@ -160,8 +160,8 @@ impl OverlayGraph {
                 };
 
                 debug_assert_eq!(v_segment, path.left_bottom_segment());
-                let id = holes.len();
-                anchors.push(IdSegment { id, v_segment });
+                let id = IdData::new_hole(holes.len());
+                anchors.push(IdSegment::with_segment(id, v_segment));
                 holes.push(path);
             } else {
                 shapes.push(vec![path]);

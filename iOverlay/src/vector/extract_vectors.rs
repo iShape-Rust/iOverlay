@@ -1,11 +1,11 @@
 use i_float::int::point::IntPoint;
 
-use crate::bind::segment::{IdSegment, IdSegments};
+use crate::bind::segment::{IdData, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
-use crate::core::graph::OverlayGraph;
-use crate::core::overlay_rule::OverlayRule;
 use crate::core::filter::MaskFilter;
+use crate::core::graph::OverlayGraph;
 use crate::core::node::OverlayNode;
+use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
@@ -14,11 +14,14 @@ use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph {
     pub fn extract_separate_vectors(&self) -> Vec<VectorEdge> {
-        self.links.iter().map(|link| VectorEdge {
-            a: link.a.point,
-            b: link.b.point,
-            fill: link.fill,
-        }).collect()
+        self.links
+            .iter()
+            .map(|link| VectorEdge {
+                a: link.a.point,
+                b: link.b.point,
+                fill: link.fill,
+            })
+            .collect()
     }
 
     pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
@@ -71,12 +74,19 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_vector_path(&self, start_data: StartVectorPathData, clockwise: bool, visited: &mut [bool]) -> VectorPath {
+    fn get_vector_path(
+        &self,
+        start_data: StartVectorPathData,
+        clockwise: bool,
+        visited: &mut [bool],
+    ) -> VectorPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        unsafe { *visited.get_unchecked_mut(link_id) = true; };
+        unsafe {
+            *visited.get_unchecked_mut(link_id) = true;
+        };
 
         let mut path = VectorPath::new();
         path.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
@@ -86,7 +96,11 @@ impl OverlayGraph {
             let node = self.node(node_id);
             link_id = match node {
                 OverlayNode::Bridge(bridge) => {
-                    if bridge[0] == link_id { bridge[1] } else { bridge[0] }
+                    if bridge[0] == link_id {
+                        bridge[1]
+                    } else {
+                        bridge[0]
+                    }
                 }
                 OverlayNode::Cross(indices) => {
                     self.find_nearest_link_to(link_id, node_id, clockwise, indices, visited)
@@ -102,7 +116,9 @@ impl OverlayGraph {
                 link.a.id
             };
 
-            unsafe { *visited.get_unchecked_mut(link_id) = true; };
+            unsafe {
+                *visited.get_unchecked_mut(link_id) = true;
+            };
         }
 
         path
@@ -139,28 +155,30 @@ impl JoinHoles for Vec<VectorShape> {
     }
 
     fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
-        let hole_segments: Vec<_> = holes.iter().enumerate()
+        let hole_segments: Vec<_> = holes
+            .iter()
+            .enumerate()
             .map(|(id, path)| {
                 let v = path[1];
                 let v_segment = if v.a < v.b {
-                        VSegment { a: v.a, b: v.b}
-                    } else {
-                        VSegment { a: v.b, b: v.a }
+                    VSegment { a: v.a, b: v.b }
+                } else {
+                    VSegment { a: v.b, b: v.a }
                 };
                 debug_assert_eq!(v_segment, most_left_bottom(path));
-                IdSegment { id, v_segment }
+                let id_data = IdData::new_hole(id);
+                IdSegment::with_segment(id_data, v_segment)
             })
             .collect();
 
         debug_assert!(is_sorted(&hole_segments));
-
 
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 
         let mut segments = Vec::new();
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(&mut segments, i, x_min, x_max);
+            shape[0].append_hull_segments(&mut segments, i, x_min, x_max);
         }
 
         segments.smart_bin_sort_by(solver, |a, b| a.v_segment.a.x.cmp(&b.v_segment.a.x));
@@ -200,5 +218,7 @@ fn most_left_bottom(path: &VectorPath) -> VSegment {
 
 #[inline]
 fn is_sorted(segments: &[IdSegment]) -> bool {
-    segments.windows(2).all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
+    segments
+        .windows(2)
+        .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
 }
