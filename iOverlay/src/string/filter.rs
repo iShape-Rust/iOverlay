@@ -1,7 +1,7 @@
 use crate::geom::id_point::IdPoint;
-use crate::string::rule::StringRule;
+use crate::segm::segment::{SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::string::graph::StringGraph;
-use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::string::rule::StringRule;
 
 pub(super) struct NavigationLink {
     pub(crate) a: IdPoint,
@@ -20,12 +20,10 @@ impl NavigationLink {
             } else {
                 self.fill &= !SUBJ_TOP;
             }
+        } else if clockwise == direct {
+            self.fill &= !SUBJ_BOTTOM;
         } else {
-            if clockwise == direct {
-                self.fill &= !SUBJ_BOTTOM;
-            } else {
-                self.fill &= !SUBJ_TOP;
-            }
+            self.fill &= !SUBJ_TOP;
         }
     }
 
@@ -65,29 +63,30 @@ impl StringGraph {
     #[inline(always)]
     pub(super) fn filter(&self, ext_rule: StringRule) -> Vec<NavigationLink> {
         match ext_rule {
-            StringRule::Slice => {
-                self.filter_slice()
-            }
+            StringRule::Slice => self.filter_slice(),
         }
     }
 
     #[inline]
     fn filter_slice(&self) -> Vec<NavigationLink> {
-        self.links.iter().map(|link| {
-            let subj = link.fill & SUBJ_BOTH;
-            let fill = if subj == 0 {
-                0
-            } else if link.fill & CLIP_BOTH == 0 {
-                subj
-            } else {
-                SUBJ_BOTH
-            };
+        self.links
+            .iter()
+            .map(|link| {
+                let fill = link.fill & SUBJ_BOTH;
+                // let fill = if subj == 0 {
+                //     0
+                // } else if link.fill & CLIP_BOTH == 0 {
+                //     subj
+                // } else {
+                //     SUBJ_BOTH
+                // };
 
-            NavigationLink {
-                a: link.a,
-                b: link.b,
-                fill,
-            }
-        }).collect()
+                NavigationLink {
+                    a: link.a,
+                    b: link.b,
+                    fill,
+                }
+            })
+            .collect()
     }
 }

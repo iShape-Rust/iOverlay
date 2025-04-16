@@ -97,8 +97,13 @@ mod tests {
     }
 
     #[test]
+    fn test_11() {
+        execute(11);
+    }
+
+    #[test]
     fn test_debug() {
-        let index = 10;
+        let index = 0;
         debug_execute_slice(index);
         debug_execute_clip(index, false);
         debug_execute_clip(index, true);

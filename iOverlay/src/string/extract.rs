@@ -1,7 +1,7 @@
 use crate::bind::solver::JoinHoles;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::ContourDirection;
-use crate::segm::segment::{SUBJ_BOTTOM, SUBJ_TOP};
+use crate::segm::segment::SUBJ_TOP;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use crate::string::split::Split;
@@ -32,6 +32,8 @@ impl StringGraph {
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `min_area`: The minimum area that a shape must have to be included in the results. Shapes smaller than this will be excluded.
+    /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
+    /// # Shape Representation
     /// The output is a `IntShapes`, where:
     /// - The outer `Vec<IntShape>` represents a set of shapes.
     /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
@@ -117,7 +119,7 @@ impl StringGraph {
         path
     }
 
-    pub(crate) fn find_nearest_link_to(
+    fn find_nearest_link_to(
         &self,
         target_index: usize,
         node_id: usize,

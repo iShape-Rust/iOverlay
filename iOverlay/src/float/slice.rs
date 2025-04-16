@@ -44,7 +44,7 @@ where
     ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `solver`: Type of solver to use.
-    /// Returns a `Shapes<P>` collection representing the sliced geometry.
+    /// - Returns a `Shapes<P>` collection representing the sliced geometry.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     fn slice_custom_by(&self, resource: &R, fill_rule: FillRule, main_direction: ContourDirection, filter: ContourFilter<T>, solver: Solver) -> Shapes<P>;

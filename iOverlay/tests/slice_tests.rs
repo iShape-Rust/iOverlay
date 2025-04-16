@@ -1,23 +1,24 @@
 #[cfg(test)]
 mod tests {
     use i_float::int::point::IntPoint;
-    use i_shape::int::path::IntPath;
-    use rand::Rng;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::string::line::IntLine;
     use i_overlay::string::slice::IntSlice;
+    use i_shape::int::path::IntPath;
+    use rand::Rng;
 
     #[test]
     fn test_miss_slice() {
-        let path = [
-            IntPoint::new(-10, -10),
-            IntPoint::new(-10, 10),
+        let path = vec![
+            IntPoint::new(10, -10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, -10),
+        ];
 
         let result = path.slice_by_line(
-            [IntPoint::new(-15, -20), IntPoint::new(-15, 20)], FillRule::NonZero,
+            [IntPoint::new(-15, -20), IntPoint::new(-15, 20)],
+            FillRule::NonZero,
         );
 
         assert_eq!(result.len(), 1);
@@ -27,15 +28,16 @@ mod tests {
 
     #[test]
     fn test_edge_slice() {
-        let path = [
-            IntPoint::new(-10, -10),
-            IntPoint::new(-10, 10),
+        let path = vec![
+            IntPoint::new(10, -10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, -10),
+        ];
 
         let result = path.slice_by_line(
-            [IntPoint::new(-10, -20), IntPoint::new(-10, 20)], FillRule::NonZero,
+            [IntPoint::new(-10, -20), IntPoint::new(-10, 20)],
+            FillRule::NonZero,
         );
 
         assert_eq!(result.len(), 1);
@@ -45,15 +47,16 @@ mod tests {
 
     #[test]
     fn test_inside_slice() {
-        let path = [
-            IntPoint::new(-10, -10),
-            IntPoint::new(-10, 10),
+        let path = vec![
+            IntPoint::new(10, -10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, -10),
+        ];
 
         let result = path.slice_by_line(
-            [IntPoint::new(0, -5), IntPoint::new(0, 5)], FillRule::NonZero,
+            [IntPoint::new(0, -5), IntPoint::new(0, 5)],
+            FillRule::NonZero,
         );
 
         assert_eq!(result.len(), 1);
@@ -63,15 +66,16 @@ mod tests {
 
     #[test]
     fn test_middle_slice() {
-        let path = [
+        let path = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(10, -10),
+        ];
 
         let result = path.slice_by_line(
-            [IntPoint::new(0, -20), IntPoint::new(0, 20)], FillRule::NonZero,
+            [IntPoint::new(0, -20), IntPoint::new(0, 20)],
+            FillRule::NonZero,
         );
 
         assert_eq!(result.len(), 2);
@@ -81,16 +85,16 @@ mod tests {
 
     #[test]
     fn test_cross_slice() {
-        let path = [
+        let path = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(10, -10),
+        ];
 
         let cross = [
             [IntPoint::new(0, -20), IntPoint::new(0, 20)],
-            [IntPoint::new(-20, 0), IntPoint::new(20, 0)]
+            [IntPoint::new(-20, 0), IntPoint::new(20, 0)],
         ];
 
         let result = path.slice_by_lines(&cross, FillRule::NonZero);
@@ -104,16 +108,16 @@ mod tests {
 
     #[test]
     fn test_cross_inside_slice() {
-        let path = [
+        let path = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(10, -10),
+        ];
 
         let cross = [
             [IntPoint::new(0, -5), IntPoint::new(0, 5)],
-            [IntPoint::new(-5, 0), IntPoint::new(5, 0)]
+            [IntPoint::new(-5, 0), IntPoint::new(5, 0)],
         ];
 
         let result = path.slice_by_lines(&cross, FillRule::NonZero);
@@ -124,20 +128,20 @@ mod tests {
 
     #[test]
     fn test_window() {
-        let path = [
+        let path = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(10, -10),
+        ];
 
-        let window = [
+        let window = vec![
             IntPoint::new(-5, -5),
             IntPoint::new(-5, 5),
             IntPoint::new(5, 5),
             IntPoint::new(5, -5),
             IntPoint::new(-5, -5), // close
-        ].to_vec();
+        ];
 
         let result = path.slice_by_path(&window, FillRule::NonZero);
 
@@ -148,28 +152,28 @@ mod tests {
 
     #[test]
     fn test_2_windows() {
-        let path = [
-            IntPoint::new(-15, -15),
-            IntPoint::new(-15, 15),
+        let path = vec![
+            IntPoint::new(15, -15),
             IntPoint::new(15, 15),
-            IntPoint::new(15, -15)
-        ].to_vec();
+            IntPoint::new(-15, 15),
+            IntPoint::new(-15, -15),
+        ];
 
-        let win_0 = [
+        let win_0 = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
             IntPoint::new(10, -10),
             IntPoint::new(-10, -10), // close
-        ].to_vec();
+        ];
 
-        let win_1 = [
+        let win_1 = vec![
             IntPoint::new(-5, -5),
             IntPoint::new(-5, 5),
             IntPoint::new(5, 5),
             IntPoint::new(5, -5),
             IntPoint::new(-5, -5), // close
-        ].to_vec();
+        ];
 
         let result = path.slice_by_paths(&[win_0, win_1], FillRule::NonZero);
 
@@ -181,12 +185,12 @@ mod tests {
 
     #[test]
     fn test_ideal_triangle() {
-        let path = [
+        let path = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(10, -10),
+        ];
 
         let triangle = [
             [IntPoint::new(-5, 0), IntPoint::new(5, 0)],
@@ -203,12 +207,12 @@ mod tests {
 
     #[test]
     fn test_not_ideal_triangle() {
-        let path = [
+        let path = vec![
             IntPoint::new(-10, -10),
             IntPoint::new(-10, 10),
             IntPoint::new(10, 10),
-            IntPoint::new(10, -10)
-        ].to_vec();
+            IntPoint::new(10, -10),
+        ];
 
         let triangle = [
             [IntPoint::new(-7, 0), IntPoint::new(7, 0)],
@@ -225,12 +229,12 @@ mod tests {
 
     #[test]
     fn test_bridge_to_triangle_0() {
-        let path = [
+        let path = vec![
             IntPoint::new(-4, -4),
             IntPoint::new(-4, 4),
             IntPoint::new(4, 4),
-            IntPoint::new(4, -4)
-        ].to_vec();
+            IntPoint::new(4, -4),
+        ];
 
         let triangle = [
             [IntPoint::new(0, 2), IntPoint::new(0, 1)],
@@ -248,12 +252,12 @@ mod tests {
 
     #[test]
     fn test_bridge_to_triangle_1() {
-        let path = [
+        let path = vec![
             IntPoint::new(-2, -2),
             IntPoint::new(-2, 2),
             IntPoint::new(2, 2),
-            IntPoint::new(2, -2)
-        ].to_vec();
+            IntPoint::new(2, -2),
+        ];
 
         let triangle = [
             [IntPoint::new(-2, -2), IntPoint::new(-1, -1)],
@@ -271,25 +275,25 @@ mod tests {
 
     #[test]
     fn test_join_to_hole() {
-        let shape = [
-            [
+        let shape = vec![
+            vec![
                 IntPoint::new(-3, -2),
                 IntPoint::new(-3, 2),
                 IntPoint::new(3, 2),
-                IntPoint::new(3, -2)
-            ].to_vec(),
-            [
+                IntPoint::new(3, -2),
+            ],
+            vec![
                 IntPoint::new(0, -1),
                 IntPoint::new(1, -1),
                 IntPoint::new(1, 1),
-                IntPoint::new(0, 1)
-            ].to_vec()
-        ].to_vec();
+                IntPoint::new(0, 1),
+            ],
+        ];
 
         let triangle = [
             [IntPoint::new(-2, -1), IntPoint::new(0, 0)],
             [IntPoint::new(-2, 1), IntPoint::new(0, 0)],
-            [IntPoint::new(-2, -1), IntPoint::new(-2, 1)]
+            [IntPoint::new(-2, -1), IntPoint::new(-2, 1)],
         ];
 
         let result = shape.slice_by_lines(&triangle, FillRule::NonZero);
@@ -304,7 +308,7 @@ mod tests {
         let path = [
             IntPoint::new(2, -2),
             IntPoint::new(0, -1),
-            IntPoint::new(1, 2)
+            IntPoint::new(1, 2),
         ];
 
         let line = [IntPoint::new(2, 1), IntPoint::new(-1, -2)];
@@ -320,12 +324,13 @@ mod tests {
         let path = [
             IntPoint::new(0, 2),
             IntPoint::new(0, -1),
-            IntPoint::new(-1, -2)
-        ].to_vec();
+            IntPoint::new(-1, -2),
+        ]
+        .to_vec();
 
         let lines = [
             [IntPoint::new(-1, -2), IntPoint::new(-1, -1)],
-            [IntPoint::new(1, -1), IntPoint::new(-2, -1)]
+            [IntPoint::new(1, -1), IntPoint::new(-2, -1)],
         ];
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
@@ -339,9 +344,9 @@ mod tests {
     #[test]
     fn test_2() {
         let path = [
-            IntPoint::new(-4, 4),
             IntPoint::new(1, 4),
-            IntPoint::new(-2, -4)
+            IntPoint::new(-4, 4),
+            IntPoint::new(-2, -4),
         ];
 
         let lines = [
@@ -354,9 +359,9 @@ mod tests {
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
-        assert_eq!(result[0][0].len(), 3);
+        assert_eq!(result[0][0].len(), 4);
         assert_eq!(result[1].len(), 1);
-        assert_eq!(result[1][0].len(), 4);
+        assert_eq!(result[1][0].len(), 3);
     }
 
     #[test]
@@ -364,7 +369,7 @@ mod tests {
         let path = [
             IntPoint::new(-4, -2),
             IntPoint::new(2, 2),
-            IntPoint::new(3, -3)
+            IntPoint::new(3, -3),
         ];
 
         let lines = [
@@ -389,12 +394,12 @@ mod tests {
             IntPoint::new(3, 4),
         ];
 
-        let lines = [
+        let lines = vec![
             [IntPoint::new(0, 3), IntPoint::new(0, -1)],
             [IntPoint::new(1, -2), IntPoint::new(1, 2)],
             [IntPoint::new(-1, 3), IntPoint::new(3, 0)],
             [IntPoint::new(2, 2), IntPoint::new(0, -1)],
-        ].to_vec();
+        ];
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
@@ -409,15 +414,15 @@ mod tests {
     #[test]
     fn test_5() {
         let path = [
-            IntPoint::new( 1, -1),
+            IntPoint::new(1, -1),
             IntPoint::new(-1, -1),
-            IntPoint::new(-2, -1)
+            IntPoint::new(-2, -1),
         ];
 
-        let lines = [
+        let lines = vec![
             [IntPoint::new(1, 1), IntPoint::new(0, 0)],
-            [IntPoint::new(-1, -1), IntPoint::new(2, 2)]
-        ].to_vec();
+            [IntPoint::new(-1, -1), IntPoint::new(2, 2)],
+        ];
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
