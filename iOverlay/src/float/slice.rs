@@ -2,10 +2,12 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use crate::core::fill_rule::FillRule;
+use crate::core::overlay::ContourDirection;
 use crate::core::solver::Solver;
 use crate::float::filter::ContourFilter;
 use crate::float::source::resource::OverlayResource;
 use crate::float::string_overlay::FloatStringOverlay;
+use crate::string::extract::SliceResultType;
 use crate::string::rule::StringRule;
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
@@ -24,12 +26,10 @@ where
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
-    ///     - `min_area`: Only retain contours with an area larger than this.
-    ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
-    /// - `solver`: Type of solver to use.
     ///
     /// Returns a `Shapes<P>` collection representing the sliced geometry.
+    ///
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     fn slice_by(&self, resource: &R, fill_rule: FillRule) -> Shapes<P>;
 
     /// Slices the current shapes by string lines.
@@ -40,9 +40,16 @@ where
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    ///
+    /// - `result_type`: What to include in a result.
+    /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
+    ///     - `min_area`: Only retain contours with an area larger than this.
+    ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
+    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
+    /// - `solver`: Type of solver to use.
     /// Returns a `Shapes<P>` collection representing the sliced geometry.
-    fn slice_by_with_filter_and_solver(&self, resource: &R, fill_rule: FillRule, filter: ContourFilter<T>, solver: Solver) -> Shapes<P>;
+    ///
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
+    fn slice_custom_by(&self, resource: &R, fill_rule: FillRule, main_direction: ContourDirection, result_type: SliceResultType, filter: ContourFilter<T>, solver: Solver) -> Shapes<P>;
 }
 
 
@@ -61,10 +68,10 @@ where
     }
 
     #[inline]
-    fn slice_by_with_filter_and_solver(&self, resource: &R0, fill_rule: FillRule, filter: ContourFilter<T>, solver: Solver) -> Shapes<P> {
+    fn slice_custom_by(&self, resource: &R0, fill_rule: FillRule, main_direction: ContourDirection, result_type: SliceResultType, filter: ContourFilter<T>, solver: Solver) -> Shapes<P> {
         FloatStringOverlay::with_shape_and_string(self, resource)
             .into_graph_with_solver(fill_rule, solver)
-            .extract_shapes_with_filter(StringRule::Slice, filter)
+            .extract_shapes_custom(StringRule::Slice, main_direction, result_type, filter)
     }
 }
 
