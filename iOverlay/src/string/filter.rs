@@ -12,50 +12,41 @@ pub(super) struct NavigationLink {
 impl NavigationLink {
     #[inline]
     pub(super) fn visit(&mut self, node_id: usize, clockwise: bool) {
+        let is_a = self.a.id == node_id;
         let direct = self.a.point < self.b.point;
-        let direction = self.a.id == node_id;
-        if direction {
-            if clockwise != direct {
-                self.fill &= !SUBJ_BOTTOM;
-            } else {
-                self.fill &= !SUBJ_TOP;
-            }
-        } else if clockwise == direct {
-            self.fill &= !SUBJ_BOTTOM;
+        let same = clockwise == direct;
+
+        let mask = if is_a {
+            if same { SUBJ_TOP } else { SUBJ_BOTTOM }
         } else {
-            self.fill &= !SUBJ_TOP;
-        }
+            if same { SUBJ_BOTTOM } else { SUBJ_TOP }
+        };
+
+        self.fill &= !mask;
     }
 
     #[inline]
     pub(super) fn is_move_possible(&self, node_id: usize, clockwise: bool) -> bool {
-        if self.fill == SUBJ_BOTH {
-            return true;
-        } else if self.fill == 0 {
-            return false;
+        match self.fill {
+            SUBJ_BOTH => return true,
+            0 => return false,
+            _ => {}
         }
-        let direction = self.a.id == node_id;
-        let left = self.is_left();
-        if direction {
-            clockwise == left
+
+        let is_a = self.a.id == node_id;
+        let direct = self.a.point < self.b.point;
+        let left = if direct {
+            self.fill & SUBJ_TOP != 0
         } else {
-            clockwise != left
-        }
+            self.fill & SUBJ_BOTTOM != 0
+        };
+
+        is_a == (clockwise == left)
     }
 
     #[inline]
     pub(super) fn other(&self, node_id: usize) -> IdPoint {
         if self.a.id == node_id { self.b } else { self.a }
-    }
-
-    #[inline]
-    pub(super) fn is_left(&self) -> bool {
-        let direct = self.a.point < self.b.point;
-        if direct {
-            self.fill & SUBJ_TOP == SUBJ_TOP
-        } else {
-            self.fill & SUBJ_BOTTOM == SUBJ_BOTTOM
-        }
     }
 }
 
@@ -73,14 +64,6 @@ impl StringGraph {
             .iter()
             .map(|link| {
                 let fill = link.fill & SUBJ_BOTH;
-                // let fill = if subj == 0 {
-                //     0
-                // } else if link.fill & CLIP_BOTH == 0 {
-                //     subj
-                // } else {
-                //     SUBJ_BOTH
-                // };
-
                 NavigationLink {
                     a: link.a,
                     b: link.b,

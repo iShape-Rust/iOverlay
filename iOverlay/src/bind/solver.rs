@@ -52,8 +52,17 @@ impl ShapeBinder {
         segments: Vec<IdSegment>,
     ) -> BindSolution {
         let children_count = anchors.len();
-
-        let mut parent_for_child = vec![usize::MAX; children_count];
+        let mut parent_for_child = {
+            #[cfg(debug_assertions)]
+            {
+                // prefer crash in debug mode
+                vec![usize::MAX; children_count]
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                vec![0; children_count]
+            }
+        };
         let mut children_count_for_parent = vec![0; shape_count];
 
         let mut j = 0;
