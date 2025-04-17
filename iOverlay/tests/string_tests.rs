@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        let index = 0;
+        let index = 11;
         debug_execute_slice(index);
         debug_execute_clip(index, false);
         debug_execute_clip(index, true);
