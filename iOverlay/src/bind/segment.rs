@@ -10,14 +10,12 @@ pub(crate) struct ContourIndex {
 }
 
 impl ContourIndex {
-
     pub(crate) const EMPTY: ContourIndex = ContourIndex { data: usize::MAX };
 
     #[inline]
     pub(crate) fn is_hole(&self) -> bool {
         self.data & 1 == 1
     }
-
 
     #[inline]
     pub(crate) fn index(&self) -> usize {
@@ -26,12 +24,14 @@ impl ContourIndex {
 
     #[inline]
     pub(crate) fn new_hole(index: usize) -> Self {
-        Self { data: (index << 1) | 1}
+        Self {
+            data: (index << 1) | 1,
+        }
     }
 
     #[inline]
     pub(crate) fn new_shape(index: usize) -> Self {
-        Self { data: index << 1}
+        Self { data: index << 1 }
     }
 }
 
@@ -42,7 +42,6 @@ pub(crate) struct IdSegment {
 }
 
 impl IdSegment {
-
     #[inline]
     fn new(data: ContourIndex, a: IntPoint, b: IntPoint) -> Self {
         Self {
@@ -61,13 +60,26 @@ impl IdSegment {
 }
 
 pub(crate) trait IdSegments {
-    fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id_data: ContourIndex, x_min: i32, x_max: i32, clockwise: bool);
+    fn append_id_segments(
+        &self,
+        buffer: &mut Vec<IdSegment>,
+        id_data: ContourIndex,
+        x_min: i32,
+        x_max: i32,
+        clockwise: bool,
+    );
 }
 
 impl IdSegments for IntPath {
-
     #[inline]
-    fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id_data: ContourIndex, x_min: i32, x_max: i32, clockwise: bool) {
+    fn append_id_segments(
+        &self,
+        buffer: &mut Vec<IdSegment>,
+        id_data: ContourIndex,
+        x_min: i32,
+        x_max: i32,
+        clockwise: bool,
+    ) {
         fn inner<I: Iterator<Item = IntPoint>>(
             mut iter: I,
             buffer: &mut Vec<IdSegment>,
@@ -75,12 +87,17 @@ impl IdSegments for IntPath {
             x_min: i32,
             x_max: i32,
         ) {
-            let mut a = iter.next().unwrap();
-            for b in iter {
-                if b.x < a.x && x_min < a.x && b.x <= x_max {
-                    buffer.push(IdSegment::new(id_data, b, a));
+            let first = iter.next().unwrap();
+            let mut b = first;
+            for a in iter {
+                if a.x < b.x && x_min < b.x && a.x <= x_max {
+                    buffer.push(IdSegment::new(id_data, a, b));
                 }
-                a = b;
+                b = a;
+            }
+            let a = first;
+            if a.x < b.x && x_min < b.x && a.x <= x_max {
+                buffer.push(IdSegment::new(id_data, a, b));
             }
         }
 
@@ -94,7 +111,14 @@ impl IdSegments for IntPath {
 
 impl IdSegments for VectorPath {
     #[inline]
-    fn append_id_segments(&self, buffer: &mut Vec<IdSegment>, id_data: ContourIndex, x_min: i32, x_max: i32, clockwise: bool) {
+    fn append_id_segments(
+        &self,
+        buffer: &mut Vec<IdSegment>,
+        id_data: ContourIndex,
+        x_min: i32,
+        x_max: i32,
+        clockwise: bool,
+    ) {
         fn inner<I: Iterator<Item = VectorEdge>>(
             iter: I,
             buffer: &mut Vec<IdSegment>,

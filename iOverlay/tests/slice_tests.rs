@@ -129,10 +129,10 @@ mod tests {
     #[test]
     fn test_window() {
         let path = vec![
-            IntPoint::new(-10, -10),
-            IntPoint::new(-10, 10),
-            IntPoint::new(10, 10),
             IntPoint::new(10, -10),
+            IntPoint::new(10, 10),
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, -10),
         ];
 
         let window = vec![

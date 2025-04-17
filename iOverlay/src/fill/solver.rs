@@ -63,7 +63,7 @@ impl FillSolver {
             }
 
             let mut sum_count =
-                scan_list.first_less_by(p.x, C::new(0, 0), |s| s.is_under_point_order(p));
+                scan_list.first_less_or_equal_by(p.x, C::new(0, 0), |s| s.is_under_point_order(p));
             let mut fill: SegmentFill;
 
             for se in buf.iter() {
