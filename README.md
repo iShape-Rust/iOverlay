@@ -11,6 +11,16 @@ The iOverlay library provides high-performance boolean operations on polygons, i
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 
+&nbsp;
+## ⚠️ Version 3.0.0 Direction Change Notice
+Starting from v3.0.0, the default output contour direction has changed:
+- Outer contours are now **counter-clockwise**
+- Holes are **clockwise**
+
+*This aligns with the standard mathematical convention and improves compatibility across other libraries.*
+
+🔧 Note: Output direction is fully configurable — you can still override it if needed.
+    
 ## Table of Contents
 
 - [Features](#features)
@@ -56,7 +66,7 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^2.0"
+i_overlay = "^3.0"
 ```
 
 &nbsp;
@@ -73,16 +83,16 @@ let subj = [
     // main contour
     vec![
       [1.0, 0.0],
-      [1.0, 5.0],
+      [4.0, 0.0],
       [4.0, 5.0],
-      [4.0, 0.0], // the contour is auto closed!
+      [1.0, 5.0], // the contour is auto closed!
     ],
     // hole contour
     vec![
       [2.0, 1.0],
-      [3.0, 1.0],
+      [2.0, 4.0],
       [3.0, 4.0],
-      [2.0, 4.0], // the contour is auto closed!
+      [3.0, 1.0], // the contour is auto closed!
     ],
 ];
 
@@ -106,17 +116,17 @@ The result is a vec of shapes:
 [
     // first shape
     [
-        // main contour (clockwise order)
+        // main contour (counterclockwise order)
         [
-            [0.0, 2.0], [0.0, 3.0], [1.0, 3.0], [1.0, 5.0], [4.0, 5.0], [4.0, 3.0], [5.0, 3.0], [5.0, 2.0], [4.0, 2.0], [4.0, 0.0], [1.0, 0.0], [1.0, 2.0]
+            [0.0, 3.0], [0.0, 2.0], [1.0, 2.0], [1.0, 0.0], [4.0, 0.0], [4.0, 2.0], [5.0, 2.0], [5.0, 3.0], [4.0, 3.0], [4.0, 5.0], [1.0, 5.0], [1.0, 3.0]
         ],
-        // first hole (counterclockwise order)
+        // first hole (clockwise order)
         [
-            [2.0, 2.0], [2.0, 1.0], [3.0, 1.0], [3.0, 2.0]
+            [2.0, 1.0], [2.0, 2.0], [3.0, 2.0], [3.0, 1.0]
         ],
-        // second hole (counterclockwise order)
+        // second hole (clockwise order)
         [
-            [2.0, 4.0], [2.0, 3.0], [3.0, 3.0], [3.0, 4.0]
+            [2.0, 3.0], [2.0, 4.0], [3.0, 4.0], [3.0, 3.0]
         ]
     ]
     // ... other shapes if present
@@ -132,7 +142,7 @@ The `overlay` function returns a `Vec<Shapes>`:
   - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
 - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 
-**Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
+**Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
 
 &nbsp;
@@ -308,9 +318,8 @@ println!("shapes: {:?}", &shapes);
 
 **Note**: 
 - Offsetting a polygon works reliably only with valid polygons. Ensure that:
-  - There are no self-intersections.
-  - Outer boundary contours are in **clockwise** order.
-  - Holes are in **counterclockwise** order.
+  - No self-intersections.
+  - Outer boundaries are **counterclockwise**, holes are **clockwise**—unless `main_direction` is set.
   
   If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/src/float/simplify.rs) operation before offsetting.  
   [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) on contour orientation.
