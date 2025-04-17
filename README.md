@@ -142,7 +142,7 @@ The `overlay` function returns a `Vec<Shapes>`:
   - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
 - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 
-**Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless main_direction is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
+**Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
 
 &nbsp;
@@ -319,7 +319,7 @@ println!("shapes: {:?}", &shapes);
 **Note**: 
 - Offsetting a polygon works reliably only with valid polygons. Ensure that:
   - No self-intersections.
-  - Outer boundaries are **counterclockwise**, holes are **clockwise**—unless main_direction is set.
+  - Outer boundaries are **counterclockwise**, holes are **clockwise**—unless `main_direction` is set.
   
   If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/src/float/simplify.rs) operation before offsetting.  
   [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) on contour orientation.
