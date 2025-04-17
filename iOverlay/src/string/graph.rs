@@ -27,4 +27,9 @@ impl StringGraph {
     pub(super) fn node(&self, index: usize) -> &Vec<usize> {
         unsafe { self.nodes.get_unchecked(index) }
     }
+
+    #[inline(always)]
+    pub(super) fn link(&self, index: usize) -> &OverlayLink {
+        unsafe { self.links.get_unchecked(index) }
+    }
 }

@@ -7,7 +7,6 @@ use crate::string::rule::StringRule;
 use crate::string::split::Split;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
-use crate::string::filter::NavigationLink;
 
 impl StringGraph {
     /// Extracts shapes from the graph based on the specified `StringRule`.
@@ -47,21 +46,21 @@ impl StringGraph {
         min_area: usize,
     ) -> IntShapes {
         let clockwise = main_direction == ContourDirection::Clockwise;
-        let mut nav_links = self.filter(string_rule);
+        let mut fills = self.filter(string_rule);
         let mut shapes= Vec::new();
         let mut holes= Vec::new();
 
         let mut link_index = 0;
-        while link_index < nav_links.len() {
-            let link = &nav_links[link_index];
-            if link.fill == 0 {
+        while link_index < fills.len() {
+            let fill = fills[link_index];
+            if fill == 0 {
                 link_index += 1;
                 continue;
             }
 
-            let direction = link.fill & SUBJ_TOP == SUBJ_TOP;
+            let direction = fill & SUBJ_TOP == SUBJ_TOP;
             let paths = self
-                .get_paths(link_index, direction, &mut nav_links)
+                .get_paths(link_index, direction, &mut fills)
                 .split_loops(min_area);
 
             for mut path in paths.into_iter() {
@@ -87,8 +86,8 @@ impl StringGraph {
     }
 
     #[inline]
-    fn get_paths(&self, start_index: usize, clockwise: bool, nav_links: &mut [NavigationLink]) -> IntPath {
-        let start_link = &mut nav_links[start_index];
+    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath {
+        let start_link = self.link(start_index);
 
         let mut link_id = start_index;
         let mut node_id = start_link.b.id;
@@ -97,15 +96,15 @@ impl StringGraph {
         let mut path = IntPath::new();
         path.push(start_link.a.point);
 
-        start_link.visit(start_link.a.id, clockwise);
+        fills[start_index] = start_link.visit_fill(fills[start_index], start_link.a.id, clockwise);
 
         // Find a closed tour
         while node_id != last_node_id {
 
-            link_id = self.find_nearest_link_to(link_id, node_id, clockwise, nav_links);
+            link_id = self.find_nearest_link_to(link_id, node_id, clockwise, fills);
 
-            let link = &mut nav_links[link_id];
-            link.visit(node_id, clockwise);
+            let link = self.link(link_id);
+            fills[link_id] = link.visit_fill(fills[link_id], node_id, clockwise);
 
             node_id = if link.a.id == node_id {
                 path.push(link.a.point);
@@ -124,7 +123,7 @@ impl StringGraph {
         target_index: usize,
         node_id: usize,
         clockwise: bool,
-        nav_links: &[NavigationLink],
+        fills: &[u8],
     ) -> usize {
         let indices = self.node(node_id);
         let mut is_first = true;
@@ -135,7 +134,7 @@ impl StringGraph {
             if link_index == target_index {
                 continue;
             }
-            if nav_links[link_index].is_move_possible(node_id, clockwise) {
+            if self.link(link_index).is_move_possible(fills[link_index], node_id, clockwise) {
                 if is_first {
                     first_index = link_index;
                     is_first = false;
@@ -148,7 +147,7 @@ impl StringGraph {
         }
 
         if first_index == usize::MAX {
-            if nav_links[target_index].is_move_possible(node_id, clockwise) {
+            if self.link(target_index).is_move_possible(fills[target_index], node_id, clockwise) {
                 return target_index;
             } else {
                 panic!("no move found")
@@ -159,7 +158,7 @@ impl StringGraph {
             return first_index;
         }
 
-        let target = &nav_links[target_index];
+        let target = self.link(target_index);
         let (c, a) = if target.a.id == node_id {
             (target.a.point, target.b.point)
         } else {
@@ -167,16 +166,16 @@ impl StringGraph {
         };
 
         // more the one vectors
-        let b = nav_links[first_index].other(node_id).point;
+        let b = self.link(first_index).other(node_id).point;
         let mut vector_solver = NearestVector::new(c, a, b, first_index, clockwise);
 
         // add second vector
-        vector_solver.add(nav_links[second_index].other(node_id).point, second_index);
+        vector_solver.add(self.link(second_index).other(node_id).point, second_index);
 
         // check the rest vectors
         for &link_index in indices.iter().skip(pos + 1) {
-            if nav_links[link_index].is_move_possible(node_id, clockwise) {
-                let p = nav_links[link_index].other(node_id).point;
+            if self.link(link_index).is_move_possible(fills[link_index], node_id, clockwise) {
+                let p = self.link(link_index).other(node_id).point;
                 vector_solver.add(p, link_index);
             }
         }
