@@ -79,8 +79,8 @@ where
 
         let join = style.join.normalize();
 
-        let outer_builder = OutlineBuilder::new(style.outer_offset, &join);
-        let inner_builder = OutlineBuilder::new(-style.inner_offset, &join);
+        let outer_builder = OutlineBuilder::new(-style.outer_offset, &join);
+        let inner_builder = OutlineBuilder::new(style.inner_offset, &join);
 
         let adapter = {
             let outer_radius = style.outer_offset;
@@ -96,6 +96,7 @@ where
             rect.add_offset(additional_offset);
 
             FloatPointAdapter::new(rect)
+            // FloatPointAdapter::with_scale(rect, 1.0) // Debug !!!
         };
 
         let int_min_area = adapter.sqr_float_to_int(filter.min_area).max(1);
@@ -110,8 +111,8 @@ where
             };
 
             let area = path.unsafe_int_area(&adapter);
-            if area <= 1 {
-                // single path must be positive ordered
+            if area >= -1 {
+                // single path must be clock-wised
                 return vec![];
             }
 
@@ -133,15 +134,16 @@ where
                     continue;
                 }
 
-                if area > 0 {
+                if area < 0 {
                     let capacity = outer_builder.capacity(path.len());
                     let mut segments = Vec::with_capacity(capacity);
                     outer_builder.build(path, &adapter, &mut segments);
                     let shapes =
                         OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                            .extract_offset(main_direction, 0);
+                            .extract_offset(ContourDirection::CounterClockwise, 0);
                     overlay.add_shapes(&shapes, ShapeType::Subject);
                 } else {
+                    // TODO switch to reverse
                     let mut inverted = Vec::with_capacity(path.len());
                     for p in path.iter().rev() {
                         inverted.push(*p);
@@ -152,7 +154,7 @@ where
                     inner_builder.build(&inverted, &adapter, &mut segments);
                     let mut shapes =
                         OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                            .extract_offset(main_direction, 0);
+                            .extract_offset(ContourDirection::CounterClockwise, 0);
 
                     for shape in shapes.iter_mut() {
                         for path in shape.iter_mut() {
@@ -193,27 +195,27 @@ mod tests {
     fn test_doc() {
         let shape = vec![
             vec![
-                [1.0, 2.0],
-                [1.0, 4.0],
-                [2.0, 5.0],
-                [4.0, 5.0],
-                [5.0, 4.0],
-                [5.0, 3.0],
-                [8.0, 3.0],
-                [8.0, 4.0],
-                [9.0, 4.0],
-                [10.0, 3.0],
-                [11.0, 3.0],
-                [11.0, 4.0],
-                [12.0, 4.0],
-                [12.0, 3.0],
-                [13.0, 3.0],
-                [13.0, 2.0],
-                [5.0, 2.0],
-                [4.0, 1.0],
                 [2.0, 1.0],
+                [4.0, 1.0],
+                [5.0, 2.0],
+                [13.0, 2.0],
+                [13.0, 3.0],
+                [12.0, 3.0],
+                [12.0, 4.0],
+                [11.0, 4.0],
+                [11.0, 3.0],
+                [10.0, 3.0],
+                [9.0, 4.0],
+                [8.0, 4.0],
+                [8.0, 3.0],
+                [5.0, 3.0],
+                [5.0, 4.0],
+                [4.0, 5.0],
+                [2.0, 5.0],
+                [1.0, 4.0],
+                [1.0, 2.0],
             ],
-            vec![[2.0, 2.0], [4.0, 2.0], [4.0, 4.0], [2.0, 4.0]],
+            vec![[2.0, 4.0], [4.0, 4.0], [4.0, 2.0], [2.0, 2.0]],
         ];
 
         let style = OutlineStyle::new(0.2).line_join(LineJoin::Round(0.1));
@@ -227,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_triangle_round_corner() {
-        let path = [[0.0, 0.0f32], [0.0, 10.0f32], [10.0, 0.0f32]];
+        let path = [[0.0, 0.0f32], [10.0, 0.0f32], [0.0, 10.0f32]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Round(0.25 * PI));
         let shapes = path.outline(style);
@@ -240,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_reversed_triangle_round_corner() {
-        let path = [[0.0, 0.0f32], [10.0, 0.0f32], [0.0, 10.0f32]];
+        let path = [[0.0, 0.0f32], [0.0, 10.0f32], [10.0, 0.0f32]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Round(0.25 * PI));
         let shapes = path.outline(style);
@@ -252,9 +254,9 @@ mod tests {
     fn test_square() {
         let path = [
             [-5.0, -5.0f32],
-            [-5.0, 5.0f32],
-            [5.0, 5.0f32],
-            [5.0, -5.0f32],
+            [5.0, -5.0],
+            [5.0, 5.0],
+            [-5.0, 5.0],
         ];
 
         let style = OutlineStyle::new(10.0);
@@ -273,9 +275,9 @@ mod tests {
     fn test_square_offset() {
         let path = [
             [-5.0, -5.0f32],
-            [-5.0, 5.0f32],
-            [5.0, 5.0f32],
-            [5.0, -5.0f32],
+            [5.0, -5.0],
+            [5.0, 5.0],
+            [-5.0, 5.0],
         ];
 
         let style = OutlineStyle::new(-20.0);
@@ -286,12 +288,26 @@ mod tests {
 
     #[test]
     fn test_rhombus_miter() {
-        let path = [[-10.0, 0.0], [0.0, 10.0], [10.0, 0.0], [0.0, -10.0]];
+        let path = [[-10.0, 0.0], [0.0, -10.0], [10.0, 0.0], [0.0, 10.0]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Miter(0.01));
         let shapes = path.outline(style);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes.first().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_window() {
+        let window = vec![
+            vec![[-10.0, -10.0], [10.0, -10.0], [10.0, 10.0], [-10.0, 10.0]],
+            vec![[-5.0, -5.0], [-5.0, 5.0], [5.0, 5.0], [5.0, -5.0]],
+        ];
+
+        let style = OutlineStyle::new(1.0).line_join(LineJoin::Bevel);
+        let shapes = window.outline(style);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 2);
     }
 }

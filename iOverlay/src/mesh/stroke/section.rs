@@ -54,7 +54,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> SectionToSegment<T, P> for Vec<
         let a_bot = adapter.float_to_int(&section.a_bot);
         let b_bot = adapter.float_to_int(&section.b_bot);
 
-        self.push(Segment::bold_subject_ab(a_top, b_top));
-        self.push(Segment::bold_subject_ab(b_bot, a_bot));
+        self.push(Segment::bold_subject_ab(b_top, a_top));
+        self.push(Segment::bold_subject_ab(a_bot, b_bot));
     }
 }

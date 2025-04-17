@@ -32,8 +32,8 @@ impl FillStrategy<OffsetCountBoolean> for SubjectOffsetStrategy {
         let top_subj = bot.subj + this.subj;
         let bot_subj = bot.subj;
 
-        let subj_top = (top_subj < 0) as SegmentFill;
-        let subj_bot = (bot_subj < 0) as SegmentFill;
+        let subj_top = (top_subj > 0) as SegmentFill;
+        let subj_bot = (bot_subj > 0) as SegmentFill;
 
         let bold = this.bold as SegmentFill;
 
