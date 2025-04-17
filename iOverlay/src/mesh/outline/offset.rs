@@ -120,7 +120,7 @@ where
             outer_builder.build(path, &adapter, &mut segments);
 
             OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                .extract_offset_min_area(int_min_area)
+                .extract_offset(main_direction, int_min_area)
         } else {
             let total_capacity = outer_builder.capacity(points_count);
 
@@ -139,7 +139,7 @@ where
                     outer_builder.build(path, &adapter, &mut segments);
                     let shapes =
                         OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                            .extract_offset_min_area(0);
+                            .extract_offset(main_direction, 0);
                     overlay.add_shapes(&shapes, ShapeType::Subject);
                 } else {
                     let mut inverted = Vec::with_capacity(path.len());
@@ -152,7 +152,7 @@ where
                     inner_builder.build(&inverted, &adapter, &mut segments);
                     let mut shapes =
                         OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                            .extract_offset_min_area(0);
+                            .extract_offset(main_direction, 0);
 
                     for shape in shapes.iter_mut() {
                         for path in shape.iter_mut() {

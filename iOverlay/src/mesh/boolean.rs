@@ -1,13 +1,13 @@
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntShapes;
-use crate::bind::segment::{IdData, IdSegment};
+use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::extract::{StartPathData, Validate, Visit};
 use crate::core::filter::MaskFilter;
 use crate::core::graph::OverlayGraph;
 use crate::core::link::{OverlayLink, OverlayLinkBuilder};
 use crate::core::node::OverlayNode;
-use crate::core::overlay::ShapeType;
+use crate::core::overlay::{ContourDirection, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
@@ -102,16 +102,18 @@ impl OverlayGraph {
         OverlayGraph::new(solver, links)
     }
 
-    pub(crate) fn extract_offset_min_area(&self, min_area: usize) -> IntShapes {
+    pub(crate) fn extract_offset(&self, main_direction: ContourDirection, min_area: usize) -> IntShapes {
         let visited = self.links.filter_by_rule(OverlayRule::Subject);
-        self.extract_offset(visited, min_area)
+        self.extract_offset_shapes(visited, main_direction, min_area)
     }
 
-    fn extract_offset(
+    fn extract_offset_shapes(
         &self,
         filter: Vec<bool>,
+        main_direction: ContourDirection,
         min_area: usize,
     ) -> IntShapes {
+        let clockwise = main_direction == ContourDirection::Clockwise;
         let mut buffer = filter;
         let visited = buffer.as_mut_slice();
         let mut shapes = Vec::new();
@@ -130,10 +132,11 @@ impl OverlayGraph {
             let link = self.link(left_top_link);
             let is_hole = link.fill & SUBJ_TOP == SUBJ_TOP;
             let mut bold = link.is_bold();
+            let direction = is_hole == clockwise;
 
-            let start_data = StartPathData::new(is_hole, link, left_top_link);
+            let start_data = StartPathData::new(direction, link, left_top_link);
 
-            let mut path = self.get_fill_path(&start_data, is_hole, &mut bold, visited);
+            let mut path = self.get_fill_path(&start_data, direction, &mut bold, visited);
             if !bold {
                 link_index += 1;
                 continue;
@@ -147,9 +150,16 @@ impl OverlayGraph {
             }
 
             if is_hole {
-                let mut v_segment = VSegment {
-                    a: path[1],
-                    b: path[2],
+                let mut v_segment = if clockwise {
+                    VSegment {
+                        a: path[1],
+                        b: path[2],
+                    }
+                } else {
+                    VSegment {
+                        a: path[0],
+                        b: path[path.len() - 1],
+                    }
                 };
                 if is_modified {
                     let most_left = path.left_bottom_segment();
@@ -160,7 +170,7 @@ impl OverlayGraph {
                 };
 
                 debug_assert_eq!(v_segment, path.left_bottom_segment());
-                let id = IdData::new_hole(holes.len());
+                let id = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id, v_segment));
                 holes.push(path);
             } else {
@@ -172,7 +182,7 @@ impl OverlayGraph {
             anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
-        shapes.join_sorted_holes(&self.solver, holes, anchors);
+        shapes.join_sorted_holes(&self.solver, holes, anchors, clockwise);
 
         shapes
     }

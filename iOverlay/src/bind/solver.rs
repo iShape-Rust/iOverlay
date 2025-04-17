@@ -1,4 +1,4 @@
-use crate::bind::segment::{IdData, IdSegment, IdSegments};
+use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::core::solver::Solver;
 use crate::geom::v_segment::VSegment;
 use crate::util::log::Int;
@@ -27,7 +27,7 @@ impl ShapeBinder {
         if shape_count < 32 {
             let capacity = segments.len().log2_sqrt().max(4) * 2;
             let list = KeyExpList::new(capacity);
-            Self::private_solve::<KeyExpList<VSegment, i32, IdData>>(
+            Self::private_solve::<KeyExpList<VSegment, i32, ContourIndex>>(
                 list,
                 shape_count,
                 hole_segments,
@@ -36,7 +36,7 @@ impl ShapeBinder {
         } else {
             let capacity = segments.len().log2_sqrt().max(8);
             let list = KeyExpTree::new(capacity);
-            Self::private_solve::<KeyExpTree<VSegment, i32, IdData>>(
+            Self::private_solve::<KeyExpTree<VSegment, i32, ContourIndex>>(
                 list,
                 shape_count,
                 hole_segments,
@@ -45,7 +45,7 @@ impl ShapeBinder {
         }
     }
 
-    fn private_solve<S: KeyExpCollection<VSegment, i32, IdData>>(
+    fn private_solve<S: KeyExpCollection<VSegment, i32, ContourIndex>>(
         mut scan_list: S,
         shape_count: usize,
         anchors: Vec<IdSegment>,
@@ -53,7 +53,7 @@ impl ShapeBinder {
     ) -> BindSolution {
         let children_count = anchors.len();
 
-        let mut parent_for_child = vec![0; children_count];
+        let mut parent_for_child = vec![usize::MAX; children_count];
         let mut children_count_for_parent = vec![0; shape_count];
 
         let mut j = 0;
@@ -68,13 +68,13 @@ impl ShapeBinder {
                 }
 
                 if id_segment.v_segment.b.x > p.x {
-                    scan_list.insert(id_segment.v_segment, id_segment.data, p.x);
+                    scan_list.insert(id_segment.v_segment, id_segment.contour_index, p.x);
                 }
                 j += 1
             }
 
             let target_id =
-                scan_list.first_less(anchor.v_segment.a.x, IdData::EMPTY, anchor.v_segment);
+                scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
             let parent_index = if target_id.is_hole() {
                 // index is a hole index
                 // at this moment this hole parent is known
@@ -83,7 +83,7 @@ impl ShapeBinder {
                 target_id.index()
             };
 
-            let child_index = anchor.data.index();
+            let child_index = anchor.contour_index.index();
 
             parent_for_child[child_index] = parent_index;
             children_count_for_parent[parent_index] += 1;
@@ -97,19 +97,20 @@ impl ShapeBinder {
 }
 
 pub(crate) trait JoinHoles {
-    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>);
+    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, clockwise: bool);
     fn join_sorted_holes(
         &mut self,
         solver: &Solver,
         holes: Vec<IntContour>,
         anchors: Vec<IdSegment>,
+        clockwise: bool
     );
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>);
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
 
 impl JoinHoles for Vec<IntShape> {
     #[inline]
-    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>) {
+    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -125,14 +126,14 @@ impl JoinHoles for Vec<IntShape> {
             .iter()
             .enumerate()
             .map(|(id, path)| IdSegment {
-                data: IdData::new_hole(id),
+                contour_index: ContourIndex::new_hole(id),
                 v_segment: path.left_bottom_segment(),
             })
             .collect();
 
         hole_segments.sort_by_a_then_by_angle(solver);
 
-        self.scan_join(solver, holes, hole_segments);
+        self.scan_join(solver, holes, hole_segments, clockwise);
     }
 
     #[inline]
@@ -141,6 +142,7 @@ impl JoinHoles for Vec<IntShape> {
         solver: &Solver,
         holes: Vec<IntContour>,
         anchors: Vec<IdSegment>,
+        clockwise: bool
     ) {
         if self.is_empty() || holes.is_empty() {
             return;
@@ -155,21 +157,21 @@ impl JoinHoles for Vec<IntShape> {
 
         let mut anchors = anchors;
         anchors.add_sort_by_angle();
-        self.scan_join(solver, holes, anchors);
+        self.scan_join(solver, holes, anchors, clockwise);
     }
 
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>) {
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool) {
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_hull_segments(&mut segments, i, x_min, x_max);
+            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
         }
 
         for (i, hole) in holes.iter().enumerate() {
-            hole.append_hole_segments(&mut segments, i, x_min, x_max);
+            hole.append_id_segments(&mut segments, ContourIndex::new_hole(i), x_min, x_max, clockwise);
         }
 
         segments.sort_by_a_then_by_angle(solver);
@@ -274,40 +276,40 @@ mod tests {
     fn test_0() {
         let mut shapes = vec![
             vec![vec![
-                IntPoint::new(-3, 2),
-                IntPoint::new(-3, 4),
-                IntPoint::new(-1, 4),
                 IntPoint::new(-1, 2),
+                IntPoint::new(-1, 4),
+                IntPoint::new(-3, 4),
+                IntPoint::new(-3, 2),
             ]],
             vec![vec![
-                IntPoint::new(3, 0),
-                IntPoint::new(2, 3),
-                IntPoint::new(3, 6),
-                IntPoint::new(6, 6),
                 IntPoint::new(6, 0),
+                IntPoint::new(6, 6),
+                IntPoint::new(3, 6),
+                IntPoint::new(2, 3),
+                IntPoint::new(3, 0),
             ]],
             vec![vec![
-                IntPoint::new(0, -2),
                 IntPoint::new(0, -1),
-                IntPoint::new(10, -1),
+                IntPoint::new(0, -2),
                 IntPoint::new(10, -2),
+                IntPoint::new(10, -1),
             ]],
         ];
 
         let holes = vec![
             vec![
-                IntPoint::new(4, 3),
-                IntPoint::new(4, 4),
                 IntPoint::new(2, 3),
+                IntPoint::new(4, 4),
+                IntPoint::new(4, 3),
             ],
             vec![
-                IntPoint::new(3, 1),
-                IntPoint::new(4, 2),
                 IntPoint::new(2, 3),
+                IntPoint::new(4, 2),
+                IntPoint::new(3, 1),
             ],
         ];
 
-        shapes.join_unsorted_holes(&Solver::default(), holes);
+        shapes.join_unsorted_holes(&Solver::default(), holes, false);
 
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[1].len(), 3);

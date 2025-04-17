@@ -1,6 +1,6 @@
 use i_float::int::point::IntPoint;
 
-use crate::bind::segment::{IdData, IdSegment, IdSegments};
+use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
 use crate::core::filter::MaskFilter;
 use crate::core::graph::OverlayGraph;
@@ -69,7 +69,7 @@ impl OverlayGraph {
             link_index += 1;
         }
 
-        shapes.join(&self.solver, holes);
+        shapes.join(&self.solver, holes, true);
 
         shapes
     }
@@ -135,12 +135,12 @@ struct StartVectorPathData {
 }
 
 trait JoinHoles {
-    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>);
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>);
+    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool);
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool);
 }
 
 impl JoinHoles for Vec<VectorShape> {
-    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
+    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -150,11 +150,11 @@ impl JoinHoles for Vec<VectorShape> {
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
         } else {
-            self.scan_join(solver, holes);
+            self.scan_join(solver, holes, clockwise);
         }
     }
 
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>) {
+    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool) {
         let hole_segments: Vec<_> = holes
             .iter()
             .enumerate()
@@ -166,7 +166,7 @@ impl JoinHoles for Vec<VectorShape> {
                     VSegment { a: v.b, b: v.a }
                 };
                 debug_assert_eq!(v_segment, most_left_bottom(path));
-                let id_data = IdData::new_hole(id);
+                let id_data = ContourIndex::new_hole(id);
                 IdSegment::with_segment(id_data, v_segment)
             })
             .collect();
@@ -178,7 +178,7 @@ impl JoinHoles for Vec<VectorShape> {
 
         let mut segments = Vec::new();
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_hull_segments(&mut segments, i, x_min, x_max);
+            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
         }
 
         segments.smart_bin_sort_by(solver, |a, b| a.v_segment.a.x.cmp(&b.v_segment.a.x));

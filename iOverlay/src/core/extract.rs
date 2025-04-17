@@ -1,6 +1,6 @@
 use super::filter::MaskFilter;
 use super::overlay_rule::OverlayRule;
-use crate::bind::segment::{IdData, IdSegment};
+use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
@@ -44,15 +44,15 @@ impl OverlayGraph {
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, min_area: usize) -> IntShapes {
         let visited = self.links.filter_by_rule(overlay_rule);
-        self.extract(visited, overlay_rule, min_area, main_direction)
+        self.extract(visited, overlay_rule, main_direction, min_area)
     }
 
     pub(crate) fn extract(
         &self,
         filter: Vec<bool>,
         overlay_rule: OverlayRule,
-        min_area: usize,
         main_direction: ContourDirection,
+        min_area: usize,
     ) -> IntShapes {
         let clockwise = main_direction == ContourDirection::Clockwise;
 
@@ -106,7 +106,7 @@ impl OverlayGraph {
                 };
 
                 debug_assert_eq!(v_segment, path.left_bottom_segment());
-                let id_data = IdData::new_hole(holes.len());
+                let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment( id_data, v_segment));
                 holes.push(path);
             } else {
@@ -118,7 +118,7 @@ impl OverlayGraph {
             anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
-        shapes.join_sorted_holes(&self.solver, holes, anchors);
+        shapes.join_sorted_holes(&self.solver, holes, anchors, clockwise);
 
         shapes
     }

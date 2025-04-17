@@ -235,6 +235,6 @@ impl Overlay {
         let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);
         let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];
-        graph.extract(filter, overlay_rule, min_area, main_direction)
+        graph.extract(filter, overlay_rule, main_direction, min_area)
     }
 }
