@@ -11,6 +11,16 @@ The iOverlay library provides high-performance boolean operations on polygons, i
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
 
+&nbsp;
+## ⚠️ Version 3.0.0 Direction Change Notice
+Starting from v3.0.0, the default output contour direction has changed:
+- Outer contours are now **counter-clockwise**
+- Holes are **clockwise**
+
+*This aligns with the standard mathematical convention and improves compatibility across other libraries.*
+
+🔧 Note: Output direction is fully configurable — you can still override it if needed.
+    
 ## Table of Contents
 
 - [Features](#features)
@@ -73,16 +83,16 @@ let subj = [
     // main contour
     vec![
       [1.0, 0.0],
-      [1.0, 5.0],
+      [4.0, 0.0],
       [4.0, 5.0],
-      [4.0, 0.0], // the contour is auto closed!
+      [1.0, 5.0], // the contour is auto closed!
     ],
     // hole contour
     vec![
       [2.0, 1.0],
-      [3.0, 1.0],
+      [2.0, 4.0],
       [3.0, 4.0],
-      [2.0, 4.0], // the contour is auto closed!
+      [3.0, 1.0], // the contour is auto closed!
     ],
 ];
 
@@ -106,17 +116,17 @@ The result is a vec of shapes:
 [
     // first shape
     [
-        // main contour (clockwise order)
+        // main contour (counterclockwise order)
         [
-            [0.0, 2.0], [0.0, 3.0], [1.0, 3.0], [1.0, 5.0], [4.0, 5.0], [4.0, 3.0], [5.0, 3.0], [5.0, 2.0], [4.0, 2.0], [4.0, 0.0], [1.0, 0.0], [1.0, 2.0]
+            [0.0, 3.0], [0.0, 2.0], [1.0, 2.0], [1.0, 0.0], [4.0, 0.0], [4.0, 2.0], [5.0, 2.0], [5.0, 3.0], [4.0, 3.0], [4.0, 5.0], [1.0, 5.0], [1.0, 3.0]
         ],
-        // first hole (counterclockwise order)
+        // first hole (clockwise order)
         [
-            [2.0, 2.0], [2.0, 1.0], [3.0, 1.0], [3.0, 2.0]
+            [2.0, 1.0], [2.0, 2.0], [3.0, 2.0], [3.0, 1.0]
         ],
-        // second hole (counterclockwise order)
+        // second hole (clockwise order)
         [
-            [2.0, 4.0], [2.0, 3.0], [3.0, 3.0], [3.0, 4.0]
+            [2.0, 3.0], [2.0, 4.0], [3.0, 4.0], [3.0, 3.0]
         ]
     ]
     // ... other shapes if present
