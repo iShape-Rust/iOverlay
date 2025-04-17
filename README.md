@@ -56,7 +56,7 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^2.0"
+i_overlay = "^3.0"
 ```
 
 &nbsp;
