@@ -15,16 +15,16 @@ mod tests {
             // main contour
             vec![
                 [1.0, 0.0],
-                [1.0, 5.0],
+                [4.0, 0.0],
                 [4.0, 5.0],
-                [4.0, 0.0], // the contour is auto closed!
+                [1.0, 5.0], // the contour is auto closed!
             ],
             // hole contour
             vec![
                 [2.0, 1.0],
-                [3.0, 1.0],
+                [2.0, 4.0],
                 [3.0, 4.0],
-                [2.0, 4.0], // the contour is auto closed!
+                [3.0, 1.0], // the contour is auto closed!
             ],
         ];
 
