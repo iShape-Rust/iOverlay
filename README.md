@@ -139,7 +139,7 @@ The `overlay` function returns a `Vec<Shapes>`:
 - `Vec<Shape>`: A collection of shapes.
 - `Shape`: Represents a shape made up of:
   - `Vec<Contour>`: A list of contours.
-  - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
+  - The first contour is the outer boundary (counterclockwise), and subsequent contours represent holes (clockwise).
 - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 
 **Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
