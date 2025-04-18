@@ -24,16 +24,16 @@
 //!    // main contour
 //!    vec![
 //!         [1.0, 0.0],
-//!         [1.0, 5.0],
+//!         [4.0, 0.0],
 //!         [4.0, 5.0],
-//!         [4.0, 0.0], // the contour is auto closed!
+//!         [1.0, 5.0], // the contour is auto closed!
 //!    ],
 //!    // hole contour
 //!    vec![
 //!         [2.0, 1.0],
-//!         [3.0, 1.0],
+//!         [2.0, 4.0],
 //!         [3.0, 4.0],
-//!         [2.0, 4.0], // the contour is auto closed!
+//!         [3.0, 1.0], // the contour is auto closed!
 //!    ],
 //!];
 //!
@@ -55,17 +55,17 @@
 //! [
 //!     // first shape
 //!     [
-//!         // main contour (clockwise order)
+//!         // main contour (counterclockwise order)
 //!         [
-//!             [0.0, 2.0], [0.0, 3.0], [1.0, 3.0], [1.0, 5.0], [4.0, 5.0], [4.0, 3.0], [5.0, 3.0], [5.0, 2.0], [4.0, 2.0], [4.0, 0.0], [1.0, 0.0], [1.0, 2.0]
+//!             [0.0, 3.0], [0.0, 2.0], [1.0, 2.0], [1.0, 0.0], [4.0, 0.0], [4.0, 2.0], [5.0, 2.0], [5.0, 3.0], [4.0, 3.0], [4.0, 5.0], [1.0, 5.0], [1.0, 3.0]
 //!         ],
-//!         // first hole (counterclockwise order)
+//!         // first hole (clockwise order)
 //!         [
-//!             [2.0, 2.0], [2.0, 1.0], [3.0, 1.0], [3.0, 2.0]
+//!             [2.0, 1.0], [2.0, 2.0], [3.0, 2.0], [3.0, 1.0]
 //!         ],
-//!         // second hole (counterclockwise order)
+//!         // second hole (clockwise order)
 //!         [
-//!             [2.0, 4.0], [2.0, 3.0], [3.0, 3.0], [3.0, 4.0]
+//!             [2.0, 3.0], [2.0, 4.0], [3.0, 4.0], [3.0, 3.0]
 //!         ]
 //!     ]
 //!     // ... other shapes if present
@@ -76,10 +76,10 @@
 //! - `Vec<Shape>`: A collection of shapes.
 //! - `Shape`: Represents a shape made up of:
 //!   - `Vec<Contour>`: A list of contours.
-//!   - The first contour is the outer boundary (clockwise), and subsequent contours represent holes (counterclockwise).
+//!   - The first contour is the outer boundary (counterclockwise), and subsequent contours represent holes (clockwise).
 //! - `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
 //!
-//! **Note**: Outer boundary contours have a clockwise order, and holes have a counterclockwise order. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
+//! **Note**: By default, outer boundaries are **counterclockwise** and holes are **clockwise**—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 //! ## Using a Custom Point Type
 //!
 //! `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
