@@ -8,10 +8,10 @@ use crate::core::nearest_vector::NearestVector;
 use crate::core::node::OverlayNode;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::path::PointPathExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
-use i_shape::int::dedup::DedupContour;
+use i_shape::int::despike::DeSpike;
 use crate::core::overlay::ContourDirection;
 use crate::geom::v_segment::VSegment;
 
@@ -331,13 +331,13 @@ pub(crate) trait Validate {
     fn validate(&mut self, min_area: usize, simplify: bool) -> (bool, bool);
 }
 
-impl Validate for IntPath {
+impl Validate for IntContour {
     #[inline]
     fn validate(&mut self, min_area: usize, simplify: bool) -> (bool, bool) {
         let is_modified = if simplify {
             self.simplify_contour()
         } else {
-            self.dedup_contour()
+            self.remove_spikes()
         };
 
         if self.len() < 3 {
