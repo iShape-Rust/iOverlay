@@ -42,14 +42,14 @@ where
 {
     #[inline]
     fn simplify_shape(&self, fill_rule: FillRule, main_direction: ContourDirection, min_area: T) -> Shapes<P> {
-        let filter = ContourFilter { min_area, simplify: true };
+        let filter = ContourFilter { min_area, simplify_contour: true, clean_result: true };
         FloatOverlay::with_subj(self)
             .overlay_custom(OverlayRule::Subject, fill_rule, main_direction, filter, Default::default())
     }
 
     #[inline]
     fn simplify_shape_with_solver(&self, fill_rule: FillRule, main_direction: ContourDirection, min_area: T, solver: Solver) -> Shapes<P> {
-        let filter = ContourFilter { min_area, simplify: true };
+        let filter = ContourFilter { min_area, simplify_contour: true, clean_result: true };
         FloatOverlay::with_subj(self)
             .overlay_custom(OverlayRule::Subject, fill_rule, main_direction, filter, solver)
     }

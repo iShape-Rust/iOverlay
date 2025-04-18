@@ -142,7 +142,7 @@ impl OverlayGraph {
                 continue;
             }
 
-            let (is_valid, is_modified) = path.validate(min_area);
+            let (is_valid, is_modified) = path.validate(min_area, true);
 
             if !is_valid {
                 link_index += 1;

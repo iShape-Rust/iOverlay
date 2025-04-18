@@ -57,10 +57,7 @@ where
             style,
             is_closed_path,
             ContourDirection::CounterClockwise,
-            ContourFilter {
-                min_area: T::from_float(0.0),
-                simplify: false,
-            },
+            Default::default(),
         )
     }
 
@@ -109,7 +106,7 @@ where
 
         let mut float = shapes.to_float(&adapter);
 
-        if filter.simplify {
+        if filter.clean_result {
             float.simplify_contour(&adapter);
         };
 
@@ -120,7 +117,6 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::overlay::ContourDirection;
-    use crate::float::filter::ContourFilter;
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
     use std::f32::consts::PI;
@@ -213,10 +209,7 @@ mod tests {
             style,
             true,
             ContourDirection::CounterClockwise,
-            ContourFilter {
-                min_area: 0.0,
-                simplify: false,
-            },
+            Default::default(),
         );
         assert_eq!(shapes.len(), 1);
 
@@ -243,10 +236,7 @@ mod tests {
             style,
             false,
             ContourDirection::CounterClockwise,
-            ContourFilter {
-                min_area: 0.0,
-                simplify: false,
-            },
+            Default::default(),
         );
         assert_eq!(shapes.len(), 1);
 
@@ -264,10 +254,7 @@ mod tests {
             style,
             false,
             ContourDirection::CounterClockwise,
-            ContourFilter {
-                min_area: 0.0,
-                simplify: false,
-            },
+            Default::default(),
         );
         assert_eq!(shapes.len(), 1);
 

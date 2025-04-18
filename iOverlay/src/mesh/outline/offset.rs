@@ -54,10 +54,7 @@ where
         self.outline_custom(
             style,
             ContourDirection::CounterClockwise,
-            ContourFilter {
-                min_area: T::from_float(0.0),
-                simplify: false,
-            },
+            Default::default(),
         )
     }
 
@@ -170,12 +167,13 @@ where
                 OverlayRule::Subject,
                 FillRule::Positive,
                 main_direction,
+                true,
                 int_min_area,
                 Default::default(),
             )
         };
 
-        if filter.simplify {
+        if filter.clean_result {
             let mut float = shapes.to_float(&adapter);
             float.simplify_contour(&adapter);
             float

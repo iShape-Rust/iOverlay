@@ -16,10 +16,10 @@ mod tests {
             IntPoint::new(0, 5),
         ];
 
-        let r0 = &path.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0)[0][0];
+        let r0 = &path.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, true, 0)[0][0];
         debug_assert!(r0.area_two() < 0);
 
-        let r1 = &path.simplify(FillRule::NonZero, ContourDirection::Clockwise, 0)[0][0];
+        let r1 = &path.simplify(FillRule::NonZero, ContourDirection::Clockwise, true, 0)[0][0];
         debug_assert!(r1.area_two() > 0);
     }
 
@@ -40,11 +40,11 @@ mod tests {
             ],
         ];
 
-        let r0 = &path.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0)[0];
+        let r0 = &path.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, true, 0)[0];
         debug_assert!(r0[0].area_two() < 0);
         debug_assert!(r0[1].area_two() > 0);
 
-        let r1 = &path.simplify(FillRule::NonZero, ContourDirection::Clockwise, 0)[0];
+        let r1 = &path.simplify(FillRule::NonZero, ContourDirection::Clockwise, true, 0)[0];
         debug_assert!(r1[0].area_two() > 0);
         debug_assert!(r1[1].area_two() < 0);
     }

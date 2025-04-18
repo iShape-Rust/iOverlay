@@ -53,7 +53,8 @@ mod tests {
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let shapes = left_rect.overlay(&right_rect, OverlayRule::Union, FillRule::EvenOdd);
+        let shapes = left_rect
+            .overlay(&right_rect, OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

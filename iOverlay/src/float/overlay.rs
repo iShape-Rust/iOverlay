@@ -191,10 +191,10 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     #[inline]
     pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, filter: ContourFilter<T>, solver: Solver) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, main_direction, area, solver);
+        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, main_direction, filter.simplify_contour, area, solver);
         let mut float = shapes.to_float(&self.adapter);
 
-        if filter.simplify {
+        if filter.clean_result {
             float.simplify_contour(&self.adapter);
         }
 
@@ -205,7 +205,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
 #[cfg(test)]
 mod tests {
     use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::ContourDirection;
     use crate::core::overlay_rule::OverlayRule;
+    use crate::core::solver::Solver;
     use crate::float::overlay::FloatOverlay;
 
     #[test]
@@ -214,7 +216,13 @@ mod tests {
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -226,7 +234,13 @@ mod tests {
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -239,7 +253,13 @@ mod tests {
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(left_rect.as_slice(), right_rect.as_slice())
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -262,7 +282,13 @@ mod tests {
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&rects.as_slice(), &right_bottom_rect)
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -285,7 +311,13 @@ mod tests {
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(rects.as_slice(), right_bottom_rect.as_slice())
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -311,7 +343,13 @@ mod tests {
 
 
         let shapes = FloatOverlay::with_subj_and_clip(&shapes, &right_bottom_rect)
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -338,7 +376,13 @@ mod tests {
 
 
         let shapes = FloatOverlay::with_subj_and_clip(&res_0, &res_1.as_slice())
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+            .overlay_custom(
+                OverlayRule::Union,
+                FillRule::EvenOdd,
+                ContourDirection::CounterClockwise,
+                Default::default(),
+                Solver::default(),
+            );
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

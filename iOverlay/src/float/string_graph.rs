@@ -63,7 +63,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<P, T> {
         let shapes = self.graph.extract_shapes_custom(string_rule, main_direction, area);
         let mut float = shapes.to_float(&self.adapter);
 
-        if filter.simplify {
+        if filter.clean_result {
             float.simplify_contour(&self.adapter);
         }
 

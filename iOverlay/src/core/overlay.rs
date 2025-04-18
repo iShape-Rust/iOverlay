@@ -204,7 +204,7 @@ impl Overlay {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
-        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockwise, 0, Default::default())
+        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockwise, true, 0, Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
@@ -217,6 +217,7 @@ impl Overlay {
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
+    /// - `simplify_contour`: Remove degenerate points from result contours.
     /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
@@ -231,10 +232,10 @@ impl Overlay {
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
-    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, min_area: usize, solver: Solver) -> IntShapes {
+    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, simplify_contour: bool, min_area: usize, solver: Solver) -> IntShapes {
         let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);
         let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];
-        graph.extract(filter, overlay_rule, main_direction, min_area)
+        graph.extract(filter, overlay_rule, main_direction, simplify_contour, min_area)
     }
 }

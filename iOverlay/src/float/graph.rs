@@ -81,10 +81,10 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     #[inline]
     pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, filter: ContourFilter<T>,) -> Shapes<P> {
         let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.graph.extract_shapes_custom(overlay_rule, main_direction, area);
+        let shapes = self.graph.extract_shapes_custom(overlay_rule, main_direction, filter.simplify_contour, area);
         let mut float = shapes.to_float(&self.adapter);
 
-        if filter.simplify {
+        if filter.clean_result {
             float.simplify_contour(&self.adapter);
         }
 

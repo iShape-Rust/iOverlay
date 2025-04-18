@@ -20,22 +20,32 @@ mod tests {
             let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
             let graph = overlay.clone().into_graph_with_solver(fill_rule, solver);
 
-            let subject_0 =
-                graph.extract_shapes_custom(OverlayRule::Subject, ContourDirection::Clockwise, 0);
+            let subject_0 = graph.extract_shapes_custom(
+                OverlayRule::Subject,
+                ContourDirection::Clockwise,
+                true,
+                0,
+            );
             let subject_1 = overlay.clone().overlay_custom(
                 OverlayRule::Subject,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
 
-            let clip_0 =
-                graph.extract_shapes_custom(OverlayRule::Clip, ContourDirection::Clockwise, 0);
+            let clip_0 = graph.extract_shapes_custom(
+                OverlayRule::Clip,
+                ContourDirection::Clockwise,
+                true,
+                0,
+            );
             let clip_1 = overlay.clone().overlay_custom(
                 OverlayRule::Clip,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
@@ -43,12 +53,14 @@ mod tests {
             let difference_0 = graph.extract_shapes_custom(
                 OverlayRule::Difference,
                 ContourDirection::Clockwise,
+                true,
                 0,
             );
             let difference_1 = overlay.clone().overlay_custom(
                 OverlayRule::Difference,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
@@ -56,42 +68,55 @@ mod tests {
             let inverse_difference_0 = graph.extract_shapes_custom(
                 OverlayRule::InverseDifference,
                 ContourDirection::Clockwise,
+                true,
                 0,
             );
             let inverse_difference_1 = overlay.clone().overlay_custom(
                 OverlayRule::InverseDifference,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
 
-            let intersect_0 =
-                graph.extract_shapes_custom(OverlayRule::Intersect, ContourDirection::Clockwise, 0);
+            let intersect_0 = graph.extract_shapes_custom(
+                OverlayRule::Intersect,
+                ContourDirection::Clockwise,
+                true,
+                0,
+            );
             let intersect_1 = overlay.clone().overlay_custom(
                 OverlayRule::Intersect,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
 
-            let union_0 =
-                graph.extract_shapes_custom(OverlayRule::Union, ContourDirection::Clockwise, 0);
+            let union_0 = graph.extract_shapes_custom(
+                OverlayRule::Union,
+                ContourDirection::Clockwise,
+                true,
+                0,
+            );
             let union_1 = overlay.clone().overlay_custom(
                 OverlayRule::Union,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
 
             let xor_0 =
-                graph.extract_shapes_custom(OverlayRule::Xor, ContourDirection::Clockwise, 0);
+                graph.extract_shapes_custom(OverlayRule::Xor, ContourDirection::Clockwise, true, 0);
             let xor_1 = overlay.clone().overlay_custom(
                 OverlayRule::Xor,
                 fill_rule,
                 ContourDirection::Clockwise,
+                true,
                 0,
                 Default::default(),
             );
@@ -947,7 +972,7 @@ mod tests {
     //
     // #[test]
     // fn test_debug_2() {
-        // debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::TREE);
-        // print_json(0, FillRule::NonZero)
+    // debug_execute(2, OverlayRule::Union, FillRule::NonZero, Solver::TREE);
+    // print_json(0, FillRule::NonZero)
     // }
 }
