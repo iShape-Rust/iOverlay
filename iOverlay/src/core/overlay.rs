@@ -2,12 +2,12 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
-use i_float::int::point::IntPoint;
-use i_shape::int::count::PointsCount;
-use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay_rule::OverlayRule;
+use i_float::int::point::IntPoint;
+use i_shape::int::count::PointsCount;
+use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
@@ -16,6 +16,26 @@ use crate::segm::winding_count::ShapeCountBoolean;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::graph::OverlayGraph;
+
+/// Configuration options for polygon Boolean operations using [`Overlay`].
+///
+/// These options control precision, simplification, and contour filtering
+/// during the Boolean operation process. You can use this to adjust output
+/// direction, eliminate small artifacts, or retain collinear points.
+#[derive(Debug, Clone, Copy)]
+pub struct IntOverlayOptions {
+    /// Preserve collinear points in the input before Boolean operations.
+    pub preserve_input_collinear: bool,
+
+    /// Desired direction for output contours (default outer: CCW / hole: CW).
+    pub output_direction: ContourDirection,
+
+    /// Preserve collinear points in the output after Boolean operations.
+    pub preserve_output_collinear: bool,
+
+    /// Minimum area threshold to include a contour in the result.
+    pub min_output_area: usize,
+}
 
 /// Specifies the type of shape being processed, influencing how the shape participates in Boolean operations.
 /// Note: All operations except for `Difference` are commutative, meaning the order of `Subject` and `Clip` shapes does not impact the outcome.
@@ -31,12 +51,13 @@ pub enum ShapeType {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContourDirection {
     CounterClockwise,
-    Clockwise
+    Clockwise,
 }
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
 pub struct Overlay {
+    pub options: IntOverlayOptions,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
 }
 
@@ -46,6 +67,18 @@ impl Overlay {
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
     pub fn new(capacity: usize) -> Self {
         Self {
+            options: Default::default(),
+            segments: Vec::with_capacity(capacity),
+        }
+    }
+
+    /// Constructs a new `Overlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
+    /// This pre-allocation helps in optimizing memory usage and performance.
+    /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_options(capacity: usize, options: IntOverlayOptions) -> Self {
+        Self {
+            options,
             segments: Vec::with_capacity(capacity),
         }
     }
@@ -61,10 +94,40 @@ impl Overlay {
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
+    /// - `subj`: An array of contours that together define the subject.
+    /// - `clip`: An array of contours that together define the clip.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_contour_options(
+        subj: &[IntPoint],
+        clip: &[IntPoint],
+        options: IntOverlayOptions,
+    ) -> Self {
+        let mut overlay = Self::with_options(subj.len() + clip.len(), options);
+        overlay.add_contour(subj, ShapeType::Subject);
+        overlay.add_contour(clip, ShapeType::Clip);
+        overlay
+    }
+
+    /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
     /// - `subj`: An array of contours that together define the subject shape.
     /// - `clip`: An array of contours that together define the clip shape.
     pub fn with_contours(subj: &[IntContour], clip: &[IntContour]) -> Self {
         let mut overlay = Self::new(subj.points_count() + clip.points_count());
+        overlay.add_contours(subj, ShapeType::Subject);
+        overlay.add_contours(clip, ShapeType::Clip);
+        overlay
+    }
+
+    /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
+    /// - `subj`: An array of contours that together define the subject shape.
+    /// - `clip`: An array of contours that together define the clip shape.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_contours_options(
+        subj: &[IntContour],
+        clip: &[IntContour],
+        options: IntOverlayOptions,
+    ) -> Self {
+        let mut overlay = Self::with_options(subj.points_count() + clip.points_count(), options);
         overlay.add_contours(subj, ShapeType::Subject);
         overlay.add_contours(clip, ShapeType::Clip);
         overlay
@@ -80,14 +143,30 @@ impl Overlay {
         overlay
     }
 
+    /// Creates a new `Overlay` instance and initializes it with subject and clip shapes.
+    /// - `subj`: An array of shapes to be used as the subject in the overlay operation.
+    /// - `clip`: An array of shapes to be used as the clip in the overlay operation.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_shapes_options(
+        subj: &[IntShape],
+        clip: &[IntShape],
+        options: IntOverlayOptions,
+    ) -> Self {
+        let mut overlay = Self::with_options(subj.points_count() + clip.points_count(), options);
+        overlay.add_shapes(subj, ShapeType::Subject);
+        overlay.add_shapes(clip, ShapeType::Clip);
+        overlay
+    }
+
     /// Adds a path to the overlay using an iterator, allowing for more flexible path input.
     /// This function is particularly useful when working with dynamically generated paths or
     /// when paths are not directly stored in a collection.
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
-        self.segments.append_path_iter(iter, shape_type);
+    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+        self.segments
+            .append_path_iter(iter, shape_type, self.options.preserve_input_collinear);
     }
 
     /// Adds a single path to the overlay as either subject or clip paths.
@@ -95,7 +174,11 @@ impl Overlay {
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_contour(&mut self, contour: &[IntPoint], shape_type: ShapeType) {
-        self.segments.append_path_iter(contour.iter().copied(), shape_type);
+        self.segments.append_path_iter(
+            contour.iter().copied(),
+            shape_type,
+            self.options.preserve_input_collinear,
+        );
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
@@ -129,8 +212,18 @@ impl Overlay {
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
     /// - `solver`: Type of solver to use.
-    pub fn into_shape_vectors(self, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<VectorShape> {
-        let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);
+    pub fn into_shape_vectors(
+        self,
+        fill_rule: FillRule,
+        overlay_rule: OverlayRule,
+        solver: Solver,
+    ) -> Vec<VectorShape> {
+        let links = OverlayLinkBuilder::build_with_overlay_filter(
+            self.segments,
+            fill_rule,
+            overlay_rule,
+            solver,
+        );
         let graph = OverlayGraph::new(solver, links);
         graph.extract_shape_vectors(overlay_rule)
     }
@@ -168,11 +261,6 @@ impl Overlay {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
-    /// ### Defaults:
-    /// - `main_direction` is set to `ContourDirection::CounterClockWise`.
-    ///   Holes will automatically use the opposite direction (clockwise). Impact on **output** only!
-    /// - `min_area` is `0`, meaning no area filtering is applied.
-    /// - `solver` uses `Default::default()`
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
     /// The output is a `IntShapes`, where:
@@ -204,7 +292,12 @@ impl Overlay {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
-        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockwise, true, 0, Default::default())
+        self.overlay_custom(
+            overlay_rule,
+            fill_rule,
+            Default::default(),
+            Default::default(),
+        )
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
@@ -216,9 +309,7 @@ impl Overlay {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
-    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `simplify_contour`: Remove degenerate points from result contours.
-    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - `options`: Adjust custom behavior.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
     /// The output is a `IntShapes`, where:
@@ -232,10 +323,51 @@ impl Overlay {
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
-    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, simplify_contour: bool, min_area: usize, solver: Solver) -> IntShapes {
-        let links = OverlayLinkBuilder::build_with_overlay_filter(self.segments, fill_rule, overlay_rule, solver);
+    pub fn overlay_custom(
+        self,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+        options: IntOverlayOptions,
+        solver: Solver,
+    ) -> IntShapes {
+        let links = OverlayLinkBuilder::build_with_overlay_filter(
+            self.segments,
+            fill_rule,
+            overlay_rule,
+            solver,
+        );
         let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];
-        graph.extract(filter, overlay_rule, main_direction, simplify_contour, min_area)
+        graph.extract(filter, overlay_rule, options)
+    }
+}
+
+impl Default for IntOverlayOptions {
+    fn default() -> Self {
+        Self {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: false,
+            min_output_area: 0,
+        }
+    }
+}
+
+impl IntOverlayOptions {
+    pub fn keep_all_points() -> Self {
+        Self {
+            preserve_input_collinear: true,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0,
+        }
+    }
+    pub fn keep_output_points() -> Self {
+        Self {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0,
+        }
     }
 }

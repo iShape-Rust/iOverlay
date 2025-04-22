@@ -1,6 +1,6 @@
 use crate::bind::solver::JoinHoles;
 use crate::core::nearest_vector::NearestVector;
-use crate::core::overlay::ContourDirection;
+use crate::core::overlay::{ContourDirection, IntOverlayOptions};
 use crate::segm::segment::SUBJ_TOP;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
@@ -22,8 +22,7 @@ impl StringGraph {
     pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
         self.extract_shapes_custom(
             string_rule,
-            ContourDirection::CounterClockwise,
-            0,
+            Default::default(),
         )
     }
 
@@ -42,10 +41,9 @@ impl StringGraph {
     pub fn extract_shapes_custom(
         &self,
         string_rule: StringRule,
-        main_direction: ContourDirection,
-        min_area: usize,
+        options: IntOverlayOptions,
     ) -> IntShapes {
-        let clockwise = main_direction == ContourDirection::Clockwise;
+        let clockwise = options.output_direction == ContourDirection::Clockwise;
         let mut fills = self.filter(string_rule);
         let mut shapes= Vec::new();
         let mut holes= Vec::new();
@@ -61,7 +59,7 @@ impl StringGraph {
             let direction = fill & SUBJ_TOP == SUBJ_TOP;
             let paths = self
                 .get_paths(link_index, direction, &mut fills)
-                .split_loops(min_area);
+                .split_loops(options.min_output_area);
 
             for mut path in paths.into_iter() {
                 let order = path.is_clockwise_ordered();
@@ -189,7 +187,6 @@ mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::string::slice::IntSlice;
     use i_float::int::point::IntPoint;
-    use crate::core::overlay::ContourDirection;
     use crate::string::overlay::StringOverlay;
     use crate::string::rule::StringRule;
 
@@ -267,8 +264,7 @@ mod tests {
 
         let r = graph.extract_shapes_custom(
             StringRule::Slice,
-            ContourDirection::CounterClockwise,
-            0,
+            Default::default(),
         );
 
         assert_eq!(r.len(), 2);

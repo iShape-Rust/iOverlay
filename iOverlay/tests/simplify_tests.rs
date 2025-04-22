@@ -3,7 +3,7 @@ mod tests {
     use i_float::int::point::IntPoint;
     use i_shape::int::shape::IntShape;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::{ContourDirection, Overlay, ShapeType};
+    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::simplify::Simplify;
     use i_overlay::core::solver::{Precision, Solver};
@@ -20,7 +20,14 @@ mod tests {
                 ].to_vec()
             ].to_vec();
 
-        let simplified = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, true, 0);
+        let op = IntOverlayOptions {
+            preserve_input_collinear: true,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0,
+        };
+
+        let simplified = paths.simplify(FillRule::NonZero, op);
 
         assert_eq!(simplified.len(), 1);
         assert_eq!(simplified[0].len(), 1);
@@ -40,7 +47,14 @@ mod tests {
                 square(IntPoint::new(10, 10))
             ].to_vec();
 
-        let simplified = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, true, 0);
+        let op = IntOverlayOptions {
+            preserve_input_collinear: true,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0,
+        };
+
+        let simplified = paths.simplify(FillRule::NonZero, op);
 
         assert_eq!(simplified.len(), 1);
         assert_eq!(simplified[0].len(), 2);
@@ -60,7 +74,14 @@ mod tests {
                 square_shape(IntPoint::new(10, 10))
             ].to_vec();
 
-        let simplified = shapes.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, true, 0);
+        let op = IntOverlayOptions {
+            preserve_input_collinear: true,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0,
+        };
+
+        let simplified = shapes.simplify(FillRule::NonZero, op);
 
         assert_eq!(simplified.len(), 1);
         assert_eq!(simplified[0].len(), 2);
@@ -109,7 +130,14 @@ mod tests {
             ]
         ];
 
-        let simple = paths.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, false, 0);
+        let op = IntOverlayOptions {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0,
+        };
+
+        let simple = paths.simplify(FillRule::NonZero, op);
 
         assert_eq!(simple.len(), 1);
         assert_eq!(simple[0].len(), 2);

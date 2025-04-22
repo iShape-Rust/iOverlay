@@ -2,17 +2,16 @@
 //! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
 //! based on the overlay rule applied.
 
+use crate::core::graph::OverlayGraph;
+use crate::core::overlay_rule::OverlayRule;
+use crate::float::overlay::OverlayOptions;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::core::graph::OverlayGraph;
-use crate::core::overlay::ContourDirection;
-use crate::core::overlay_rule::OverlayRule;
-use crate::float::filter::ContourFilter;
-
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
@@ -55,7 +54,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Shapes<P> {
-        self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockwise, Default::default())
+        self.extract_shapes_custom(overlay_rule, Default::default())
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes.
@@ -63,10 +62,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// # Parameters
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
-    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
-    ///     - `min_area`: Only retain contours with an area larger than this.
-    ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
+    /// - `options`: Adjust custom behavior.
     ///
     /// # Returns
     /// A `Shapes<P>` collection, representing the geometric result of the applied overlay rule.
@@ -79,13 +75,22 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<P, T> {
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
-    pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, filter: ContourFilter<T>,) -> Shapes<P> {
-        let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.graph.extract_shapes_custom(overlay_rule, main_direction, filter.simplify_contour, area);
+    pub fn extract_shapes_custom(
+        &self,
+        overlay_rule: OverlayRule,
+        options: OverlayOptions<T>,
+    ) -> Shapes<P> {
+        let shapes = self
+            .graph
+            .extract_shapes_custom(overlay_rule, options.int_options(&self.adapter));
         let mut float = shapes.to_float(&self.adapter);
 
-        if filter.clean_result {
-            float.simplify_contour(&self.adapter);
+        if options.clean_result {
+            if options.preserve_output_collinear {
+                float.despike_contour(&self.adapter);
+            } else {
+                float.simplify_contour(&self.adapter);
+            }
         }
 
         float

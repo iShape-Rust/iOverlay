@@ -7,14 +7,33 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
+use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
-use crate::float::filter::ContourFilter;
 use crate::float::graph::FloatOverlayGraph;
 use crate::float::source::resource::OverlayResource;
+
+#[derive(Debug, Clone, Copy)]
+pub struct OverlayOptions<T: FloatNumber> {
+    /// Preserve collinear points in the input before Boolean operations.
+    pub preserve_input_collinear: bool,
+
+    /// Desired direction for output contours (default outer: CCW / hole: CW).
+    pub output_direction: ContourDirection,
+
+    /// Preserve collinear points in the output after Boolean operations.
+    pub preserve_output_collinear: bool,
+
+    /// Minimum area threshold to include a contour in the result.
+    pub min_output_area: T,
+
+    /// If true, the result will be cleaned from precision-related issues
+    /// such as duplicate or nearly identical points. Especially useful for `f32` coordinates.
+    pub clean_result: bool,
+}
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
 #[derive(Clone)]
@@ -34,6 +53,19 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     #[inline]
     pub fn with_adapter(adapter: FloatPointAdapter<P, T>, capacity: usize) -> Self {
         Self { overlay: Overlay::new(capacity), adapter }
+    }
+
+    /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
+    /// by converting float-based geometry to integer space, using a pre-configured adapter.
+    ///
+    /// - `adapter`: A `FloatPointAdapter` instance responsible for coordinate conversion between
+    ///   float and integer values, ensuring accuracy during geometric transformations.
+    /// - `options`: Adjust custom behavior.
+    /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
+    ///   segments for efficient memory allocation.
+    #[inline]
+    pub fn with_adapter_and_options(adapter: FloatPointAdapter<P, T>, options: OverlayOptions<T>, capacity: usize) -> Self {
+        Self { overlay: Overlay::with_options(capacity, options.int_options(&adapter)), adapter }
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
@@ -62,6 +94,31 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
     /// - `subj`: A `OverlayResource` that define the subject.
+    /// - `clip`: A `OverlayResource` that define the clip.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_subj_and_clip_and_options<R0, R1>(subj: &R0, clip: &R1, options: OverlayOptions<T>) -> Self
+    where
+        R0: OverlayResource<P, T> +?Sized,
+        R1: OverlayResource<P, T> +?Sized,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let adapter = FloatPointAdapter::with_iter(iter);
+        let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
+        let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
+
+        Self::with_adapter_and_options(adapter, options, subj_capacity + clip_capacity)
+            .unsafe_add_source(subj, ShapeType::Subject)
+            .unsafe_add_source(clip, ShapeType::Clip)
+    }
+
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// - `subj`: A `OverlayResource` that define the subject.
     ///   `OverlayResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
@@ -77,6 +134,27 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
         Self::with_adapter(adapter, subj_capacity)
+            .unsafe_add_source(subj, ShapeType::Subject)
+    }
+
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// - `subj`: A `OverlayResource` that define the subject.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_subj_and_options<R>(subj: &R, options: OverlayOptions<T>) -> Self
+    where
+        R: OverlayResource<P, T> +?Sized,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        let iter = subj.iter_paths().flatten();
+        let adapter = FloatPointAdapter::with_iter(iter);
+        let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
+
+        Self::with_adapter_and_options(adapter, options, subj_capacity)
             .unsafe_add_source(subj, ShapeType::Subject)
     }
 
@@ -160,7 +238,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        self.overlay_custom(overlay_rule, fill_rule, ContourDirection::CounterClockwise, Default::default(), Default::default())
+        self.overlay_custom(overlay_rule, fill_rule, Default::default(), Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
@@ -172,10 +250,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `filter`: `ContourFilter<T>` for optional contour filtering and simplification:
-    ///     - `min_area`: Only retain contours with an area larger than this.
-    ///     - `simplify`: Simplifies contours and removes degenerate edges if `true`.
+    /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
     /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
@@ -189,23 +264,50 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, main_direction: ContourDirection, filter: ContourFilter<T>, solver: Solver) -> Shapes<P> {
-        let area = self.adapter.sqr_float_to_int(filter.min_area);
-        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, main_direction, filter.simplify_contour, area, solver);
+    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
+        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, options.int_options(&self.adapter), solver);
         let mut float = shapes.to_float(&self.adapter);
 
-        if filter.clean_result {
-            float.simplify_contour(&self.adapter);
+        if options.clean_result {
+            if options.preserve_output_collinear {
+                float.despike_contour(&self.adapter);
+            } else {
+                float.simplify_contour(&self.adapter);
+            }
         }
 
         float
     }
 }
 
+impl<T: FloatNumber> Default for OverlayOptions<T> {
+    fn default() -> Self {
+        // f32 precision is not enough to cover i32
+        let clean_result = T::bit_width() <= 32;
+        Self {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: false,
+            min_output_area: T::from_float(0.0),
+            clean_result,
+        }
+    }
+}
+
+impl<T: FloatNumber> OverlayOptions<T> {
+    pub(crate) fn int_options<P: FloatPointCompatible<T>>(&self, adapter: &FloatPointAdapter<P, T>) -> IntOverlayOptions {
+        IntOverlayOptions {
+            preserve_input_collinear: self.preserve_input_collinear,
+            output_direction: self.output_direction,
+            preserve_output_collinear: self.preserve_output_collinear,
+            min_output_area: adapter.sqr_float_to_int(self.min_output_area),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::core::fill_rule::FillRule;
-    use crate::core::overlay::ContourDirection;
     use crate::core::overlay_rule::OverlayRule;
     use crate::core::solver::Solver;
     use crate::float::overlay::FloatOverlay;
@@ -219,7 +321,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );
@@ -233,11 +334,12 @@ mod tests {
     fn test_contour_vec() {
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+
+
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );
@@ -256,7 +358,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );
@@ -285,7 +386,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );
@@ -314,7 +414,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );
@@ -346,7 +445,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );
@@ -379,7 +477,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
                 Default::default(),
                 Solver::default(),
             );

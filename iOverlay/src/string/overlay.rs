@@ -72,7 +72,7 @@ impl StringOverlay {
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     #[inline]
     pub fn add_shape_contour_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I) {
-        self.segments.append_path_iter(iter, ShapeType::Subject);
+        self.segments.append_path_iter(iter, ShapeType::Subject, false);
     }
 
     /// Adds a single path to the overlay as a shape paths.

@@ -6,14 +6,13 @@ use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::node::OverlayNode;
+use crate::core::overlay::{ContourDirection, IntOverlayOptions};
+use crate::geom::v_segment::VSegment;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::PointPathExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
-use i_shape::int::despike::DeSpike;
-use crate::core::overlay::ContourDirection;
-use crate::geom::v_segment::VSegment;
 
 impl OverlayGraph {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -28,14 +27,12 @@ impl OverlayGraph {
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> IntShapes {
-        self.extract_shapes_custom(overlay_rule, ContourDirection::CounterClockwise, true,0)
+        self.extract_shapes_custom(overlay_rule, Default::default())
     }
 
     /// Extracts shapes from the overlay graph similar to `extract_shapes`, but with an additional constraint on the minimum area of the shapes. This is useful for filtering out shapes that do not meet a certain size threshold, which can be beneficial for eliminating artifacts or noise from the output.
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
-    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `simplify_contour`: Remove degenerate points from result contours.
-    /// - `min_area`: The minimum area threshold for shapes to be included in the result. Shapes with an area smaller than this value will be excluded.
+    /// - `options`: Adjust custom behavior.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
     /// The output is a `IntShapes`, where:
@@ -44,20 +41,22 @@ impl OverlayGraph {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    pub fn extract_shapes_custom(&self, overlay_rule: OverlayRule, main_direction: ContourDirection, simplify_contour: bool, min_area: usize) -> IntShapes {
+    pub fn extract_shapes_custom(
+        &self,
+        overlay_rule: OverlayRule,
+        options: IntOverlayOptions,
+    ) -> IntShapes {
         let visited = self.links.filter_by_rule(overlay_rule);
-        self.extract(visited, overlay_rule, main_direction, simplify_contour, min_area)
+        self.extract(visited, overlay_rule, options)
     }
 
     pub(crate) fn extract(
         &self,
         filter: Vec<bool>,
         overlay_rule: OverlayRule,
-        main_direction: ContourDirection,
-        simplify_contour: bool,
-        min_area: usize,
+        options: IntOverlayOptions,
     ) -> IntShapes {
-        let clockwise = main_direction == ContourDirection::Clockwise;
+        let clockwise = options.output_direction == ContourDirection::Clockwise;
 
         let mut buffer = filter;
         let visited = buffer.as_mut_slice();
@@ -81,7 +80,8 @@ impl OverlayGraph {
             let start_data = StartPathData::new(direction, link, left_top_link);
 
             let mut contour = self.get_contour(&start_data, direction, visited);
-            let (is_valid, is_modified) = contour.validate(min_area, simplify_contour);
+            let (is_valid, is_modified) =
+                contour.validate(options.min_output_area, options.preserve_output_collinear);
 
             if !is_valid {
                 link_index += 1;
@@ -110,7 +110,7 @@ impl OverlayGraph {
 
                 debug_assert_eq!(v_segment, contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
-                anchors.push(IdSegment::with_segment( id_data, v_segment));
+                anchors.push(IdSegment::with_segment(id_data, v_segment));
                 holes.push(contour);
             } else {
                 shapes.push(vec![contour]);
@@ -328,30 +328,35 @@ impl StartPathData {
 }
 
 pub(crate) trait Validate {
-    fn validate(&mut self, min_area: usize, simplify: bool) -> (bool, bool);
+    fn validate(&mut self, min_output_area: usize, preserve_output_collinear: bool)
+    -> (bool, bool);
 }
 
 impl Validate for IntContour {
     #[inline]
-    fn validate(&mut self, min_area: usize, simplify: bool) -> (bool, bool) {
-        let is_modified = if simplify {
+    fn validate(
+        &mut self,
+        min_output_area: usize,
+        preserve_output_collinear: bool,
+    ) -> (bool, bool) {
+        let is_modified = if !preserve_output_collinear {
             self.simplify_contour()
         } else {
-            self.remove_spikes()
+            false
         };
 
         if self.len() < 3 {
             return (false, is_modified);
         }
 
-        if min_area == 0 {
+        if min_output_area == 0 {
             return (true, is_modified);
         }
 
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() as usize >> 1;
 
-        (abs_area >= min_area, is_modified)
+        (abs_area >= min_output_area, is_modified)
     }
 }
 

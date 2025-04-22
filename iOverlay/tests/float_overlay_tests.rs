@@ -6,11 +6,10 @@ mod tests {
     use i_overlay::core::overlay::{ContourDirection, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::float::clip::FloatClip;
-    use i_overlay::float::overlay::FloatOverlay;
+    use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_overlay::float::slice::FloatSlice;
     use i_overlay::string::clip::ClipRule;
     use rand::Rng;
-    use i_overlay::float::filter::ContourFilter;
 
     #[derive(Clone, Copy)]
     struct FPoint {
@@ -682,10 +681,11 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Intersect,
                 FillRule::EvenOdd,
-                ContourDirection::CounterClockwise,
-                ContourFilter {
-                    min_area: 0.0,
-                    simplify_contour: false,
+                OverlayOptions {
+                    preserve_input_collinear: false,
+                    output_direction: ContourDirection::CounterClockwise,
+                    preserve_output_collinear: false,
+                    min_output_area: 0.0,
                     clean_result: false,
                 },
                 Default::default(),

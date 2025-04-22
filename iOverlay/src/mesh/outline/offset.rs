@@ -2,7 +2,6 @@ use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
-use crate::float::filter::ContourFilter;
 use crate::float::source::resource::OverlayResource;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
@@ -13,7 +12,9 @@ use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::area::IntArea;
+use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use crate::float::overlay::OverlayOptions;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -28,10 +29,7 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes with optional filtering.
     ///
     /// - `style`: Defines the outline properties, including offset, and joins.
-    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `filter`: Defines optional contour filtering and simplification:
-    ///     - `min_area`: Retains only contours with an area larger than this value.
-    ///     - `simplify`: If `true`, simplifies contours and removes degenerate edges.
+    /// - `options`: Adjust custom behavior.
     ///
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
@@ -39,8 +37,7 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn outline_custom(
         &self,
         style: OutlineStyle<T>,
-        main_direction: ContourDirection,
-        filter: ContourFilter<T>,
+        options: OverlayOptions<T>,
     ) -> Shapes<P>;
 }
 
@@ -53,7 +50,6 @@ where
     fn outline(&self, style: OutlineStyle<T>) -> Shapes<P> {
         self.outline_custom(
             style,
-            ContourDirection::CounterClockwise,
             Default::default(),
         )
     }
@@ -61,8 +57,7 @@ where
     fn outline_custom(
         &self,
         style: OutlineStyle<T>,
-        main_direction: ContourDirection,
-        filter: ContourFilter<T>,
+        options: OverlayOptions<T>,
     ) -> Shapes<P> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
@@ -96,7 +91,7 @@ where
             // FloatPointAdapter::with_scale(rect, 1.0) // Debug !!!
         };
 
-        let int_min_area = adapter.sqr_float_to_int(filter.min_area).max(1);
+        let int_min_area = adapter.sqr_float_to_int(options.min_output_area).max(1);
 
         let shapes = if paths_count <= 1 {
             // fast solution for a single path
@@ -118,7 +113,7 @@ where
             outer_builder.build(path, &adapter, &mut segments);
 
             OverlayGraph::offset_graph_with_solver(segments, Default::default())
-                .extract_offset(main_direction, int_min_area)
+                .extract_offset(options.output_direction, int_min_area)
         } else {
             let total_capacity = outer_builder.capacity(points_count);
 
@@ -166,16 +161,18 @@ where
             overlay.overlay_custom(
                 OverlayRule::Subject,
                 FillRule::Positive,
-                main_direction,
-                true,
-                int_min_area,
+                options.int_options(&adapter),
                 Default::default(),
             )
         };
 
-        if filter.clean_result {
+        if options.clean_result {
             let mut float = shapes.to_float(&adapter);
-            float.simplify_contour(&adapter);
+            if options.preserve_output_collinear {
+                float.despike_contour(&adapter);
+            } else {
+                float.simplify_contour(&adapter);
+            }
             float
         } else {
             shapes.to_float(&adapter)

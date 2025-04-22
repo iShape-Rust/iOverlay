@@ -7,7 +7,7 @@ mod tests {
     use crate::util::overlay;
     use crate::util::overlay::JsonPrint;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::{ContourDirection, Overlay};
+    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
 
@@ -16,108 +16,72 @@ mod tests {
     fn execute(index: usize) {
         let test = BooleanTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
+
+        let options = IntOverlayOptions {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::Clockwise,
+            preserve_output_collinear: false,
+            min_output_area: 0,
+        };
+
         for solver in SOLVERS {
             let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
             let graph = overlay.clone().into_graph_with_solver(fill_rule, solver);
 
-            let subject_0 = graph.extract_shapes_custom(
-                OverlayRule::Subject,
-                ContourDirection::Clockwise,
-                true,
-                0,
-            );
+            let subject_0 = graph.extract_shapes_custom(OverlayRule::Subject, options);
             let subject_1 = overlay.clone().overlay_custom(
                 OverlayRule::Subject,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
-            let clip_0 = graph.extract_shapes_custom(
-                OverlayRule::Clip,
-                ContourDirection::Clockwise,
-                true,
-                0,
-            );
+            let clip_0 = graph.extract_shapes_custom(OverlayRule::Clip, options);
             let clip_1 = overlay.clone().overlay_custom(
                 OverlayRule::Clip,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
-            let difference_0 = graph.extract_shapes_custom(
-                OverlayRule::Difference,
-                ContourDirection::Clockwise,
-                true,
-                0,
-            );
+            let difference_0 = graph.extract_shapes_custom(OverlayRule::Difference, options);
             let difference_1 = overlay.clone().overlay_custom(
                 OverlayRule::Difference,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
-            let inverse_difference_0 = graph.extract_shapes_custom(
-                OverlayRule::InverseDifference,
-                ContourDirection::Clockwise,
-                true,
-                0,
-            );
+            let inverse_difference_0 =
+                graph.extract_shapes_custom(OverlayRule::InverseDifference, options);
             let inverse_difference_1 = overlay.clone().overlay_custom(
                 OverlayRule::InverseDifference,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
-            let intersect_0 = graph.extract_shapes_custom(
-                OverlayRule::Intersect,
-                ContourDirection::Clockwise,
-                true,
-                0,
-            );
+            let intersect_0 = graph.extract_shapes_custom(OverlayRule::Intersect, options);
             let intersect_1 = overlay.clone().overlay_custom(
                 OverlayRule::Intersect,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
-            let union_0 = graph.extract_shapes_custom(
-                OverlayRule::Union,
-                ContourDirection::Clockwise,
-                true,
-                0,
-            );
+            let union_0 = graph.extract_shapes_custom(OverlayRule::Union, options);
             let union_1 = overlay.clone().overlay_custom(
                 OverlayRule::Union,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
-            let xor_0 =
-                graph.extract_shapes_custom(OverlayRule::Xor, ContourDirection::Clockwise, true, 0);
+            let xor_0 = graph.extract_shapes_custom(OverlayRule::Xor, options);
             let xor_1 = overlay.clone().overlay_custom(
                 OverlayRule::Xor,
                 fill_rule,
-                ContourDirection::Clockwise,
-                true,
-                0,
+                options,
                 Default::default(),
             );
 
