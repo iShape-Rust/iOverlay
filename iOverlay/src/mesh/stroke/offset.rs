@@ -1,6 +1,5 @@
 use crate::core::graph::OverlayGraph;
-use crate::core::overlay::ContourDirection;
-use crate::float::filter::ContourFilter;
+use crate::float::overlay::OverlayOptions;
 use crate::float::source::resource::OverlayResource;
 use crate::mesh::stroke::builder::StrokeBuilder;
 use crate::mesh::style::StrokeStyle;
@@ -10,6 +9,7 @@ use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -28,10 +28,7 @@ pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     ///
     /// - `style`: Defines the stroke properties, including width, line caps, and joins.
     /// - `is_closed_path`: Specifies whether the path is closed (true) or open (false).
-    /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
-    /// - `filter`: Defines optional contour filtering and simplification:
-    ///     - `min_area`: Retains only contours with an area larger than this value.
-    ///     - `simplify`: If `true`, simplifies contours and removes degenerate edges.
+    /// - `options`: Adjust custom behavior.
     ///
     /// # Returns
     /// A collection of `Shapes<P>` representing the stroke geometry.
@@ -41,8 +38,7 @@ pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
         &self,
         style: StrokeStyle<P, T>,
         is_closed_path: bool,
-        main_direction: ContourDirection,
-        filter: ContourFilter<T>,
+        options: OverlayOptions<T>,
     ) -> Shapes<P>;
 }
 
@@ -53,20 +49,14 @@ where
     T: FloatNumber + 'static,
 {
     fn stroke(&self, style: StrokeStyle<P, T>, is_closed_path: bool) -> Shapes<P> {
-        self.stroke_custom(
-            style,
-            is_closed_path,
-            ContourDirection::CounterClockwise,
-            Default::default(),
-        )
+        self.stroke_custom(style, is_closed_path, Default::default())
     }
 
     fn stroke_custom(
         &self,
         style: StrokeStyle<P, T>,
         is_closed_path: bool,
-        main_direction: ContourDirection,
-        filter: ContourFilter<T>,
+        options: OverlayOptions<T>,
     ) -> Shapes<P> {
         let mut paths_count = 0;
         let mut points_count = 0;
@@ -101,13 +91,18 @@ where
             builder.build(path, is_closed_path, &adapter, &mut segments);
         }
 
+        let min_area = adapter.sqr_float_to_int(options.min_output_area);
         let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
-            .extract_offset(main_direction, 0);
+            .extract_offset(options.output_direction, min_area);
 
         let mut float = shapes.to_float(&adapter);
 
-        if filter.clean_result {
-            float.simplify_contour(&adapter);
+        if options.clean_result {
+            if options.preserve_output_collinear {
+                float.despike_contour(&adapter);
+            } else {
+                float.simplify_contour(&adapter);
+            }
         };
 
         float
@@ -116,7 +111,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::overlay::ContourDirection;
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
     use std::f32::consts::PI;
@@ -205,12 +199,7 @@ mod tests {
 
         let style = StrokeStyle::new(2.0);
 
-        let shapes = path.stroke_custom(
-            style,
-            true,
-            ContourDirection::CounterClockwise,
-            Default::default(),
-        );
+        let shapes = path.stroke_custom(style, true, Default::default());
         assert_eq!(shapes.len(), 1);
 
         let shape = shapes.first().unwrap();
@@ -232,12 +221,7 @@ mod tests {
 
         let style = StrokeStyle::new(10.0).line_join(LineJoin::Miter(0.1));
 
-        let shapes = path.stroke_custom(
-            style,
-            false,
-            ContourDirection::CounterClockwise,
-            Default::default(),
-        );
+        let shapes = path.stroke_custom(style, false, Default::default());
         assert_eq!(shapes.len(), 1);
 
         let shape = shapes.first().unwrap();
@@ -250,12 +234,7 @@ mod tests {
 
         let style = StrokeStyle::new(10.0).line_join(LineJoin::Miter(0.1));
 
-        let shapes = path.stroke_custom(
-            style,
-            false,
-            ContourDirection::CounterClockwise,
-            Default::default(),
-        );
+        let shapes = path.stroke_custom(style, false, Default::default());
         assert_eq!(shapes.len(), 1);
 
         let shape = shapes.first().unwrap();
