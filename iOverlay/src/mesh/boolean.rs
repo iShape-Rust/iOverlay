@@ -102,7 +102,7 @@ impl OverlayGraph {
         OverlayGraph::new(solver, links)
     }
 
-    pub(crate) fn extract_offset(&self, main_direction: ContourDirection, min_area: usize) -> IntShapes {
+    pub(crate) fn extract_offset(&self, main_direction: ContourDirection, min_area: u64) -> IntShapes {
         let visited = self.links.filter_by_rule(OverlayRule::Subject);
         self.extract_offset_shapes(visited, main_direction, min_area)
     }
@@ -111,7 +111,7 @@ impl OverlayGraph {
         &self,
         filter: Vec<bool>,
         main_direction: ContourDirection,
-        min_area: usize,
+        min_area: u64,
     ) -> IntShapes {
         let clockwise = main_direction == ContourDirection::Clockwise;
         let mut buffer = filter;

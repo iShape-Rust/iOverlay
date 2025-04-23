@@ -2,6 +2,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
+use crate::float::overlay::OverlayOptions;
 use crate::float::source::resource::OverlayResource;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
@@ -14,7 +15,6 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::area::IntArea;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::float::overlay::OverlayOptions;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -34,11 +34,7 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn outline_custom(
-        &self,
-        style: OutlineStyle<T>,
-        options: OverlayOptions<T>,
-    ) -> Shapes<P>;
+    fn outline_custom(&self, style: OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P>;
 }
 
 impl<S, P, T> OutlineOffset<P, T> for S
@@ -48,17 +44,10 @@ where
     T: FloatNumber + 'static,
 {
     fn outline(&self, style: OutlineStyle<T>) -> Shapes<P> {
-        self.outline_custom(
-            style,
-            Default::default(),
-        )
+        self.outline_custom(style, Default::default())
     }
 
-    fn outline_custom(
-        &self,
-        style: OutlineStyle<T>,
-        options: OverlayOptions<T>,
-    ) -> Shapes<P> {
+    fn outline_custom(&self, style: OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
             let mut paths_count = 0;
@@ -92,7 +81,6 @@ where
         };
 
         let int_min_area = adapter.sqr_float_to_int(options.min_output_area).max(1);
-
         let shapes = if paths_count <= 1 {
             // fast solution for a single path
 
@@ -247,12 +235,7 @@ mod tests {
 
     #[test]
     fn test_square() {
-        let path = [
-            [-5.0, -5.0f32],
-            [5.0, -5.0],
-            [5.0, 5.0],
-            [-5.0, 5.0],
-        ];
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(10.0);
         let shapes = path.outline(style);
@@ -268,12 +251,7 @@ mod tests {
 
     #[test]
     fn test_square_offset() {
-        let path = [
-            [-5.0, -5.0f32],
-            [5.0, -5.0],
-            [5.0, 5.0],
-            [-5.0, 5.0],
-        ];
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(-20.0);
         let shapes = path.outline(style);
@@ -304,5 +282,25 @@ mod tests {
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 2);
+    }
+
+    // [[[[300.0, 300.0], [500.0, 300.0], [500.0, 500.0], [300.0, 500.0]]]]
+    #[test]
+    fn test_float_square_0() {
+        let shape = vec![vec![
+            [300.0, 300.0], [500.0, 300.0], [500.0, 500.0], [300.0, 500.0]
+        ]];
+
+        let style = OutlineStyle::default().outer_offset(50.0).inner_offset(50.0);
+
+        let shapes = shape.outline(style);
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 8);
     }
 }

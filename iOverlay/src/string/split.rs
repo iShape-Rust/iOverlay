@@ -3,13 +3,13 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::{IntPath, PointPathExtension};
 
 pub(super) trait Split {
-    fn split_loops(self, min_area: usize) -> Vec<Self>
+    fn split_loops(self, min_area: u64) -> Vec<Self>
     where
         Self: Sized;
 }
 
 impl Split for IntPath {
-    fn split_loops(self, min_area: usize) -> Vec<Self> {
+    fn split_loops(self, min_area: u64) -> Vec<Self> {
         let mut result: Vec<IntPath> = Vec::new();
         let mut path: IntPath = Vec::new();
         let mut map: HashMap<IntPoint, usize> = HashMap::new();
@@ -43,16 +43,16 @@ impl Split for IntPath {
 }
 
 trait ValidateArea {
-    fn validate_area(&self, min_area: usize) -> bool;
+    fn validate_area(&self, min_area: u64) -> bool;
 }
 
 impl ValidateArea for IntPath {
     #[inline]
-    fn validate_area(&self, min_area: usize) -> bool {
+    fn validate_area(&self, min_area: u64) -> bool {
         if min_area == 0 {
             return true;
         }
-        let abs_area = self.unsafe_area().unsigned_abs() as usize >> 1;
+        let abs_area = self.unsafe_area().unsigned_abs() >> 1;
         abs_area < min_area
     }
 }

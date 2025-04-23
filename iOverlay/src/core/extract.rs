@@ -328,17 +328,12 @@ impl StartPathData {
 }
 
 pub(crate) trait Validate {
-    fn validate(&mut self, min_output_area: usize, preserve_output_collinear: bool)
-    -> (bool, bool);
+    fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
 }
 
 impl Validate for IntContour {
     #[inline]
-    fn validate(
-        &mut self,
-        min_output_area: usize,
-        preserve_output_collinear: bool,
-    ) -> (bool, bool) {
+    fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
             self.simplify_contour()
         } else {
@@ -352,11 +347,11 @@ impl Validate for IntContour {
         if min_output_area == 0 {
             return (true, is_modified);
         }
-
         let area = self.unsafe_area();
-        let abs_area = area.unsigned_abs() as usize >> 1;
+        let abs_area = area.unsigned_abs() >> 1;
+        let is_valid = abs_area >= min_output_area;
 
-        (abs_area >= min_output_area, is_modified)
+        (is_valid, is_modified)
     }
 }
 

@@ -34,7 +34,7 @@ pub struct IntOverlayOptions {
     pub preserve_output_collinear: bool,
 
     /// Minimum area threshold to include a contour in the result.
-    pub min_output_area: usize,
+    pub min_output_area: u64,
 }
 
 /// Specifies the type of shape being processed, influencing how the shape participates in Boolean operations.
