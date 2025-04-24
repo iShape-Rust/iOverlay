@@ -1,13 +1,14 @@
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
+use i_triangle::float::builder::TriangulationBuilder;
+use i_triangle::float::triangulation::Triangulation;
 use i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
-use i_triangle::triangulation::int::{IntTriangulate, Triangulation as IntTriangulation};
-use i_triangle::triangulation::float::Triangulation;
-use i_triangle::triangulation::float::TriangulationBuilder;
+use i_triangle::int::triangulation::IntTriangulation;
+use i_triangle::int::triangulator::Triangulator;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
@@ -50,10 +51,9 @@ impl ShapeWidget {
             return None;
         }
         let color = color?;
-        // println!("shapes: {:?}", shapes);
 
-        let triangulation = shapes.to_triangulation(fill_rule, 0);
-        // println!("triangulation: {}", triangulation.indices.len());
+        let triangulation = Triangulator::with_fill_rule(fill_rule.unwrap_or(FillRule::NonZero))
+            .triangulate_shapes(shapes).into_triangulation();
 
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
@@ -64,12 +64,15 @@ impl ShapeWidget {
         }
         let color = color?;
 
-        let triangulation = paths.to_triangulation(fill_rule, 0);
+        let triangulation = Triangulator::with_fill_rule(fill_rule.unwrap_or(FillRule::NonZero))
+            .triangulate_shape(paths).into_triangulation();
+
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
 
     fn fill_mesh_for_triangulation(triangulation: IntTriangulation, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
-        if triangulation.indices.is_empty() {
+        let indices = triangulation.indices;
+        if indices.is_empty() {
             return None;
         }
         let color_pack = pack(color);
@@ -78,7 +81,7 @@ impl ShapeWidget {
             SolidVertex2D { position: [v.x - offset.x, v.y - offset.y], color: color_pack }
         }).collect();
 
-        let indices = triangulation.indices.iter().map(|&i| i as u32).collect();
+        let indices = indices.iter().map(|&i| i as u32).collect();
 
         Some(Mesh::Solid {
             buffers: Indexed { vertices, indices },
@@ -94,7 +97,7 @@ impl ShapeWidget {
         let color = color?;
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
 
-        let mut builder = TriangulationBuilder::new();
+        let mut builder = TriangulationBuilder::default();
         for shape in shapes.iter() {
             for path in shape.iter() {
                 let world_path: Vec<_> = path.iter().map(|&p| {
@@ -121,7 +124,7 @@ impl ShapeWidget {
         let color = color?;
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
 
-        let mut builder = TriangulationBuilder::new();
+        let mut builder = TriangulationBuilder::default();
 
         for path in paths.iter() {
             let world_path: Vec<_> = path.iter().map(|&p| {

@@ -30,5 +30,4 @@ impl AppResource {
             outline: OutlineResource::with_content(outline),
         }
     }
-
 }

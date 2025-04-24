@@ -1,10 +1,10 @@
 use std::f32::consts::PI;
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
+use i_triangle::float::triangulation::Triangulation;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::vector::edge::{SideFill, SUBJ_LEFT, SUBJ_RIGHT, CLIP_LEFT, CLIP_RIGHT, VectorEdge};
-use i_triangle::triangulation::float::Triangulation;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
