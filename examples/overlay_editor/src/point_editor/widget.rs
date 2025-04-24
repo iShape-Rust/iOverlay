@@ -95,8 +95,8 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         _renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        if let State::Some(stete_box) = &mut tree.state {
-            stete_box
+        if let State::Some(state_box) = &mut tree.state {
+            state_box
                 .downcast_mut::<PointsEditorState>()
                 .unwrap()
                 .update_mesh(
@@ -136,6 +136,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                     let view_cursor = *position - bounds.position();
                     if let Some(updated_point) = state.mouse_move(&*self, view_cursor) {
                         shell.publish((self.on_update)(updated_point));
+                        shell.capture_event();
                     }
                 }
             }
@@ -143,13 +144,17 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
                 let position = cursor.position().unwrap_or(Point::ORIGIN);
                 if bounds.contains(position) {
                     let view_cursor = position - bounds.position();
-                    state.mouse_press(&*self, view_cursor);
+                    if state.mouse_press(&*self, view_cursor) {
+                        shell.capture_event();
+                    }
                 }
             }
             mouse::Event::ButtonReleased(mouse::Button::Left) => {
                 let position = cursor.position().unwrap_or(Point::ORIGIN);
                 let view_cursor = position - bounds.position();
-                state.mouse_release(&*self, view_cursor);
+                if state.mouse_release(&*self, view_cursor) {
+                    shell.capture_event();
+                }
             }
             _ => {}
         }

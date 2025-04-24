@@ -116,13 +116,13 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
             return;
         };
         let state = tree.state.downcast_mut::<SheetState>();
-
         match mouse_event {
             mouse::Event::CursorMoved { position } => {
                 if bounds.contains(*position) {
                     let view_cursor = *position - bounds.position();
                     if let Some(drag) = state.mouse_move(self.camera, view_cursor) {
                         shell.publish((self.on_drag)(drag));
+                        shell.capture_event();
                         return;
                     }
                 }
@@ -132,11 +132,13 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                 if bounds.contains(position) {
                     let view_cursor = position - bounds.position();
                     state.mouse_press(self.camera, view_cursor);
+                    shell.capture_event();
                     return;
                 }
             }
             mouse::Event::ButtonReleased(mouse::Button::Left) => {
                 state.mouse_release();
+                shell.capture_event();
                 return;
             }
             mouse::Event::WheelScrolled { delta } => {
@@ -145,6 +147,7 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                     let cursor = position - bounds.position();
                     if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), *delta, cursor) {
                         shell.publish((self.on_zoom)(scale));
+                        shell.capture_event();
                         return;
                     }
                 }
