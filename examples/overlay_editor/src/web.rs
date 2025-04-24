@@ -44,7 +44,8 @@ impl WebApp {
         application("iOverlay", EditorApp::update, EditorApp::view)
             .subscription(EditorApp::subscription)
             .resizable(true)
-            .run_with(app_initializer).unwrap();
+            .run_with(app_initializer)
+            .unwrap();
 
         info!("wasm app run");
     }

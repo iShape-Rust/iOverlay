@@ -6,9 +6,9 @@ use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
 use iced::advanced::layout::{self, Layout};
-use iced::advanced::{Clipboard, renderer, Shell};
+use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
-use iced::{Event, event, mouse, Color, Vector, Transformation};
+use iced::{mouse, Color, Vector, Transformation};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
 use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::Mesh;
@@ -135,20 +135,6 @@ impl<Message> Widget<Message, Theme, Renderer> for PathWidget {
         limits: &layout::Limits,
     ) -> layout::Node {
         layout::Node::new(limits.max())
-    }
-
-    fn on_event(
-        &mut self,
-        _tree: &mut Tree,
-        _event: Event,
-        _layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
-        _shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
-    ) -> event::Status {
-        event::Status::Ignored
     }
 
     fn draw(

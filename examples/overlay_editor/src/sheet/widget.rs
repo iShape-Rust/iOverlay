@@ -5,7 +5,7 @@ use iced::advanced::widget::tree;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
-use iced::{Event, event, mouse};
+use iced::{Event, mouse};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
 use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::Mesh;
@@ -93,66 +93,66 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
         layout::Node::new(limits.max())
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
-        let state = tree.state.downcast_mut::<SheetState>();
-
+    ) {
         let bounds = layout.bounds();
-
         let size = bounds.size();
-        if self.is_size_changed(bounds.size()) {
+        if self.is_size_changed(size) {
             shell.publish((self.on_size)(size));
         }
 
-        if let Event::Mouse(mouse_event) = event {
-            match mouse_event {
-                mouse::Event::CursorMoved { position } => {
-                    if bounds.contains(position) {
-                        let view_cursor = position - bounds.position();
-                        if let Some(drag) = state.mouse_move(self.camera, view_cursor) {
-                            shell.publish((self.on_drag)(drag));
-                            return event::Status::Captured;
-                        }
+        let mouse_event = if let Event::Mouse(mouse_event) = event {
+            mouse_event
+        } else {
+            return;
+        };
+        let state = tree.state.downcast_mut::<SheetState>();
+
+        match mouse_event {
+            mouse::Event::CursorMoved { position } => {
+                if bounds.contains(*position) {
+                    let view_cursor = *position - bounds.position();
+                    if let Some(drag) = state.mouse_move(self.camera, view_cursor) {
+                        shell.publish((self.on_drag)(drag));
+                        return;
                     }
-                }
-                mouse::Event::ButtonPressed(mouse::Button::Left) => {
-                    let position = cursor.position().unwrap_or(Point::ORIGIN);
-                    if bounds.contains(position) {
-                        let view_cursor = position - bounds.position();
-                        state.mouse_press(self.camera, view_cursor);
-                        return event::Status::Captured;
-                    }
-                }
-                mouse::Event::ButtonReleased(mouse::Button::Left) => {
-                    state.mouse_release();
-                    return event::Status::Captured;
-                }
-                mouse::Event::WheelScrolled { delta } => {
-                    let position = cursor.position().unwrap_or(Point::ORIGIN);
-                    if bounds.contains(position) {
-                        let cursor = position - bounds.position();
-                        if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), delta, cursor) {
-                            shell.publish((self.on_zoom)(scale));
-                            return event::Status::Captured;
-                        }
-                    }
-                }
-                _ => {
-                    // println!("other mouse event: {:?}", mouse_event);
                 }
             }
+            mouse::Event::ButtonPressed(mouse::Button::Left) => {
+                let position = cursor.position().unwrap_or(Point::ORIGIN);
+                if bounds.contains(position) {
+                    let view_cursor = position - bounds.position();
+                    state.mouse_press(self.camera, view_cursor);
+                    return;
+                }
+            }
+            mouse::Event::ButtonReleased(mouse::Button::Left) => {
+                state.mouse_release();
+                return;
+            }
+            mouse::Event::WheelScrolled { delta } => {
+                let position = cursor.position().unwrap_or(Point::ORIGIN);
+                if bounds.contains(position) {
+                    let cursor = position - bounds.position();
+                    if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), *delta, cursor) {
+                        shell.publish((self.on_zoom)(scale));
+                        return;
+                    }
+                }
+            }
+            _ => {
+                // println!("other mouse event: {:?}", mouse_event);
+            }
         }
-
-        event::Status::Ignored
     }
 
     fn draw(

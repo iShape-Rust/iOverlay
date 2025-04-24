@@ -120,9 +120,9 @@ pub(super) fn style_sidebar_background(theme: &Theme) -> container::Style {
 
 pub(super) fn style_separator(theme: &Theme) -> rule::Style {
     let color = if theme.extended_palette().is_dark {
-        Color::new(0.0, 0.0, 0.0, 0.8)
+        Color::from_rgba(0.0, 0.0, 0.0, 0.8)
     } else {
-        Color::new(1.0, 1.0, 1.0, 0.8)
+        Color::from_rgba(1.0, 1.0, 1.0, 0.8)
     };
 
     rule::Style {

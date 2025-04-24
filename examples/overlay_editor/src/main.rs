@@ -5,7 +5,7 @@ mod point_editor;
 mod sheet;
 mod geom;
 
-use iced::application;
+use iced::{application, run, Theme};
 use crate::app::main::EditorApp;
 use crate::data::resource::AppResource;
 
@@ -16,20 +16,22 @@ fn main() -> iced::Result {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn run_desktop() -> iced::Result {
-
-    let app_resource = AppResource::with_paths(
-        "../tests/boolean",
-        "../tests/string",
-        "../tests/stroke",
-        "../tests/outline"
-    );
-
     let app_initializer = || {
-        let app = EditorApp::new(app_resource);
+        let app_resource = AppResource::with_paths(
+            "../tests/boolean",
+            "../tests/string",
+            "../tests/stroke",
+            "../tests/outline"
+        );
+        let app = EditorApp::with_resource(app_resource);
         (app, iced::Task::none())
     };
 
-    application("iOverlay", EditorApp::update, EditorApp::view)
-        .subscription(EditorApp::subscription)
-        .run_with(app_initializer)
+
+    application(app_initializer, EditorApp::update, EditorApp::view)
+        .resizable(true)
+        .centered()
+        .title("iOverlay Editor")
+        .run()
 }
+

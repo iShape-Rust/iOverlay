@@ -35,7 +35,7 @@ pub(crate) enum BooleanMessage {
     PointEdited(PointEditUpdate),
     WorkspaceSized(Size),
     WorkspaceZoomed(Camera),
-    WorkspaceDraged(Vector<f32>),
+    WorkspaceDragged(Vector<f32>),
 }
 
 impl EditorApp {
@@ -92,7 +92,7 @@ impl EditorApp {
             BooleanMessage::PointEdited(update) => self.boolean_update_point(update),
             BooleanMessage::WorkspaceSized(size) => self.boolean_update_size(size),
             BooleanMessage::WorkspaceZoomed(zoom) => self.boolean_update_zoom(zoom),
-            BooleanMessage::WorkspaceDraged(drag) => self.boolean_update_drag(drag),
+            BooleanMessage::WorkspaceDragged(drag) => self.boolean_update_drag(drag),
         }
     }
 
