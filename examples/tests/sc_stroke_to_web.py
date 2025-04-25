@@ -17,7 +17,8 @@ for filename in sorted(os.listdir(DIRECTORY)):
                 data = json.load(f)
                 if "stroke" in data:
                     new_data = {
-                        "stroke": data.get("stroke")
+                        "stroke": data.get("stroke"),
+                        "scale": data.get("scale")
                     }
                     all_data.append(new_data)
                 else:

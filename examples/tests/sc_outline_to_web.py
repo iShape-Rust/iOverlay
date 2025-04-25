@@ -17,7 +17,8 @@ for filename in sorted(os.listdir(DIRECTORY)):
                 data = json.load(f)
                 if "outline" in data:
                     new_data = {
-                        "outline": data.get("outline")
+                        "outline": data.get("outline"),
+                        "scale": data.get("scale")
                     }
                     all_data.append(new_data)
                 else:

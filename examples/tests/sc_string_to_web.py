@@ -17,7 +17,8 @@ for filename in sorted(os.listdir(DIRECTORY)):
                 data = json.load(f)
                 if "string" in data:
                     new_data = {
-                        "string": data.get("string")
+                        "string": data.get("string"),
+                        "body": data.get("body")
                     }
                     all_data.append(new_data)
                 else:
