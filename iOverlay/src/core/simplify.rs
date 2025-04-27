@@ -28,32 +28,32 @@ pub trait Simplify {
 
 impl Simplify for IntPath {
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        let mut overlay = Overlay::new(self.len());
+        let mut overlay = Overlay::with_options(self.len(), options);
         overlay.add_contour(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, options, Default::default())
+        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
     }
 }
 
 impl Simplify for [IntPath] {
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        let mut overlay = Overlay::new(self.points_count());
+        let mut overlay = Overlay::with_options(self.points_count(), options);
         overlay.add_contours(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, options, Default::default())
+        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
     }
 }
 
 impl Simplify for IntShape {
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        let mut overlay = Overlay::new(self.points_count());
+        let mut overlay = Overlay::with_options(self.points_count(), options);
         overlay.add_shape(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, options, Default::default())
+        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
     }
 }
 
 impl Simplify for [IntShape] {
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        let mut overlay = Overlay::new(self.len());
+        let mut overlay = Overlay::with_options(self.points_count(), options);
         overlay.add_shapes(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, options, Default::default())
+        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
     }
 }

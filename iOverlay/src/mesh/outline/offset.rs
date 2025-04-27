@@ -24,7 +24,7 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
-    fn outline(&self, style: OutlineStyle<T>) -> Shapes<P>;
+    fn outline(&self, style: &OutlineStyle<T>) -> Shapes<P>;
 
     /// Generates an outline shapes for contours, or shapes with optional filtering.
     ///
@@ -34,7 +34,7 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// # Returns
     /// A collection of `Shapes<P>` representing the outline geometry.
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn outline_custom(&self, style: OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P>;
+    fn outline_custom(&self, style: &OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P>;
 }
 
 impl<S, P, T> OutlineOffset<P, T> for S
@@ -43,11 +43,11 @@ where
     P: FloatPointCompatible<T> + 'static,
     T: FloatNumber + 'static,
 {
-    fn outline(&self, style: OutlineStyle<T>) -> Shapes<P> {
+    fn outline(&self, style: &OutlineStyle<T>) -> Shapes<P> {
         self.outline_custom(style, Default::default())
     }
 
-    fn outline_custom(&self, style: OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P> {
+    fn outline_custom(&self, style: &OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
             let mut paths_count = 0;
@@ -58,7 +58,7 @@ where
             (points_count, paths_count)
         };
 
-        let join = style.join.normalize();
+        let join = style.join.clone().normalize();
 
         let outer_builder = OutlineBuilder::new(-style.outer_offset, &join);
         let inner_builder = OutlineBuilder::new(style.inner_offset, &join);
@@ -105,7 +105,7 @@ where
         } else {
             let total_capacity = outer_builder.capacity(points_count);
 
-            let mut overlay = Overlay::new(total_capacity);
+            let mut overlay = Overlay::with_options(total_capacity, options.int_options(&adapter),);
 
             for path in self.iter_paths() {
                 let area = path.unsafe_int_area(&adapter);
@@ -149,7 +149,6 @@ where
             overlay.overlay_custom(
                 OverlayRule::Subject,
                 FillRule::Positive,
-                options.int_options(&adapter),
                 Default::default(),
             )
         };
@@ -202,7 +201,7 @@ mod tests {
         ];
 
         let style = OutlineStyle::new(0.2).line_join(LineJoin::Round(0.1));
-        let shapes = shape.outline(style);
+        let shapes = shape.outline(&style);
 
         assert_eq!(shapes.len(), 1);
 
@@ -215,7 +214,7 @@ mod tests {
         let path = [[0.0, 0.0f32], [10.0, 0.0f32], [0.0, 10.0f32]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Round(0.25 * PI));
-        let shapes = path.outline(style);
+        let shapes = path.outline(&style);
 
         assert_eq!(shapes.len(), 1);
 
@@ -228,7 +227,7 @@ mod tests {
         let path = [[0.0, 0.0f32], [0.0, 10.0f32], [10.0, 0.0f32]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Round(0.25 * PI));
-        let shapes = path.outline(style);
+        let shapes = path.outline(&style);
 
         assert_eq!(shapes.len(), 0);
     }
@@ -238,7 +237,7 @@ mod tests {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(10.0);
-        let shapes = path.outline(style);
+        let shapes = path.outline(&style);
 
         assert_eq!(shapes.len(), 1);
 
@@ -254,7 +253,7 @@ mod tests {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(-20.0);
-        let shapes = path.outline(style);
+        let shapes = path.outline(&style);
 
         assert_eq!(shapes.len(), 0);
     }
@@ -264,7 +263,7 @@ mod tests {
         let path = [[-10.0, 0.0], [0.0, -10.0], [10.0, 0.0], [0.0, 10.0]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Miter(0.01));
-        let shapes = path.outline(style);
+        let shapes = path.outline(&style);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes.first().unwrap().len(), 1);
@@ -278,7 +277,7 @@ mod tests {
         ];
 
         let style = OutlineStyle::new(1.0).line_join(LineJoin::Bevel);
-        let shapes = window.outline(style);
+        let shapes = window.outline(&style);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 2);
@@ -293,7 +292,7 @@ mod tests {
 
         let style = OutlineStyle::default().outer_offset(50.0).inner_offset(50.0);
 
-        let shapes = shape.outline(style);
+        let shapes = shape.outline(&style);
 
         assert_eq!(shapes.len(), 1);
 

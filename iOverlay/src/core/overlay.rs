@@ -296,7 +296,6 @@ impl Overlay {
             overlay_rule,
             fill_rule,
             Default::default(),
-            Default::default(),
         )
     }
 
@@ -309,7 +308,6 @@ impl Overlay {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
-    /// - `options`: Adjust custom behavior.
     /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
     /// The output is a `IntShapes`, where:
@@ -327,7 +325,6 @@ impl Overlay {
         self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
-        options: IntOverlayOptions,
         solver: Solver,
     ) -> IntShapes {
         let links = OverlayLinkBuilder::build_with_overlay_filter(
@@ -338,7 +335,7 @@ impl Overlay {
         );
         let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];
-        graph.extract(filter, overlay_rule, options)
+        graph.extract(filter, overlay_rule, self.options)
     }
 }
 

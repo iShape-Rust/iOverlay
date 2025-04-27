@@ -39,6 +39,7 @@ pub struct OverlayOptions<T: FloatNumber> {
 #[derive(Clone)]
 pub struct FloatOverlay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) overlay: Overlay,
+    pub(super) clean_result: bool,
     pub(super) adapter: FloatPointAdapter<P, T>,
 }
 
@@ -52,7 +53,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///   segments for efficient memory allocation.
     #[inline]
     pub fn with_adapter(adapter: FloatPointAdapter<P, T>, capacity: usize) -> Self {
-        Self { overlay: Overlay::new(capacity), adapter }
+        Self::with_adapter_and_options(adapter, Default::default(), capacity)
     }
 
     /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
@@ -65,7 +66,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///   segments for efficient memory allocation.
     #[inline]
     pub fn with_adapter_and_options(adapter: FloatPointAdapter<P, T>, options: OverlayOptions<T>, capacity: usize) -> Self {
-        Self { overlay: Overlay::with_options(capacity, options.int_options(&adapter)), adapter }
+        let clean_result = options.clean_result;
+        Self { overlay: Overlay::with_options(capacity, options.int_options(&adapter)), clean_result, adapter }
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
@@ -238,7 +240,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        self.overlay_custom(overlay_rule, fill_rule, Default::default(), Default::default())
+        self.overlay_custom(overlay_rule, fill_rule, Default::default())
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
@@ -250,7 +252,6 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
     /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
@@ -264,12 +265,13 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
-        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, options.int_options(&self.adapter), solver);
+    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, solver: Solver) -> Shapes<P> {
+        let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
+        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, solver);
         let mut float = shapes.to_float(&self.adapter);
 
-        if options.clean_result {
-            if options.preserve_output_collinear {
+        if self.clean_result {
+            if preserve_output_collinear {
                 float.despike_contour(&self.adapter);
             } else {
                 float.simplify_contour(&self.adapter);
@@ -321,7 +323,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 
@@ -340,7 +341,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 
@@ -358,7 +358,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 
@@ -386,7 +385,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 
@@ -414,7 +412,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 
@@ -445,7 +442,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 
@@ -477,7 +473,6 @@ mod tests {
             .overlay_custom(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Default::default(),
                 Solver::default(),
             );
 

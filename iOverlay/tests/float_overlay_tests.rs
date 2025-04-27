@@ -677,17 +677,18 @@ mod tests {
         let result_no_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
             .overlay(OverlayRule::Intersect, FillRule::EvenOdd);
 
-        let result_with_filter = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
+        let opt = OverlayOptions {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: false,
+            min_output_area: 0.0,
+            clean_result: false,
+        };
+        
+        let result_with_filter = FloatOverlay::with_subj_and_clip_and_options(&shape_0, &shape_1, opt)
             .overlay_custom(
                 OverlayRule::Intersect,
                 FillRule::EvenOdd,
-                OverlayOptions {
-                    preserve_input_collinear: false,
-                    output_direction: ContourDirection::CounterClockwise,
-                    preserve_output_collinear: false,
-                    min_output_area: 0.0,
-                    clean_result: false,
-                },
                 Default::default(),
             );
 

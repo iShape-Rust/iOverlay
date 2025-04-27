@@ -36,15 +36,14 @@ where
 {
     #[inline]
     fn simplify_shape(&self, fill_rule: FillRule, options: OverlayOptions<T>) -> Shapes<P> {
-
-        FloatOverlay::with_subj(self)
-            .overlay_custom(OverlayRule::Subject, fill_rule, options, Default::default())
+        FloatOverlay::with_subj_and_options(self, options)
+            .overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
     }
 
     #[inline]
     fn simplify_shape_with_solver(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
-        FloatOverlay::with_subj(self)
-            .overlay_custom(OverlayRule::Subject, fill_rule, options, solver)
+        FloatOverlay::with_subj_and_options(self, options)
+            .overlay_custom(OverlayRule::Subject, fill_rule, solver)
     }
 }
 

@@ -17,7 +17,7 @@ pub enum LineCap<P: FloatPointCompatible<T>, T: FloatNumber> {
 }
 
 /// The join style of a line.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LineJoin<T: FloatNumber> {
     /// Cuts off the corner where two lines meet. This is the default.
     Bevel,

@@ -25,14 +25,13 @@ mod tests {
         };
 
         for solver in SOLVERS {
-            let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
+            let overlay = Overlay::with_contours_options(&test.subj_paths, &test.clip_paths, options);
             let graph = overlay.clone().into_graph_with_solver(fill_rule, solver);
 
             let subject_0 = graph.extract_shapes_custom(OverlayRule::Subject, options);
             let subject_1 = overlay.clone().overlay_custom(
                 OverlayRule::Subject,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
@@ -40,7 +39,6 @@ mod tests {
             let clip_1 = overlay.clone().overlay_custom(
                 OverlayRule::Clip,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
@@ -48,7 +46,6 @@ mod tests {
             let difference_1 = overlay.clone().overlay_custom(
                 OverlayRule::Difference,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
@@ -57,7 +54,6 @@ mod tests {
             let inverse_difference_1 = overlay.clone().overlay_custom(
                 OverlayRule::InverseDifference,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
@@ -65,7 +61,6 @@ mod tests {
             let intersect_1 = overlay.clone().overlay_custom(
                 OverlayRule::Intersect,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
@@ -73,7 +68,6 @@ mod tests {
             let union_1 = overlay.clone().overlay_custom(
                 OverlayRule::Union,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
@@ -81,7 +75,6 @@ mod tests {
             let xor_1 = overlay.clone().overlay_custom(
                 OverlayRule::Xor,
                 fill_rule,
-                options,
                 Default::default(),
             );
 
