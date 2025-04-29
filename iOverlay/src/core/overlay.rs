@@ -68,7 +68,7 @@ impl Overlay {
     pub fn new(capacity: usize) -> Self {
         Self {
             options: Default::default(),
-            segments: Vec::with_capacity(capacity),
+            segments: Vec::with_capacity(capacity)
         }
     }
 
@@ -79,7 +79,7 @@ impl Overlay {
     pub fn with_options(capacity: usize, options: IntOverlayOptions) -> Self {
         Self {
             options,
-            segments: Vec::with_capacity(capacity),
+            segments: Vec::with_capacity(capacity)
         }
     }
 

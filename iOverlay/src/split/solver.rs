@@ -12,6 +12,7 @@ use crate::util::sort::SmartBinSort;
 
 pub(crate) trait SplitSegments<C: WindingCount> {
     fn split_segments(self, solver: Solver) -> Vec<Segment<C>>;
+    fn split_segments_with_modification(self, solver: Solver, modification: &mut bool) -> Vec<Segment<C>>;
 }
 
 impl<C: WindingCount> SplitSegments<C> for Vec<Segment<C>> {
@@ -21,7 +22,19 @@ impl<C: WindingCount> SplitSegments<C> for Vec<Segment<C>> {
         segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
         segments.merge_if_needed();
 
-        SplitSolver::new(solver).split(segments)
+        let (segments, _) = SplitSolver::new(solver).split(segments);
+        segments
+    }
+
+    fn split_segments_with_modification(self, solver: Solver, modification: &mut bool) -> Vec<Segment<C>> {
+        let mut segments = self;
+        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+        let any_merged = segments.merge_if_needed();
+
+        let (segments, any_intersection) = SplitSolver::new(solver).split(segments);
+        *modification = any_merged | any_intersection;
+
+        segments
     }
 }
 
@@ -36,7 +49,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    pub(crate) fn split<C: WindingCount>(&self, segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(crate) fn split<C: WindingCount>(&self, segments: Vec<Segment<C>>) -> (Vec<Segment<C>>, bool) {
         let is_list = self.solver.is_list_split(&segments);
         let snap_radius = self.snap_radius();
         if is_list {

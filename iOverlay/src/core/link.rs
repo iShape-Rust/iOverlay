@@ -83,6 +83,19 @@ impl OverlayLinkBuilder {
         }
     }
 
+    #[inline]
+    pub(super) fn build_with_overlay_short_subject(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver, early_out: bool) -> Option<Vec<OverlayLink>> {
+        if segments.is_empty() { return Some(vec![]); }
+        let mut modified = false;
+        let segments = segments.split_segments_with_modification(solver, &mut modified);
+        if !modified && early_out {
+            return None;
+        }
+        if segments.is_empty() { return Some(vec![]); }
+        let fills = Self::fill_boolean(&segments, fill_rule, solver);
+        Some(Self::build_links::<SubjectFilter, ShapeCountBoolean>(&segments, &fills))
+    }
+
     fn fill_string(segments: &[Segment<ShapeCountString>], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
         let is_list = solver.is_list_fill(segments);
         match fill_rule {

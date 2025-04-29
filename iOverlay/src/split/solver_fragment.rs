@@ -8,7 +8,7 @@ use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn fragment_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> Vec<Segment<C>> {
+    pub(super) fn fragment_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> (Vec<Segment<C>>, bool) {
         let layout = if let Some(layout) = GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len()) {
             layout
         } else {
@@ -19,7 +19,8 @@ impl SplitSolver {
 
         let mut marks = Vec::new();
         let mut need_to_fix = true;
-
+        let mut any_intersection = false;
+        
         let mut snap_radius = snap_radius;
 
         while need_to_fix && segments.len() > 2 {
@@ -41,9 +42,10 @@ impl SplitSolver {
             }
 
             if marks.is_empty() {
-                return segments;
+                return (segments, any_intersection);
             }
 
+            any_intersection = true;
             buffer.clear();
 
             segments = self.apply(&mut marks, segments, need_to_fix);
@@ -53,7 +55,7 @@ impl SplitSolver {
             snap_radius.increment();
         }
 
-        segments
+        (segments, any_intersection)
     }
 
     #[inline]

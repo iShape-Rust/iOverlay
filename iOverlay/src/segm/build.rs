@@ -6,24 +6,25 @@ use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 
 pub(crate) trait BuildSegments {
-    fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType, keep_same_line_points: bool);
+    fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType, keep_same_line_points: bool) -> bool;
 }
 
 impl<C: WindingCount> BuildSegments for Vec<Segment<C>> {
     #[inline]
-    fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType, keep_same_line_points: bool) {
+    fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType, keep_same_line_points: bool) -> bool {
         if keep_same_line_points {
-            append_iter_keeping_same_line_points(self, iter, shape_type);
+            append_iter_keeping_same_line_points(self, iter, shape_type)
         } else {
-            append_iter_removing_same_line_points(self, iter, shape_type);
+            append_iter_removing_same_line_points(self, iter, shape_type)
         }
     }
 }
 
-fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) {
+fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) -> bool {
     // our goal add all not degenerate segments
-    let mut p0 = if let Some(p) = iter.next() { p } else { return; };
-    let mut p1 = if let Some(p) = iter.next() { p } else { return; };
+    let mut modified = false;
+    let mut p0 = if let Some(p) = iter.next() { p } else { return modified; };
+    let mut p1 = if let Some(p) = iter.next() { p } else { return modified; };
 
     let q0 = p0;
     for p in &mut iter {
@@ -32,6 +33,7 @@ fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingC
             p1 = p;
             break;
         }
+        modified = true;
         p1 = p;
     }
 
@@ -42,6 +44,7 @@ fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingC
     for p in &mut iter {
         if Triangle::is_line_point(p0, p1, p) {
             p1 = p;
+            modified = true;
             continue;
         }
         segments.push(Segment::with_ab(p0, p1, direct, invert));
@@ -62,12 +65,14 @@ fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingC
         }
         (true, true) => {
             // all collinear
+            modified = true;
             if p0 != q1 {
                 segments.push(Segment::with_ab(p0, q1, direct, invert));
             }
         }
         (true, false) => {
             // p0, p1, q0 is on same line
+            modified = true;
             if p0 != q0 {
                 segments.push(Segment::with_ab(p0, q0, direct, invert));
             }
@@ -75,18 +80,21 @@ fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingC
         }
         (false, true) => {
             // p1, q0, q1 is on same line
+            modified = true;
             segments.push(Segment::with_ab(p0, p1, direct, invert));
             if p1 != q1 {
                 segments.push(Segment::with_ab(p1, q1, direct, invert));
             }
         }
     }
+    modified
 }
 
-fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) {
+fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) -> bool {
     // our goal add all not degenerate segments escaping same line points
-    let mut p0 = if let Some(p) = iter.next() { p } else { return; };
-    let mut p1 = if let Some(p) = iter.next() { p } else { return; };
+    let mut modified = true;
+    let mut p0 = if let Some(p) = iter.next() { p } else { return modified; };
+    let mut p1 = if let Some(p) = iter.next() { p } else { return modified; };
 
     let q0 = p0;
     for p in &mut iter {
@@ -95,6 +103,7 @@ fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCo
             p1 = p;
             break;
         }
+        modified = true;
         p1 = p;
     }
 
@@ -105,6 +114,7 @@ fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCo
     for p in &mut iter {
         if !test_keep_points(p0, p1, p) {
             p1 = p;
+            modified = true;
             continue;
         }
         segments.push(Segment::with_ab(p0, p1, direct, invert));
@@ -125,12 +135,14 @@ fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCo
         }
         (true, true) => {
             // all collinear
+            modified = true;
             if p0 != q1 {
                 segments.push(Segment::with_ab(p0, q1, direct, invert));
             }
         }
         (true, false) => {
             // p0, p1, q0 is on same line
+            modified = true;
             if p0 != q0 {
                 segments.push(Segment::with_ab(p0, q0, direct, invert));
             }
@@ -138,12 +150,14 @@ fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCo
         }
         (false, true) => {
             // p1, q0, q1 is on same line
+            modified = true;
             segments.push(Segment::with_ab(p0, p1, direct, invert));
             if p1 != q1 {
                 segments.push(Segment::with_ab(p1, q1, direct, invert));
             }
         }
     }
+    modified
 }
 
 #[inline]

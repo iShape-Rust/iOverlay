@@ -26,7 +26,7 @@ impl SplitSolver {
         &self,
         snap_radius: SnapRadius,
         mut segments: Vec<Segment<C>>,
-    ) -> Vec<Segment<C>> {
+    ) -> (Vec<Segment<C>>, bool) {
         let range: SegRange<i32> = segments.ver_range().into();
         let mut tree: SegExpTree<i32, i32, IdSegment> = if let Some(tree) = SegExpTree::new(range) {
             tree
@@ -36,6 +36,7 @@ impl SplitSolver {
 
         let mut marks = Vec::new();
         let mut need_to_fix = true;
+        let mut any_intersection = false;
 
         let mut snap_radius = snap_radius;
 
@@ -70,9 +71,10 @@ impl SplitSolver {
             }
 
             if marks.is_empty() {
-                return segments;
+                return (segments, any_intersection);
             }
 
+            any_intersection = true;
             tree.clear();
 
             segments = self.apply(&mut marks, segments, need_to_fix);
@@ -82,7 +84,7 @@ impl SplitSolver {
             snap_radius.increment();
         }
 
-        segments
+        (segments, any_intersection)
     }
 }
 

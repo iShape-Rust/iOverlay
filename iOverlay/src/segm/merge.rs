@@ -2,12 +2,12 @@ use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 
 pub(crate) trait ShapeSegmentsMerge {
-    fn merge_if_needed(&mut self);
+    fn merge_if_needed(&mut self) -> bool;
 }
 
 impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
-    fn merge_if_needed(&mut self) {
-        if self.len() < 2 { return; }
+    fn merge_if_needed(&mut self) -> bool {
+        if self.len() < 2 { return false; }
 
         let mut prev = &self[0].x_segment;
         for i in 1..self.len() {
@@ -15,10 +15,12 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
             if prev.eq(this) {
                 let new_len = merge(self, i);
                 self.truncate(new_len);
-                return;
+                return true;
             }
             prev = this;
         }
+
+        false
     }
 }
 
