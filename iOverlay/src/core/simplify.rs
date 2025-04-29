@@ -154,4 +154,23 @@ mod tests {
         let c1 = rev_contour.simplify(FillRule::NonZero, Default::default());
         assert_eq!(c1[0][0].len(), 4);
     }
+
+    #[test]
+    fn test_1() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(10, 0),
+            IntPoint::new(0, 10),
+        ];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 2);
+
+        let r1 = rev_contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 2);
+    }
 }
