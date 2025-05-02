@@ -1,6 +1,7 @@
 //! This module provides methods to simplify paths and shapes by reducing complexity
 //! (e.g., removing small artifacts or shapes below a certain area threshold) based on a fill rule.
 
+use crate::core::overlay::ContourDirection;
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLinkBuilder;
@@ -86,7 +87,7 @@ impl Overlay {
             self.options.preserve_input_collinear,
         );
 
-        let early_out = !is_modified;
+        let early_out = !is_modified && !Self::has_loops(contour);
 
         if let Some(links) = OverlayLinkBuilder::build_with_overlay_short_subject(
             self.segments,
@@ -98,35 +99,52 @@ impl Overlay {
             let filter = vec![false; graph.links.len()];
             graph.extract(filter, OverlayRule::Subject, self.options)
         } else {
-            // the path is already perfect just need to check direction
-            let contour_clockwise = contour.is_clockwise_ordered();
-            let output_clockwise = self.options.output_direction == Clockwise;
+            // the path is perfect just need to check direction
+            Self::apply_fill_rule(self.options.output_direction, fill_rule, contour)
+        }
+    }
 
-            match fill_rule {
-                FillRule::EvenOdd | FillRule::NonZero => {
-                    if contour_clockwise != output_clockwise {
-                        let rev_contour: Vec<_> = contour.iter().rev().cloned().collect();
-                        vec![vec![rev_contour]]
-                    } else {
-                        vec![vec![contour.clone()]]
-                    }
+    #[inline]
+    fn apply_fill_rule(output_direction: ContourDirection, fill_rule: FillRule, contour: &IntContour) -> IntShapes {
+        let contour_clockwise = contour.is_clockwise_ordered();
+        let output_clockwise = output_direction == Clockwise;
+
+        match fill_rule {
+            FillRule::EvenOdd | FillRule::NonZero => {
+                if contour_clockwise != output_clockwise {
+                    let rev_contour: Vec<_> = contour.iter().rev().cloned().collect();
+                    vec![vec![rev_contour]]
+                } else {
+                    vec![vec![contour.clone()]]
                 }
-                FillRule::Positive => {
-                    if contour_clockwise == output_clockwise {
-                        vec![vec![contour.clone()]]
-                    } else {
-                        vec![vec![vec![]]]
-                    }
+            }
+            FillRule::Positive => {
+                if contour_clockwise == output_clockwise {
+                    vec![vec![contour.clone()]]
+                } else {
+                    vec![vec![vec![]]]
                 }
-                FillRule::Negative => {
-                    if contour_clockwise != output_clockwise {
-                        vec![vec![contour.clone()]]
-                    } else {
-                        vec![vec![vec![]]]
-                    }
+            }
+            FillRule::Negative => {
+                if contour_clockwise != output_clockwise {
+                    vec![vec![contour.clone()]]
+                } else {
+                    vec![vec![vec![]]]
                 }
             }
         }
+    }
+
+    #[inline]
+    fn has_loops(contour: &IntContour) -> bool {
+        use std::collections::HashSet;
+        let mut seen = HashSet::with_capacity(contour.len());
+        for pt in contour {
+            if !seen.insert(pt) {
+                return true;
+            }
+        }
+        false
     }
 }
 
@@ -135,6 +153,7 @@ mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::core::simplify::Simplify;
     use i_float::int::point::IntPoint;
+    use crate::core::overlay::IntOverlayOptions;
 
     #[test]
     fn test_0() {
@@ -172,5 +191,74 @@ mod tests {
 
         let r1 = rev_contour.simplify(FillRule::NonZero, Default::default());
         assert_eq!(r1.len(), 2);
+    }
+
+    #[test]
+    fn test_2() {
+        // 2 outer contours, not intersections but share point
+        let contour = vec![
+            IntPoint::new(-2, -1),
+            IntPoint::new(0, 0),
+            IntPoint::new(2, 1),
+            IntPoint::new(2, -1),
+            IntPoint::new(0, 0),
+            IntPoint::new(-2, 1),
+        ];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points());
+        assert_eq!(r0.len(), 2);
+
+        let r1 = rev_contour.simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points());
+        assert_eq!(r1.len(), 2);
+    }
+
+    #[test]
+    fn test_3() {
+        // outer and inner contours, not intersections but share point
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(-3, 2),
+            IntPoint::new(-3, -2),
+            IntPoint::new(0, 0),
+            IntPoint::new(-2, -1),
+            IntPoint::new(-2, 1),
+        ];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 1);
+
+        let r1 = rev_contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 1);
+    }
+
+    #[test]
+    fn test_4() {
+        // 2 inner contours (one inside other), not intersections but share point
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(-3, 2),
+            IntPoint::new(-3, -2),
+            IntPoint::new(0, 0),
+            IntPoint::new(-2, 1),
+            IntPoint::new(-2, -1),
+        ];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 1);
+        assert_eq!(r0[0].len(), 1);
+        assert_eq!(r0[0][0].len(), 3);
+
+        let r1 = rev_contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 1);
+        assert_eq!(r1[0][0].len(), 3);
     }
 }

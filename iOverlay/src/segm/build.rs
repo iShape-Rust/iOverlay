@@ -92,7 +92,7 @@ fn append_iter_removing_same_line_points<I: Iterator<Item=IntPoint>, C: WindingC
 
 fn append_iter_keeping_same_line_points<I: Iterator<Item=IntPoint>, C: WindingCount>(segments: &mut Vec<Segment<C>>, mut iter: I, shape_type: ShapeType) -> bool {
     // our goal add all not degenerate segments escaping same line points
-    let mut modified = true;
+    let mut modified = false;
     let mut p0 = if let Some(p) = iter.next() { p } else { return modified; };
     let mut p1 = if let Some(p) = iter.next() { p } else { return modified; };
 
