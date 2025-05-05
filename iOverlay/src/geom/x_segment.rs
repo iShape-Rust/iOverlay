@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use i_float::int::point::IntPoint;
-use i_key_sort::index::{BinKey, BinLayout};
+use i_key_sort::bin_key::index::{BinKey, BinLayout};
 use crate::geom::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

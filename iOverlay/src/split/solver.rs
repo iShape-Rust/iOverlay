@@ -1,6 +1,6 @@
 use i_float::int::point::IntPoint;
-use i_key_sort::index::{BinKey, BinLayout};
-use i_key_sort::key_sort::Bin;
+use i_key_sort::bin_key::index::{BinKey, BinLayout};
+use i_key_sort::sort::key_sort::Bin;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;

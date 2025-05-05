@@ -1,5 +1,5 @@
 use i_float::int::point::IntPoint;
-use i_key_sort::index::{BinKey, BinLayout};
+use i_key_sort::bin_key::index::{BinKey, BinLayout};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) struct IdPoint {

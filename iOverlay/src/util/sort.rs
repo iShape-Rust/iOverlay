@@ -1,9 +1,9 @@
 #[cfg(feature = "allow_multithreading")]
 use rayon::prelude::*;
 use std::cmp::Ordering;
-use i_key_sort::index::{BinKey, BinLayoutOp};
+use i_key_sort::bin_key::index::{BinKey, BinLayoutOp};
+use i_key_sort::sort::key_sort::KeyBinSort;
 use crate::core::solver::Solver;
-use i_key_sort::key_sort::KeyBinSort;
 
 pub(crate) trait SmartBinSort<U> {
     fn smart_bin_sort_by<F>(&mut self, solver: &Solver, compare: F)
@@ -40,7 +40,7 @@ where
 }
 #[cfg(test)]
 mod tests {
-    use i_key_sort::index::BinLayout;
+    use i_key_sort::bin_key::index::BinLayout;
     use super::*;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]

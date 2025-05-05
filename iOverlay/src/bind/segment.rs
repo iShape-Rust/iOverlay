@@ -1,7 +1,7 @@
 use crate::geom::v_segment::VSegment;
 use crate::vector::edge::{VectorEdge, VectorPath};
 use i_float::int::point::IntPoint;
-use i_key_sort::index::{BinKey, BinLayout};
+use i_key_sort::bin_key::index::{BinKey, BinLayout};
 use i_shape::int::path::IntPath;
 
 #[derive(Debug, Clone, Copy)]

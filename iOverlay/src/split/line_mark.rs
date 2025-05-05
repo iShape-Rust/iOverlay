@@ -1,5 +1,5 @@
 use i_float::int::point::IntPoint;
-use i_key_sort::index::{BinKey, BinLayout};
+use i_key_sort::bin_key::index::{BinKey, BinLayout};
 
 #[derive(Clone, Copy, PartialEq)]
 pub(super) struct LineMark {

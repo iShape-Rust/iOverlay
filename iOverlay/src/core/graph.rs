@@ -3,6 +3,7 @@
 //! based on the overlay rule applied.
 
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::layout::BinStore;
 use crate::core::solver::Solver;
 use crate::geom::end::End;
 use crate::util::sort::SmartBinSort;
@@ -36,11 +37,26 @@ impl OverlayGraph {
             return vec![];
         }
 
-        let mut end_bs: Vec<End> = links.iter().enumerate()
-            .map(|(i, link)| End { index: i, point: link.b.point })
-            .collect();
+        let mut end_min = i32::MAX;
+        let mut end_max = i32::MIN;
+        for link in links.iter() {
+            end_min = end_min.min(link.b.point.x);
+            end_max = end_min.min(link.b.point.x);
+        }
 
-        end_bs.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
+        let end_bs = if let Some(mut store) = BinStore::new(end_min, end_max, links.len()) {
+            store.layout_bins(links.iter().map(|link|&link.b.point.x));
+            store.into_sorted_by_bins_vec(
+                links.len(), links.iter().enumerate()
+                    .map(|(i, link)| End { index: i, point: link.b.point }), |a, b| a.point.cmp(&b.point))
+        } else {
+            let mut end_bs: Vec<End> = links.iter().enumerate()
+                .map(|(i, link)| End { index: i, point: link.b.point })
+                .collect();
+
+            end_bs.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
+            end_bs
+        };
 
         let mut nodes: Vec<OverlayNode> = Vec::with_capacity(n);
 
