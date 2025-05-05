@@ -41,7 +41,7 @@ impl OverlayGraph {
         let mut end_max = i32::MIN;
         for link in links.iter() {
             end_min = end_min.min(link.b.point.x);
-            end_max = end_min.min(link.b.point.x);
+            end_max = end_max.max(link.b.point.x);
         }
 
         let end_bs = if let Some(mut store) = BinStore::new(end_min, end_max, links.len()) {
