@@ -70,7 +70,7 @@ impl ShapeWidget {
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
 
-    fn fill_mesh_for_triangulation(triangulation: IntTriangulation, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn fill_mesh_for_triangulation(triangulation: IntTriangulation<usize>, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
         let indices = triangulation.indices;
         if indices.is_empty() {
             return None;
@@ -144,7 +144,7 @@ impl ShapeWidget {
         Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>, usize>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }

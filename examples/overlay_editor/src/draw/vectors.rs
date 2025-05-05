@@ -248,7 +248,7 @@ impl MeshBuilder {
         }
     }
 
-    fn append(&mut self, triangulation: Triangulation<FloatPoint<f32>>, color: color::Packed) -> &mut Self {
+    fn append(&mut self, triangulation: Triangulation<FloatPoint<f32>, usize>, color: color::Packed) -> &mut Self {
         let offset = self.vertices.len();
         for p in triangulation.points.iter() {
             self.vertices.push(SolidVertex2D { position: [p.x, p.y], color });

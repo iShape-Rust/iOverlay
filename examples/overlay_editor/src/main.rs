@@ -5,7 +5,7 @@ mod point_editor;
 mod sheet;
 mod geom;
 
-use iced::{application, run, Font, Theme};
+use iced::{application, Font};
 use crate::app::main::EditorApp;
 use crate::data::resource::AppResource;
 

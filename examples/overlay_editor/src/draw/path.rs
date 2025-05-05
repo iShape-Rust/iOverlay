@@ -53,7 +53,7 @@ impl PathWidget {
         Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>, usize>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }
@@ -87,7 +87,7 @@ impl PathWidget {
         camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 
-    fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
+    fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>, usize>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let screen_path: Vec<_> = path.iter().map(|&p| {
             let v = camera.int_world_to_view(p);

@@ -251,7 +251,7 @@ impl OutlineState {
             JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
         }
 
-        let float_shapes = float_paths.outline(style);
+        let float_shapes = float_paths.outline(&style);
 
         let scale = self.workspace.scale;
         let mut int_paths = Vec::with_capacity(float_shapes.len());
