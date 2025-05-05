@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "3.3.2"
+version = "3.4.0"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."
@@ -9,15 +9,15 @@ repository = "https://github.com/iShape-Rust/iOverlay"
 readme = "README.md"
 
 [dependencies]
-#i_float = { version = "~1.10.0", features = ["bin_key"] }
-#i_shape = { version = "~1.12.0" }
+i_float = { version = "~1.11.0", features = ["bin_key"] }
+i_shape = { version = "~1.12.0" }
 i_tree = { version = "~0.15.0" }
-#i_key_sort = { version = "~0.4.0" }
+i_key_sort = { version = "~0.5.0" }
 
-i_float = { path = "../../iFloat", features = ["bin_key"] }
-i_shape = { path = "../../iShape" }
+#i_float = { path = "../../iFloat", features = ["bin_key"] }
+#i_shape = { path = "../../iShape" }
 #i_tree = { path = "../../iTree" }
-i_key_sort = { path = "../../iKeySort" }
+#i_key_sort = { path = "../../iKeySort" }
 
 [dependencies.rayon]
 version = "^1.10"

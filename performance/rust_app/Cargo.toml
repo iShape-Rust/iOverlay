@@ -12,4 +12,4 @@ codegen-units = 1
 
 #i_overlay = { path = "../../iOverlay", default-features = true }
 #i_overlay = { path = "../../iOverlay", default-features = false }
-i_overlay = "~3.3.2"
+i_overlay = "~3.4.0"
