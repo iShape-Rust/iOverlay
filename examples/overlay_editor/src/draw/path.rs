@@ -94,7 +94,7 @@ impl PathWidget {
             FloatPoint::new(v.x, v.y)
         }).collect();
 
-        let sub_triangulation = stroke_builder.build_open_path_mesh(&screen_path);
+        let sub_triangulation = stroke_builder.build_open_path_mesh::<FloatPoint<f32>, usize>(&screen_path);
         builder.append(sub_triangulation);
 
         let r2 = 2.0 * width;
@@ -111,7 +111,7 @@ impl PathWidget {
                 let v0 = m0 + t0;
                 let v1 = m0 + t1;
 
-                let arrow_triangulation = stroke_builder.build_open_path_mesh(&[v0, m, v1]);
+                let arrow_triangulation = stroke_builder.build_open_path_mesh::<FloatPoint<f32>, usize>(&[v0, m, v1]);
                 builder.append(arrow_triangulation);
 
                 a = b;
