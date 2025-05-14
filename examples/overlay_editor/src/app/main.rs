@@ -12,7 +12,7 @@ use iced::keyboard::Event as KeyboardEvent;
 use iced::keyboard::Key::Named as NamedBox;
 use iced::widget::{vertical_rule, Space};
 use iced::widget::{Button, Column, Container, Row, Text};
-use iced::{Alignment, Element, Font, Length};
+use iced::{Alignment, Element, Length};
 use iced::{Subscription, Task};
 
 use crate::app::design::style_separator;
@@ -27,7 +27,6 @@ pub struct EditorApp {
 }
 
 pub(super) struct MainState {
-    custom_font: Font,
     selected_action: MainAction,
     pub(super) boolean: BooleanState,
     pub(super) string: StringState,
@@ -70,7 +69,7 @@ pub(crate) enum AppMessage {
 }
 
 impl EditorApp {
-    pub fn with_resource(mut app_resource: AppResource, custom_font: Font) -> Self {
+    pub fn with_resource(mut app_resource: AppResource) -> Self {
         Self {
             main_actions: vec![
                 MainAction::Boolean,
@@ -79,7 +78,6 @@ impl EditorApp {
                 MainAction::Outline,
             ],
             state: MainState {
-                custom_font,
                 selected_action: MainAction::Boolean,
                 boolean: BooleanState::new(&mut app_resource.boolean),
                 string: StringState::new(&mut app_resource.string),
@@ -171,7 +169,7 @@ impl EditorApp {
                 let is_selected = self.state.selected_action.eq(item);
                 column.push(
                     Container::new(
-                        Button::new(Text::new(item.title()).font(self.state.custom_font))
+                        Button::new(Text::new(item.title()))
                             .width(Length::Fill)
                             .on_press(AppMessage::Main(MainMessage::ActionSelected(item.clone())))
                             .style(if is_selected {

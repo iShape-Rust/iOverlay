@@ -1,6 +1,5 @@
 use std::panic;
 use std::sync::Once;
-use iced::Font;
 use wasm_bindgen::prelude::*;
 
 
@@ -8,8 +7,6 @@ use wasm_bindgen::prelude::*;
 pub struct WebApp {}
 
 static INIT_LOGGER: Once = Once::new();
-
-const ROBOTO_REGULAR: &[u8] = include_bytes!("assets/fonts/Roboto-Regular.ttf");
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
@@ -36,13 +33,6 @@ impl WebApp {
             console_log::init_with_level(log::Level::Debug).expect("error initializing log");
         });
 
-        info!("wasm start load fonts");
-
-        let _ = iced::font::load(ROBOTO_REGULAR);
-        let custom_font = Font {
-            family: iced::font::Family::Name("Roboto"),
-            ..Font::default()
-        };
         info!("wasm start");
 
         let app_initializer = move || {
@@ -53,7 +43,7 @@ impl WebApp {
                 &stroke_data,
                 &outline_data,
             );
-            let app = EditorApp::with_resource(app_resource, custom_font);
+            let app = EditorApp::with_resource(app_resource);
 
             (app, iced::Task::none())
         };
