@@ -36,7 +36,7 @@ impl Simplify for IntPath {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
         Overlay::with_options(self.len(), options).overlay_subject_contour(
-            &self,
+            self,
             fill_rule,
             Default::default(),
         )

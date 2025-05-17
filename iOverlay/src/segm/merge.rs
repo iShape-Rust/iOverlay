@@ -1,5 +1,3 @@
-use i_float::int::point::IntPoint;
-use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 
@@ -35,14 +33,14 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
             return;
         };
 
-        self.push(first_item.clone());
+        self.push(*first_item);
         let mut prev = first_item.x_segment;
 
         for item in iter {
             if prev.eq(&item.x_segment) {
                 self.last_mut().unwrap().count.apply(item.count);
             } else {
-                self.push(item.clone());
+                self.push(*item);
                 prev = item.x_segment;
             }
         }

@@ -26,7 +26,7 @@ impl SplitSolver {
         if segments.is_empty() {
             return false;
         }
-        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+        segments.smart_bin_sort_by(solver, |a, b| a.x_segment.cmp(&b.x_segment));
         let any_merged = segments.merge_if_needed();
         let any_intersection = self.split(segments, solver);
 
@@ -41,7 +41,7 @@ impl SplitSolver {
             return self.list_split(snap_radius, segments, solver);
         }
 
-        let is_fragmentation = solver.is_fragmentation_required(&segments);
+        let is_fragmentation = solver.is_fragmentation_required(segments);
 
         if is_fragmentation {
             self.fragment_split(snap_radius, segments, solver)
@@ -94,7 +94,7 @@ impl SplitSolver {
     }
 
     pub(super) fn apply<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, need_to_fix: bool, solver: &Solver) {
-        self.sort_and_filter_marks(&segments, solver);
+        self.sort_and_filter_marks(segments, solver);
         let min = segments[0].x_segment.a.x;
         let mut max = segments[0].x_segment.b.x;
 
@@ -117,7 +117,7 @@ impl SplitSolver {
             return self.one_bin_merge(segments, need_to_fix);
         };
 
-        let mut bins = Self::init_bins(max, &layout, &mut self.marks, &segments);
+        let mut bins = Self::init_bins(max, &layout, &self.marks, segments);
 
         let empty = Segment {
             x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },

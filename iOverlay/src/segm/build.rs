@@ -169,8 +169,7 @@ fn test_keep_points(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> bool {
     let dot = a.dot_product(b);
 
     // true to keep
-    let keep = cross != 0 || dot < 0;
-    keep
+    cross != 0 || dot < 0
 }
 
 impl<C: Send> Segment<C> {

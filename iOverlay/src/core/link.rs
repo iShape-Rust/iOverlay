@@ -43,7 +43,7 @@ pub(crate) struct OverlayLinkBuilder;
 impl OverlayLinkBuilder {
     #[inline]
     pub(crate) fn build_without_filter(
-        segments: &Vec<Segment<ShapeCountBoolean>>,
+        segments: &[Segment<ShapeCountBoolean>],
         fill_rule: FillRule,
         solver: &Solver,
     ) -> Vec<OverlayLink> {
@@ -52,7 +52,7 @@ impl OverlayLinkBuilder {
 
     #[inline]
     pub(super) fn build_with_filler_filter(
-        segments: &Vec<Segment<ShapeCountBoolean>>,
+        segments: &[Segment<ShapeCountBoolean>],
         fill_rule: FillRule,
         solver: &Solver,
     ) -> Vec<OverlayLink> {
@@ -82,8 +82,8 @@ impl OverlayLinkBuilder {
         fill_rule: FillRule,
         solver: &Solver,
     ) -> Vec<OverlayLink> {
-        let fills = Self::fill_string(&segments, fill_rule, solver);
-        Self::build_all_links(&segments, &fills)
+        let fills = Self::fill_string(segments, fill_rule, solver);
+        Self::build_all_links(segments, &fills)
     }
 
     pub(crate) fn build_string_with_clip_rule(

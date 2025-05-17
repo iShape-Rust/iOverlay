@@ -195,7 +195,7 @@ impl StringOverlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let links = OverlayLinkBuilder::build_string_with_clip_rule(&mut self.segments, fill_rule, clip_rule, &solver);
+        let links = OverlayLinkBuilder::build_string_with_clip_rule(&self.segments, fill_rule, clip_rule, &solver);
         StringGraph::new(solver, links).into_clip_string_lines()
     }
 

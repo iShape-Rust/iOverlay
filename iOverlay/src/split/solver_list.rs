@@ -48,7 +48,7 @@ impl SplitSolver {
 
             snap_radius.increment();
 
-            if need_to_fix && !solver.is_list_split(&segments) {
+            if need_to_fix && !solver.is_list_split(segments) {
                 // finish with tree solver if edges is become large
                 self.tree_split(snap_radius, segments, solver);
                 return true;
