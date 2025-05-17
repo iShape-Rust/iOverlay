@@ -1,3 +1,4 @@
+use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
@@ -8,81 +9,88 @@ use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn fragment_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> (Vec<Segment<C>>, bool) {
-        let layout = if let Some(layout) = GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len()) {
+    pub(super) fn fragment_split<C: WindingCount>(
+        &mut self,
+        snap_radius: SnapRadius,
+        segments: &mut Vec<Segment<C>>,
+        solver: &Solver
+    ) -> bool {
+        let layout = if let Some(layout) =
+            GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len())
+        {
             layout
         } else {
-            return self.tree_split(snap_radius, segments)
+            return self.tree_split(snap_radius, segments, solver);
         };
 
         let mut buffer = FragmentBuffer::new(layout);
 
-        let mut marks = Vec::new();
         let mut need_to_fix = true;
         let mut any_intersection = false;
-        
+
         let mut snap_radius = snap_radius;
 
         while need_to_fix && segments.len() > 2 {
+            self.marks.clear();
 
             buffer.init_fragment_buffer(segments.iter().map(|it| it.x_segment));
             for (i, segment) in segments.iter().enumerate() {
                 buffer.add_segment(i, segment.x_segment);
             }
 
-            need_to_fix = self.process(snap_radius.radius(), &mut buffer, &mut marks);
+            need_to_fix = self.process(snap_radius.radius(), &mut buffer, solver);
 
             if !buffer.on_border.is_empty() {
                 for (&index, segments) in buffer.on_border.iter_mut() {
                     if let Some(fragments) = buffer.groups.get(index) {
                         let border_x = buffer.layout.pos(index);
-                        Self::on_border_split(border_x, fragments, segments, &mut marks);
+                        self.on_border_split(border_x, fragments, segments);
                     }
                 }
             }
 
-            if marks.is_empty() {
-                return (segments, any_intersection);
+            if self.marks.is_empty() {
+                return any_intersection;
             }
 
             any_intersection = true;
             buffer.clear();
 
-            segments = self.apply(&mut marks, segments, need_to_fix);
-
-            marks.clear();
+            self.apply(segments, need_to_fix, solver);
 
             snap_radius.increment();
         }
 
-        (segments, any_intersection)
+        any_intersection
     }
 
     #[inline]
-    fn process(&self, radius: i64, buffer: &mut FragmentBuffer, marks: &mut Vec<LineMark>) -> bool {
+    fn process(&mut self, radius: i64, buffer: &mut FragmentBuffer, solver: &Solver) -> bool {
         #[cfg(feature = "allow_multithreading")]
         {
-            if self.solver.multithreading.is_some() {
-                return Self::parallel_split(radius, buffer, marks)
+            if solver.multithreading.is_some() {
+                return self.parallel_split(radius, buffer);
             }
         }
 
-        Self::serial_split(radius, buffer, marks)
+        self.serial_split(radius, buffer)
     }
 
     #[inline]
-    fn serial_split(radius: i64, buffer: &mut FragmentBuffer, marks: &mut Vec<LineMark>) -> bool {
+    fn serial_split(&mut self, radius: i64, buffer: &mut FragmentBuffer) -> bool {
         let mut is_any_round = false;
         for group in buffer.groups.iter_mut() {
-            if group.is_empty() { continue; }
-            let any_round = SplitSolver::bin_split(radius, group, marks);
+            if group.is_empty() {
+                continue;
+            }
+            let any_round = SplitSolver::bin_split(radius, group, &mut self.marks);
             is_any_round = is_any_round || any_round;
         }
         is_any_round
     }
 
     #[cfg(feature = "allow_multithreading")]
-    fn parallel_split(radius: i64, buffer: &mut FragmentBuffer, marks: &mut Vec<LineMark>) -> bool {
+    fn parallel_split(&mut self, radius: i64, buffer: &mut FragmentBuffer) -> bool {
         use rayon::iter::IntoParallelRefMutIterator;
         use rayon::iter::ParallelIterator;
 
@@ -91,7 +99,7 @@ impl SplitSolver {
             marks: Vec<LineMark>,
         }
 
-        let marks_capacity = marks.len() / buffer.groups.len();
+        let marks_capacity = self.marks.len() / buffer.groups.len();
 
         let results: Vec<TaskResult> = buffer
             .groups
@@ -99,10 +107,7 @@ impl SplitSolver {
             .map(|group| {
                 let mut marks = Vec::with_capacity(marks_capacity);
                 let any_round = SplitSolver::bin_split(radius, group, &mut marks);
-                TaskResult {
-                    any_round,
-                    marks,
-                }
+                TaskResult { any_round, marks }
             })
             .collect();
 
@@ -117,13 +122,13 @@ impl SplitSolver {
             return false;
         }
 
-        if marks.capacity() < size {
-            let additional = size - marks.capacity();
-            marks.reserve(additional);
+        if self.marks.capacity() < size {
+            let additional = size - self.marks.capacity();
+            self.marks.reserve(additional);
         }
 
         for mut result in results.into_iter() {
-            marks.append(&mut result.marks);
+            self.marks.append(&mut result.marks);
         }
 
         is_any_round
@@ -131,7 +136,7 @@ impl SplitSolver {
 
     fn bin_split(radius: i64, fragments: &mut [Fragment], marks: &mut Vec<LineMark>) -> bool {
         if fragments.len() < 2 {
-            return false
+            return false;
         }
 
         fragments.sort_unstable_by(|a, b| a.rect.min_y.cmp(&b.rect.min_y));
@@ -150,12 +155,11 @@ impl SplitSolver {
                 // MARK: the intersection, ensuring the right order for deterministic results
 
                 let is_round = if fi.x_segment < fj.x_segment {
-                    SplitSolver::cross_fragments(fi, fj, marks, radius)
+                    Self::cross_fragments(fi, fj, radius, marks)
                 } else {
-                    SplitSolver::cross_fragments(fj, fi, marks, radius)
+                    Self::cross_fragments(fj, fi, radius, marks)
                 };
 
-                // let is_round = SplitSolver::cross(fi.index, fj.index, &fi.x_segment, &fj.x_segment, marks, radius);
                 any_round = any_round || is_round
             }
         }
@@ -163,7 +167,12 @@ impl SplitSolver {
         any_round
     }
 
-    fn on_border_split(border_x: i32, fragments: &[Fragment], vertical_segments: &mut [BorderVSegment], marks: &mut Vec<LineMark>) {
+    fn on_border_split(
+        &mut self,
+        border_x: i32,
+        fragments: &[Fragment],
+        vertical_segments: &mut [BorderVSegment]
+    ) {
         let mut points = Vec::new();
         for fragment in fragments.iter() {
             if fragment.x_segment.b.x == border_x {
@@ -185,13 +194,21 @@ impl SplitSolver {
             }
             let mut j = i;
             while j < points.len() && points[j].y < s.y_range.max {
-                marks.push(LineMark { index: s.id, point: points[j] });
+                self.marks.push(LineMark {
+                    index: s.id,
+                    point: points[j],
+                });
                 j += 1;
             }
         }
     }
 
-    fn cross_fragments(fi: &Fragment, fj: &Fragment, marks: &mut Vec<LineMark>, radius: i64) -> bool {
+    fn cross_fragments(
+        fi: &Fragment,
+        fj: &Fragment,
+        radius: i64,
+        marks: &mut Vec<LineMark>
+    ) -> bool {
         let cross = if let Some(cross) = CrossSolver::cross(&fi.x_segment, &fj.x_segment, radius) {
             cross
         } else {
@@ -203,43 +220,73 @@ impl SplitSolver {
         match cross.cross_type {
             CrossType::Overlay => {
                 let mask = CrossSolver::collinear(&fi.x_segment, &fj.x_segment);
-                if mask == 0 { return false; }
+                if mask == 0 {
+                    return false;
+                }
 
-                if !(fi.rect.contains_with_radius(fi.x_segment.a, r) || fj.rect.contains_with_radius(fi.x_segment.a, r)) {
+                if !(fi.rect.contains_with_radius(fi.x_segment.a, r)
+                    || fj.rect.contains_with_radius(fi.x_segment.a, r))
+                {
                     return false;
                 }
 
                 if mask.is_target_a() {
-                    marks.push(LineMark { index: fj.index, point: fi.x_segment.a });
+                    marks.push(LineMark {
+                        index: fj.index,
+                        point: fi.x_segment.a,
+                    });
                 }
 
                 if mask.is_target_b() {
-                    marks.push(LineMark { index: fj.index, point: fi.x_segment.b });
+                    marks.push(LineMark {
+                        index: fj.index,
+                        point: fi.x_segment.b,
+                    });
                 }
 
                 if mask.is_other_a() {
-                    marks.push(LineMark { index: fi.index, point: fj.x_segment.a });
+                    marks.push(LineMark {
+                        index: fi.index,
+                        point: fj.x_segment.a,
+                    });
                 }
 
                 if mask.is_other_b() {
-                    marks.push(LineMark { index: fi.index, point: fj.x_segment.b });
+                    marks.push(LineMark {
+                        index: fi.index,
+                        point: fj.x_segment.b,
+                    });
                 }
             }
             _ => {
-                if !fi.rect.contains_with_radius(cross.point, r) || !fj.rect.contains_with_radius(cross.point, r) {
+                if !fi.rect.contains_with_radius(cross.point, r)
+                    || !fj.rect.contains_with_radius(cross.point, r)
+                {
                     return false;
                 }
 
                 match cross.cross_type {
                     CrossType::Pure => {
-                        marks.push(LineMark { index: fi.index, point: cross.point });
-                        marks.push(LineMark { index: fj.index, point: cross.point });
+                        marks.push(LineMark {
+                            index: fi.index,
+                            point: cross.point,
+                        });
+                        marks.push(LineMark {
+                            index: fj.index,
+                            point: cross.point,
+                        });
                     }
                     CrossType::TargetEnd => {
-                        marks.push(LineMark { index: fj.index, point: cross.point });
+                        marks.push(LineMark {
+                            index: fj.index,
+                            point: cross.point,
+                        });
                     }
                     CrossType::OtherEnd => {
-                        marks.push(LineMark { index: fi.index, point: cross.point });
+                        marks.push(LineMark {
+                            index: fi.index,
+                            point: cross.point,
+                        });
                     }
                     _ => {}
                 }
@@ -248,5 +295,4 @@ impl SplitSolver {
 
         cross.is_round
     }
-
 }

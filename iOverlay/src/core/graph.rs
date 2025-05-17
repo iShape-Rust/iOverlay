@@ -24,6 +24,12 @@ pub struct OverlayGraph {
 }
 
 impl OverlayGraph {
+
+    #[inline]
+    pub(crate) fn empty() -> Self {
+        Self { solver: Default::default(), nodes: Vec::new(), links: Vec::new() }
+    }
+
     #[inline]
     pub(crate) fn new(solver: Solver, links: Vec<OverlayLink>) -> Self {
         let mut m_links = links;

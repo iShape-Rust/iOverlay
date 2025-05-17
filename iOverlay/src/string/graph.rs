@@ -11,6 +11,15 @@ pub struct StringGraph {
 
 impl StringGraph {
     #[inline]
+    pub(super) fn empty() -> Self {
+        Self {
+            solver: Default::default(),
+            nodes: Vec::new(),
+            links: Vec::new(),
+        }
+    }
+
+    #[inline]
     pub(super) fn new(solver: Solver, links: Vec<OverlayLink>) -> Self {
         let mut m_links = links;
         let old_nodes = OverlayGraph::build_nodes_and_connect_links(&solver, &mut m_links);

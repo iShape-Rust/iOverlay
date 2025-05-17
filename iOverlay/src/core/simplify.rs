@@ -81,27 +81,28 @@ impl Overlay {
         fill_rule: FillRule,
         solver: Solver,
     ) -> IntShapes {
-        let is_modified = self.segments.append_path_iter(
+        let append_modified = self.segments.append_path_iter(
             contour.iter().copied(),
             ShapeType::Subject,
             self.options.preserve_input_collinear,
         );
 
-        let early_out = !is_modified && !Self::has_loops(contour);
-
-        if let Some(links) = OverlayLinkBuilder::build_with_overlay_short_subject(
-            self.segments,
-            fill_rule,
-            solver,
-            early_out,
-        ) {
-            let graph = OverlayGraph::new(solver, links);
-            let filter = vec![false; graph.links.len()];
-            graph.extract(filter, OverlayRule::Subject, self.options, &mut self.points_buffer)
-        } else {
+        let split_modified = self.split_solver.split_segments(&mut self.segments, &solver);
+        if !split_modified && !append_modified && !Self::has_loops(contour) {
             // the path is perfect just need to check direction
-            Self::apply_fill_rule(self.options.output_direction, fill_rule, contour)
+            return Self::apply_fill_rule(self.options.output_direction, fill_rule, contour);
         }
+
+        let links = OverlayLinkBuilder::build_with_overlay_filter(
+            &self.segments,
+            fill_rule,
+            OverlayRule::Subject,
+            &solver
+        );
+
+        let graph = OverlayGraph::new(solver, links);
+        let filter = vec![false; graph.links.len()];
+        graph.extract(filter, OverlayRule::Subject, self.options, &mut self.points_buffer)
     }
 
     #[inline]

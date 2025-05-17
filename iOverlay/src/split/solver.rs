@@ -10,58 +10,43 @@ use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
 use crate::util::sort::SmartBinSort;
 
-pub(crate) trait SplitSegments<C: WindingCount> {
-    fn split_segments(self, solver: Solver) -> Vec<Segment<C>>;
-    fn split_segments_with_modification(self, solver: Solver, modification: &mut bool) -> Vec<Segment<C>>;
-}
-
-impl<C: WindingCount> SplitSegments<C> for Vec<Segment<C>> {
-    #[inline]
-    fn split_segments(self, solver: Solver) -> Vec<Segment<C>> {
-        let mut segments = self;
-        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
-        segments.merge_if_needed();
-
-        let (segments, _) = SplitSolver::new(solver).split(segments);
-        segments
-    }
-
-    fn split_segments_with_modification(self, solver: Solver, modification: &mut bool) -> Vec<Segment<C>> {
-        let mut segments = self;
-        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
-        let any_merged = segments.merge_if_needed();
-
-        let (segments, any_intersection) = SplitSolver::new(solver).split(segments);
-        *modification = any_merged | any_intersection;
-
-        segments
-    }
-}
-
-pub(super) struct SplitSolver {
-    pub(super) solver: Solver,
+#[derive(Clone)]
+pub(crate) struct SplitSolver {
+    pub(super) marks: Vec<LineMark>,
 }
 
 impl SplitSolver {
     #[inline(always)]
-    pub(crate) fn new(solver: Solver) -> Self {
-        Self { solver }
+    pub(crate) fn new() -> Self {
+        Self { marks: Vec::new() }
     }
 
     #[inline]
-    pub(crate) fn split<C: WindingCount>(&self, segments: Vec<Segment<C>>) -> (Vec<Segment<C>>, bool) {
-        let is_list = self.solver.is_list_split(&segments);
-        let snap_radius = self.snap_radius();
+    pub(crate) fn split_segments<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, solver: &Solver) -> bool {
+        if segments.is_empty() {
+            return false;
+        }
+        segments.smart_bin_sort_by(&solver, |a, b| a.x_segment.cmp(&b.x_segment));
+        let any_merged = segments.merge_if_needed();
+        let any_intersection = self.split(segments, solver);
+
+        any_merged | any_intersection
+    }
+
+    #[inline]
+    fn split<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, solver: &Solver) -> bool {
+        let is_list = solver.is_list_split(segments);
+        let snap_radius = solver.snap_radius();
         if is_list {
-            return self.list_split(snap_radius, segments);
+            return self.list_split(snap_radius, segments, solver);
         }
 
-        let is_fragmentation = self.solver.is_fragmentation_required(&segments);
+        let is_fragmentation = solver.is_fragmentation_required(&segments);
 
         if is_fragmentation {
-            self.fragment_split(snap_radius, segments)
+            self.fragment_split(snap_radius, segments, solver)
         } else {
-            self.tree_split(snap_radius, segments)
+            self.tree_split(snap_radius, segments, solver)
         }
     }
 
@@ -108,12 +93,12 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply<C: WindingCount>(&self, marks: &mut Vec<LineMark>, segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
-        self.sort_and_filter_marks(marks, &segments);
+    pub(super) fn apply<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, need_to_fix: bool, solver: &Solver) {
+        self.sort_and_filter_marks(&segments, solver);
         let min = segments[0].x_segment.a.x;
         let mut max = segments[0].x_segment.b.x;
 
-        for m in marks.iter() {
+        for m in self.marks.iter() {
             max = max.max(m.point.x);
         }
 
@@ -121,18 +106,18 @@ impl SplitSolver {
             max = max.max(s.x_segment.b.x);
         }
 
-        let new_len = segments.len() + marks.len();
+        let new_len = segments.len() + self.marks.len();
         if new_len <= 16 {
-            return Self::one_bin_merge(marks, segments, need_to_fix);
+            return self.one_bin_merge(segments, need_to_fix);
         };
 
         let layout = if let Some(layout) = BinLayout::new(min..max, new_len) {
             layout
         } else {
-            return Self::one_bin_merge(marks, segments, need_to_fix);
+            return self.one_bin_merge(segments, need_to_fix);
         };
 
-        let mut bins = Self::init_bins(max, &layout, marks, &segments);
+        let mut bins = Self::init_bins(max, &layout, &mut self.marks, &segments);
 
         let empty = Segment {
             x_segment: XSegment { a: IntPoint::ZERO, b: IntPoint::ZERO },
@@ -141,13 +126,12 @@ impl SplitSolver {
 
         let mut buffer = vec![empty; new_len];
 
-        // let mut buffer = vec![empty; new_len];
         let slice = buffer.as_mut_slice();
 
         // split segments
 
         let mut j = 0;
-        let mut mj = marks[0];
+        let mut mj = self.marks[0];
         for (i, s) in segments.iter().enumerate() {
             // TODO early out
             if i != mj.index {
@@ -169,8 +153,8 @@ impl SplitSolver {
                 // add middle
                 let mut m0 = mj;
                 j += 1;
-                while j < marks.len() {
-                    mj = marks[j];
+                while j < self.marks.len() {
+                    mj = self.marks[j];
                     if m0.index != mj.index {
                         break;
                     }
@@ -203,9 +187,7 @@ impl SplitSolver {
             }
         }
 
-        buffer.merge_if_needed();
-
-        buffer
+        segments.copy_and_merge(&buffer);
     }
 
     #[inline]
@@ -261,39 +243,37 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn one_bin_merge<C: WindingCount>(marks: &mut [LineMark], mut segments: Vec<Segment<C>>, need_to_fix: bool) -> Vec<Segment<C>> {
+    fn one_bin_merge<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, need_to_fix: bool) {
         if need_to_fix {
-            segments.reserve(marks.len());
+            segments.reserve(self.marks.len());
         } else {
-            segments.reserve_exact(marks.len());
+            segments.reserve_exact(self.marks.len());
         }
 
         let mut i = 0;
-        while i < marks.len() {
-            let index = marks[i].index;
+        while i < self.marks.len() {
+            let index = self.marks[i].index;
             let i0 = i;
             i += 1;
-            while i < marks.len() && marks[i].index == index {
+            while i < self.marks.len() && self.marks[i].index == index {
                 i += 1;
             }
 
             if i0 + 1 == i {
                 let e0 = unsafe { segments.get_unchecked_mut(index) };
-                let p = marks[i0].point;
+                let p = self.marks[i0].point;
                 let b = e0.x_segment.b;
                 let count = e0.count;
                 *e0 = Segment::create_and_validate(e0.x_segment.a, p, count);
                 segments.push(Segment::create_and_validate(p, b, count));
             } else {
-                Self::multi_split_edge(&marks[i0..i], &mut segments);
+                Self::multi_split_edge(&self.marks[i0..i], segments);
             }
         }
 
         segments.sort_unstable_by(|a, b| a.x_segment.cmp(&b.x_segment));
 
         segments.merge_if_needed();
-
-        segments
     }
 
     #[inline]
@@ -318,23 +298,23 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_and_filter_marks<C: Send>(&self, marks: &mut Vec<LineMark>, segments: &[Segment<C>]) {
-        marks.smart_bin_sort_by(&self.solver, |a, b| a.index.cmp(&b.index).then(a.point.cmp(&b.point)));
-        marks.dedup();
+    fn sort_and_filter_marks<C: Send>(&mut self, segments: &[Segment<C>], solver: &Solver) {
+        self.marks.smart_bin_sort_by(solver, |a, b| a.index.cmp(&b.index).then(a.point.cmp(&b.point)));
+        self.marks.dedup();
 
         let mut i = 1;
         let mut i0 = 0;
-        let mut m0_index = marks[0].index;
+        let mut m0_index = self.marks[0].index;
 
-        while i < marks.len() {
-            let mi_index = marks[i].index;
+        while i < self.marks.len() {
+            let mi_index = self.marks[i].index;
             if mi_index == m0_index {
                 i += 1;
                 continue;
             }
 
             if i0 + 1 < i {
-                Self::sort_sub_marks(&mut marks[i0..i], segments);
+                Self::sort_sub_marks(&mut self.marks[i0..i], segments);
             }
 
             m0_index = mi_index;
@@ -343,7 +323,7 @@ impl SplitSolver {
         }
 
         if i0 + 1 < i {
-            Self::sort_sub_marks(&mut marks[i0..i], segments);
+            Self::sort_sub_marks(&mut self.marks[i0..i], segments);
         }
     }
 

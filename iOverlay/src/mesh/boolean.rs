@@ -14,7 +14,7 @@ use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::{Segment, SegmentFill, SUBJ_TOP};
 use crate::segm::winding_count::WindingCount;
-use crate::split::solver::SplitSegments;
+use crate::split::solver::SplitSolver;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct OffsetCountBoolean {
@@ -92,10 +92,11 @@ impl WindingCount for OffsetCountBoolean {
 
 impl OverlayGraph {
     #[inline]
-    pub(crate) fn offset_graph_with_solver(segments: Vec<Segment<OffsetCountBoolean>>, solver: Solver) -> OverlayGraph {
-        if segments.is_empty() { return OverlayGraph::new(solver, vec![]); }
-        let segments = segments.split_segments(solver);
-        if segments.is_empty() { return OverlayGraph::new(solver, vec![]); }
+    pub(crate) fn offset_graph_with_solver(mut segments: Vec<Segment<OffsetCountBoolean>>, split_solver: &mut SplitSolver, solver: Solver) -> OverlayGraph {
+        split_solver.split_segments(&mut segments, &solver);
+        if segments.is_empty() {
+            return OverlayGraph::empty();
+        }
         let is_list = solver.is_list_fill(&segments);
         let fills = FillSolver::fill::<SubjectOffsetStrategy, OffsetCountBoolean>(is_list, &segments);
         let links = OverlayLinkBuilder::build_all_links(&segments, &fills);

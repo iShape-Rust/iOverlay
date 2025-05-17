@@ -7,6 +7,7 @@ use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use i_tree::seg::exp::{SegExpCollection, SegRange};
 use i_tree::seg::tree::SegExpTree;
+use crate::core::solver::Solver;
 
 #[derive(Debug, Clone, Copy)]
 struct IdSegment {
@@ -23,18 +24,18 @@ impl ExpiredVal<i32> for IdSegment {
 
 impl SplitSolver {
     pub(super) fn tree_split<C: WindingCount>(
-        &self,
+        &mut self,
         snap_radius: SnapRadius,
-        mut segments: Vec<Segment<C>>,
-    ) -> (Vec<Segment<C>>, bool) {
+        segments: &mut Vec<Segment<C>>,
+        solver: &Solver
+    ) -> bool {
         let range: SegRange<i32> = segments.ver_range().into();
         let mut tree: SegExpTree<i32, i32, IdSegment> = if let Some(tree) = SegExpTree::new(range) {
             tree
         } else {
-            return self.list_split(snap_radius, segments);
+            return self.list_split(snap_radius, segments, solver);
         };
 
-        let mut marks = Vec::new();
         let mut need_to_fix = true;
         let mut any_intersection = false;
 
@@ -42,6 +43,7 @@ impl SplitSolver {
 
         while need_to_fix && segments.len() > 2 {
             need_to_fix = false;
+            self.marks.clear();
 
             let radius = snap_radius.radius();
 
@@ -60,7 +62,7 @@ impl SplitSolver {
                         scan_index,
                         this,
                         scan,
-                        &mut marks,
+                        &mut self.marks,
                         radius,
                     );
 
@@ -70,21 +72,19 @@ impl SplitSolver {
                 tree.insert_by_range(si_range, si.id_segment(i));
             }
 
-            if marks.is_empty() {
-                return (segments, any_intersection);
+            if self.marks.is_empty() {
+                return any_intersection;
             }
 
             any_intersection = true;
             tree.clear();
 
-            segments = self.apply(&mut marks, segments, need_to_fix);
-
-            marks.clear();
+            self.apply(segments, need_to_fix, solver);
 
             snap_radius.increment();
         }
 
-        (segments, any_intersection)
+        any_intersection
     }
 }
 

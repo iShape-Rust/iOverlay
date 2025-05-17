@@ -10,6 +10,7 @@ use crate::geom::x_segment::XSegment;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
+use crate::split::solver::SplitSolver;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
@@ -17,6 +18,7 @@ use crate::string::line::IntLine;
 #[derive(Clone)]
 pub struct StringOverlay {
     pub(super) segments: Vec<Segment<ShapeCountString>>,
+    pub(crate) split_solver: SplitSolver
 }
 
 impl StringOverlay {
@@ -27,6 +29,7 @@ impl StringOverlay {
     pub fn new(capacity: usize) -> Self {
         Self {
             segments: Vec::with_capacity(capacity),
+            split_solver: SplitSolver::new()
         }
     }
 
@@ -187,8 +190,12 @@ impl StringOverlay {
     /// # Returns
     /// A vector of `IntPath` instances representing the clipped sections of the input lines.
     #[inline]
-    pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<IntPath> {
-        let links = OverlayLinkBuilder::build_string_with_clip_rule(self.segments, fill_rule, clip_rule, solver);
+    pub fn clip_string_lines_with_solver(mut self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<IntPath> {
+        self.split_solver.split_segments(&mut self.segments, &solver);
+        if self.segments.is_empty() {
+            return Vec::new();
+        }
+        let links = OverlayLinkBuilder::build_string_with_clip_rule(&mut self.segments, fill_rule, clip_rule, &solver);
         StringGraph::new(solver, links).into_clip_string_lines()
     }
 
@@ -205,8 +212,13 @@ impl StringOverlay {
     /// - `fill_rule`: The rule that defines how to fill shapes (e.g., non-zero, even-odd).
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
-    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> StringGraph {
-        let links = OverlayLinkBuilder::build_string_all(self.segments, fill_rule, solver);
+    pub fn into_graph_with_solver(mut self, fill_rule: FillRule, solver: Solver) -> StringGraph {
+        self.split_solver.split_segments(&mut self.segments, &solver);
+        if self.segments.is_empty() {
+            return StringGraph::empty();
+        }
+
+        let links = OverlayLinkBuilder::build_string_all(&mut self.segments, fill_rule, &solver);
         StringGraph::new(solver, links)
     }
 }

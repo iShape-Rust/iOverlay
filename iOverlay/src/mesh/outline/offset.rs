@@ -15,6 +15,7 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::area::IntArea;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use crate::split::solver::SplitSolver;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -80,6 +81,7 @@ where
             // FloatPointAdapter::with_scale(rect, 1.0) // Debug !!!
         };
 
+        let mut split_solver = SplitSolver::new();
         let int_min_area = adapter.sqr_float_to_int(options.min_output_area).max(1);
         let shapes = if paths_count <= 1 {
             // fast solution for a single path
@@ -100,7 +102,7 @@ where
             let mut segments = Vec::with_capacity(capacity);
             outer_builder.build(path, &adapter, &mut segments);
 
-            OverlayGraph::offset_graph_with_solver(segments, Default::default())
+            OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
                 .extract_offset(options.output_direction, int_min_area)
         } else {
             let total_capacity = outer_builder.capacity(points_count);
@@ -119,7 +121,7 @@ where
                     let mut segments = Vec::with_capacity(capacity);
                     outer_builder.build(path, &adapter, &mut segments);
                     let shapes =
-                        OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                        OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
                             .extract_offset(ContourDirection::CounterClockwise, 0);
                     overlay.add_shapes(&shapes, ShapeType::Subject);
                 } else {
@@ -133,7 +135,7 @@ where
                     let mut segments = Vec::with_capacity(capacity);
                     inner_builder.build(&inverted, &adapter, &mut segments);
                     let mut shapes =
-                        OverlayGraph::offset_graph_with_solver(segments, Default::default())
+                        OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
                             .extract_offset(ContourDirection::CounterClockwise, 0);
 
                     for shape in shapes.iter_mut() {

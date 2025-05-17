@@ -2,6 +2,7 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
+use crate::split::solver::SplitSolver;
 use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay_rule::OverlayRule;
@@ -60,6 +61,7 @@ pub struct Overlay {
     pub options: IntOverlayOptions,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
     pub(crate) points_buffer: Vec<IntPoint>,
+    pub(crate) split_solver: SplitSolver
 }
 
 impl Overlay {
@@ -70,7 +72,8 @@ impl Overlay {
         Self {
             options: Default::default(),
             segments: Vec::with_capacity(capacity),
-            points_buffer: Vec::new()
+            points_buffer: Vec::new(),
+            split_solver: SplitSolver::new()
         }
     }
 
@@ -82,7 +85,8 @@ impl Overlay {
         Self {
             options,
             segments: Vec::with_capacity(capacity),
-            points_buffer: Vec::new()
+            points_buffer: Vec::new(),
+            split_solver: SplitSolver::new()
         }
     }
 
@@ -221,16 +225,20 @@ impl Overlay {
     /// - `overlay_rule`: The overlay rule to apply.
     /// - `solver`: Type of solver to use.
     pub fn into_shape_vectors(
-        self,
+        mut self,
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
         solver: Solver,
     ) -> Vec<VectorShape> {
+        self.split_solver.split_segments(&mut self.segments, &solver);
+        if self.segments.is_empty() {
+            return Vec::new();
+        }
         let links = OverlayLinkBuilder::build_with_overlay_filter(
-            self.segments,
+            &self.segments,
             fill_rule,
             overlay_rule,
-            solver,
+            &solver,
         );
         let graph = OverlayGraph::new(solver, links);
         graph.extract_shape_vectors(overlay_rule)
@@ -239,8 +247,13 @@ impl Overlay {
     /// Convert into vectors from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `solver`: Type of solver to use.
-    pub fn into_separate_vectors(self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
-        let links = OverlayLinkBuilder::build_without_filter(self.segments, fill_rule, solver);
+    pub fn into_separate_vectors(mut self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
+        self.split_solver.split_segments(&mut self.segments, &solver);
+        if self.segments.is_empty() {
+            return Vec::new();
+        }
+
+        let links = OverlayLinkBuilder::build_without_filter(&self.segments, fill_rule, &solver);
         OverlayGraph::new(solver, links).extract_separate_vectors()
     }
 
@@ -255,8 +268,12 @@ impl Overlay {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - `solver`: Type of solver to use.
     #[inline]
-    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
-        let links = OverlayLinkBuilder::build_with_filler_filter(self.segments, fill_rule, solver);
+    pub fn into_graph_with_solver(mut self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
+        self.split_solver.split_segments(&mut self.segments, &solver);
+        if self.segments.is_empty() {
+            return OverlayGraph::empty();
+        }
+        let links = OverlayLinkBuilder::build_with_filler_filter(&self.segments, fill_rule, &solver);
         OverlayGraph::new(solver, links)
     }
 
@@ -335,11 +352,15 @@ impl Overlay {
         fill_rule: FillRule,
         solver: Solver,
     ) -> IntShapes {
+        self.split_solver.split_segments(&mut self.segments, &solver);
+        if self.segments.is_empty() {
+            return Vec::new();
+        }
         let links = OverlayLinkBuilder::build_with_overlay_filter(
-            self.segments,
+            &self.segments,
             fill_rule,
             overlay_rule,
-            solver,
+            &solver,
         );
         let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];

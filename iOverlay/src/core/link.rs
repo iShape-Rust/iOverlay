@@ -1,14 +1,18 @@
-use i_float::int::point::IntPoint;
 use crate::core::fill_rule::FillRule;
-use crate::core::filter::{ClipFilter, DifferenceFilter, StringClipInsideBoundaryExcludedFilter, StringClipInsideBoundaryIncludedFilter, FillerFilter, IntersectFilter, InverseDifferenceFilter, StringClipOutsideBoundaryExcludedFilter, StringClipOutsideBoundaryIncludedFilter, SubjectFilter, UnionFilter, XorFilter, InclusionFilterStrategy};
+use crate::core::filter::{
+    ClipFilter, DifferenceFilter, FillerFilter, InclusionFilterStrategy, IntersectFilter,
+    InverseDifferenceFilter, StringClipInsideBoundaryExcludedFilter,
+    StringClipInsideBoundaryIncludedFilter, StringClipOutsideBoundaryExcludedFilter,
+    StringClipOutsideBoundaryIncludedFilter, SubjectFilter, UnionFilter, XorFilter,
+};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::fill::solver::{FillSolver, FillStrategy};
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::{Segment, SegmentFill};
-use crate::segm::winding_count::{WindingCount, ShapeCountBoolean, ShapeCountString};
-use crate::split::solver::SplitSegments;
+use crate::segm::winding_count::{ShapeCountBoolean, ShapeCountString, WindingCount};
 use crate::string::clip::ClipRule;
+use i_float::int::point::IntPoint;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct OverlayLink {
@@ -38,17 +42,30 @@ pub(crate) struct OverlayLinkBuilder;
 
 impl OverlayLinkBuilder {
     #[inline]
-    pub(crate) fn build_without_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+    pub(crate) fn build_without_filter(
+        segments: &Vec<Segment<ShapeCountBoolean>>,
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
         Self::build_boolean_all(segments, fill_rule, solver)
     }
 
     #[inline]
-    pub(super) fn build_with_filler_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
+    pub(super) fn build_with_filler_filter(
+        segments: &Vec<Segment<ShapeCountBoolean>>,
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
         Self::build_boolean::<FillerFilter>(segments, fill_rule, solver)
     }
 
     #[inline]
-    pub(super) fn build_with_overlay_filter(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, overlay_rule: OverlayRule, solver: Solver) -> Vec<OverlayLink> {
+    pub(super) fn build_with_overlay_filter(
+        segments: &[Segment<ShapeCountBoolean>],
+        fill_rule: FillRule,
+        overlay_rule: OverlayRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
         match overlay_rule {
             OverlayRule::Subject => Self::build_boolean::<SubjectFilter>(segments, fill_rule, solver),
             OverlayRule::Clip => Self::build_boolean::<ClipFilter>(segments, fill_rule, solver),
@@ -60,43 +77,36 @@ impl OverlayLinkBuilder {
         }
     }
 
-    pub(crate) fn build_string_all(segments: Vec<Segment<ShapeCountString>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() { return vec![]; }
-        let segments = segments.split_segments(solver);
-        if segments.is_empty() { return vec![]; }
+    pub(crate) fn build_string_all(
+        segments: &mut [Segment<ShapeCountString>],
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
         let fills = Self::fill_string(&segments, fill_rule, solver);
-
         Self::build_all_links(&segments, &fills)
     }
 
-    pub(crate) fn build_string_with_clip_rule(segments: Vec<Segment<ShapeCountString>>, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() { return vec![]; }
-        let segments = segments.split_segments(solver);
-        if segments.is_empty() { return vec![]; }
-        let fills = Self::fill_string(&segments, fill_rule, solver);
+    pub(crate) fn build_string_with_clip_rule(
+        segments: &[Segment<ShapeCountString>],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
+        let fills = Self::fill_string(segments, fill_rule, solver);
 
         match clip_rule {
-            ClipRule { invert: true, boundary_included: true } => Self::build_links::<StringClipOutsideBoundaryIncludedFilter, ShapeCountString>(&segments, &fills),
-            ClipRule { invert: true, boundary_included: false } => Self::build_links::<StringClipOutsideBoundaryExcludedFilter, ShapeCountString>(&segments, &fills),
-            ClipRule { invert: false, boundary_included: true } => Self::build_links::<StringClipInsideBoundaryIncludedFilter, ShapeCountString>(&segments, &fills),
-            ClipRule { invert: false, boundary_included: false } => Self::build_links::<StringClipInsideBoundaryExcludedFilter, ShapeCountString>(&segments, &fills),
+            ClipRule { invert: true, boundary_included: true } => Self::build_links::<StringClipOutsideBoundaryIncludedFilter, ShapeCountString>(segments, &fills),
+            ClipRule { invert: true, boundary_included: false } => Self::build_links::<StringClipOutsideBoundaryExcludedFilter, ShapeCountString>(segments, &fills),
+            ClipRule { invert: false, boundary_included: true } => Self::build_links::<StringClipInsideBoundaryIncludedFilter, ShapeCountString>(segments, &fills),
+            ClipRule { invert: false, boundary_included: false } => Self::build_links::<StringClipInsideBoundaryExcludedFilter, ShapeCountString>(segments, &fills),
         }
     }
 
-    #[inline]
-    pub(super) fn build_with_overlay_short_subject(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver, early_out: bool) -> Option<Vec<OverlayLink>> {
-        if segments.is_empty() { return Some(vec![]); }
-        let mut modified = false;
-        let segments = segments.split_segments_with_modification(solver, &mut modified);
-        if !modified && early_out {
-            return None;
-        }
-        if segments.is_empty() { return Some(vec![]); }
-        let fills = Self::fill_boolean(&segments, fill_rule, solver);
-        Some(Self::build_links::<SubjectFilter, ShapeCountBoolean>(&segments, &fills))
-    }
-
-    fn fill_string(segments: &[Segment<ShapeCountString>], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
+    fn fill_string(
+        segments: &[Segment<ShapeCountString>],
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<SegmentFill> {
         let is_list = solver.is_list_fill(segments);
         match fill_rule {
             FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategyString, ShapeCountString>(is_list, segments),
@@ -106,7 +116,11 @@ impl OverlayLinkBuilder {
         }
     }
 
-    fn fill_boolean(segments: &[Segment<ShapeCountBoolean>], fill_rule: FillRule, solver: Solver) -> Vec<SegmentFill> {
+    fn fill_boolean(
+        segments: &[Segment<ShapeCountBoolean>],
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<SegmentFill> {
         let is_list = solver.is_list_fill(segments);
         match fill_rule {
             FillRule::EvenOdd => FillSolver::fill::<EvenOddStrategy, ShapeCountBoolean>(is_list, segments),
@@ -116,24 +130,32 @@ impl OverlayLinkBuilder {
         }
     }
 
-    fn build_boolean<F: InclusionFilterStrategy>(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() { return vec![]; }
-        let segments = segments.split_segments(solver);
-        if segments.is_empty() { return vec![]; }
-        let fills = Self::fill_boolean(&segments, fill_rule, solver);
-        Self::build_links::<F, ShapeCountBoolean>(&segments, &fills)
+    #[inline]
+    fn build_boolean<F: InclusionFilterStrategy>(
+        segments: &[Segment<ShapeCountBoolean>],
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
+        let fills = Self::fill_boolean(segments, fill_rule, solver);
+        Self::build_links::<F, ShapeCountBoolean>(segments, &fills)
     }
 
-    fn build_boolean_all(segments: Vec<Segment<ShapeCountBoolean>>, fill_rule: FillRule, solver: Solver) -> Vec<OverlayLink> {
-        if segments.is_empty() { return vec![]; }
-        let segments = segments.split_segments(solver);
-        if segments.is_empty() { return vec![]; }
-        let fills = Self::fill_boolean(&segments, fill_rule, solver);
-        Self::build_all_links(&segments, &fills)
+    fn build_boolean_all(
+        segments: &[Segment<ShapeCountBoolean>],
+        fill_rule: FillRule,
+        solver: &Solver,
+    ) -> Vec<OverlayLink> {
+        let fills = Self::fill_boolean(segments, fill_rule, solver);
+        Self::build_all_links(segments, &fills)
     }
 
-    fn build_links<F: InclusionFilterStrategy, C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
-        let n = fills.iter().fold(0, |s, &fill| s + F::is_included(fill) as usize);
+    fn build_links<F: InclusionFilterStrategy, C: Send>(
+        segments: &[Segment<C>],
+        fills: &[SegmentFill],
+    ) -> Vec<OverlayLink> {
+        let n = fills
+            .iter()
+            .fold(0, |s, &fill| s + F::is_included(fill) as usize);
 
         let empty_id = IdPoint::new(0, IntPoint::ZERO);
         let empty_link = OverlayLink::new(empty_id, empty_id, 0);
@@ -144,8 +166,13 @@ impl OverlayLinkBuilder {
             if !F::is_included(fill) {
                 continue;
             }
-            let (segment, link) = unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
-            *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), fill);
+            let (segment, link) =
+                unsafe { (segments.get_unchecked(j), links.get_unchecked_mut(i)) };
+            *link = OverlayLink::new(
+                IdPoint::new(0, segment.x_segment.a),
+                IdPoint::new(0, segment.x_segment.b),
+                fill,
+            );
 
             i += 1;
         }
@@ -153,14 +180,22 @@ impl OverlayLinkBuilder {
         links
     }
 
-    pub(crate) fn build_all_links<C: Send>(segments: &[Segment<C>], fills: &[SegmentFill]) -> Vec<OverlayLink> {
+    pub(crate) fn build_all_links<C: Send>(
+        segments: &[Segment<C>],
+        fills: &[SegmentFill],
+    ) -> Vec<OverlayLink> {
         let empty_id = IdPoint::new(0, IntPoint::ZERO);
         let empty_link = OverlayLink::new(empty_id, empty_id, 0);
         let mut links = vec![empty_link; fills.len()];
 
         for (i, &fill) in fills.iter().enumerate() {
-            let (segment, link) = unsafe { (segments.get_unchecked(i), links.get_unchecked_mut(i)) };
-            *link = OverlayLink::new(IdPoint::new(0, segment.x_segment.a), IdPoint::new(0, segment.x_segment.b), fill);
+            let (segment, link) =
+                unsafe { (segments.get_unchecked(i), links.get_unchecked_mut(i)) };
+            *link = OverlayLink::new(
+                IdPoint::new(0, segment.x_segment.a),
+                IdPoint::new(0, segment.x_segment.b),
+                fill,
+            );
         }
 
         links
@@ -174,7 +209,10 @@ struct NegativeStrategy;
 
 impl FillStrategy<ShapeCountBoolean> for EvenOddStrategy {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountBoolean,
+        bot: ShapeCountBoolean,
+    ) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = 1 & top.subj as SegmentFill;
         let subj_bot = 1 & bot.subj as SegmentFill;
@@ -189,7 +227,10 @@ impl FillStrategy<ShapeCountBoolean> for EvenOddStrategy {
 
 impl FillStrategy<ShapeCountBoolean> for NonZeroStrategy {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountBoolean,
+        bot: ShapeCountBoolean,
+    ) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = (top.subj != 0) as SegmentFill;
         let subj_bot = (bot.subj != 0) as SegmentFill;
@@ -204,7 +245,10 @@ impl FillStrategy<ShapeCountBoolean> for NonZeroStrategy {
 
 impl FillStrategy<ShapeCountBoolean> for PositiveStrategy {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountBoolean,
+        bot: ShapeCountBoolean,
+    ) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = (top.subj > 0) as SegmentFill;
         let subj_bot = (bot.subj > 0) as SegmentFill;
@@ -219,7 +263,10 @@ impl FillStrategy<ShapeCountBoolean> for PositiveStrategy {
 
 impl FillStrategy<ShapeCountBoolean> for NegativeStrategy {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountBoolean,
+        bot: ShapeCountBoolean,
+    ) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = (top.subj < 0) as SegmentFill;
         let subj_bot = (bot.subj < 0) as SegmentFill;
@@ -239,7 +286,10 @@ pub(crate) struct NegativeStrategyString;
 
 impl FillStrategy<ShapeCountString> for EvenOddStrategyString {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountString,
+        bot: ShapeCountString,
+    ) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
         let top = ShapeCountString { subj, clip: 0 };
 
@@ -254,7 +304,10 @@ impl FillStrategy<ShapeCountString> for EvenOddStrategyString {
 
 impl FillStrategy<ShapeCountString> for NonZeroStrategyString {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountString,
+        bot: ShapeCountString,
+    ) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
         let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
@@ -269,7 +322,10 @@ impl FillStrategy<ShapeCountString> for NonZeroStrategyString {
 
 impl FillStrategy<ShapeCountString> for PositiveStrategyString {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountString,
+        bot: ShapeCountString,
+    ) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
         let top = ShapeCountString { subj, clip: 0 }; // clip not need
 
@@ -284,7 +340,10 @@ impl FillStrategy<ShapeCountString> for PositiveStrategyString {
 
 impl FillStrategy<ShapeCountString> for NegativeStrategyString {
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountString, bot: ShapeCountString) -> (ShapeCountString, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountString,
+        bot: ShapeCountString,
+    ) -> (ShapeCountString, SegmentFill) {
         let subj = bot.subj + this.subj;
         let top = ShapeCountString { subj, clip: 0 }; // clip not need
 

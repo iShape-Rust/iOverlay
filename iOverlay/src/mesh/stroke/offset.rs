@@ -11,6 +11,7 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use crate::split::solver::SplitSolver;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates a stroke shapes for paths, contours, or shapes.
@@ -92,7 +93,8 @@ where
         }
 
         let min_area = adapter.sqr_float_to_int(options.min_output_area);
-        let shapes = OverlayGraph::offset_graph_with_solver(segments, Default::default())
+        let mut split_solver = SplitSolver::new();
+        let shapes = OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
             .extract_offset(options.output_direction, min_area);
 
         let mut float = shapes.to_float(&adapter);

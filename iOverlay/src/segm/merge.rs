@@ -1,8 +1,11 @@
+use i_float::int::point::IntPoint;
+use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 
 pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self) -> bool;
+    fn copy_and_merge(&mut self, resource: &Self);
 }
 
 impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
@@ -22,6 +25,29 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
 
         false
     }
+
+    fn copy_and_merge(&mut self, resource: &Self) {
+        self.clear();
+        let mut iter = resource.iter();
+        let first_item = if let Some(first) = iter.next() {
+            first
+        } else {
+            return;
+        };
+
+        self.push(first_item.clone());
+        let mut prev = first_item.x_segment;
+
+        for item in iter {
+            if prev.eq(&item.x_segment) {
+                self.last_mut().unwrap().count.apply(item.count);
+            } else {
+                self.push(item.clone());
+                prev = item.x_segment;
+            }
+        }
+    }
+
 }
 
 fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {

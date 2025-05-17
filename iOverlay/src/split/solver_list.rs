@@ -1,11 +1,16 @@
+use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 
 impl SplitSolver {
-    pub(super) fn list_split<C: WindingCount>(&self, snap_radius: SnapRadius, mut segments: Vec<Segment<C>>) -> (Vec<Segment<C>>, bool) {
-        let mut marks = Vec::new();
+    pub(super) fn list_split<C: WindingCount>(
+        &mut self,
+        snap_radius: SnapRadius,
+        segments: &mut Vec<Segment<C>>,
+        solver: &Solver
+    ) -> bool {
         let mut need_to_fix = true;
 
         let mut snap_radius = snap_radius;
@@ -13,7 +18,7 @@ impl SplitSolver {
 
         while need_to_fix && segments.len() > 1 {
             need_to_fix = false;
-            marks.clear();
+            self.marks.clear();
 
             let radius: i64 = snap_radius.radius();
 
@@ -30,26 +35,26 @@ impl SplitSolver {
                         continue;
                     }
 
-                    let is_round = SplitSolver::cross(i, j, ei, ej, &mut marks, radius);
+                    let is_round = SplitSolver::cross(i, j, ei, ej, &mut self.marks, radius);
                     need_to_fix = need_to_fix || is_round
                 }
             }
 
-            if marks.is_empty() {
-                return (segments, any_intersection);
+            if self.marks.is_empty() {
+                return any_intersection;
             }
             any_intersection = true;
-            segments = self.apply(&mut marks, segments, need_to_fix);
+            self.apply(segments, need_to_fix, solver);
 
             snap_radius.increment();
 
-            if need_to_fix && !self.solver.is_list_split(&segments) {
+            if need_to_fix && !solver.is_list_split(&segments) {
                 // finish with tree solver if edges is become large
-                let (segments, _) = self.tree_split(snap_radius, segments);
-                return (segments, true);
+                self.tree_split(snap_radius, segments, solver);
+                return true;
             }
         }
 
-        (segments, any_intersection)
+        any_intersection
     }
 }
