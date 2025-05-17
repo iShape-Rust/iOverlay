@@ -97,7 +97,7 @@ impl Overlay {
         ) {
             let graph = OverlayGraph::new(solver, links);
             let filter = vec![false; graph.links.len()];
-            graph.extract(filter, OverlayRule::Subject, self.options)
+            graph.extract(filter, OverlayRule::Subject, self.options, &mut self.points_buffer)
         } else {
             // the path is perfect just need to check direction
             Self::apply_fill_rule(self.options.output_direction, fill_rule, contour)

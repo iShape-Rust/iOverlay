@@ -47,22 +47,27 @@ impl OverlayGraph {
         options: IntOverlayOptions,
     ) -> IntShapes {
         let visited = self.links.filter_by_rule(overlay_rule);
-        self.extract(visited, overlay_rule, options)
+        let mut buffer = Vec::new();
+        self.extract(visited, overlay_rule, options, &mut buffer)
     }
 
     pub(crate) fn extract(
         &self,
-        filter: Vec<bool>,
+        mut filter: Vec<bool>,
         overlay_rule: OverlayRule,
         options: IntOverlayOptions,
+        contour_buffer: &mut IntContour,
     ) -> IntShapes {
         let clockwise = options.output_direction == ContourDirection::Clockwise;
 
-        let mut buffer = filter;
-        let visited = buffer.as_mut_slice();
+        let visited = filter.as_mut_slice();
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
         let mut anchors = Vec::new();
+
+        if contour_buffer.capacity() < visited.len() {
+            contour_buffer.reserve(visited.len() - contour_buffer.capacity());
+        }
 
         let mut link_index = 0;
         let mut is_all_anchors_sorted = true;
@@ -79,14 +84,17 @@ impl OverlayGraph {
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            let mut contour = self.get_contour(&start_data, direction, visited);
+            contour_buffer.clear();
+            self.feed_contour(&start_data, direction, visited, contour_buffer);
             let (is_valid, is_modified) =
-                contour.validate(options.min_output_area, options.preserve_output_collinear);
+                contour_buffer.validate(options.min_output_area, options.preserve_output_collinear);
 
             if !is_valid {
                 link_index += 1;
                 continue;
             }
+
+            let contour = contour_buffer.as_slice().to_vec();
 
             if is_hole {
                 let mut v_segment = if clockwise {
@@ -126,19 +134,19 @@ impl OverlayGraph {
         shapes
     }
 
-    fn get_contour(
+    fn feed_contour(
         &self,
         start_data: &StartPathData,
         clockwise: bool,
         visited: &mut [bool],
-    ) -> IntContour {
+        contour: &mut IntContour,
+    ) {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
         visited.visit(link_id);
 
-        let mut contour = IntContour::new();
         contour.push(start_data.begin);
 
         // Find a closed tour
@@ -168,8 +176,6 @@ impl OverlayGraph {
 
             visited.visit(link_id);
         }
-
-        contour
     }
 
     #[inline]

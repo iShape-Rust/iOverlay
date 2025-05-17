@@ -59,6 +59,7 @@ pub enum ContourDirection {
 pub struct Overlay {
     pub options: IntOverlayOptions,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
+    pub(crate) points_buffer: Vec<IntPoint>,
 }
 
 impl Overlay {
@@ -68,7 +69,8 @@ impl Overlay {
     pub fn new(capacity: usize) -> Self {
         Self {
             options: Default::default(),
-            segments: Vec::with_capacity(capacity)
+            segments: Vec::with_capacity(capacity),
+            points_buffer: Vec::new()
         }
     }
 
@@ -79,7 +81,8 @@ impl Overlay {
     pub fn with_options(capacity: usize, options: IntOverlayOptions) -> Self {
         Self {
             options,
-            segments: Vec::with_capacity(capacity)
+            segments: Vec::with_capacity(capacity),
+            points_buffer: Vec::new()
         }
     }
 
@@ -208,6 +211,11 @@ impl Overlay {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.segments.clear();
+        self.points_buffer.clear();
+    }
+
     /// Convert into vector shapes from the added paths or shapes, applying the specified fill and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The fill rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
@@ -322,7 +330,7 @@ impl Overlay {
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
     pub fn overlay_custom(
-        self,
+        mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
         solver: Solver,
@@ -335,7 +343,7 @@ impl Overlay {
         );
         let graph = OverlayGraph::new(solver, links);
         let filter = vec![false; graph.links.len()];
-        graph.extract(filter, overlay_rule, self.options)
+        graph.extract(filter, overlay_rule, self.options, &mut self.points_buffer)
     }
 }
 
