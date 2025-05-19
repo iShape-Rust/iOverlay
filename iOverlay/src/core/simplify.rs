@@ -1,10 +1,9 @@
 //! This module provides methods to simplify paths and shapes by reducing complexity
-//! (e.g., removing small artifacts or shapes below a certain area threshold) based on a fill rule.
+//! (e.g., removing small artifacts or shapes below a certain area threshold) based on a build rule.
 
 use crate::core::overlay::ContourDirection;
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
-use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
@@ -15,7 +14,7 @@ use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
-/// while preserving overall shape and topology. The method applies a minimum area threshold and a fill rule to
+/// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
 /// determine which areas should be retained or excluded.
 pub trait Simplify {
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
@@ -89,20 +88,14 @@ impl Overlay {
 
         let split_modified = self.split_solver.split_segments(&mut self.segments, &solver);
         if !split_modified && !append_modified && !Self::has_loops(contour) {
-            // the path is perfect just need to check direction
+            // the path is already perfect, just need to check the direction
             return Self::apply_fill_rule(self.options.output_direction, fill_rule, contour);
         }
 
-        let links = OverlayLinkBuilder::build_with_overlay_filter(
-            &self.segments,
-            fill_rule,
-            OverlayRule::Subject,
-            &solver
-        );
-
-        let graph = OverlayGraph::new(solver, links);
-        let filter = vec![false; graph.links.len()];
-        graph.extract(filter, OverlayRule::Subject, self.options, &mut self.points_buffer)
+        self
+            .graph_builder
+            .build_boolean_overlay(fill_rule, OverlayRule::Subject, solver, self.segments)
+            .extract_shapes_custom(OverlayRule::Subject, self.options)
     }
 
     #[inline]

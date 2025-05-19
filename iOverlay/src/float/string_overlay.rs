@@ -112,8 +112,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         self
     }
 
-    /// Converts the current overlay into an `FloatStringGraph` based on the specified fill rule.
-    /// The resulting graph is the foundation for performing boolean operations, and it's optimized for such operations based on the provided fill rule.
+    /// Converts the current overlay into an `FloatStringGraph` based on the specified build rule.
+    /// The resulting graph is the foundation for performing boolean operations, and it's optimized for such operations based on the provided build rule.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
@@ -121,7 +121,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         self.into_graph_with_solver(fill_rule, Default::default())
     }
 
-    /// Converts the current overlay into an `FloatStringGraph` based on the specified fill rule and solver.
+    /// Converts the current overlay into an `FloatStringGraph` based on the specified build rule and solver.
     /// This method allows for finer control over the boolean operation process by passing a custom solver.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
@@ -132,7 +132,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         FloatStringGraph { graph, adapter: self.adapter }
     }
 
-    /// Executes a single Boolean operation on the current geometry using the specified fill and clip rules.
+    /// Executes a single Boolean operation on the current geometry using the specified build and clip rules.
     ///
     /// ### Parameters:
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).

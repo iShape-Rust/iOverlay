@@ -8,7 +8,7 @@ use crate::string::split::Split;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
 
-impl StringGraph {
+impl StringGraph<'_> {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// # Shape Representation

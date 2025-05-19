@@ -13,7 +13,7 @@ where
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
-    /// Clips paths according to the specified fill and clip rules.
+    /// Clips paths according to the specified build and clip rules.
     /// - `resource`: A clipping shape.
     ///   `OverlayResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
@@ -26,7 +26,7 @@ where
     /// A `Paths<P>` collection of string lines that meet the clipping conditions.
     fn clip_by(&self, source: &R, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>;
 
-    /// Clips paths according to the specified fill and clip rules.
+    /// Clips paths according to the specified build and clip rules.
     /// - `resource`: A clipping shape.
     ///   `OverlayResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.

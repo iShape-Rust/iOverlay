@@ -9,7 +9,7 @@ use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::rule::StringRule;
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
-/// allowing for boolean operations based on the specified fill rule.
+/// allowing for boolean operations based on the specified build rule.
 pub trait FloatSlice<R, P, T: FloatNumber>
 where
     R: OverlayResource<P, T>,

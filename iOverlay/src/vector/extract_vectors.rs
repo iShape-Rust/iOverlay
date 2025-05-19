@@ -2,9 +2,7 @@ use i_float::int::point::IntPoint;
 
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
-use crate::core::filter::MaskFilter;
-use crate::core::graph::OverlayGraph;
-use crate::core::node::OverlayNode;
+use crate::core::graph::{OverlayGraph, OverlayNode};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::geom::v_segment::VSegment;
@@ -12,7 +10,7 @@ use crate::segm::segment::SegmentFill;
 use crate::util::sort::SmartBinSort;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
 
-impl OverlayGraph {
+impl OverlayGraph<'_> {
     pub fn extract_separate_vectors(&self) -> Vec<VectorEdge> {
         self.links
             .iter()
@@ -25,7 +23,7 @@ impl OverlayGraph {
     }
 
     pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
-        let mut binding = self.links.filter_by_rule(overlay_rule);
+        let mut binding = self.links.filter_by_overlay(overlay_rule);
         let visited = binding.as_mut_slice();
         let mut holes = Vec::new();
         let mut shapes = Vec::new();

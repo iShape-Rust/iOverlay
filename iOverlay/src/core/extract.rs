@@ -1,11 +1,10 @@
-use super::filter::MaskFilter;
+use crate::core::link::OverlayLinkFilter;
 use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
-use crate::core::graph::OverlayGraph;
+use crate::core::graph::{OverlayGraph, OverlayNode};
 use crate::core::link::OverlayLink;
 use crate::core::nearest_vector::NearestVector;
-use crate::core::node::OverlayNode;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions};
 use crate::geom::v_segment::VSegment;
 use i_float::int::point::IntPoint;
@@ -14,7 +13,7 @@ use i_shape::int::path::PointPathExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
 
-impl OverlayGraph {
+impl OverlayGraph<'_> {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
@@ -46,7 +45,7 @@ impl OverlayGraph {
         overlay_rule: OverlayRule,
         options: IntOverlayOptions,
     ) -> IntShapes {
-        let visited = self.links.filter_by_rule(overlay_rule);
+        let visited = self.links.filter_by_overlay(overlay_rule);
         let mut buffer = Vec::new();
         self.extract(visited, overlay_rule, options, &mut buffer)
     }

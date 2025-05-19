@@ -185,14 +185,14 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         self
     }
 
-    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
     pub fn into_graph(self, fill_rule: FillRule) -> FloatOverlayGraph<P, T> {
         self.into_graph_with_solver(fill_rule, Solver::AUTO)
     }
 
-    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `solver`: Type of solver to use.
     #[inline]
@@ -201,7 +201,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         FloatOverlayGraph::new(graph, self.adapter)
     }
 
-    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and build rules.
     /// This method provides a streamlined approach for performing a Boolean operation without generating
     /// an entire `FloatOverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
     /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
@@ -243,7 +243,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         self.overlay_custom(overlay_rule, fill_rule, Default::default())
     }
 
-    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and build rules.
     /// This method provides a streamlined approach for performing a Boolean operation without generating
     /// an entire `FloatOverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
     /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%

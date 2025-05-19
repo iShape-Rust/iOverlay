@@ -4,19 +4,19 @@
 
 use crate::split::solver::SplitSolver;
 use crate::core::fill_rule::FillRule;
-use crate::core::link::OverlayLinkBuilder;
 use crate::core::overlay_rule::OverlayRule;
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
-
+use crate::build::builder::GraphBuilder;
+use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
 use crate::segm::winding_count::ShapeCountBoolean;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
-use super::graph::OverlayGraph;
+use super::graph::{OverlayGraph, OverlayNode};
 
 /// Configuration options for polygon Boolean operations using [`Overlay`].
 ///
@@ -56,15 +56,15 @@ pub enum ContourDirection {
 }
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
-#[derive(Clone)]
 pub struct Overlay {
     pub options: IntOverlayOptions,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
     pub(crate) points_buffer: Vec<IntPoint>,
-    pub(crate) split_solver: SplitSolver
+    pub(crate) split_solver: SplitSolver,
+    pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>
 }
 
-impl Overlay {
+impl<'a> Overlay {
     /// Constructs a new `Overlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
@@ -73,7 +73,8 @@ impl Overlay {
             options: Default::default(),
             segments: Vec::with_capacity(capacity),
             points_buffer: Vec::new(),
-            split_solver: SplitSolver::new()
+            split_solver: SplitSolver::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
         }
     }
 
@@ -86,7 +87,8 @@ impl Overlay {
             options,
             segments: Vec::with_capacity(capacity),
             points_buffer: Vec::new(),
-            split_solver: SplitSolver::new()
+            split_solver: SplitSolver::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
         }
     }
 
@@ -220,8 +222,8 @@ impl Overlay {
         self.points_buffer.clear();
     }
 
-    /// Convert into vector shapes from the added paths or shapes, applying the specified fill and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
-    /// - `fill_rule`: The fill rule to use for the shapes.
+    /// Convert into vector shapes from the added paths or shapes, applying the specified build and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
+    /// - `fill_rule`: The build rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
     /// - `solver`: Type of solver to use.
     pub fn into_shape_vectors(
@@ -234,50 +236,48 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let links = OverlayLinkBuilder::build_with_overlay_filter(
-            &self.segments,
-            fill_rule,
-            overlay_rule,
-            &solver,
-        );
-        let graph = OverlayGraph::new(solver, links);
-        graph.extract_shape_vectors(overlay_rule)
+        self.graph_builder
+            .build_boolean_overlay(fill_rule, overlay_rule, &solver, &self.segments)
+            .extract_shape_vectors(overlay_rule)
     }
 
-    /// Convert into vectors from the added paths or shapes, applying the specified fill rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
-    /// - `fill_rule`: The fill rule to use for the shapes.
+    /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
+    /// - `fill_rule`: The build rule to use for the shapes.
     /// - `solver`: Type of solver to use.
     pub fn into_separate_vectors(mut self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
-
-        let links = OverlayLinkBuilder::build_without_filter(&self.segments, fill_rule, &solver);
-        OverlayGraph::new(solver, links).extract_separate_vectors()
+        self.graph_builder
+            .build_boolean_all(fill_rule, &solver, &self.segments)
+            .extract_separate_vectors()
     }
 
-    /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// Convert into `OverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
-    pub fn into_graph(self, fill_rule: FillRule) -> OverlayGraph {
-        self.into_graph_with_solver(fill_rule, Default::default())
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph> {
+        self.build_graph_view_with_solver(fill_rule, Default::default())
     }
 
-    /// Convert into `OverlayGraph` from the added paths or shapes using the specified fill rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided fill rule.
+    /// Convert into `OverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     /// - `solver`: Type of solver to use.
     #[inline]
-    pub fn into_graph_with_solver(mut self, fill_rule: FillRule, solver: Solver) -> OverlayGraph {
+    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<OverlayGraph> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
-            return OverlayGraph::empty();
+            return None;
         }
-        let links = OverlayLinkBuilder::build_with_filler_filter(&self.segments, fill_rule, &solver);
-        OverlayGraph::new(solver, links)
+        let graph = self
+            .graph_builder
+            .build_boolean_all(fill_rule, &solver, &self.segments);
+
+        Some(graph)
     }
 
-    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and build rules.
     /// This method provides a streamlined approach for performing a Boolean operation without generating
     /// an entire `OverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
     /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
@@ -324,7 +324,7 @@ impl Overlay {
         )
     }
 
-    /// Executes a single Boolean operation on the current geometry using the specified overlay and fill rules.
+    /// Executes a single Boolean operation on the current geometry using the specified overlay and build rules.
     /// This method provides a streamlined approach for performing a Boolean operation without generating
     /// an entire `OverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
     /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
@@ -356,15 +356,9 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let links = OverlayLinkBuilder::build_with_overlay_filter(
-            &self.segments,
-            fill_rule,
-            overlay_rule,
-            &solver,
-        );
-        let graph = OverlayGraph::new(solver, links);
-        let filter = vec![false; graph.links.len()];
-        graph.extract(filter, overlay_rule, self.options, &mut self.points_buffer)
+        self.graph_builder
+            .build_boolean_overlay(fill_rule, overlay_rule, &solver, &self.segments)
+            .extract_shapes_custom(overlay_rule, self.options)
     }
 }
 

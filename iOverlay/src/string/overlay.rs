@@ -2,9 +2,9 @@ use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
+use crate::build::builder::GraphBuilder;
 use crate::core::fill_rule::FillRule;
-use crate::core::link::OverlayLinkBuilder;
-use crate::core::overlay::ShapeType;
+use crate::core::overlay::{IntOverlayOptions, ShapeType};
 use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::build::BuildSegments;
@@ -15,10 +15,11 @@ use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 
-#[derive(Clone)]
 pub struct StringOverlay {
+    pub options: IntOverlayOptions,
     pub(super) segments: Vec<Segment<ShapeCountString>>,
-    pub(crate) split_solver: SplitSolver
+    pub(crate) split_solver: SplitSolver,
+    pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>>
 }
 
 impl StringOverlay {
@@ -28,8 +29,23 @@ impl StringOverlay {
     #[inline]
     pub fn new(capacity: usize) -> Self {
         Self {
+            options: Default::default(),
             segments: Vec::with_capacity(capacity),
-            split_solver: SplitSolver::new()
+            split_solver: SplitSolver::new(),
+            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>>::new()
+        }
+    }
+
+    /// Constructs a new `StringOverlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
+    /// This pre-allocation helps in optimizing memory usage and performance.
+    /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
+    /// - `options`: Adjust custom behavior.
+    pub fn with_options(capacity: usize, options: IntOverlayOptions) -> Self {
+        Self {
+            options,
+            segments: Vec::with_capacity(capacity),
+            split_solver: SplitSolver::new(),
+            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>>::new()
         }
     }
 
@@ -172,7 +188,7 @@ impl StringOverlay {
         }
     }
 
-    /// Clips lines according to the specified fill and clip rules.
+    /// Clips lines according to the specified build and clip rules.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
     /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
     /// # Returns
@@ -182,7 +198,7 @@ impl StringOverlay {
         self.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
-    /// Clips lines according to the specified fill and clip rules.
+    /// Clips lines according to the specified build and clip rules.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
     /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
@@ -195,30 +211,29 @@ impl StringOverlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let links = OverlayLinkBuilder::build_string_with_clip_rule(&self.segments, fill_rule, clip_rule, &solver);
-        StringGraph::new(solver, links).into_clip_string_lines()
+        self.graph_builder
+            .build_string_clip(fill_rule, clip_rule, &solver, &self.segments)
+            .into_clip_string_lines()
     }
 
-    /// Converts the overlay into a `StringGraph`, using the specified `FillRule`.
+    /// Builds and returns a lightweight, borrowed view of the overlay graph.
     /// This graph is used for string operations, enabling analysis and manipulation of geometric data.
-    /// - `fill_rule`: The rule that defines how to fill shapes (e.g., non-zero, even-odd).
+    /// - `fill_rule`: The rule that defines how to build shapes (e.g., non-zero, even-odd).
     #[inline]
-    pub fn into_graph(self, fill_rule: FillRule) -> StringGraph {
-        self.into_graph_with_solver(fill_rule, Default::default())
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<StringGraph> {
+        self.build_graph_view_with_solver(fill_rule, Default::default())
     }
 
-    /// Converts the overlay into a `StringGraph`, with an additional option to specify a custom solver.
+    /// Builds and returns a lightweight, borrowed view of the overlay graph.
     /// This graph is used for string operations, enabling analysis and manipulation of geometric data.
-    /// - `fill_rule`: The rule that defines how to fill shapes (e.g., non-zero, even-odd).
+    /// - `fill_rule`: The rule that defines how to build shapes (e.g., non-zero, even-odd).
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
-    pub fn into_graph_with_solver(mut self, fill_rule: FillRule, solver: Solver) -> StringGraph {
+    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<StringGraph> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
-            return StringGraph::empty();
+            return None;
         }
-
-        let links = OverlayLinkBuilder::build_string_all(&mut self.segments, fill_rule, &solver);
-        StringGraph::new(solver, links)
+        Some(self.graph_builder.build_string_all(fill_rule, solver, &self.segments))
     }
 }

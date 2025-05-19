@@ -7,7 +7,7 @@ use crate::float::overlay::FloatOverlay;
 use crate::float::source::resource::OverlayResource;
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
-/// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and fill rules.
+/// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and build rules.
 pub trait SingleFloatOverlay<R0, R1, P, T>
 where
     R0: OverlayResource<P, T>,

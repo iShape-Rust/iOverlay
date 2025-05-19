@@ -21,7 +21,6 @@ pub enum OverlayRule {
 }
 
 impl OverlayRule {
-    // todo convert to template!
     #[inline(always)]
     pub(crate) fn is_fill_top(&self, fill: SegmentFill) -> bool {
         match self {

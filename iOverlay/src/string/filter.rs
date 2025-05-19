@@ -41,7 +41,7 @@ impl OverlayLink {
     }
 }
 
-impl StringGraph {
+impl StringGraph<'_> {
     #[inline(always)]
     pub(super) fn filter(&self, ext_rule: StringRule) -> Vec<u8> {
         match ext_rule {

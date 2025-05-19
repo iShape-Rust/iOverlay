@@ -5,7 +5,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLink;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
-use crate::segm::winding_count::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
+use crate::segm::winding_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -20,7 +20,7 @@ pub struct ClipRule {
 }
 
 
-impl StringGraph {
+impl StringGraph<'_> {
     #[inline]
     pub(super) fn into_clip_string_lines(self) -> Vec<IntPath> {
         let mut paths = Vec::new();
@@ -109,7 +109,7 @@ impl OverlayLink {
 }
 
 pub trait IntClip {
-    /// Clips a single line according to the specified fill and clip rules.
+    /// Clips a single line according to the specified build and clip rules.
     /// - `line`: The line to be clipped, represented by two points.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
     /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
@@ -118,7 +118,7 @@ pub trait IntClip {
     /// A vector of `IntPath` instances representing the clipped sections of the input line.
     fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath>;
 
-    /// Clips multiple lines according to the specified fill and clip rules.
+    /// Clips multiple lines according to the specified build and clip rules.
     /// - `lines`: A slice of `IntLine` instances representing lines to be clipped.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the results.
@@ -127,7 +127,7 @@ pub trait IntClip {
     /// A vector of `IntPath` instances containing the clipped portions of the input lines.
     fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath>;
 
-    /// Clips a single path according to the specified fill and clip rules.
+    /// Clips a single path according to the specified build and clip rules.
     /// - `path`: A reference to an `IntPath`, which is a sequence of points representing the path to be clipped.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of path segments.
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
@@ -136,7 +136,7 @@ pub trait IntClip {
     /// A vector of `IntPath` instances representing the clipped sections of the path.
     fn clip_path(&self, path: &IntPath, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath>;
 
-    /// Clips multiple paths according to the specified fill and clip rules.
+    /// Clips multiple paths according to the specified build and clip rules.
     /// - `paths`: A slice of `IntPath` instances, each representing a path to be clipped.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of path segments.
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
