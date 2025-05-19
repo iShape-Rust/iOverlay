@@ -81,7 +81,7 @@ mod tests {
     fn test_contour_slice() {
         let rect = [[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
-        let shapes = rect.as_slice().simplify_shape(FillRule::NonZero, Default::default());
+        let shapes = rect.as_slice().simplify_shape(FillRule::NonZero);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -92,7 +92,7 @@ mod tests {
     fn test_contour_vec() {
         let rect = vec![[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
-        let shapes = rect.simplify_shape(FillRule::NonZero, Default::default());
+        let shapes = rect.simplify_shape(FillRule::NonZero);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

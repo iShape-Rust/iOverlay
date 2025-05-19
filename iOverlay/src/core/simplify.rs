@@ -6,7 +6,6 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
-use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::{IntPath, PointPathExtension};
@@ -33,11 +32,8 @@ pub trait Simplify {
 impl Simplify for IntPath {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        Overlay::with_options(self.len(), options).overlay_subject_contour(
-            self,
-            fill_rule,
-            Default::default(),
-        )
+        Overlay::new_custom(self.len(), options, Default::default())
+            .overlay_subject_contour(self, fill_rule)
     }
 }
 
@@ -46,9 +42,9 @@ impl Simplify for [IntPath] {
         if self.len() == 1 {
             return self[0].simplify(fill_rule, options);
         }
-        let mut overlay = Overlay::with_options(self.points_count(), options);
+        let mut overlay = Overlay::new_custom(self.points_count(), options, Default::default());
         overlay.add_contours(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
+        overlay.overlay(OverlayRule::Subject, fill_rule)
     }
 }
 
@@ -57,17 +53,17 @@ impl Simplify for IntShape {
         if self.len() == 1 {
             return self[0].simplify(fill_rule, options);
         }
-        let mut overlay = Overlay::with_options(self.points_count(), options);
+        let mut overlay = Overlay::new_custom(self.points_count(), options, Default::default());
         overlay.add_shape(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
+        overlay.overlay(OverlayRule::Subject, fill_rule)
     }
 }
 
 impl Simplify for [IntShape] {
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        let mut overlay = Overlay::with_options(self.points_count(), options);
+        let mut overlay = Overlay::new_custom(self.points_count(), options, Default::default());
         overlay.add_shapes(self, ShapeType::Subject);
-        overlay.overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
+        overlay.overlay(OverlayRule::Subject, fill_rule)
     }
 }
 
@@ -77,7 +73,6 @@ impl Overlay {
         mut self,
         contour: &IntContour,
         fill_rule: FillRule,
-        solver: Solver,
     ) -> IntShapes {
         let append_modified = self.segments.append_path_iter(
             contour.iter().copied(),
@@ -85,7 +80,7 @@ impl Overlay {
             self.options.preserve_input_collinear,
         );
 
-        let split_modified = self.split_solver.split_segments(&mut self.segments, &solver);
+        let split_modified = self.split_solver.split_segments(&mut self.segments, &self.solver);
         if !split_modified && !append_modified && !Self::has_loops(contour) {
             // the path is already perfect, just need to check the direction
             return Self::apply_fill_rule(self.options.output_direction, fill_rule, contour);
@@ -93,7 +88,7 @@ impl Overlay {
 
         self
             .graph_builder
-            .build_boolean_overlay(fill_rule, OverlayRule::Subject, self.options, &solver, &self.segments)
+            .build_boolean_overlay(fill_rule, OverlayRule::Subject, self.options, &self.solver, &self.segments)
             .extract_shapes(OverlayRule::Subject)
     }
 

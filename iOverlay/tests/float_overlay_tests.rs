@@ -685,11 +685,10 @@ mod tests {
             clean_result: false,
         };
         
-        let result_with_filter = FloatOverlay::with_subj_and_clip_and_options(&shape_0, &shape_1, opt)
-            .overlay_custom(
+        let result_with_filter = FloatOverlay::with_subj_and_clip_custom(&shape_0, &shape_1, opt, Default::default())
+            .overlay(
                 OverlayRule::Intersect,
                 FillRule::EvenOdd,
-                Default::default(),
             );
 
         assert_eq!(result_no_filter.len(), 1);

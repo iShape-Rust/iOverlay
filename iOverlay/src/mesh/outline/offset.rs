@@ -108,7 +108,7 @@ where
         } else {
             let total_capacity = outer_builder.capacity(points_count);
 
-            let mut overlay = Overlay::with_options(total_capacity, options.int_options(&adapter),);
+            let mut overlay = Overlay::new_custom(total_capacity, options.int_options(&adapter), Default::default());
             let mut offset_overlay = OffsetOverlay::new(128);
 
             let mut segments = Vec::new();
@@ -173,10 +173,9 @@ where
                 }
             }
 
-            overlay.overlay_custom(
+            overlay.overlay(
                 OverlayRule::Subject,
-                FillRule::Positive,
-                Default::default(),
+                FillRule::Positive
             )
         };
 

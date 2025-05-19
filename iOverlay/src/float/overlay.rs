@@ -52,7 +52,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///   segments for efficient memory allocation.
     #[inline]
     pub fn with_adapter(adapter: FloatPointAdapter<P, T>, capacity: usize) -> Self {
-        Self::with_adapter_and_options(adapter, Default::default(), capacity)
+        Self::new_custom(adapter, Default::default(), Default::default(), capacity)
     }
 
     /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
@@ -61,12 +61,13 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `adapter`: A `FloatPointAdapter` instance responsible for coordinate conversion between
     ///   float and integer values, ensuring accuracy during geometric transformations.
     /// - `options`: Adjust custom behavior.
+    /// - `solver`: Type of solver to use.
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
-    pub fn with_adapter_and_options(adapter: FloatPointAdapter<P, T>, options: OverlayOptions<T>, capacity: usize) -> Self {
+    pub fn new_custom(adapter: FloatPointAdapter<P, T>, options: OverlayOptions<T>, solver: Solver, capacity: usize) -> Self {
         let clean_result = options.clean_result;
-        Self { overlay: Overlay::with_options(capacity, options.int_options(&adapter)), clean_result, adapter }
+        Self { overlay: Overlay::new_custom(capacity, options.int_options(&adapter), solver), clean_result, adapter }
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
@@ -101,7 +102,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
-    pub fn with_subj_and_clip_and_options<R0, R1>(subj: &R0, clip: &R1, options: OverlayOptions<T>) -> Self
+    /// - `solver`: Type of solver to use.
+    pub fn with_subj_and_clip_custom<R0, R1>(subj: &R0, clip: &R1, options: OverlayOptions<T>, solver: Solver) -> Self
     where
         R0: OverlayResource<P, T> +?Sized,
         R1: OverlayResource<P, T> +?Sized,
@@ -113,7 +115,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
-        Self::with_adapter_and_options(adapter, options, subj_capacity + clip_capacity)
+        Self::new_custom(adapter, options, solver, subj_capacity + clip_capacity)
             .unsafe_add_source(subj, ShapeType::Subject)
             .unsafe_add_source(clip, ShapeType::Clip)
     }
@@ -145,7 +147,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
-    pub fn with_subj_and_options<R>(subj: &R, options: OverlayOptions<T>) -> Self
+    /// - `solver`: Type of solver to use.
+    pub fn with_subj_custom<R>(subj: &R, options: OverlayOptions<T>, solver: Solver) -> Self
     where
         R: OverlayResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
@@ -155,7 +158,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
-        Self::with_adapter_and_options(adapter, options, subj_capacity)
+        Self::new_custom(adapter, options, solver, subj_capacity)
             .unsafe_add_source(subj, ShapeType::Subject)
     }
 
@@ -188,15 +191,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
     pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatOverlayGraph<P, T>> {
-        self.build_graph_view_with_solver(fill_rule, Solver::AUTO)
-    }
-
-    /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
-    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `solver`: Type of solver to use.
-    #[inline]
-    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<FloatOverlayGraph<P, T>> {
-        let graph = self.overlay.build_graph_view_with_solver(fill_rule, solver)?;
+        let graph = self.overlay.build_graph_view(fill_rule)?;
         Some(FloatOverlayGraph::new(graph, self.adapter.clone(), self.clean_result))
     }
 
@@ -238,35 +233,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay(self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        self.overlay_custom(overlay_rule, fill_rule, Default::default())
-    }
-
-    /// Executes a single Boolean operation on the current geometry using the specified overlay and build rules.
-    /// This method provides a streamlined approach for performing a Boolean operation without generating
-    /// an entire `FloatOverlayGraph`. Ideal for cases where only one Boolean operation is needed, `overlay`
-    /// saves on computational resources by building only the necessary links, optimizing CPU usage by 0-20%
-    /// compared to a full graph-based approach.
-    ///
-    /// ### Parameters:
-    /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
-    /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
-    /// - `solver`: Type of solver to use.
-    /// - Returns: A vector of `Shapes<P>` that meet the specified area criteria, representing the cleaned-up geometric result.
-    /// # Shape Representation
-    /// The output is a `Shapes<P>`, where:
-    /// - The outer `Vec<Shape<P>>` represents a set of shapes.
-    /// - Each shape `Vec<Contour<P>>` represents a collection of paths, where the first path is the outer boundary, and all subsequent paths are holes in this boundary.
-    /// - Each path `Vec<P>` is a sequence of points, forming a closed path.
-    ///
-    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    /// This method is particularly useful in scenarios where the geometry only needs one overlay operation
-    /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
-    /// particularly for complex or resource-intensive geometries.
-    #[inline]
-    pub fn overlay_custom(self, overlay_rule: OverlayRule, fill_rule: FillRule, solver: Solver) -> Shapes<P> {
+    pub fn overlay(mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
         let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
-        let shapes = self.overlay.overlay_custom(overlay_rule, fill_rule, solver);
+        let shapes = self.overlay.overlay(overlay_rule, fill_rule);
         let mut float = shapes.to_float(&self.adapter);
 
         if self.clean_result {
@@ -319,10 +288,9 @@ mod tests {
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
                 FillRule::EvenOdd,
-                Solver::default(),
             );
 
         assert_eq!(shapes.len(), 1);
@@ -337,10 +305,9 @@ mod tests {
 
 
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
-                FillRule::EvenOdd,
-                Solver::default(),
+                FillRule::EvenOdd
             );
 
         assert_eq!(shapes.len(), 1);
@@ -354,10 +321,9 @@ mod tests {
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(left_rect.as_slice(), right_rect.as_slice())
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
-                FillRule::EvenOdd,
-                Solver::default(),
+                FillRule::EvenOdd
             );
 
         assert_eq!(shapes.len(), 1);
@@ -381,10 +347,9 @@ mod tests {
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&rects.as_slice(), &right_bottom_rect)
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
-                FillRule::EvenOdd,
-                Solver::default(),
+                FillRule::EvenOdd
             );
 
         assert_eq!(shapes.len(), 1);
@@ -408,10 +373,9 @@ mod tests {
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(rects.as_slice(), right_bottom_rect.as_slice())
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
-                FillRule::EvenOdd,
-                Solver::default(),
+                FillRule::EvenOdd
             );
 
         assert_eq!(shapes.len(), 1);
@@ -438,10 +402,9 @@ mod tests {
 
 
         let shapes = FloatOverlay::with_subj_and_clip(&shapes, &right_bottom_rect)
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
-                FillRule::EvenOdd,
-                Solver::default(),
+                FillRule::EvenOdd
             );
 
         assert_eq!(shapes.len(), 1);
@@ -469,10 +432,9 @@ mod tests {
 
 
         let shapes = FloatOverlay::with_subj_and_clip(&res_0, &res_1.as_slice())
-            .overlay_custom(
+            .overlay(
                 OverlayRule::Union,
-                FillRule::EvenOdd,
-                Solver::default(),
+                FillRule::EvenOdd
             );
 
         assert_eq!(shapes.len(), 1);

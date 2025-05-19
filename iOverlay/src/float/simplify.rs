@@ -13,11 +13,10 @@ use crate::float::source::resource::OverlayResource;
 pub trait SimplifyShape<P, T: FloatNumber> {
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     ///
-    /// - `options`: Adjust custom behavior.
     /// - Returns: A collection of `Shapes<P>` that represents the simplified geometry.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn simplify_shape(&self, fill_rule: FillRule, options: OverlayOptions<T>) -> Shapes<P>;
+    fn simplify_shape(&self, fill_rule: FillRule) -> Shapes<P>;
 
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     /// - `options`: Adjust custom behavior.
@@ -25,7 +24,7 @@ pub trait SimplifyShape<P, T: FloatNumber> {
     /// - Returns: A collection of Shapes<P> that represents the simplified geometry.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn simplify_shape_with_solver(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P>;
+    fn simplify_shape_custom(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P>;
 }
 
 impl<S, P, T> SimplifyShape<P, T> for S
@@ -35,15 +34,15 @@ where
     T: FloatNumber,
 {
     #[inline]
-    fn simplify_shape(&self, fill_rule: FillRule, options: OverlayOptions<T>) -> Shapes<P> {
-        FloatOverlay::with_subj_and_options(self, options)
-            .overlay_custom(OverlayRule::Subject, fill_rule, Default::default())
+    fn simplify_shape(&self, fill_rule: FillRule) -> Shapes<P> {
+        FloatOverlay::with_subj_custom(self, Default::default(), Default::default())
+            .overlay(OverlayRule::Subject, fill_rule)
     }
 
     #[inline]
-    fn simplify_shape_with_solver(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
-        FloatOverlay::with_subj_and_options(self, options)
-            .overlay_custom(OverlayRule::Subject, fill_rule, solver)
+    fn simplify_shape_custom(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
+        FloatOverlay::with_subj_custom(self, options, solver)
+            .overlay(OverlayRule::Subject, fill_rule)
     }
 }
 
@@ -56,7 +55,7 @@ mod tests {
     fn test_contour_slice() {
         let rect = [[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
-        let shapes = rect.as_slice().simplify_shape(FillRule::NonZero, Default::default());
+        let shapes = rect.as_slice().simplify_shape(FillRule::NonZero);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -67,7 +66,7 @@ mod tests {
     fn test_contour_vec() {
         let rect = vec![[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
-        let shapes = rect.simplify_shape(FillRule::NonZero, Default::default());
+        let shapes = rect.simplify_shape(FillRule::NonZero);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
