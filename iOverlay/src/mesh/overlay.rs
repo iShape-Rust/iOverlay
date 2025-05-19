@@ -1,6 +1,5 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::graph::OverlayNode;
-use crate::core::overlay::IntOverlayOptions;
 use crate::core::solver::Solver;
 use crate::mesh::graph::OffsetGraph;
 use crate::segm::offset::ShapeCountOffset;
@@ -8,7 +7,6 @@ use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 
 pub struct OffsetOverlay {
-    pub options: IntOverlayOptions,
     pub(super) segments: Vec<Segment<ShapeCountOffset>>,
     pub(crate) split_solver: SplitSolver,
     pub(crate) graph_builder: GraphBuilder<ShapeCountOffset, OverlayNode>
@@ -18,19 +16,18 @@ impl OffsetOverlay {
     #[inline]
     pub fn new(capacity: usize) -> Self {
         Self {
-            options: Default::default(),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountOffset, OverlayNode>::new()
         }
     }
-    
+
     #[inline]
     pub fn clear(&mut self) {
         self.segments.clear();
     }
-    
-    
+
+
     #[inline]
     pub fn add_segments(&mut self, segments: &[Segment<ShapeCountOffset>]) {
         self.segments.extend_from_slice(segments);
@@ -39,7 +36,6 @@ impl OffsetOverlay {
     #[inline]
     pub fn with_segments(segments: Vec<Segment<ShapeCountOffset>>) -> Self {
         Self {
-            options: Default::default(),
             segments,
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountOffset, OverlayNode>::new()

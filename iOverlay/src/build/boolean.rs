@@ -8,7 +8,7 @@ use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
 use crate::core::overlay::IntOverlayOptions;
 use crate::core::overlay_rule::OverlayRule;
-use crate::segm::segment::{Segment, SegmentFill, ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::segm::segment::{Segment, SegmentFill, ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::segm::winding::WindingCount;
 
 impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
@@ -21,18 +21,6 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     ) -> OverlayGraph {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
-        self.boolean_graph(options, solver)
-    }
-
-    #[inline]
-    pub(crate) fn build_boolean_filler(&mut self,
-                                       fill_rule: FillRule,
-                                       options: IntOverlayOptions,
-                                       solver: &Solver,
-                                       segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph {
-        self.build_boolean_fills(fill_rule, solver, segments);
-        self.build_links_by_filter::<FillerFilter>(segments);
         self.boolean_graph(options, solver)
     }
 
@@ -69,7 +57,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
 
     #[inline]
     fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph {
-        self.build_nodes_and_connect_links(&solver);
+        self.build_nodes_and_connect_links(solver);
         OverlayGraph {
             nodes: &self.nodes,
             links: &self.links,
@@ -155,7 +143,6 @@ impl FillStrategy<ShapeCountBoolean> for NegativeStrategy {
     }
 }
 
-struct FillerFilter;
 struct SubjectFilter;
 struct ClipFilter;
 struct IntersectFilter;
@@ -163,13 +150,6 @@ struct UnionFilter;
 struct DifferenceFilter;
 struct InverseDifferenceFilter;
 struct XorFilter;
-
-impl InclusionFilterStrategy for FillerFilter {
-    #[inline(always)]
-    fn is_included(fill: SegmentFill) -> bool {
-        !fill.is_filler()
-    }
-}
 
 impl InclusionFilterStrategy for SubjectFilter {
     #[inline(always)]
@@ -228,7 +208,6 @@ trait BooleanFillFilter {
     fn is_difference(&self) -> bool;
     fn is_inverse_difference(&self) -> bool;
     fn is_xor(&self) -> bool;
-    fn is_filler(&self) -> bool;
 }
 
 impl BooleanFillFilter for SegmentFill {
@@ -292,12 +271,6 @@ impl BooleanFillFilter for SegmentFill {
 
         // only one of it must be true
         is_any_top != is_any_bottom
-    }
-
-    #[inline(always)]
-    fn is_filler(&self) -> bool {
-        let fill = *self;
-        fill == NONE || fill == SUBJ_BOTH || fill == CLIP_BOTH || fill == ALL
     }
 }
 

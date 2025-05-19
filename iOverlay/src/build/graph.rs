@@ -108,7 +108,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     #[inline]
     fn bin_layout(&self) -> Option<BinLayout<i32>> {
         let count = self.links.len();
-        if count < 64 || count > 1_000_000 {
+        if !(64..=1_000_000).contains(&count) {
             // direct approach work better for small and large data
             return None
         }
