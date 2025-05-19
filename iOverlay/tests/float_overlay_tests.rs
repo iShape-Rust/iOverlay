@@ -53,7 +53,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -79,7 +79,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -106,7 +106,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -133,7 +133,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -159,7 +159,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -185,7 +185,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -211,7 +211,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -235,7 +235,7 @@ mod tests {
         ]];
 
         let union = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Union);
 
         assert_eq!(union.len(), 1);
@@ -264,7 +264,7 @@ mod tests {
 
         let shapes =
             FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
-                .into_graph(FillRule::NonZero)
+                .build_graph_view(FillRule::NonZero).unwrap()
                 .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.is_empty(), true);
@@ -285,7 +285,7 @@ mod tests {
             shape.len(),
         )
         .unsafe_add_source(&shape, ShapeType::Subject)
-        .into_graph(FillRule::NonZero)
+        .build_graph_view(FillRule::NonZero).unwrap()
         .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
@@ -305,7 +305,7 @@ mod tests {
         let shape_1 = vec![vec![FPoint::new(-500.0, -500.0)]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
@@ -328,7 +328,7 @@ mod tests {
         ]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .into_graph(FillRule::NonZero)
+            .build_graph_view(FillRule::NonZero).unwrap()
             .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
@@ -342,7 +342,7 @@ mod tests {
         let shapes =
             FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
                 .unsafe_add_contour(&path, ShapeType::Subject)
-                .into_graph(FillRule::NonZero)
+                .build_graph_view(FillRule::NonZero).unwrap()
                 .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 0);
@@ -354,7 +354,7 @@ mod tests {
             &vec![FPoint::new(0.0, 0.0)],
             &vec![FPoint::new(1.0, 0.0)],
         )
-        .into_graph(FillRule::NonZero)
+        .build_graph_view(FillRule::NonZero).unwrap()
         .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 0);
@@ -366,7 +366,7 @@ mod tests {
         let shapes =
             FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
                 .unsafe_add_contour(&path, ShapeType::Subject)
-                .into_graph(FillRule::NonZero)
+                .build_graph_view(FillRule::NonZero).unwrap()
                 .extract_shapes(OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 0);

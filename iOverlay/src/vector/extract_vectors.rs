@@ -1,13 +1,13 @@
 use i_float::int::point::IntPoint;
-
+use i_key_sort::sort::key_sort::KeyBinSort;
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
-use crate::core::graph::{OverlayGraph, OverlayNode};
+use crate::core::extract::GraphUtil;
+use crate::core::graph::OverlayGraph;
+use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay_rule::OverlayRule;
-use crate::core::solver::Solver;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
-use crate::util::sort::SmartBinSort;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
 
 impl OverlayGraph<'_> {
@@ -36,7 +36,12 @@ impl OverlayGraph<'_> {
                 continue;
             }
 
-            let left_top_link = self.find_left_top_link(link_index, visited);
+            let left_top_link = GraphUtil::find_left_top_link(
+                self.links,
+                self.nodes,
+                link_index,
+                visited
+            );
             let link = self.link(left_top_link);
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
@@ -67,7 +72,7 @@ impl OverlayGraph<'_> {
             link_index += 1;
         }
 
-        shapes.join(&self.solver, holes, true);
+        shapes.join(holes, true);
 
         shapes
     }
@@ -86,31 +91,26 @@ impl OverlayGraph<'_> {
             *visited.get_unchecked_mut(link_id) = true;
         };
 
-        let mut path = VectorPath::new();
-        path.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
+        let mut contour = VectorPath::new();
+        contour.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
 
         // Find a closed tour
         while node_id != last_node_id {
-            let node = self.node(node_id);
-            link_id = match node {
-                OverlayNode::Bridge(bridge) => {
-                    if bridge[0] == link_id {
-                        bridge[1]
-                    } else {
-                        bridge[0]
-                    }
-                }
-                OverlayNode::Cross(indices) => {
-                    self.find_nearest_link_to(link_id, node_id, clockwise, indices, visited)
-                }
-            };
+            link_id = GraphUtil::next_link(
+                self.links,
+                self.nodes,
+                link_id,
+                node_id,
+                clockwise,
+                visited,
+            );
 
-            let link = self.link(link_id);
+            let link = unsafe { self.links.get_unchecked(link_id) };
             node_id = if link.a.id == node_id {
-                path.push(VectorEdge::new(link.fill, link.a.point, link.b.point));
+                contour.push(VectorEdge::new(link.fill, link.a.point, link.b.point));
                 link.b.id
             } else {
-                path.push(VectorEdge::new(link.fill, link.b.point, link.a.point));
+                contour.push(VectorEdge::new(link.fill, link.b.point, link.a.point));
                 link.a.id
             };
 
@@ -119,7 +119,7 @@ impl OverlayGraph<'_> {
             };
         }
 
-        path
+        contour
     }
 }
 
@@ -133,12 +133,12 @@ struct StartVectorPathData {
 }
 
 trait JoinHoles {
-    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool);
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool);
+    fn join(&mut self, holes: Vec<VectorPath>, clockwise: bool);
+    fn scan_join(&mut self, holes: Vec<VectorPath>, clockwise: bool);
 }
 
 impl JoinHoles for Vec<VectorShape> {
-    fn join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool) {
+    fn join(&mut self, holes: Vec<VectorPath>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -148,11 +148,11 @@ impl JoinHoles for Vec<VectorShape> {
             let mut hole_paths = holes;
             self[0].append(&mut hole_paths);
         } else {
-            self.scan_join(solver, holes, clockwise);
+            self.scan_join(holes, clockwise);
         }
     }
 
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<VectorPath>, clockwise: bool) {
+    fn scan_join(&mut self, holes: Vec<VectorPath>, clockwise: bool) {
         let hole_segments: Vec<_> = holes
             .iter()
             .enumerate()
@@ -179,7 +179,7 @@ impl JoinHoles for Vec<VectorShape> {
             shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
         }
 
-        segments.smart_bin_sort_by(solver, |a, b| a.v_segment.a.x.cmp(&b.v_segment.a.x));
+        segments.sort_with_bins(|a, b| a.v_segment.a.x.cmp(&b.v_segment.a.x));
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 

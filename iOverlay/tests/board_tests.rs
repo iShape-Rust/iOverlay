@@ -43,7 +43,7 @@ mod tests {
         overlay.add_contours(&subj_paths, ShapeType::Subject);
         overlay.add_contours(&clip_paths, ShapeType::Clip);
 
-        let graph = overlay.into_graph(FillRule::NonZero);
+        let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
         let result = graph.extract_shapes(rule);
 
         result.len()

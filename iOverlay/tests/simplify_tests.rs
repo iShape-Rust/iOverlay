@@ -97,17 +97,23 @@ mod tests {
                 IntPoint::new(3, 0)
             ].to_vec();
 
+        let mut overlay_0 = Overlay::new(4);
+        overlay_0.add_contour(&path, ShapeType::Subject);
 
-        let mut overlay = Overlay::new(4);
-        overlay.add_contour(&path, ShapeType::Subject);
+        let mut overlay_1 = Overlay::new(4);
+        overlay_1.add_contour(&path, ShapeType::Subject);
 
         let mut solver = Solver::default();
         solver.precision = Precision::ABSOLUTE;
 
-        let simple_0 = overlay.clone().into_graph_with_solver(FillRule::NonZero, solver).extract_shapes(OverlayRule::Subject);
+        let simple_0 = overlay_0
+            .build_graph_view_with_solver(FillRule::NonZero, solver)
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         solver.precision = Precision::MEDIUM;
-        let simple_1 = overlay.into_graph_with_solver(FillRule::NonZero, solver).extract_shapes(OverlayRule::Subject);
+        let simple_1 = overlay_1
+            .build_graph_view_with_solver(FillRule::NonZero, solver)
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(simple_0.len(), 1);
         assert_eq!(simple_0[0].len(), 1);

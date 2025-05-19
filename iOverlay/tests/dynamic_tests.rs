@@ -28,11 +28,12 @@ mod tests {
                 while a < 2.0 * PI {
                     let subj = create_star(1.0, r, 7, a);
 
-                    let overlay = Overlay::with_contours(&subj, &clip);
-                    let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                    graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Union);
-                    assert!(result.len() > 0);
+                    if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                        .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                        graph.validate();
+                        let result = graph.extract_shapes(OverlayRule::Union);
+                        assert!(result.len() > 0);
+                    }
                     a += 0.005
                 }
                 r += 0.01
@@ -47,11 +48,12 @@ mod tests {
             let mut a = 0.0;
             while a < 4.0 * PI {
                 let subj = create_star(200.0, 30.0, 7, a);
-                let overlay = Overlay::with_contours(&subj, &clip);
-                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Xor);
-                assert!(result.len() > 1 || result.len() == 0);
+                if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                    .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                    graph.validate();
+                    let result = graph.extract_shapes(OverlayRule::Xor);
+                    assert!(result.len() > 0);
+                }
                 a += 0.001
             }
         }
@@ -65,11 +67,12 @@ mod tests {
 
             while a < 2.0 * PI {
                 let subj = create_star(202.5, 33.75, 24, a);
-                let overlay = Overlay::with_contours(&subj, &clip);
-                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Xor);
-                assert!(result.len() > 1 || result.len() == 0);
+                if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                    .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                    graph.validate();
+                    let result = graph.extract_shapes(OverlayRule::Xor);
+                    assert!(result.len() > 0);
+                }
                 a += 0.001
             }
         }
@@ -83,11 +86,12 @@ mod tests {
 
             while a < 4.0 * PI {
                 let subj = create_star(100.0, 10.0, 17, a);
-                let overlay = Overlay::with_contours(&subj, &clip);
-                let graph = overlay.into_graph_with_solver(FillRule::EvenOdd, solver);
-                graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Xor);
-                assert!(result.len() > 1 || result.len() == 0);
+                if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                    .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                    graph.validate();
+                    let result = graph.extract_shapes(OverlayRule::Xor);
+                    assert!(result.len() > 0);
+                }
                 a += 0.001
             }
         }
@@ -101,11 +105,12 @@ mod tests {
 
             while a < 0.000_001 {
                 let subj = create_star(202.5, 33.75, 24, a);
-                let overlay = Overlay::with_contours(&subj, &clip);
-                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Xor);
-                assert!(result.len() > 1 || result.len() == 0);
+                if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                    .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                    graph.validate();
+                    let result = graph.extract_shapes(OverlayRule::Xor);
+                    assert!(result.len() > 0);
+                }
                 a += 0.000_000_01
             }
         }
@@ -119,11 +124,12 @@ mod tests {
 
         // println!("subj {:?}", subj);
         for &solver in SOLVERS.iter() {
-            let overlay = Overlay::with_contours(&subj, &clip);
-            let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-            graph.validate();
-            let result = graph.extract_shapes(OverlayRule::Xor);
-            assert!(result.len() > 1 || result.len() == 0);
+            if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                graph.validate();
+                let result = graph.extract_shapes(OverlayRule::Xor);
+                assert!(result.len() > 0);
+            }
         }
     }
 
@@ -135,11 +141,12 @@ mod tests {
 
             while a < 0.000_001 {
                 let subj = create_star(100.0, 50.0, 24, a);
-                let overlay = Overlay::with_contours(&subj, &clip);
-                let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Xor);
-                assert!(result.len() > 1 || result.len() == 0);
+                if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                    .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                    graph.validate();
+                    let result = graph.extract_shapes(OverlayRule::Xor);
+                    assert!(result.len() > 0);
+                }
                 a += 0.000_000_1
             }
         }
@@ -154,11 +161,12 @@ mod tests {
         let mut overlay = Overlay::new(n);
         overlay.add_contour(&subj_paths, ShapeType::Subject);
 
-        let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
-        graph.validate();
-        let result = graph.extract_shapes(OverlayRule::Subject);
-
-        assert!(!result.is_empty());
+        if let Some(graph) = overlay
+            .build_graph_view_with_solver(FillRule::NonZero, Solver::AUTO) {
+            graph.validate();
+            let result = graph.extract_shapes(OverlayRule::Subject);
+            assert!(result.len() > 0);
+        }
     }
 
     #[test]
@@ -172,8 +180,12 @@ mod tests {
                     let mut overlay = Overlay::new(n);
                     overlay.add_contour(&subj_paths, ShapeType::Subject);
 
-                    let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                    _ = graph.extract_shapes(OverlayRule::Subject);
+                    if let Some(graph) = overlay
+                        .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                        graph.validate();
+                        let result = graph.extract_shapes(OverlayRule::Subject);
+                        assert!(result.len() > 0);
+                    }
                 }
                 r += 0.001;
             }
@@ -191,12 +203,12 @@ mod tests {
                 let mut a = 0.0;
                 while a < 2.0 * PI {
                     let subj = create_star(r0, r, 4, a);
-
-                    let overlay = Overlay::with_contours(&subj, &clip);
-                    let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-                    graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Union);
-                    assert!(result.len() > 0);
+                    if let Some(graph) = Overlay::with_contours(&subj, &clip)
+                        .build_graph_view_with_solver(FillRule::NonZero, solver) {
+                        graph.validate();
+                        let result = graph.extract_shapes(OverlayRule::Union);
+                        assert!(result.len() > 0);
+                    }
                     a += 0.005
                 }
                 r += 0.01 * s
@@ -212,11 +224,12 @@ mod tests {
         let r = 1.01;
         let subj = create_star(1.0, r, 7, a);
 
-        let overlay = Overlay::with_contours(&subj, &clip);
-        let graph = overlay.into_graph_with_solver(FillRule::NonZero, solver);
-        graph.validate();
-        let result = graph.extract_shapes(OverlayRule::Union);
-        assert!(result.len() > 0);
+        if let Some(graph) = Overlay::with_contours(&subj, &clip)
+            .build_graph_view_with_solver(FillRule::NonZero, solver) {
+            graph.validate();
+            let result = graph.extract_shapes(OverlayRule::Union);
+            assert!(result.len() > 0);
+        }
     }
 
     #[test]
@@ -230,9 +243,12 @@ mod tests {
             overlay.add_contour(&subj_path, ShapeType::Subject);
             overlay.add_contour(&clip_path, ShapeType::Clip);
 
-            let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
-            graph.validate();
-            _ = graph.extract_shapes(OverlayRule::Union);
+            if let Some(graph) = overlay
+                .build_graph_view_with_solver(FillRule::NonZero, Solver::AUTO) {
+                graph.validate();
+                let result = graph.extract_shapes(OverlayRule::Union);
+                assert!(result.len() > 0);
+            }
         }
     }
 
@@ -243,9 +259,12 @@ mod tests {
             let subj_path = random(10, n);
             let mut overlay = Overlay::new(2 * n);
             overlay.add_contour(&subj_path, ShapeType::Subject);
-            let graph = overlay.into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
-            graph.validate();
-            _ = graph.extract_shapes(OverlayRule::Subject);
+            if let Some(graph) = overlay
+                .build_graph_view_with_solver(FillRule::NonZero, Solver::AUTO) {
+                graph.validate();
+                let result = graph.extract_shapes(OverlayRule::Subject);
+                assert!(result.len() > 0);
+            }
         }
     }
 
@@ -255,11 +274,13 @@ mod tests {
         for i in 1..50000 {
             let r = i as f64;
             let subj_path = random_float(r, n);
-
-            let graph = FloatOverlay::with_subj(&subj_path)
-                .into_graph_with_solver(FillRule::NonZero, Solver::AUTO);
-            graph.graph.validate();
-            _ = graph.extract_shapes(OverlayRule::Subject);
+            let mut overlay = FloatOverlay::with_subj(&subj_path);
+            if let Some(graph) = overlay
+                .build_graph_view_with_solver(FillRule::NonZero, Solver::AUTO) {
+                graph.graph.validate();
+                let result = graph.extract_shapes(OverlayRule::Subject);
+                assert!(result.len() > 0);
+            }
         }
     }
 
@@ -283,8 +304,12 @@ mod tests {
 
             let mut overlay = Overlay::new(4);
             overlay.add_contours(&subj_paths, ShapeType::Subject);
-            let graph = overlay.into_graph(FillRule::NonZero);
-            _ = graph.extract_shapes(OverlayRule::Subject);
+            if let Some(graph) = overlay
+                .build_graph_view(FillRule::NonZero) {
+                graph.validate();
+                let result = graph.extract_shapes(OverlayRule::Subject);
+                assert!(result.len() > 0);
+            }
         }
     }
 

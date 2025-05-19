@@ -3,7 +3,6 @@
 
 use crate::core::overlay::ContourDirection;
 use crate::core::fill_rule::FillRule;
-use crate::core::graph::OverlayGraph;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
@@ -94,8 +93,8 @@ impl Overlay {
 
         self
             .graph_builder
-            .build_boolean_overlay(fill_rule, OverlayRule::Subject, solver, self.segments)
-            .extract_shapes_custom(OverlayRule::Subject, self.options)
+            .build_boolean_overlay(fill_rule, OverlayRule::Subject, self.options, &solver, &self.segments)
+            .extract_shapes(OverlayRule::Subject)
     }
 
     #[inline]

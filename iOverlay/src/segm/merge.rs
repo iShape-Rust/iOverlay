@@ -1,5 +1,5 @@
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 
 pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self) -> bool;
@@ -76,9 +76,9 @@ fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use i_float::int::point::IntPoint;
+    use crate::segm::boolean::ShapeCountBoolean;
+use i_float::int::point::IntPoint;
     use super::*;
-    use crate::segm::winding_count::ShapeCountBoolean;
 
     #[test]
     fn test_merge_if_needed_empty() {

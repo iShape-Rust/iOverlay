@@ -1,6 +1,6 @@
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::fragment::Fragment;
 use crate::split::grid_layout::{BorderVSegment, FragmentBuffer, GridLayout};

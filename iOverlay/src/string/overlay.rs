@@ -1,3 +1,6 @@
+use crate::segm::string::STRING_FORWARD_CLIP;
+use crate::segm::string::STRING_BACK_CLIP;
+use crate::segm::string::ShapeCountString;
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
@@ -9,7 +12,6 @@ use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::split::solver::SplitSolver;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
@@ -234,6 +236,6 @@ impl StringOverlay {
         if self.segments.is_empty() {
             return None;
         }
-        Some(self.graph_builder.build_string_all(fill_rule, solver, &self.segments))
+        Some(self.graph_builder.build_string_all(fill_rule, &solver, &self.segments))
     }
 }

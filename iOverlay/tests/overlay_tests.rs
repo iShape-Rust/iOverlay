@@ -24,55 +24,63 @@ mod tests {
             min_output_area: 0,
         };
 
-        for solver in SOLVERS {
-            let overlay = Overlay::with_contours_options(&test.subj_paths, &test.clip_paths, options);
-            let graph = overlay.clone().into_graph_with_solver(fill_rule, solver);
+        fn overlay(test: &BooleanTest, options: IntOverlayOptions) -> Overlay {
+            Overlay::with_contours_options(&test.subj_paths, &test.clip_paths, options)
+        }
 
-            let subject_0 = graph.extract_shapes_custom(OverlayRule::Subject, options);
-            let subject_1 = overlay.clone().overlay_custom(
+        for solver in SOLVERS {
+            let mut ovr = overlay(&test, options);
+            let graph = if let Some(graph) = ovr.build_graph_view_with_solver(fill_rule, solver) {
+                graph
+            } else {
+                continue;
+            };
+
+            let subject_0 = graph.extract_shapes(OverlayRule::Subject);
+            let subject_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::Subject,
                 fill_rule,
                 Default::default(),
             );
 
-            let clip_0 = graph.extract_shapes_custom(OverlayRule::Clip, options);
-            let clip_1 = overlay.clone().overlay_custom(
+            let clip_0 = graph.extract_shapes(OverlayRule::Clip);
+            let clip_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::Clip,
                 fill_rule,
                 Default::default(),
             );
 
-            let difference_0 = graph.extract_shapes_custom(OverlayRule::Difference, options);
-            let difference_1 = overlay.clone().overlay_custom(
+            let difference_0 = graph.extract_shapes(OverlayRule::Difference);
+            let difference_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::Difference,
                 fill_rule,
                 Default::default(),
             );
 
             let inverse_difference_0 =
-                graph.extract_shapes_custom(OverlayRule::InverseDifference, options);
-            let inverse_difference_1 = overlay.clone().overlay_custom(
+                graph.extract_shapes(OverlayRule::InverseDifference);
+            let inverse_difference_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::InverseDifference,
                 fill_rule,
                 Default::default(),
             );
 
-            let intersect_0 = graph.extract_shapes_custom(OverlayRule::Intersect, options);
-            let intersect_1 = overlay.clone().overlay_custom(
+            let intersect_0 = graph.extract_shapes(OverlayRule::Intersect);
+            let intersect_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::Intersect,
                 fill_rule,
                 Default::default(),
             );
 
-            let union_0 = graph.extract_shapes_custom(OverlayRule::Union, options);
-            let union_1 = overlay.clone().overlay_custom(
+            let union_0 = graph.extract_shapes(OverlayRule::Union);
+            let union_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::Union,
                 fill_rule,
                 Default::default(),
             );
 
-            let xor_0 = graph.extract_shapes_custom(OverlayRule::Xor, options);
-            let xor_1 = overlay.clone().overlay_custom(
+            let xor_0 = graph.extract_shapes(OverlayRule::Xor);
+            let xor_1 = overlay(&test, options).overlay_custom(
                 OverlayRule::Xor,
                 fill_rule,
                 Default::default(),
@@ -117,8 +125,8 @@ mod tests {
     #[allow(dead_code)]
     fn debug_execute(index: usize, overlay_rule: OverlayRule, fill_rule: FillRule, solver: Solver) {
         let test = BooleanTest::load(index);
-        let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
-        let graph = overlay.into_graph_with_solver(fill_rule, solver);
+        let mut overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
+        let graph = overlay.build_graph_view_with_solver(fill_rule, solver).unwrap();
         let result = graph.extract_shapes(overlay_rule);
 
         println!("{}: {}", &overlay_rule, result.json_print());
@@ -156,8 +164,8 @@ mod tests {
     #[allow(dead_code)]
     fn print_json(index: usize, fill_rule: FillRule) {
         let test = BooleanTest::load(index);
-        let overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
-        let graph = overlay.into_graph_with_solver(fill_rule, Default::default());
+        let mut overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
+        let graph = overlay.build_graph_view(fill_rule).unwrap();
 
         let subject = graph.extract_shapes(OverlayRule::Subject);
         let clip = graph.extract_shapes(OverlayRule::Clip);

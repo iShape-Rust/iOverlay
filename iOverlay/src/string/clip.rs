@@ -1,3 +1,4 @@
+use crate::segm::string::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
@@ -5,7 +6,6 @@ use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLink;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
-use crate::segm::winding_count::{ShapeCountString, STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
@@ -25,7 +25,7 @@ impl StringGraph<'_> {
     pub(super) fn into_clip_string_lines(self) -> Vec<IntPath> {
         let mut paths = Vec::new();
 
-        let mut links = self.links;
+        let links = self.links;
         let nodes = self.nodes;
 
         let mut link_index = 0;
@@ -43,7 +43,7 @@ impl StringGraph<'_> {
             sub_path.push(link.a.point);
             sub_path.push(link.b.point);
             let mut a = link.b;
-            while let Some(b) = Self::find_next_point(&nodes, &mut links, a, is_out_node) {
+            while let Some(b) = Self::find_next_point(nodes, links, a, is_out_node) {
                 a = b;
                 sub_path.push(b.point);
             }

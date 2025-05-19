@@ -13,7 +13,6 @@ use crate::string::overlay::StringOverlay;
 /// The `FloatStringOverlay` struct is a builder for overlaying geometric shapes by converting
 /// floating-point geometry to integer space. It provides methods for adding paths and shapes,
 /// as well as for converting the overlay into a `FloatStringGraph`.
-#[derive(Clone)]
 pub struct FloatStringOverlay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) overlay: StringOverlay,
     pub(super) adapter: FloatPointAdapter<P, T>,
@@ -117,8 +116,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn into_graph(self, fill_rule: FillRule) -> FloatStringGraph<P, T> {
-        self.into_graph_with_solver(fill_rule, Default::default())
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatStringGraph<P, T>> {
+        self.build_graph_view_with_solver(fill_rule, Default::default())
     }
 
     /// Converts the current overlay into an `FloatStringGraph` based on the specified build rule and solver.
@@ -127,9 +126,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn into_graph_with_solver(self, fill_rule: FillRule, solver: Solver) -> FloatStringGraph<P, T> {
-        let graph = self.overlay.into_graph_with_solver(fill_rule, solver);
-        FloatStringGraph { graph, adapter: self.adapter }
+    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<FloatStringGraph<P, T>> {
+        let graph = self.overlay.build_graph_view_with_solver(fill_rule, solver)?;
+        Some(FloatStringGraph { graph, adapter: self.adapter.clone() })
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified build and clip rules.

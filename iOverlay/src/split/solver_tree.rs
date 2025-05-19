@@ -2,7 +2,7 @@ use i_tree::ExpiredVal;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use i_tree::seg::exp::{SegExpCollection, SegRange};

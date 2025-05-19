@@ -1,3 +1,4 @@
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::graph::OverlayNode;
 use crate::core::fill_rule::FillRule;
@@ -5,37 +6,41 @@ use crate::core::solver::Solver;
 use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLink;
+use crate::core::overlay::IntOverlayOptions;
 use crate::core::overlay_rule::OverlayRule;
 use crate::segm::segment::{Segment, SegmentFill, ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, NONE, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
-use crate::segm::winding_count::{ShapeCountBoolean, WindingCount};
+use crate::segm::winding::WindingCount;
 
 impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     #[inline]
     pub(crate) fn build_boolean_all(&mut self,
                                     fill_rule: FillRule,
+                                    options: IntOverlayOptions,
                                     solver: &Solver,
                                     segments: &[Segment<ShapeCountBoolean>],
     ) -> OverlayGraph {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
-        self.boolean_graph(solver)
+        self.boolean_graph(options, solver)
     }
 
     #[inline]
     pub(crate) fn build_boolean_filler(&mut self,
-                                    fill_rule: FillRule,
-                                    solver: &Solver,
-                                    segments: &[Segment<ShapeCountBoolean>],
+                                       fill_rule: FillRule,
+                                       options: IntOverlayOptions,
+                                       solver: &Solver,
+                                       segments: &[Segment<ShapeCountBoolean>],
     ) -> OverlayGraph {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_by_filter::<FillerFilter>(segments);
-        self.boolean_graph(solver)
+        self.boolean_graph(options, solver)
     }
 
     #[inline]
     pub(crate) fn build_boolean_overlay(&mut self,
                                         fill_rule: FillRule,
                                         overlay_rule: OverlayRule,
+                                        options: IntOverlayOptions,
                                         solver: &Solver,
                                         segments: &[Segment<ShapeCountBoolean>],
     ) -> OverlayGraph {
@@ -49,7 +54,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
             OverlayRule::InverseDifference => self.build_links_by_filter::<InverseDifferenceFilter>(segments),
             OverlayRule::Xor => self.build_links_by_filter::<XorFilter>(segments),
         }
-        self.boolean_graph(solver)
+        self.boolean_graph(options, solver)
     }
 
     #[inline]
@@ -63,11 +68,12 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     }
 
     #[inline]
-    fn boolean_graph(&mut self, solver: &Solver) -> OverlayGraph {
+    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph {
         self.build_nodes_and_connect_links(&solver);
         OverlayGraph {
             nodes: &self.nodes,
             links: &self.links,
+            options
         }
     }
 }

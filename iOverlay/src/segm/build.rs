@@ -3,7 +3,7 @@ use i_float::triangle::Triangle;
 use crate::core::overlay::ShapeType;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 
 pub(crate) trait BuildSegments {
     fn append_path_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I, shape_type: ShapeType, keep_same_line_points: bool) -> bool;
@@ -187,10 +187,10 @@ impl<C: Send> Segment<C> {
 mod tests {
     use i_float::int::point::IntPoint;
     use crate::core::overlay::ShapeType;
+    use crate::segm::boolean::ShapeCountBoolean;
     use crate::segm::build::BuildSegments;
     use crate::segm::merge::ShapeSegmentsMerge;
     use crate::segm::segment::Segment;
-    use crate::segm::winding_count::ShapeCountBoolean;
 
     #[test]
     fn test_0() {

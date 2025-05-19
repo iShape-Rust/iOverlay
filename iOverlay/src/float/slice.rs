@@ -57,15 +57,17 @@ where
     #[inline]
     fn slice_by(&self, resource: &R0, fill_rule: FillRule) -> Shapes<P> {
         FloatStringOverlay::with_shape_and_string(self, resource)
-            .into_graph(fill_rule)
-            .extract_shapes(StringRule::Slice)
+            .build_graph_view(fill_rule)
+            .map(|graph|graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_custom_by(&self, resource: &R0, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
         FloatStringOverlay::with_shape_and_string(self, resource)
-            .into_graph_with_solver(fill_rule, solver)
-            .extract_shapes_custom(StringRule::Slice, options)
+            .build_graph_view_with_solver(fill_rule, solver)
+            .map(|graph|graph.extract_shapes_custom(StringRule::Slice, options))
+            .unwrap_or_default()
     }
 }
 

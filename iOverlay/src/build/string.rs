@@ -1,8 +1,8 @@
+use crate::segm::string::ShapeCountString;
 use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
 use crate::segm::segment::{Segment, SegmentFill, CLIP_BOTH, SUBJ_BOTH};
-use crate::segm::winding_count::ShapeCountString;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 
@@ -62,7 +62,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
         self.build_nodes_and_connect_links(solver);
         StringGraph {
             nodes: &self.nodes,
-            links: &self.links,
+            links: &mut self.links,
         }
     }
 }

@@ -8,15 +8,19 @@ mod tests {
 
     #[test]
     fn test_both_clock_wise() {
-        let mut overlay = Overlay::new(2);
+        fn overlay() -> Overlay {
+            let mut overlay = Overlay::new(2);
 
-        overlay.add_contour(&square(10, true), ShapeType::Subject);
-        overlay.add_contour(&square(5, true), ShapeType::Subject);
+            overlay.add_contour(&square(10, true), ShapeType::Subject);
+            overlay.add_contour(&square(5, true), ShapeType::Subject);
 
-        let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
-        let positive = overlay.clone().into_graph(FillRule::Positive).extract_shapes(OverlayRule::Subject);
-        let negative = overlay.clone().into_graph(FillRule::Negative).extract_shapes(OverlayRule::Subject);
+            overlay
+        }
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);
@@ -32,15 +36,19 @@ mod tests {
 
     #[test]
     fn test_both_counter_clock_wise() {
-        let mut overlay = Overlay::new(2);
+        fn overlay() -> Overlay {
+            let mut overlay = Overlay::new(2);
 
-        overlay.add_contour(&square(10, false), ShapeType::Subject);
-        overlay.add_contour(&square(5, false), ShapeType::Subject);
+            overlay.add_contour(&square(10, false), ShapeType::Subject);
+            overlay.add_contour(&square(5, false), ShapeType::Subject);
 
-        let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
-        let positive = overlay.clone().into_graph(FillRule::Positive).extract_shapes(OverlayRule::Subject);
-        let negative = overlay.clone().into_graph(FillRule::Negative).extract_shapes(OverlayRule::Subject);
+            overlay
+        }
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);
@@ -56,15 +64,19 @@ mod tests {
 
     #[test]
     fn test_cw_and_ccw() {
-        let mut overlay = Overlay::new(2);
+        fn overlay() -> Overlay {
+            let mut overlay = Overlay::new(2);
 
-        overlay.add_contour(&square(10, true), ShapeType::Subject);
-        overlay.add_contour(&square(5, false), ShapeType::Subject);
+            overlay.add_contour(&square(10, true), ShapeType::Subject);
+            overlay.add_contour(&square(5, false), ShapeType::Subject);
 
-        let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
-        let positive = overlay.clone().into_graph(FillRule::Positive).extract_shapes(OverlayRule::Subject);
-        let negative = overlay.clone().into_graph(FillRule::Negative).extract_shapes(OverlayRule::Subject);
+            overlay
+        }
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);
@@ -78,17 +90,23 @@ mod tests {
         assert_eq!(positive.len(), 0);
     }
 
+
+
     #[test]
     fn test_ccw_and_cw() {
-        let mut overlay = Overlay::new(2);
+        fn overlay() -> Overlay {
+            let mut overlay = Overlay::new(2);
 
-        overlay.add_contour(&square(10, false), ShapeType::Subject);
-        overlay.add_contour(&square(5, true), ShapeType::Subject);
+            overlay.add_contour(&square(10, false), ShapeType::Subject);
+            overlay.add_contour(&square(5, true), ShapeType::Subject);
 
-        let even_odd = overlay.clone().into_graph(FillRule::EvenOdd).extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay.clone().into_graph(FillRule::NonZero).extract_shapes(OverlayRule::Subject);
-        let positive = overlay.clone().into_graph(FillRule::Positive).extract_shapes(OverlayRule::Subject);
-        let negative = overlay.clone().into_graph(FillRule::Negative).extract_shapes(OverlayRule::Subject);
+            overlay
+        }
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);

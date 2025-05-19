@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use i_float::int::point::IntPoint;
 use i_key_sort::bin_key::index::{BinKey, BinLayout};
 use crate::geom::x_segment::XSegment;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 
 pub type SegmentFill = u8;
 

@@ -4,7 +4,7 @@ use i_key_sort::bin_key::index::BinLayout;
 use crate::build::builder::{GraphBuilder, GraphNode};
 use crate::core::solver::Solver;
 use crate::geom::end::End;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 use crate::util::sort::SmartBinSort;
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
@@ -81,6 +81,10 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
             let count = self.bin_store.prepare_bins();
             self.ends.resize(count, End::default());
 
+            for (i, link) in self.links.iter().enumerate() {
+                self.bin_store.feed_vec(&mut self.ends, End { index: i, point: link.b.point });
+            }
+
             for bin in self.bin_store.bins.iter() {
                 let start = bin.offset;
                 let end = bin.data;
@@ -104,7 +108,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     #[inline]
     fn bin_layout(&self) -> Option<BinLayout<i32>> {
         let count = self.links.len();
-        if count < 64 || count > 1000_000 {
+        if count < 64 || count > 1_000_000 {
             // direct approach work better for small and large data
             return None
         }

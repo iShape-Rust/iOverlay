@@ -1,14 +1,13 @@
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
-use crate::core::solver::Solver;
 use crate::geom::v_segment::VSegment;
 use crate::util::log::Int;
-use crate::util::sort::SmartBinSort;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
 use i_tree::key::tree::KeyExpTree;
 use std::cmp::Ordering;
+use i_key_sort::sort::key_sort::KeyBinSort;
 
 pub(crate) struct BindSolution {
     pub(crate) parent_for_child: Vec<usize>,
@@ -106,20 +105,19 @@ impl ShapeBinder {
 }
 
 pub(crate) trait JoinHoles {
-    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntContour>, clockwise: bool);
+    fn join_unsorted_holes(&mut self, holes: Vec<IntContour>, clockwise: bool);
     fn join_sorted_holes(
         &mut self,
-        solver: &Solver,
         holes: Vec<IntContour>,
         anchors: Vec<IdSegment>,
         clockwise: bool
     );
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
+    fn scan_join(&mut self, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
 
 impl JoinHoles for Vec<IntShape> {
     #[inline]
-    fn join_unsorted_holes(&mut self, solver: &Solver, holes: Vec<IntPath>, clockwise: bool) {
+    fn join_unsorted_holes(&mut self, holes: Vec<IntPath>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -140,15 +138,14 @@ impl JoinHoles for Vec<IntShape> {
             })
             .collect();
 
-        hole_segments.sort_by_a_then_by_angle(solver);
+        hole_segments.sort_by_a_then_by_angle();
 
-        self.scan_join(solver, holes, hole_segments, clockwise);
+        self.scan_join(holes, hole_segments, clockwise);
     }
 
     #[inline]
     fn join_sorted_holes(
         &mut self,
-        solver: &Solver,
         holes: Vec<IntContour>,
         anchors: Vec<IdSegment>,
         clockwise: bool
@@ -166,10 +163,10 @@ impl JoinHoles for Vec<IntShape> {
 
         let mut anchors = anchors;
         anchors.add_sort_by_angle();
-        self.scan_join(solver, holes, anchors, clockwise);
+        self.scan_join(holes, anchors, clockwise);
     }
 
-    fn scan_join(&mut self, solver: &Solver, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool) {
+    fn scan_join(&mut self, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool) {
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 
@@ -183,7 +180,7 @@ impl JoinHoles for Vec<IntShape> {
             hole.append_id_segments(&mut segments, ContourIndex::new_hole(i), x_min, x_max, clockwise);
         }
 
-        segments.sort_by_a_then_by_angle(solver);
+        segments.sort_by_a_then_by_angle();
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 
@@ -241,14 +238,14 @@ impl IdSegment {
 }
 
 pub(crate) trait SortByAngle {
-    fn sort_by_a_then_by_angle(&mut self, solver: &Solver);
+    fn sort_by_a_then_by_angle(&mut self);
     fn add_sort_by_angle(&mut self);
 }
 
 impl SortByAngle for [IdSegment] {
     #[inline]
-    fn sort_by_a_then_by_angle(&mut self, solver: &Solver) {
-        self.smart_bin_sort_by(solver, |s0, s1| s0.cmp_by_a_then_by_angle(s1));
+    fn sort_by_a_then_by_angle(&mut self) {
+        self.sort_with_bins(|s0, s1| s0.cmp_by_a_then_by_angle(s1));
     }
 
     #[inline]
@@ -276,7 +273,6 @@ impl SortByAngle for [IdSegment] {
 #[cfg(test)]
 mod tests {
     use crate::bind::solver::JoinHoles;
-    use crate::core::solver::Solver;
     use crate::geom::v_segment::VSegment;
     use i_float::int::point::IntPoint;
     use std::cmp::Ordering;
@@ -318,7 +314,7 @@ mod tests {
             ],
         ];
 
-        shapes.join_unsorted_holes(&Solver::default(), holes, false);
+        shapes.join_unsorted_holes(holes, false);
 
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[1].len(), 3);

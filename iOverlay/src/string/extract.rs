@@ -78,7 +78,7 @@ impl StringGraph<'_> {
             }
         }
 
-        shapes.join_unsorted_holes(&self.solver, holes, clockwise);
+        shapes.join_unsorted_holes(holes, clockwise);
 
         shapes
     }
@@ -260,7 +260,7 @@ mod tests {
 
         let mut overlay = StringOverlay::with_shape(&paths);
         overlay.add_string_contour(&window);
-        let graph = overlay.into_graph(FillRule::NonZero);
+        let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
 
         let r = graph.extract_shapes_custom(
             StringRule::Slice,

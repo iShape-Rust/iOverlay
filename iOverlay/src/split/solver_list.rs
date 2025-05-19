@@ -1,6 +1,6 @@
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 

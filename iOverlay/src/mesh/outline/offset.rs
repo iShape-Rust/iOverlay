@@ -1,5 +1,4 @@
 use crate::core::fill_rule::FillRule;
-use crate::core::graph::OverlayGraph;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
@@ -15,7 +14,7 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::area::IntArea;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::split::solver::SplitSolver;
+use crate::mesh::overlay::OffsetOverlay;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -81,8 +80,8 @@ where
             // FloatPointAdapter::with_scale(rect, 1.0) // Debug !!!
         };
 
-        let mut split_solver = SplitSolver::new();
         let int_min_area = adapter.sqr_float_to_int(options.min_output_area).max(1);
+
         let shapes = if paths_count <= 1 {
             // fast solution for a single path
 
@@ -102,12 +101,17 @@ where
             let mut segments = Vec::with_capacity(capacity);
             outer_builder.build(path, &adapter, &mut segments);
 
-            OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
-                .extract_offset(options.output_direction, int_min_area)
+            OffsetOverlay::with_segments(segments)
+                .build_graph_view_with_solver(Default::default())
+                .map(|graph| graph.extract_offset(options.output_direction, int_min_area))
+                .unwrap_or_default()
         } else {
             let total_capacity = outer_builder.capacity(points_count);
 
             let mut overlay = Overlay::with_options(total_capacity, options.int_options(&adapter),);
+            let mut offset_overlay = OffsetOverlay::new(128);
+
+            let mut segments = Vec::new();
 
             for path in self.iter_paths() {
                 let area = path.unsafe_int_area(&adapter);
@@ -118,11 +122,22 @@ where
 
                 if area < 0 {
                     let capacity = outer_builder.capacity(path.len());
-                    let mut segments = Vec::with_capacity(capacity);
+                    let additional = capacity.saturating_sub(segments.capacity());
+                    if additional > 0 {
+                        segments.reserve(additional);
+                    }
+                    segments.clear();
+
                     outer_builder.build(path, &adapter, &mut segments);
-                    let shapes =
-                        OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
-                            .extract_offset(ContourDirection::CounterClockwise, 0);
+
+                    offset_overlay.clear();
+                    offset_overlay.add_segments(&segments);
+
+                    let shapes = offset_overlay
+                        .build_graph_view_with_solver(Default::default())
+                        .map(|graph| graph.extract_offset(ContourDirection::CounterClockwise, 0))
+                        .unwrap_or_default();
+
                     overlay.add_shapes(&shapes, ShapeType::Subject);
                 } else {
                     // TODO switch to reverse
@@ -132,11 +147,21 @@ where
                     }
 
                     let capacity = inner_builder.capacity(inverted.len());
-                    let mut segments = Vec::with_capacity(capacity);
+                    let additional = capacity.saturating_sub(segments.capacity());
+                    if additional > 0 {
+                        segments.reserve(additional);
+                    }
+                    segments.clear();
+
                     inner_builder.build(&inverted, &adapter, &mut segments);
-                    let mut shapes =
-                        OverlayGraph::offset_graph_with_solver(segments, &mut split_solver, Default::default())
-                            .extract_offset(ContourDirection::CounterClockwise, 0);
+
+                    offset_overlay.clear();
+                    offset_overlay.add_segments(&segments);
+
+                    let mut shapes = offset_overlay
+                        .build_graph_view_with_solver(Default::default())
+                        .map(|graph| graph.extract_offset(ContourDirection::CounterClockwise, 0))
+                        .unwrap_or_default();
 
                     for shape in shapes.iter_mut() {
                         for path in shape.iter_mut() {

@@ -2,6 +2,7 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::split::solver::SplitSolver;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
@@ -9,11 +10,9 @@ use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 use crate::build::builder::GraphBuilder;
-use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
-use crate::segm::winding_count::ShapeCountBoolean;
 use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::graph::{OverlayGraph, OverlayNode};
@@ -64,7 +63,7 @@ pub struct Overlay {
     pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>
 }
 
-impl<'a> Overlay {
+impl Overlay {
     /// Constructs a new `Overlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
@@ -237,7 +236,7 @@ impl<'a> Overlay {
             return Vec::new();
         }
         self.graph_builder
-            .build_boolean_overlay(fill_rule, overlay_rule, &solver, &self.segments)
+            .build_boolean_overlay(fill_rule, overlay_rule, self.options, &solver, &self.segments)
             .extract_shape_vectors(overlay_rule)
     }
 
@@ -250,7 +249,7 @@ impl<'a> Overlay {
             return Vec::new();
         }
         self.graph_builder
-            .build_boolean_all(fill_rule, &solver, &self.segments)
+            .build_boolean_all(fill_rule, self.options, &solver, &self.segments)
             .extract_separate_vectors()
     }
 
@@ -272,7 +271,7 @@ impl<'a> Overlay {
         }
         let graph = self
             .graph_builder
-            .build_boolean_all(fill_rule, &solver, &self.segments);
+            .build_boolean_all(fill_rule, self.options, &solver, &self.segments);
 
         Some(graph)
     }
@@ -357,8 +356,8 @@ impl<'a> Overlay {
             return Vec::new();
         }
         self.graph_builder
-            .build_boolean_overlay(fill_rule, overlay_rule, &solver, &self.segments)
-            .extract_shapes_custom(overlay_rule, self.options)
+            .build_boolean_overlay(fill_rule, overlay_rule, self.options, &solver, &self.segments)
+            .extract_shapes(overlay_rule)
     }
 }
 

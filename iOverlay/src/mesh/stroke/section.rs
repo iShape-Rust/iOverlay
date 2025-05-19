@@ -3,8 +3,8 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
-use crate::mesh::boolean::ShapeCountString;
 use crate::mesh::math::Math;
+use crate::segm::offset::ShapeCountOffset;
 use crate::segm::segment::Segment;
 
 #[derive(Debug, Clone)]
@@ -47,7 +47,7 @@ pub(crate) trait SectionToSegment<T: FloatNumber, P: FloatPointCompatible<T>> {
     fn add_section(&mut self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>);
 }
 
-impl<T: FloatNumber, P: FloatPointCompatible<T>> SectionToSegment<T, P> for Vec<Segment<ShapeCountString>> {
+impl<T: FloatNumber, P: FloatPointCompatible<T>> SectionToSegment<T, P> for Vec<Segment<ShapeCountOffset>> {
     fn add_section(&mut self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>) {
         let a_top = adapter.float_to_int(&section.a_top);
         let b_top = adapter.float_to_int(&section.b_top);

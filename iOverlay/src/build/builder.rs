@@ -2,7 +2,7 @@ use crate::core::solver::Solver;
 use crate::geom::end::End;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
-use crate::segm::winding_count::WindingCount;
+use crate::segm::winding::WindingCount;
 use crate::util::log::Int;
 use i_float::triangle::Triangle;
 use i_key_sort::sort::layout::BinStore;

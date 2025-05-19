@@ -3,7 +3,7 @@ use crate::core::link::OverlayLink;
 
 pub struct StringGraph<'a> {
     pub(crate) nodes: &'a [Vec<usize>],
-    pub(crate) links: &'a [OverlayLink],
+    pub(crate) links: &'a mut [OverlayLink],
 }
 impl StringGraph<'_> {
     #[inline(always)]

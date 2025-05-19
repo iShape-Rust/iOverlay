@@ -18,28 +18,40 @@ impl IntSlice for IntShapes {
     fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_lines(lines);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_path(path);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_paths(paths);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 }
 
@@ -48,28 +60,40 @@ impl IntSlice for IntShape {
     fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_lines(lines);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_path(path);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_paths(paths);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 }
 
@@ -78,27 +102,39 @@ impl IntSlice for [IntPoint] {
     fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_line(line);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_lines(lines);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_path(path);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 
     #[inline]
     fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_paths(paths);
-        overlay.into_graph(fill_rule).extract_shapes(StringRule::Slice)
+        overlay
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
     }
 }
