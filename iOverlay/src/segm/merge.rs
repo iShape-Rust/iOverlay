@@ -33,16 +33,21 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
             return;
         };
 
-        self.push(*first_item);
-        let mut prev = first_item.x_segment;
+        let mut prev = *first_item;
 
         for item in iter {
-            if prev.eq(&item.x_segment) {
-                self.last_mut().unwrap().count.apply(item.count);
+            if prev.x_segment.eq(&item.x_segment) {
+                prev.count.apply(item.count);
             } else {
-                self.push(*item);
-                prev = item.x_segment;
+                if prev.count.is_not_empty() {
+                    self.push(prev);
+                }
+                prev = *item;
             }
+        }
+
+        if prev.count.is_not_empty() {
+            self.push(prev);
         }
     }
 

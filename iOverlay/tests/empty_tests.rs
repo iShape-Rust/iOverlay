@@ -3,7 +3,6 @@ mod tests {
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
-    use i_overlay::core::overlay_rule::OverlayRule;
 
     #[test]
     fn test_00() {

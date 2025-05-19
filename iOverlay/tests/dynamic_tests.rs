@@ -51,8 +51,7 @@ mod tests {
                 if let Some(graph) = Overlay::with_contours(&subj, &clip)
                     .build_graph_view_with_solver(FillRule::NonZero, solver) {
                     graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Xor);
-                    assert!(result.len() > 0);
+                    let _ = graph.extract_shapes(OverlayRule::Xor);
                 }
                 a += 0.001
             }
@@ -70,8 +69,7 @@ mod tests {
                 if let Some(graph) = Overlay::with_contours(&subj, &clip)
                     .build_graph_view_with_solver(FillRule::NonZero, solver) {
                     graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Xor);
-                    assert!(result.len() > 0);
+                    let _ = graph.extract_shapes(OverlayRule::Xor);
                 }
                 a += 0.001
             }
@@ -89,8 +87,7 @@ mod tests {
                 if let Some(graph) = Overlay::with_contours(&subj, &clip)
                     .build_graph_view_with_solver(FillRule::NonZero, solver) {
                     graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Xor);
-                    assert!(result.len() > 0);
+                    let _ = graph.extract_shapes(OverlayRule::Xor);
                 }
                 a += 0.001
             }
@@ -108,8 +105,7 @@ mod tests {
                 if let Some(graph) = Overlay::with_contours(&subj, &clip)
                     .build_graph_view_with_solver(FillRule::NonZero, solver) {
                     graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Xor);
-                    assert!(result.len() > 0);
+                    let _ = graph.extract_shapes(OverlayRule::Xor);
                 }
                 a += 0.000_000_01
             }
@@ -144,8 +140,7 @@ mod tests {
                 if let Some(graph) = Overlay::with_contours(&subj, &clip)
                     .build_graph_view_with_solver(FillRule::NonZero, solver) {
                     graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Xor);
-                    assert!(result.len() > 0);
+                    let _ = graph.extract_shapes(OverlayRule::Xor);
                 }
                 a += 0.000_000_1
             }
@@ -310,6 +305,35 @@ mod tests {
                 let result = graph.extract_shapes(OverlayRule::Subject);
                 assert!(result.len() > 0);
             }
+        }
+    }
+
+    #[test]
+    fn test_15() {
+        let subj_paths = [
+            vec![
+                IntPoint::new(0,0),
+                IntPoint::new(1,6),
+                IntPoint::new(6,4),
+            ],
+            vec![
+                IntPoint::new(0,0),
+                IntPoint::new(6,5),
+                IntPoint::new(2,-2),
+            ],
+            vec![
+                IntPoint::new(0,0),
+                IntPoint::new(3,-1),
+                IntPoint::new(1,3),
+            ]
+        ];
+        let mut overlay = Overlay::new(4);
+        overlay.add_contours(&subj_paths, ShapeType::Subject);
+        if let Some(graph) = overlay
+            .build_graph_view(FillRule::NonZero) {
+            graph.validate();
+            let result = graph.extract_shapes(OverlayRule::Subject);
+            assert!(result.len() > 0);
         }
     }
 

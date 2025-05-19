@@ -264,8 +264,8 @@ mod tests {
 
         let shapes =
             FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
-                .build_graph_view(FillRule::NonZero).unwrap()
-                .extract_shapes(OverlayRule::Subject);
+                .build_graph_view(FillRule::NonZero)
+                .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.is_empty(), true);
     }
@@ -284,9 +284,9 @@ mod tests {
             FloatPointAdapter::with_iter(shape.iter().flatten()),
             shape.len(),
         )
-        .unsafe_add_source(&shape, ShapeType::Subject)
-        .build_graph_view(FillRule::NonZero).unwrap()
-        .extract_shapes(OverlayRule::Subject);
+            .unsafe_add_source(&shape, ShapeType::Subject)
+            .build_graph_view(FillRule::NonZero)
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -305,8 +305,8 @@ mod tests {
         let shape_1 = vec![vec![FPoint::new(-500.0, -500.0)]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .build_graph_view(FillRule::NonZero).unwrap()
-            .extract_shapes(OverlayRule::Subject);
+            .build_graph_view(FillRule::NonZero)
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -328,8 +328,8 @@ mod tests {
         ]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&shape_0, &shape_1)
-            .build_graph_view(FillRule::NonZero).unwrap()
-            .extract_shapes(OverlayRule::Subject);
+            .build_graph_view(FillRule::NonZero)
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -342,8 +342,8 @@ mod tests {
         let shapes =
             FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
                 .unsafe_add_contour(&path, ShapeType::Subject)
-                .build_graph_view(FillRule::NonZero).unwrap()
-                .extract_shapes(OverlayRule::Subject);
+                .build_graph_view(FillRule::NonZero)
+                .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.len(), 0);
     }
@@ -354,8 +354,8 @@ mod tests {
             &vec![FPoint::new(0.0, 0.0)],
             &vec![FPoint::new(1.0, 0.0)],
         )
-        .build_graph_view(FillRule::NonZero).unwrap()
-        .extract_shapes(OverlayRule::Subject);
+            .build_graph_view(FillRule::NonZero)
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.len(), 0);
     }
@@ -366,8 +366,8 @@ mod tests {
         let shapes =
             FloatOverlay::with_adapter(FloatPointAdapter::with_iter(path.iter()), path.len())
                 .unsafe_add_contour(&path, ShapeType::Subject)
-                .build_graph_view(FillRule::NonZero).unwrap()
-                .extract_shapes(OverlayRule::Subject);
+                .build_graph_view(FillRule::NonZero)
+                .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
 
         assert_eq!(shapes.len(), 0);
     }
