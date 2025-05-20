@@ -1,4 +1,6 @@
-use std::marker::PhantomData;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;

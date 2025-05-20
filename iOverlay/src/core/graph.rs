@@ -2,6 +2,7 @@
 //! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
 //! based on the overlay rule applied.
 
+use alloc::vec::Vec;
 use super::link::OverlayLink;
 use crate::build::builder::GraphNode;
 use crate::core::overlay::IntOverlayOptions;

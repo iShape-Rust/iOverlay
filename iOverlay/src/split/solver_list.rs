@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;

@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::geom::v_segment::VSegment;
 use crate::util::log::Int;
@@ -6,7 +8,7 @@ use i_shape::int::shape::{IntContour, IntShape};
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
 use i_tree::key::tree::KeyExpTree;
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 use i_key_sort::sort::key_sort::KeyBinSort;
 
 pub(crate) struct BindSolution {
@@ -272,10 +274,11 @@ impl SortByAngle for [IdSegment] {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::bind::solver::JoinHoles;
     use crate::geom::v_segment::VSegment;
     use i_float::int::point::IntPoint;
-    use std::cmp::Ordering;
+    use core::cmp::Ordering;
 
     #[test]
     fn test_0() {

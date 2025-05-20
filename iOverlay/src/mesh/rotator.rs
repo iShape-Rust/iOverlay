@@ -50,7 +50,7 @@ impl<T: FloatNumber> Rotator<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
+    use core::f64::consts::PI;
     use crate::mesh::rotator::Rotator;
 
 

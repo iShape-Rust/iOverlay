@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::geom::v_segment::VSegment;
 use crate::vector::edge::{VectorEdge, VectorPath};
 use i_float::int::point::IntPoint;

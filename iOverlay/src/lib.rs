@@ -187,6 +187,8 @@
 //! println!("result: {:?}", result);
 //! ```
 
+#![no_std]
+extern crate alloc;
 
 pub mod mesh;
 pub mod build;

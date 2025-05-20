@@ -1,3 +1,5 @@
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use crate::mesh::stroke::builder_cap::CapBuilder;
 use crate::mesh::stroke::builder_join::{
     BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,

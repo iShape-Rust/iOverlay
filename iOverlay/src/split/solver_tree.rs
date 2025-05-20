@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use i_tree::ExpiredVal;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;

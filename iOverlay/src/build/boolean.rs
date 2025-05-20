@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::graph::OverlayNode;

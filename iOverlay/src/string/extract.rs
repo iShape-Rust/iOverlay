@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::bind::solver::JoinHoles;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions};
@@ -184,6 +186,7 @@ impl StringGraph<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::core::fill_rule::FillRule;
     use crate::string::slice::IntSlice;
     use i_float::int::point::IntPoint;

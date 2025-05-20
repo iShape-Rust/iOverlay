@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::core::overlay::ShapeType;
@@ -185,6 +186,8 @@ impl<C: Send> Segment<C> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+    use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
     use crate::core::overlay::ShapeType;
     use crate::segm::boolean::ShapeCountBoolean;

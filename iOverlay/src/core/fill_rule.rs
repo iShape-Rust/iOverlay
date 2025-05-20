@@ -1,4 +1,4 @@
-use std::fmt;
+use core::fmt;
 
 /// Represents the rule used to determine the "bind" of a shape, affecting how shapes are filled. For a visual description, see [Fill Rules](https://ishape-rust.github.io/iShape-js/overlay/filling_rules/filling_rules.html).
 /// - `EvenOdd`: Only odd-numbered sub-regions are filled.

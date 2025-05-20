@@ -1,12 +1,14 @@
 //! This module provides methods to simplify paths and shapes by reducing complexity
 //! (e.g., removing small artifacts or shapes below a certain area threshold) based on a build rule.
 
-use crate::core::overlay::ContourDirection;
 use crate::core::fill_rule::FillRule;
+use crate::core::overlay::ContourDirection;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
+use crate::core::simplify::vec::Vec;
 use crate::segm::build::BuildSegments;
+use alloc::vec;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
@@ -69,31 +71,39 @@ impl Simplify for [IntShape] {
 
 impl Overlay {
     #[inline]
-    fn overlay_subject_contour(
-        mut self,
-        contour: &IntContour,
-        fill_rule: FillRule,
-    ) -> IntShapes {
+    fn overlay_subject_contour(mut self, contour: &IntContour, fill_rule: FillRule) -> IntShapes {
         let append_modified = self.segments.append_path_iter(
             contour.iter().copied(),
             ShapeType::Subject,
             self.options.preserve_input_collinear,
         );
 
-        let split_modified = self.split_solver.split_segments(&mut self.segments, &self.solver);
-        if !split_modified && !append_modified && !Self::has_loops(contour) {
+        let split_modified = self
+            .split_solver
+            .split_segments(&mut self.segments, &self.solver);
+        let has_loops = self.graph_builder.has_loops(&self.segments, &self.solver);
+        if !split_modified && !append_modified && !has_loops {
             // the path is already perfect, just need to check the direction
             return Self::apply_fill_rule(self.options.output_direction, fill_rule, contour);
         }
 
-        self
-            .graph_builder
-            .build_boolean_overlay(fill_rule, OverlayRule::Subject, self.options, &self.solver, &self.segments)
+        self.graph_builder
+            .build_boolean_overlay(
+                fill_rule,
+                OverlayRule::Subject,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
             .extract_shapes(OverlayRule::Subject)
     }
 
     #[inline]
-    fn apply_fill_rule(output_direction: ContourDirection, fill_rule: FillRule, contour: &IntContour) -> IntShapes {
+    fn apply_fill_rule(
+        output_direction: ContourDirection,
+        fill_rule: FillRule,
+        contour: &IntContour,
+    ) -> IntShapes {
         let contour_clockwise = contour.is_clockwise_ordered();
         let output_clockwise = output_direction == Clockwise;
 
@@ -122,26 +132,15 @@ impl Overlay {
             }
         }
     }
-
-    #[inline]
-    fn has_loops(contour: &IntContour) -> bool {
-        use std::collections::HashSet;
-        let mut seen = HashSet::with_capacity(contour.len());
-        for pt in contour {
-            if !seen.insert(pt) {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::core::fill_rule::FillRule;
-    use crate::core::simplify::Simplify;
-    use i_float::int::point::IntPoint;
     use crate::core::overlay::IntOverlayOptions;
+    use crate::core::simplify::Simplify;
+    use crate::core::simplify::vec;
+    use i_float::int::point::IntPoint;
 
     #[test]
     fn test_0() {

@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::build::builder::GraphBuilder;
 use crate::core::graph::OverlayNode;
 use crate::core::solver::Solver;

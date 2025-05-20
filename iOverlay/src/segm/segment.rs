@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 use i_float::int::point::IntPoint;
 use i_key_sort::bin_key::index::{BinKey, BinLayout};
 use crate::geom::x_segment::XSegment;

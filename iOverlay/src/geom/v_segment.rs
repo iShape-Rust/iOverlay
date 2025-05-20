@@ -1,5 +1,5 @@
-use std::cmp::Ordering;
-use std::mem;
+use core::cmp::Ordering;
+use core::mem;
 use i_tree::ExpiredKey;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
@@ -92,7 +92,7 @@ impl ExpiredKey<i32> for VSegment {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering;
+    use core::cmp::Ordering;
     use i_float::int::point::IntPoint;
     use crate::geom::v_segment::VSegment;
 

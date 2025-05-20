@@ -1,5 +1,7 @@
-use std::f64::consts::PI;
-use std::marker::PhantomData;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::f64::consts::PI;
+use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;

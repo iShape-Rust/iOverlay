@@ -43,6 +43,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay_rule::OverlayRule;
     use crate::float::overlay::FloatOverlay;

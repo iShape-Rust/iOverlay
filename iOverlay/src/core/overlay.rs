@@ -2,6 +2,7 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
+use alloc::vec::Vec;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::split::solver::SplitSolver;
 use crate::core::fill_rule::FillRule;
@@ -59,7 +60,6 @@ pub struct Overlay {
     pub solver: Solver,
     pub options: IntOverlayOptions,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
-    pub(crate) points_buffer: Vec<IntPoint>,
     pub(crate) split_solver: SplitSolver,
     pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>
 }
@@ -73,7 +73,6 @@ impl Overlay {
             solver: Default::default(),
             options: Default::default(),
             segments: Vec::with_capacity(capacity),
-            points_buffer: Vec::new(),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
         }
@@ -89,7 +88,6 @@ impl Overlay {
             solver,
             options,
             segments: Vec::with_capacity(capacity),
-            points_buffer: Vec::new(),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
         }
@@ -218,15 +216,16 @@ impl Overlay {
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
     /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
     pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
         for shape in shapes.iter() {
             self.add_contours(shape, shape_type);
         }
     }
 
+    #[inline]
     pub fn clear(&mut self) {
         self.segments.clear();
-        self.points_buffer.clear();
     }
 
     /// Convert into vector shapes from the added paths or shapes, applying the specified build and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.

@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::core::link::OverlayLink;
 use crate::segm::segment::{SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::string::graph::StringGraph;

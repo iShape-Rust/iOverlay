@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::core::link::OverlayLink;
 use crate::i_float::int::point::IntPoint;
 use i_key_sort::bin_key::index::BinLayout;

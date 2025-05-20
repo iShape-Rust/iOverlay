@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 use crate::core::overlay::ShapeType;
 use crate::segm::winding::WindingCount;
 

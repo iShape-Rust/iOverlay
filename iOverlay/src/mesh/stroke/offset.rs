@@ -1,3 +1,5 @@
+use crate::mesh::stroke::offset::vec::Vec;
+use alloc::vec;
 use crate::float::overlay::OverlayOptions;
 use crate::float::source::resource::OverlayResource;
 use crate::mesh::stroke::builder::StrokeBuilder;
@@ -115,7 +117,7 @@ where
 mod tests {
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
-    use std::f32::consts::PI;
+    use core::f32::consts::PI;
 
     #[test]
     fn test_doc() {

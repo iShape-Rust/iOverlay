@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
@@ -40,12 +41,13 @@ impl SplitSolver {
 
             need_to_fix = self.process(snap_radius.radius(), &mut buffer, solver);
 
-            if !buffer.on_border.is_empty() {
-                for (&index, segments) in buffer.on_border.iter_mut() {
-                    if let Some(fragments) = buffer.groups.get(index) {
-                        let border_x = buffer.layout.pos(index);
-                        self.on_border_split(border_x, fragments, segments);
-                    }
+            for (index, segments) in buffer.on_border.iter_mut().enumerate() {
+                if segments.is_empty() {
+                    continue;
+                }
+                if let Some(fragments) = buffer.groups.get(index) {
+                    let border_x = buffer.layout.pos(index);
+                    self.on_border_split(border_x, fragments, segments);
                 }
             }
 
@@ -65,10 +67,10 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn process(&mut self, radius: i64, buffer: &mut FragmentBuffer, solver: &Solver) -> bool {
+    fn process(&mut self, radius: i64, buffer: &mut FragmentBuffer, _solver: &Solver) -> bool {
         #[cfg(feature = "allow_multithreading")]
         {
-            if solver.multithreading.is_some() {
+            if _solver.multithreading.is_some() {
                 return self.parallel_split(radius, buffer);
             }
         }

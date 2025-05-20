@@ -1,5 +1,7 @@
 #[cfg(test)]
 pub mod overlay {
+    extern crate std;
+
     use std::path::PathBuf;
     use i_shape::int::path::IntPaths;
     use i_shape::int::shape::{IntContour, IntShapes};

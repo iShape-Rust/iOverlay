@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::core::solver::Solver;
 use crate::geom::end::End;
 use crate::geom::v_segment::VSegment;

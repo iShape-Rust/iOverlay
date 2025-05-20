@@ -5,6 +5,7 @@
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
@@ -67,7 +68,22 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     #[inline]
     pub fn new_custom(adapter: FloatPointAdapter<P, T>, options: OverlayOptions<T>, solver: Solver, capacity: usize) -> Self {
         let clean_result = options.clean_result;
-        Self { overlay: Overlay::new_custom(capacity, options.int_options(&adapter), solver), clean_result, adapter }
+        let overlay = Overlay::new_custom(capacity, options.int_with_adapter(&adapter), solver);
+        Self { overlay, clean_result, adapter }
+    }
+
+    /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
+    /// by converting float-based geometry to integer space, using a pre-configured adapter.
+    /// - `options`: Adjust custom behavior.
+    /// - `solver`: Type of solver to use.
+    /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
+    ///   segments for efficient memory allocation.
+    #[inline]
+    pub fn new_empty(options: OverlayOptions<T>, solver: Solver, capacity: usize) -> Self {
+        let clean_result = options.clean_result;
+        let adapter = FloatPointAdapter::new(FloatRect::zero());
+        let overlay = Overlay::new_custom(capacity, options.int_default(), solver);
+        Self { overlay, clean_result, adapter }
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
@@ -140,7 +156,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
             .unsafe_add_source(subj, ShapeType::Subject)
     }
 
-    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// Creates a new `FloatOverlay` instance and initializes it with subject.
     /// - `subj`: A `OverlayResource` that define the subject.
     ///   `OverlayResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
@@ -171,9 +187,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn unsafe_add_source<R: OverlayResource<P, T> +?Sized>(mut self, resource: &R, shape_type: ShapeType) -> Self {
-        for contour in resource.iter_paths() {
-            self = self.unsafe_add_contour(contour, shape_type);
-        }
+        self.add_source(resource, shape_type);
         self
     }
 
@@ -185,6 +199,59 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     pub fn unsafe_add_contour(mut self, contour: &[P], shape_type: ShapeType) -> Self {
         self.overlay.add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         self
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.overlay.clear();
+    }
+
+    #[inline]
+    fn add_source<R: OverlayResource<P, T> +?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
+        for contour in resource.iter_paths() {
+            self.overlay.add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
+        }
+    }
+
+    /// Reinit `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// - `subj`: A `OverlayResource` that define the subject.
+    /// - `clip`: A `OverlayResource` that define the clip.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
+    where
+        R0: OverlayResource<P, T> +?Sized,
+        R1: OverlayResource<P, T> +?Sized,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        self.clear();
+
+        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        self.adapter = FloatPointAdapter::with_iter(iter);
+        self.add_source(subj, ShapeType::Subject);
+        self.add_source(clip, ShapeType::Clip);
+    }
+
+    /// Reinit `FloatOverlay` instance and initializes it with subject
+    /// - `subj`: A `OverlayResource` that define the subject.
+    ///   `OverlayResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    pub fn reinit_with_subj<R>(&mut self, subj: &R)
+    where
+        R: OverlayResource<P, T> +?Sized,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        self.clear();
+
+        let iter = subj.iter_paths().flatten();
+        self.adapter = FloatPointAdapter::with_iter(iter);
+        self.add_source(subj, ShapeType::Subject);
     }
 
     /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
@@ -224,7 +291,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///
     /// let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
     /// let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
-    /// let overlay = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect);
+    /// let mut overlay = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect);
     ///
     /// let result_shapes = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
     /// ```
@@ -233,7 +300,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay(mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
+    pub fn overlay(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
         let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
         let shapes = self.overlay.overlay(overlay_rule, fill_rule);
         let mut float = shapes.to_float(&self.adapter);
@@ -265,7 +332,7 @@ impl<T: FloatNumber> Default for OverlayOptions<T> {
 }
 
 impl<T: FloatNumber> OverlayOptions<T> {
-    pub(crate) fn int_options<P: FloatPointCompatible<T>>(&self, adapter: &FloatPointAdapter<P, T>) -> IntOverlayOptions {
+    pub(crate) fn int_with_adapter<P: FloatPointCompatible<T>>(&self, adapter: &FloatPointAdapter<P, T>) -> IntOverlayOptions {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
@@ -273,11 +340,21 @@ impl<T: FloatNumber> OverlayOptions<T> {
             min_output_area: adapter.sqr_float_to_int(self.min_output_area),
         }
     }
+
+    pub(crate) fn int_default(&self) -> IntOverlayOptions {
+        IntOverlayOptions {
+            preserve_input_collinear: self.preserve_input_collinear,
+            output_direction: self.output_direction,
+            preserve_output_collinear: self.preserve_output_collinear,
+            min_output_area: 0,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::core::fill_rule::FillRule;
+    use alloc::vec;
+use crate::core::fill_rule::FillRule;
     use crate::core::overlay_rule::OverlayRule;
     use crate::float::overlay::FloatOverlay;
 
@@ -461,7 +538,7 @@ mod tests {
             vec![vec![[400.0, 250.0], [400.0, 150.0], [500.0, 150.0], [500.0, 250.0]]]
         ];
 
-        let overlay = FloatOverlay::with_subj_and_clip(&subj, &clip);
+        let mut overlay = FloatOverlay::with_subj_and_clip(&subj, &clip);
 
         let result = overlay.overlay(OverlayRule::Intersect, FillRule::EvenOdd );
 

@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::segm::string::ShapeCountString;
 use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
 use crate::core::fill_rule::FillRule;

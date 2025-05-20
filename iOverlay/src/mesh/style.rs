@@ -1,4 +1,5 @@
-use std::f64::consts::PI;
+use alloc::vec::Vec;
+use core::f64::consts::PI;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 

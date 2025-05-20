@@ -1,4 +1,4 @@
-use std::fmt;
+use core::fmt;
 use crate::segm::segment::{SegmentFill, BOTH_BOTTOM, BOTH_TOP, CLIP_TOP, NONE, SUBJ_TOP};
 
 /// Defines the types of overlay/boolean operations that can be applied to shapes. For a visual description, see [Overlay Rules](https://ishape-rust.github.io/iShape-js/overlay/overlay_rules/overlay_rules.html).

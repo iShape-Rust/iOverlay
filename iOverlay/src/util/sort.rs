@@ -1,6 +1,6 @@
 #[cfg(feature = "allow_multithreading")]
 use rayon::prelude::*;
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 use i_key_sort::bin_key::index::{BinKey, BinLayoutOp};
 use i_key_sort::sort::key_sort::KeyBinSort;
 use crate::core::solver::Solver;
@@ -40,6 +40,7 @@ where
 }
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use i_key_sort::bin_key::index::BinLayout;
     use super::*;
 

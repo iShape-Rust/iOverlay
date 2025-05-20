@@ -136,7 +136,7 @@ impl CrossSolver {
         let ab0 = (a0 - b1).dot_product(v1).signum();
         let ba0 = (b0 - a1).dot_product(v1).signum();
         let bb0 = (b0 - b1).dot_product(v1).signum();
-
+        
         let aa1 = -aa0;
         let ab1 = -ba0;
         let ba1 = -ab0;

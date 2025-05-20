@@ -1,9 +1,11 @@
-use std::collections::HashMap;
+use alloc::vec;
+use alloc::vec::Vec;
 use i_float::int::rect::IntRect;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
 use crate::split::fragment::Fragment;
 
+#[derive(Debug, Clone)]
 pub(super) struct BorderVSegment {
     pub(super) id: usize,
     pub(super) y_range: LineRange,
@@ -12,14 +14,14 @@ pub(super) struct BorderVSegment {
 pub(super) struct FragmentBuffer {
     pub(super) layout: GridLayout,
     pub(super) groups: Vec<Vec<Fragment>>,
-    pub(super) on_border: HashMap<usize, Vec<BorderVSegment>>,
+    pub(super) on_border: Vec<Vec<BorderVSegment>>,
 }
 
 impl FragmentBuffer {
     #[inline]
     pub(super) fn new(layout: GridLayout) -> Self {
         let n = layout.index(layout.max_x) + 1;
-        Self { layout, groups: vec![Vec::new(); n], on_border: HashMap::new() }
+        Self { layout, groups: vec![Vec::new(); n], on_border: vec![Vec::new(); n] }
     }
 
     pub(super) fn init_fragment_buffer<I>(&mut self, iter: I)
@@ -54,11 +56,7 @@ impl FragmentBuffer {
     fn insert_vertical(&mut self, fragment: Fragment, bin_index: usize) {
         if bin_index > 0 && fragment.x_segment.a.x == self.layout.pos(bin_index) {
             let bvs = BorderVSegment { id: fragment.index, y_range: fragment.x_segment.y_range() };
-            if let Some(segments) = self.on_border.get_mut(&bin_index) {
-                segments.push(bvs);
-            } else {
-                self.on_border.insert(bin_index, vec![bvs]);
-            }
+            self.on_border[bin_index].push(bvs);
         }
         self.insert(fragment, bin_index);
     }
@@ -68,7 +66,9 @@ impl FragmentBuffer {
         for group in self.groups.iter_mut() {
             group.clear();
         }
-        self.on_border.clear();
+        for vec in self.on_border.iter_mut() {
+            vec.clear();
+        }
     }
 
     #[inline]
@@ -219,6 +219,7 @@ impl GridLayout {
 
 #[cfg(test)]
 mod tests {
+    use crate::split::grid_layout::vec;
     use i_float::int::point::IntPoint;
     use i_float::int::rect::IntRect;
     use i_float::triangle::Triangle;

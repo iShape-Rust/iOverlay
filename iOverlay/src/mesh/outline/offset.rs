@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
@@ -108,7 +110,7 @@ where
         } else {
             let total_capacity = outer_builder.capacity(points_count);
 
-            let mut overlay = Overlay::new_custom(total_capacity, options.int_options(&adapter), Default::default());
+            let mut overlay = Overlay::new_custom(total_capacity, options.int_with_adapter(&adapter), Default::default());
             let mut offset_overlay = OffsetOverlay::new(128);
 
             let mut segments = Vec::new();
@@ -195,9 +197,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::mesh::outline::offset::OutlineOffset;
+    use alloc::vec;
+use crate::mesh::outline::offset::OutlineOffset;
     use crate::mesh::style::{LineJoin, OutlineStyle};
-    use std::f32::consts::PI;
+    use core::f32::consts::PI;
 
     #[test]
     fn test_doc() {

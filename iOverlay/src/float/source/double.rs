@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use crate::float::source::resource::OverlayResource;
@@ -96,6 +97,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::float::source::resource::OverlayResource;
 
     #[test]

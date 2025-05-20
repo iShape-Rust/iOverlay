@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 

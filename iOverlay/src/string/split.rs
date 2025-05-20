@@ -1,6 +1,8 @@
-use std::collections::HashMap;
+use alloc::vec;
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::shape::IntContour;
 
 pub(super) trait Split {
     fn split_loops(self, min_area: u64) -> Vec<Self>
@@ -8,37 +10,121 @@ pub(super) trait Split {
         Self: Sized;
 }
 
-impl Split for IntPath {
+impl Split for IntContour {
     fn split_loops(self, min_area: u64) -> Vec<Self> {
+        if self.is_empty() {
+            return Vec::new();
+        }
+        let mut contour: IntContour = Vec::with_capacity(self.len());
         let mut result: Vec<IntPath> = Vec::new();
-        let mut path: IntPath = Vec::new();
-        let mut map: HashMap<IntPoint, usize> = HashMap::new();
+
+        let mut bin_store = BinStore::new(&self);
 
         for point in self {
-            if let Some(&pos) = map.get(&point) {
-                let tail_len = path.len() - pos;
+            let next_pos = contour.len() + 1;
+            let pos = bin_store.insert_if_not_exist(point, next_pos);
+            if pos < contour.len() {
+                // found a loop
+                let tail_len = contour.len() - pos;
                 if tail_len < 2 {
                     // tail is too small
-                    path.truncate(pos);
+                    contour.truncate(pos);
                 } else {
-                    let mut tail = path.split_off(pos);
+                    let mut tail = contour.split_off(pos);
                     tail.push(point);
                     if tail.validate_area(min_area) {
                         result.push(tail);
                     }
                 }
             } else {
-                path.push(point);
-                let pos = path.len();
-                map.insert(point, pos);
+                contour.push(point);
             }
         }
 
-        if path.len() > 2 {
-            result.push(path);
+        if contour.len() > 2 {
+            result.push(contour);
         }
 
         result
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct PointItem {
+    point: IntPoint,
+    pos: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Bin {
+    offset: usize,
+    data: usize,
+}
+
+struct BinStore {
+    mask: u32,
+    bins: Vec<Bin>,
+    items: Vec<PointItem>,
+}
+
+impl BinStore {
+    fn new(contour: &IntContour) -> Self {
+        let log = contour.len().ilog2().saturating_sub(4).clamp(1, 30);
+        let bins_count = 1 << log;
+        let bins = vec![Bin { offset: 0, data: 0 }; bins_count];
+        let items = vec![
+            PointItem {
+                point: IntPoint::EMPTY,
+                pos: 0
+            };
+            contour.len()
+        ];
+        let mask = bins_count.wrapping_sub(1) as u32;
+
+        let mut store = Self { mask, bins, items };
+
+        for &p in contour.iter() {
+            let index = store.bin_index(p);
+            unsafe { store.bins.get_unchecked_mut(index).data += 1 };
+        }
+
+        let mut offset = 0;
+        for bin in store.bins.iter_mut() {
+            let next_offset = offset + bin.data;
+            *bin = Bin {
+                offset,
+                data: offset,
+            };
+            offset = next_offset;
+        }
+
+        store
+    }
+
+    #[inline]
+    fn insert_if_not_exist(&mut self, point: IntPoint, pos: usize) -> usize {
+        let index = self.bin_index(point);
+        let bin = unsafe { self.bins.get_unchecked_mut(index) };
+        let start = bin.offset;
+        let end = bin.data;
+        for i in start..end {
+            let item = unsafe { self.items.get_unchecked_mut(i) };
+            if item.point == point {
+                return item.pos;
+            }
+        }
+        bin.data = end + 1;
+        unsafe { *self.items.get_unchecked_mut(end) = PointItem { point, pos } }
+
+        usize::MAX
+    }
+
+    #[inline]
+    fn bin_index(&self, p: IntPoint) -> usize {
+        let x = p.x.unsigned_abs();
+        let y = p.y.unsigned_abs();
+        let hash = x.wrapping_mul(31) ^ y.wrapping_mul(17);
+        (hash & self.mask) as usize
     }
 }
 
@@ -57,10 +143,10 @@ impl ValidateArea for IntPath {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
 
     #[test]
     fn test_empty_path() {
@@ -111,18 +197,26 @@ mod tests {
 
         let result = path.split_loops(0);
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0], [
-            IntPoint::new(3, 1),
-            IntPoint::new(4, 0),
-            IntPoint::new(3, -1),
-            IntPoint::new(2, 0),
-        ].to_vec());
-        assert_eq!(result[1], [
-            IntPoint::new(0, 0),
-            IntPoint::new(1, 1),
-            IntPoint::new(2, 0),
-            IntPoint::new(1, -1),
-        ].to_vec());
+        assert_eq!(
+            result[0],
+            [
+                IntPoint::new(3, 1),
+                IntPoint::new(4, 0),
+                IntPoint::new(3, -1),
+                IntPoint::new(2, 0),
+            ]
+            .to_vec()
+        );
+        assert_eq!(
+            result[1],
+            [
+                IntPoint::new(0, 0),
+                IntPoint::new(1, 1),
+                IntPoint::new(2, 0),
+                IntPoint::new(1, -1),
+            ]
+            .to_vec()
+        );
     }
 
     #[test]
@@ -139,17 +233,25 @@ mod tests {
 
         let result = path.split_loops(0);
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0], [
-            IntPoint::new(3, 1),
-            IntPoint::new(3, -1),
-            IntPoint::new(2, 0),
-        ].to_vec());
-        assert_eq!(result[1], [
-            IntPoint::new(0, 0),
-            IntPoint::new(1, 1),
-            IntPoint::new(2, 0),
-            IntPoint::new(1, -1),
-        ].to_vec());
+        assert_eq!(
+            result[0],
+            [
+                IntPoint::new(3, 1),
+                IntPoint::new(3, -1),
+                IntPoint::new(2, 0),
+            ]
+            .to_vec()
+        );
+        assert_eq!(
+            result[1],
+            [
+                IntPoint::new(0, 0),
+                IntPoint::new(1, 1),
+                IntPoint::new(2, 0),
+                IntPoint::new(1, -1),
+            ]
+            .to_vec()
+        );
     }
 
     #[test]
@@ -171,18 +273,26 @@ mod tests {
 
         let result = path.split_loops(0);
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0], [
-            IntPoint::new(3, 1),
-            IntPoint::new(4, 0),
-            IntPoint::new(3, -1),
-            IntPoint::new(2, 0),
-        ].to_vec());
-        assert_eq!(result[1], [
-            IntPoint::new(1, 1),
-            IntPoint::new(2, 0),
-            IntPoint::new(1, -1),
-            IntPoint::new(0, 0),
-        ].to_vec());
+        assert_eq!(
+            result[0],
+            [
+                IntPoint::new(3, 1),
+                IntPoint::new(4, 0),
+                IntPoint::new(3, -1),
+                IntPoint::new(2, 0),
+            ]
+            .to_vec()
+        );
+        assert_eq!(
+            result[1],
+            [
+                IntPoint::new(1, 1),
+                IntPoint::new(2, 0),
+                IntPoint::new(1, -1),
+                IntPoint::new(0, 0),
+            ]
+            .to_vec()
+        );
     }
 
     #[test]
@@ -196,11 +306,15 @@ mod tests {
 
         let result = path.split_loops(0);
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0], [
-            IntPoint::new(1, 1),
-            IntPoint::new(2, 0),
-            IntPoint::new(0, 0),
-        ].to_vec());
+        assert_eq!(
+            result[0],
+            [
+                IntPoint::new(1, 1),
+                IntPoint::new(2, 0),
+                IntPoint::new(0, 0),
+            ]
+            .to_vec()
+        );
     }
 
     #[test]
@@ -222,25 +336,41 @@ mod tests {
 
         let result = path.split_loops(0);
         assert_eq!(result.len(), 4);
-        assert_eq!(result[0], [
-            IntPoint::new(-1, 2),
-            IntPoint::new(1, 2),
-            IntPoint::new(0, 0),
-        ].to_vec());
-        assert_eq!(result[1], [
-            IntPoint::new(2, 1),
-            IntPoint::new(2, -1),
-            IntPoint::new(0, 0),
-        ].to_vec());
-        assert_eq!(result[2], [
-            IntPoint::new(1, -2),
-            IntPoint::new(-1, -2),
-            IntPoint::new(0, 0),
-        ].to_vec());
-        assert_eq!(result[3], [
-            IntPoint::new(-2, -1),
-            IntPoint::new(-2, 1),
-            IntPoint::new(0, 0),
-        ].to_vec());
+        assert_eq!(
+            result[0],
+            [
+                IntPoint::new(-1, 2),
+                IntPoint::new(1, 2),
+                IntPoint::new(0, 0),
+            ]
+            .to_vec()
+        );
+        assert_eq!(
+            result[1],
+            [
+                IntPoint::new(2, 1),
+                IntPoint::new(2, -1),
+                IntPoint::new(0, 0),
+            ]
+            .to_vec()
+        );
+        assert_eq!(
+            result[2],
+            [
+                IntPoint::new(1, -2),
+                IntPoint::new(-1, -2),
+                IntPoint::new(0, 0),
+            ]
+            .to_vec()
+        );
+        assert_eq!(
+            result[3],
+            [
+                IntPoint::new(-2, -1),
+                IntPoint::new(-2, 1),
+                IntPoint::new(0, 0),
+            ]
+            .to_vec()
+        );
     }
 }

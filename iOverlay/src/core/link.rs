@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;

@@ -1,8 +1,9 @@
+use alloc::vec::Vec;
 use crate::segm::segment::Segment;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use std::f64::consts::PI;
+use core::f64::consts::PI;
 use i_float::float::vector::FloatPointMath;
 use crate::mesh::miter::{Miter, SharpMiter};
 use crate::mesh::outline::section::Section;

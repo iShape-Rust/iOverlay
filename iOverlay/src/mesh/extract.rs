@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use i_shape::int::shape::{IntContour, IntShapes};
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};

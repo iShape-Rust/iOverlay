@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 
@@ -81,7 +82,8 @@ fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::segm::boolean::ShapeCountBoolean;
+    use alloc::vec;
+use crate::segm::boolean::ShapeCountBoolean;
 use i_float::int::point::IntPoint;
     use super::*;
 

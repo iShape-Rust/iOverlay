@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::segm::string::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
@@ -239,7 +240,8 @@ impl IntClip for [IntPoint] {
 
 #[cfg(test)]
 mod tests {
-    use i_float::int::point::IntPoint;
+    use alloc::vec;
+use i_float::int::point::IntPoint;
     use i_shape::int::path::IntPath;
     use crate::core::fill_rule::FillRule;
     use crate::string::clip::{ClipRule, IntClip};

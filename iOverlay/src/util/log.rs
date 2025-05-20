@@ -16,6 +16,8 @@ impl Int for usize {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+    use alloc::vec::Vec;
     use crate::util::log::Int;
 
     #[test]

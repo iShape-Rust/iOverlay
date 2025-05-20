@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntContour;
@@ -119,6 +121,7 @@ impl ContourDecomposition for IntContour {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::shape::IntContour;
     use crate::core::divide::ContourDecomposition;

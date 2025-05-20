@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key_sort::KeyBinSort;
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};

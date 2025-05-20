@@ -9,26 +9,29 @@ repository = "https://github.com/iShape-Rust/iOverlay"
 readme = "README.md"
 
 [dependencies]
-i_float = { version = "~1.13.0", features = ["bin_key"] }
+#i_float = { version = "~1.13.0", features = ["bin_key"] }
 #i_shape = { version = "~1.12.0" }
 #i_tree = { version = "~0.15.0" }
 #i_key_sort = { version = "~0.5.0" }
 
-#i_float = { path = "../../iFloat", features = ["bin_key"] }
+i_float = { path = "../../iFloat", features = ["bin_key"] }
 i_shape = { path = "../../iShape" }
 i_tree = { path = "../../iTree" }
 i_key_sort = { path = "../../iKeySort" }
 
-[dependencies.rayon]
-version = "^1.10"
-optional = true
+rayon = { optional = true, version = "^1.10" }
+
 
 [features]
-default = ["allow_multithreading"]
-allow_multithreading = ["rayon"]
+default = []
+
 glam = ["i_float/glam"]
+serde = ["i_float/serde", "i_shape/serde"]
+allow_multithreading = ["dep:rayon"]
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 rand = { version = "^0.8.5", features = [] }
+i_float = { path = "../../iFloat", features = ["serde"] }
+i_shape = { path = "../../iShape", features = ["serde"] }

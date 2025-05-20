@@ -74,6 +74,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::core::fill_rule::FillRule;
     use crate::float::simplify::SimplifyShape;
 

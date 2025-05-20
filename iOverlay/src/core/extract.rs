@@ -1,3 +1,5 @@
+use crate::core::extract::vec::Vec;
+use alloc::vec;
 use crate::core::link::OverlayLinkFilter;
 use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};

@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::segm::string::STRING_FORWARD_CLIP;
 use crate::segm::string::STRING_BACK_CLIP;
 use crate::segm::string::ShapeCountString;
@@ -127,9 +128,9 @@ impl StringOverlay {
         let a = line[0];
         let b = line[1];
         let segment = match a.cmp(&b) {
-            std::cmp::Ordering::Less => Segment { x_segment: XSegment { a, b }, count: ShapeCountString { subj: 0, clip: STRING_BACK_CLIP } },
-            std::cmp::Ordering::Greater => Segment { x_segment: XSegment { a: b, b: a }, count: ShapeCountString { subj: 0, clip: STRING_FORWARD_CLIP } },
-            std::cmp::Ordering::Equal => return,
+            core::cmp::Ordering::Less => Segment { x_segment: XSegment { a, b }, count: ShapeCountString { subj: 0, clip: STRING_BACK_CLIP } },
+            core::cmp::Ordering::Greater => Segment { x_segment: XSegment { a: b, b: a }, count: ShapeCountString { subj: 0, clip: STRING_FORWARD_CLIP } },
+            core::cmp::Ordering::Equal => return,
         };
 
         self.segments.push(segment);
