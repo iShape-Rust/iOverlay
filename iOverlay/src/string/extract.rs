@@ -6,7 +6,7 @@ use crate::core::overlay::{ContourDirection, IntOverlayOptions};
 use crate::segm::segment::SUBJ_TOP;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
-use crate::string::split::Split;
+use crate::string::split::{BinStore, Split};
 use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntShapes;
 
@@ -50,6 +50,9 @@ impl StringGraph<'_> {
         let mut shapes= Vec::new();
         let mut holes= Vec::new();
 
+        let mut contour_buffer = Vec::new();
+        let mut bin_store = BinStore::new();
+
         let mut link_index = 0;
         while link_index < fills.len() {
             let fill = fills[link_index];
@@ -61,7 +64,7 @@ impl StringGraph<'_> {
             let direction = fill & SUBJ_TOP == SUBJ_TOP;
             let paths = self
                 .get_paths(link_index, direction, &mut fills)
-                .split_loops(options.min_output_area);
+                .split_loops(options.min_output_area, &mut contour_buffer, &mut bin_store);
 
             for mut path in paths.into_iter() {
                 let order = path.is_clockwise_ordered();
