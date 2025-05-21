@@ -853,7 +853,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        for _ in 0..10_000 {
+        for _ in 0..100_000 {
             let x0 = rng.gen_range(range.clone());
             let y0 = rng.gen_range(range.clone());
             let x1 = rng.gen_range(range.clone());
@@ -862,7 +862,10 @@ mod tests {
             let a = IntPoint::new(x0, y0);
             let b = IntPoint::new(x1, y1);
 
-            let segment = if a <= b {
+            if a == b {
+                continue;
+            }
+            let segment = if a < b {
                 XSegment { a, b }
             } else {
                 XSegment { a: b, b: a }

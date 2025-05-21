@@ -55,15 +55,12 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         let count = segments.len();
         if solver.is_list_fill(segments) {
             let capacity = count.log2_sqrt().max(4) * 2;
-            let mut list = self.list.take().unwrap_or_else(|| KeyExpList::new(capacity));
-            list.reserve_capacity(capacity);
+            let mut list = self.take_scan_list(capacity);
             self.build_fills::<F, KeyExpList<VSegment, i32, C>>(&mut list, segments);
             self.list = Some(list);
         } else {
             let capacity = count.log2_sqrt().max(8);
-            let mut tree = self.tree.take().unwrap_or_else(|| KeyExpTree::new(capacity));
-            tree.reserve_capacity(capacity);
-
+            let mut tree = self.take_scan_tree(capacity);
             self.build_fills::<F, KeyExpTree<VSegment, i32, C>>(&mut tree, segments);
             self.tree = Some(tree);
         }
@@ -151,6 +148,28 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
                 IdPoint::new(0, segment.x_segment.b),
                 fill,
             ));
+        }
+    }
+
+    #[inline]
+    fn take_scan_list(&mut self, capacity: usize) -> KeyExpList<VSegment, i32, C> {
+        if let Some(mut list) = self.list.take() {
+            list.clear();
+            list.reserve_capacity(capacity);
+            list
+        } else {
+            KeyExpList::new(capacity)
+        }
+    }
+
+    #[inline]
+    fn take_scan_tree(&mut self, capacity: usize) -> KeyExpTree<VSegment, i32, C> {
+        if let Some(mut tree) = self.tree.take() {
+            tree.clear();
+            tree.reserve_capacity(capacity);
+            tree
+        } else {
+            KeyExpTree::new(capacity)
         }
     }
 }
