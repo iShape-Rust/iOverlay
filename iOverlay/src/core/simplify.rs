@@ -4,6 +4,7 @@
 use i_shape::flat::buffer::FlatContoursBuffer;
 use crate::core::overlay::ContourDirection;
 use alloc::vec;
+use core::cmp::Ordering;
 use crate::i_float::int::point::IntPoint;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ContourDirection::Clockwise;
@@ -231,9 +232,43 @@ impl Overlay {
         let split_modified = self
             .split_solver
             .split_segments(&mut self.segments, &self.solver);
-        let has_loops = self.graph_builder.has_loops(&self.segments, &self.solver);
+        let has_loops = Self::has_any_loop(contour);
 
         !split_modified && !append_modified && !has_loops
+    }
+
+    #[inline]
+    fn has_any_loop(contour: &[IntPoint]) -> bool {
+        let mut min_pos: IntPoint = IntPoint::new(i32::MAX, i32::MAX);
+        let mut index: usize = 0;
+        for (i, &p) in contour.iter().enumerate() {
+            if min_pos > p {
+                min_pos = p;
+                index = i;
+            }
+        }
+        let n = contour.len() - 1;
+        let mut i = (index + 1) % n;
+        let mut j = index;
+
+        let mut pi = contour[i];
+        let mut pj = min_pos;
+
+        for _ in 0..n {
+            match pi.cmp(&pj) {
+                Ordering::Less => {
+                    i = (i + 1) % n;
+                    pi = contour[i];
+                }
+                Ordering::Equal => return true,
+                Ordering::Greater => {
+                    j = (j + 1) % n;
+                    pj = contour[j];
+                }
+            }
+        }
+
+        false
     }
 
 }
