@@ -3,9 +3,9 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::ShapeToFloat;
+use i_shape::source::resource::ShapeResource;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
-use crate::float::source::resource::OverlayResource;
 use crate::float::string_graph::FloatStringGraph;
 use crate::string::clip::ClipRule;
 use crate::string::overlay::StringOverlay;
@@ -44,8 +44,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
     pub fn with_shape_and_string<R0, R1>(shape: &R0, string: &R1) -> Self
     where
-        R0: OverlayResource<P, T>,
-        R1: OverlayResource<P, T>,
+        R0: ShapeResource<P, T>,
+        R1: ShapeResource<P, T>,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -67,7 +67,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn unsafe_add_shapes<S: OverlayResource<P, T>>(mut self, source: &S) -> Self {
+    pub fn unsafe_add_shapes<S: ShapeResource<P, T>>(mut self, source: &S) -> Self {
         for contour in source.iter_paths() {
             self = self.unsafe_add_shape_contour(contour);
         }
@@ -81,7 +81,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
     #[inline]
-    pub fn unsafe_add_string_lines<S: OverlayResource<P, T>>(mut self, resource: &S) -> Self {
+    pub fn unsafe_add_string_lines<S: ShapeResource<P, T>>(mut self, resource: &S) -> Self {
         for path in resource.iter_paths() {
             self = self.unsafe_add_string_line(path);
         }

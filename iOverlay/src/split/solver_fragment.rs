@@ -41,13 +41,20 @@ impl SplitSolver {
 
             need_to_fix = self.process(snap_radius.radius(), &mut buffer, solver);
 
-            for (index, segments) in buffer.on_border.iter_mut().enumerate() {
-                if segments.is_empty() {
-                    continue;
+            #[cfg(debug_assertions)]
+            debug_assert!(buffer.is_on_border_sorted());
+            let mut j = 0;
+            while j < buffer.on_border.len() {
+                let j0 = j;
+                let x = buffer.on_border[j].x;
+                j += 1;
+                while j < buffer.on_border.len() && x == buffer.on_border[j].x {
+                    j += 1;
                 }
+
+                let index = buffer.layout.index(x);
                 if let Some(fragments) = buffer.groups.get(index) {
-                    let border_x = buffer.layout.pos(index);
-                    self.on_border_split(border_x, fragments, segments);
+                    self.on_border_split(x, fragments, &mut buffer.on_border[j0..j]);
                 }
             }
 

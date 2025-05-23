@@ -1,11 +1,11 @@
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
+use i_shape::source::resource::ShapeResource;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::overlay::{FloatOverlay, OverlayOptions};
-use crate::float::source::resource::OverlayResource;
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
 /// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
@@ -29,7 +29,7 @@ pub trait SimplifyShape<P, T: FloatNumber> {
 
 impl<S, P, T> SimplifyShape<P, T> for S
 where
-    S: OverlayResource<P, T>,
+    S: ShapeResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {

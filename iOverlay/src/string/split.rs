@@ -1,6 +1,6 @@
+use i_shape::int::path::ContourExtension;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
-use i_shape::int::path::{IntPath, PointPathExtension};
 use i_shape::int::shape::IntContour;
 
 pub(super) trait Split {
@@ -22,7 +22,7 @@ impl Split for IntContour {
 
         bin_store.init(&self);
 
-        let mut result: Vec<IntPath> = Vec::new();
+        let mut result: Vec<IntContour> = Vec::new();
 
         for point in self {
             let next_pos = contour_buffer.len() + 1;
@@ -139,7 +139,7 @@ trait ValidateArea {
     fn validate_area(&self, min_area: u64) -> bool;
 }
 
-impl ValidateArea for IntPath {
+impl ValidateArea for IntContour {
     #[inline]
     fn validate_area(&self, min_area: u64) -> bool {
         if min_area == 0 {
@@ -152,6 +152,7 @@ impl ValidateArea for IntPath {
 
 #[cfg(test)]
 mod tests {
+    use crate::i_shape::int::path::IntPath;
     use super::*;
     use alloc::vec;
 

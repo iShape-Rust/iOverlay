@@ -203,6 +203,5 @@ pub(crate) mod bind;
 pub(crate) mod geom;
 pub(crate) mod util;
 
-
 pub use i_float;
 pub use i_shape;

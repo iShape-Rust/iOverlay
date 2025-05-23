@@ -1,32 +1,37 @@
-use alloc::vec;
-use alloc::vec::Vec;
-use i_float::int::rect::IntRect;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
 use crate::split::fragment::Fragment;
+use alloc::vec;
+use alloc::vec::Vec;
+use i_float::int::rect::IntRect;
 
 #[derive(Debug, Clone)]
 pub(super) struct BorderVSegment {
     pub(super) id: usize,
+    pub(super) x: i32,
     pub(super) y_range: LineRange,
 }
 
 pub(super) struct FragmentBuffer {
     pub(super) layout: GridLayout,
     pub(super) groups: Vec<Vec<Fragment>>,
-    pub(super) on_border: Vec<Vec<BorderVSegment>>,
+    pub(super) on_border: Vec<BorderVSegment>,
 }
 
 impl FragmentBuffer {
     #[inline]
     pub(super) fn new(layout: GridLayout) -> Self {
         let n = layout.index(layout.max_x) + 1;
-        Self { layout, groups: vec![Vec::new(); n], on_border: vec![Vec::new(); n] }
+        Self {
+            layout,
+            groups: vec![Vec::new(); n],
+            on_border: Vec::with_capacity(64),
+        }
     }
 
     pub(super) fn init_fragment_buffer<I>(&mut self, iter: I)
     where
-        I: Iterator<Item=XSegment>,
+        I: Iterator<Item = XSegment>,
     {
         let mut counts = vec![0; self.groups.len()];
         for s in iter {
@@ -41,7 +46,6 @@ impl FragmentBuffer {
             }
         }
 
-
         for (i, group) in self.groups.iter_mut().enumerate() {
             group.reserve(counts[i]);
         }
@@ -54,9 +58,13 @@ impl FragmentBuffer {
 
     #[inline]
     fn insert_vertical(&mut self, fragment: Fragment, bin_index: usize) {
-        if bin_index > 0 && fragment.x_segment.a.x == self.layout.pos(bin_index) {
-            let bvs = BorderVSegment { id: fragment.index, y_range: fragment.x_segment.y_range() };
-            self.on_border[bin_index].push(bvs);
+        let x = fragment.x_segment.a.x;
+        if bin_index > 0 && x == self.layout.pos(bin_index) {
+            self.on_border.push(BorderVSegment {
+                id: fragment.index,
+                y_range: fragment.x_segment.y_range(),
+                x,
+            });
         }
         self.insert(fragment, bin_index);
     }
@@ -66,9 +74,7 @@ impl FragmentBuffer {
         for group in self.groups.iter_mut() {
             group.clear();
         }
-        for vec in self.on_border.iter_mut() {
-            vec.clear();
-        }
+        self.on_border.clear();
     }
 
     #[inline]
@@ -119,12 +125,22 @@ impl FragmentBuffer {
 
             let rect = if is_inc {
                 let max_y = y0 + h_max as i32;
-                let rect = IntRect { min_x: prev_x, max_x, min_y: prev_y, max_y };
+                let rect = IntRect {
+                    min_x: prev_x,
+                    max_x,
+                    min_y: prev_y,
+                    max_y,
+                };
                 prev_y = y0 + h_min as i32;
                 rect
             } else {
                 let min_y = y0 - h_max as i32;
-                let rect = IntRect { min_x: prev_x, max_x, min_y, max_y: prev_y };
+                let rect = IntRect {
+                    min_x: prev_x,
+                    max_x,
+                    min_y,
+                    max_y: prev_y,
+                };
                 prev_y = y0 - h_min as i32;
                 rect
             };
@@ -132,16 +148,40 @@ impl FragmentBuffer {
             prev_x = max_x;
             w += dw;
 
-            self.insert(Fragment { index: segment_index, rect, x_segment: s }, i);
+            self.insert(
+                Fragment {
+                    index: segment_index,
+                    rect,
+                    x_segment: s,
+                },
+                i,
+            );
         }
 
         let rect = if is_inc {
-            IntRect { min_x: prev_x, max_x: s.b.x, min_y: prev_y, max_y: s.b.y }
+            IntRect {
+                min_x: prev_x,
+                max_x: s.b.x,
+                min_y: prev_y,
+                max_y: s.b.y,
+            }
         } else {
-            IntRect { min_x: prev_x, max_x: s.b.x, min_y: s.b.y, max_y: prev_y }
+            IntRect {
+                min_x: prev_x,
+                max_x: s.b.x,
+                min_y: s.b.y,
+                max_y: prev_y,
+            }
         };
 
-        self.insert(Fragment { index: segment_index, rect, x_segment: s }, i1);
+        self.insert(
+            Fragment {
+                index: segment_index,
+                rect,
+                x_segment: s,
+            },
+            i1,
+        );
     }
 
     fn add_horizontal(&mut self, segment_index: usize, s: XSegment) {
@@ -153,16 +193,51 @@ impl FragmentBuffer {
         let mut i = i0;
         while i < i1 {
             let x = self.layout.pos(i + 1);
-            let rect = IntRect { min_x: x0, max_x: x, min_y: y, max_y: y };
-            self.insert(Fragment { index: segment_index, rect, x_segment: s }, i);
+            let rect = IntRect {
+                min_x: x0,
+                max_x: x,
+                min_y: y,
+                max_y: y,
+            };
+            self.insert(
+                Fragment {
+                    index: segment_index,
+                    rect,
+                    x_segment: s,
+                },
+                i,
+            );
 
             x0 = x;
             i += 1;
         }
 
-        let rect = IntRect { min_x: x0, max_x: s.b.x, min_y: y, max_y: y };
-        self.insert(Fragment { index: segment_index, rect, x_segment: s }, i1);
+        let rect = IntRect {
+            min_x: x0,
+            max_x: s.b.x,
+            min_y: y,
+            max_y: y,
+        };
+        self.insert(
+            Fragment {
+                index: segment_index,
+                rect,
+                x_segment: s,
+            },
+            i1,
+        );
     }
+
+    #[cfg(debug_assertions)]
+    pub(super) fn is_on_border_sorted(&self) -> bool {
+        for w in self.on_border.windows(2) {
+            if w[0].x > w[1].x {
+                return false;
+            }
+        }
+        true
+    }
+
 }
 
 pub(super) struct GridLayout {
@@ -173,7 +248,7 @@ pub(super) struct GridLayout {
 
 impl GridLayout {
     #[inline]
-    fn index(&self, x: i32) -> usize {
+    pub(super) fn index(&self, x: i32) -> usize {
         ((x - self.min_x) >> self.power) as usize
     }
 
@@ -184,7 +259,7 @@ impl GridLayout {
 
     pub(super) fn new<I>(iter: I, count: usize) -> Option<Self>
     where
-        I: Iterator<Item=XSegment>,
+        I: Iterator<Item = XSegment>,
     {
         let mut iter = iter.peekable();
         let first = iter.peek()?;
@@ -207,32 +282,39 @@ impl GridLayout {
             return None;
         }
         let log = dx.ilog2();
-        let power = if log > max_power {
-            log - max_power
-        } else {
-            1
-        };
+        let power = if log > max_power { log - max_power } else { 1 };
 
-        Some(Self { min_x, max_x, power })
+        Some(Self {
+            min_x,
+            max_x,
+            power,
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::geom::x_segment::XSegment;
     use crate::split::grid_layout::vec;
+    use crate::split::grid_layout::{FragmentBuffer, GridLayout};
     use i_float::int::point::IntPoint;
     use i_float::int::rect::IntRect;
     use i_float::triangle::Triangle;
     use rand::Rng;
-    use crate::geom::x_segment::XSegment;
-    use crate::split::grid_layout::{FragmentBuffer, GridLayout};
 
     #[test]
     fn test_0() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 0 }, b: IntPoint { x: 6, y: 3 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 0 },
+            b: IntPoint { x: 6, y: 3 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -241,9 +323,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 0, max_y: 2 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 1, max_y: 3 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 1,
+                max_y: 3,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -252,10 +358,17 @@ mod tests {
 
     #[test]
     fn test_0_inv() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 3 }, b: IntPoint { x: 6, y: 0 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 3 },
+            b: IntPoint { x: 6, y: 0 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -264,9 +377,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 2, max_y: 3 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 1, max_y: 3 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 0, max_y: 2 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 2,
+                max_y: 3,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 1,
+                max_y: 3,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -275,10 +412,17 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 1 }, b: IntPoint { x: 6, y: 4 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 1 },
+            b: IntPoint { x: 6, y: 4 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -287,9 +431,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 1, max_y: 2 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 1, max_y: 3 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 2, max_y: 4 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 1,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 1,
+                max_y: 3,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 2,
+                max_y: 4,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -298,10 +466,17 @@ mod tests {
 
     #[test]
     fn test_1_inv() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 4 }, b: IntPoint { x: 6, y: 1 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 4 },
+            b: IntPoint { x: 6, y: 1 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -310,9 +485,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 3, max_y: 4 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 2, max_y: 4 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 1, max_y: 3 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 3,
+                max_y: 4,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 2,
+                max_y: 4,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 1,
+                max_y: 3,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -321,10 +520,17 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: -1 }, b: IntPoint { x: 6, y: 2 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: -1 },
+            b: IntPoint { x: 6, y: 2 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -333,9 +539,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: -1, max_y: 0 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: -1, max_y: 1 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 0, max_y: 2 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: -1,
+                max_y: 0,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: -1,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -344,10 +574,17 @@ mod tests {
 
     #[test]
     fn test_2_inv() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 2 }, b: IntPoint { x: 6, y: -1 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 2 },
+            b: IntPoint { x: 6, y: -1 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -356,9 +593,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 1, max_y: 2 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 0, max_y: 2 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: -1, max_y: 1 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 1,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: -1,
+                max_y: 1,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -367,10 +628,17 @@ mod tests {
 
     #[test]
     fn test_3() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 0 }, b: IntPoint { x: 6, y: 1 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 0 },
+            b: IntPoint { x: 6, y: 1 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -379,9 +647,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 0, max_y: 1 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -390,10 +682,17 @@ mod tests {
 
     #[test]
     fn test_3_inv() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 1 }, b: IntPoint { x: 6, y: 0 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 1 },
+            b: IntPoint { x: 6, y: 0 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -402,9 +701,33 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 0, max_y: 1 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
@@ -413,10 +736,17 @@ mod tests {
 
     #[test]
     fn test_4() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 0, y: 0 }, b: IntPoint { x: 5, y: 3 } };
+        let segment = XSegment {
+            a: IntPoint { x: 0, y: 0 },
+            b: IntPoint { x: 5, y: 3 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -425,22 +755,52 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 0, max_x: 2, min_y: 0, max_y: 2 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 1, max_y: 3 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 5, min_y: 2, max_y: 3 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 0,
+                max_x: 2,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 1,
+                max_y: 3,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 5,
+                min_y: 2,
+                max_y: 3,
+            },
+        );
 
         validate_rect(&segment, &buffer.groups[0][0].rect);
         validate_rect(&segment, &buffer.groups[1][0].rect);
         validate_rect(&segment, &buffer.groups[2][0].rect);
     }
 
-
     #[test]
     fn test_5() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 0 }, b: IntPoint { x: 4, y: 5 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 0 },
+            b: IntPoint { x: 4, y: 5 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -449,16 +809,39 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 2);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 0, max_y: 2 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 1, max_y: 5 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 1,
+                max_y: 5,
+            },
+        );
     }
 
     #[test]
     fn test_6() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 0, y: 0 }, b: IntPoint { x: 6, y: 6 } };
+        let segment = XSegment {
+            a: IntPoint { x: 0, y: 0 },
+            b: IntPoint { x: 6, y: 6 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -467,17 +850,48 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 0, max_x: 2, min_y: 0, max_y: 2 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 2, max_y: 4 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 4, max_y: 6 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 0,
+                max_x: 2,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 2,
+                max_y: 4,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 4,
+                max_y: 6,
+            },
+        );
     }
 
     #[test]
     fn test_7() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 1 }, b: IntPoint { x: 5, y: 5 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 1 },
+            b: IntPoint { x: 5, y: 5 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -486,17 +900,48 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 1, max_y: 2 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 2, max_y: 4 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 5, min_y: 4, max_y: 5 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 1,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 2,
+                max_y: 4,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 5,
+                min_y: 4,
+                max_y: 5,
+            },
+        );
     }
 
     #[test]
     fn test_7_inv() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 5 }, b: IntPoint { x: 5, y: 1 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 5 },
+            b: IntPoint { x: 5, y: 1 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -505,17 +950,48 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 3);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 2, min_y: 4, max_y: 5 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 2, max_y: 4 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 5, min_y: 1, max_y: 2 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 2,
+                min_y: 4,
+                max_y: 5,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 2,
+                max_y: 4,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 5,
+                min_y: 1,
+                max_y: 2,
+            },
+        );
     }
 
     #[test]
     fn test_8() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 0, y: 0 }, b: IntPoint { x: 7, y: 0 } };
+        let segment = XSegment {
+            a: IntPoint { x: 0, y: 0 },
+            b: IntPoint { x: 7, y: 0 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -524,18 +1000,57 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 4);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 0, max_x: 2, min_y: 0, max_y: 0 });
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 0, max_y: 0 });
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: 4, max_x: 6, min_y: 0, max_y: 0 });
-        rect_compare(&buffer.groups[3][0].rect, &IntRect { min_x: 6, max_x: 7, min_y: 0, max_y: 0 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 0,
+                max_x: 2,
+                min_y: 0,
+                max_y: 0,
+            },
+        );
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 0,
+                max_y: 0,
+            },
+        );
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: 4,
+                max_x: 6,
+                min_y: 0,
+                max_y: 0,
+            },
+        );
+        rect_compare(
+            &buffer.groups[3][0].rect,
+            &IntRect {
+                min_x: 6,
+                max_x: 7,
+                min_y: 0,
+                max_y: 0,
+            },
+        );
     }
 
     #[test]
     fn test_9() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 1 }, b: IntPoint { x: 1, y: 9 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 1 },
+            b: IntPoint { x: 1, y: 9 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -544,15 +1059,30 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 1);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 1, min_y: 1, max_y: 9 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 1,
+                min_y: 1,
+                max_y: 9,
+            },
+        );
     }
 
     #[test]
     fn test_9_inv() {
-        let layout = GridLayout { min_x: 0, max_x: 12, power: 1 };
+        let layout = GridLayout {
+            min_x: 0,
+            max_x: 12,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: 1, y: 9 }, b: IntPoint { x: 1, y: 1 } };
+        let segment = XSegment {
+            a: IntPoint { x: 1, y: 9 },
+            b: IntPoint { x: 1, y: 1 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -561,7 +1091,15 @@ mod tests {
         assert_eq!(buffer.groups.len(), 7);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 1);
 
-        rect_compare(&buffer.groups[0][0].rect, &IntRect { min_x: 1, max_x: 1, min_y: 1, max_y: 9 });
+        rect_compare(
+            &buffer.groups[0][0].rect,
+            &IntRect {
+                min_x: 1,
+                max_x: 1,
+                min_y: 1,
+                max_y: 9,
+            },
+        );
     }
 
     #[test]
@@ -574,7 +1112,16 @@ mod tests {
 
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: -100_000, y: -100_000 }, b: IntPoint { x: 100_000, y: 100_000 } };
+        let segment = XSegment {
+            a: IntPoint {
+                x: -100_000,
+                y: -100_000,
+            },
+            b: IntPoint {
+                x: 100_000,
+                y: 100_000,
+            },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -596,10 +1143,17 @@ mod tests {
 
     #[test]
     fn test_11() {
-        let layout = GridLayout { min_x: -10, max_x: 10, power: 1 };
+        let layout = GridLayout {
+            min_x: -10,
+            max_x: 10,
+            power: 1,
+        };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: -6, y: 0 }, b: IntPoint { x: 4, y: 2 } };
+        let segment = XSegment {
+            a: IntPoint { x: -6, y: 0 },
+            b: IntPoint { x: 4, y: 2 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -614,11 +1168,51 @@ mod tests {
         validate_rect(&segment, &buffer.groups[5][0].rect);
         validate_rect(&segment, &buffer.groups[6][0].rect);
 
-        rect_compare(&buffer.groups[2][0].rect, &IntRect { min_x: -6, max_x: -4, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[3][0].rect, &IntRect { min_x: -4, max_x: -2, min_y: 0, max_y: 1 });
-        rect_compare(&buffer.groups[4][0].rect, &IntRect { min_x: -2, max_x: 0, min_y: 0, max_y: 2 });
-        rect_compare(&buffer.groups[5][0].rect, &IntRect { min_x: 0, max_x: 2, min_y: 1, max_y: 2 });
-        rect_compare(&buffer.groups[6][0].rect, &IntRect { min_x: 2, max_x: 4, min_y: 1, max_y: 2 });
+        rect_compare(
+            &buffer.groups[2][0].rect,
+            &IntRect {
+                min_x: -6,
+                max_x: -4,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[3][0].rect,
+            &IntRect {
+                min_x: -4,
+                max_x: -2,
+                min_y: 0,
+                max_y: 1,
+            },
+        );
+        rect_compare(
+            &buffer.groups[4][0].rect,
+            &IntRect {
+                min_x: -2,
+                max_x: 0,
+                min_y: 0,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[5][0].rect,
+            &IntRect {
+                min_x: 0,
+                max_x: 2,
+                min_y: 1,
+                max_y: 2,
+            },
+        );
+        rect_compare(
+            &buffer.groups[6][0].rect,
+            &IntRect {
+                min_x: 2,
+                max_x: 4,
+                min_y: 1,
+                max_y: 2,
+            },
+        );
     }
 
     #[test]
@@ -630,7 +1224,10 @@ mod tests {
         };
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: -8, y: -10 }, b: IntPoint { x: -8, y: -9 } };
+        let segment = XSegment {
+            a: IntPoint { x: -8, y: -10 },
+            b: IntPoint { x: -8, y: -9 },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -639,7 +1236,15 @@ mod tests {
         assert_eq!(buffer.groups.len(), 11);
         assert_eq!(buffer.groups.iter().fold(0usize, |s, it| s + it.len()), 1);
 
-        rect_compare(&buffer.groups[1][0].rect, &IntRect { min_x: -8, max_x: -8, min_y: -10, max_y: -9 });
+        rect_compare(
+            &buffer.groups[1][0].rect,
+            &IntRect {
+                min_x: -8,
+                max_x: -8,
+                min_y: -10,
+                max_y: -9,
+            },
+        );
     }
 
     #[test]
@@ -652,7 +1257,16 @@ mod tests {
 
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: -83143, y: 65289 }, b: IntPoint { x: 45253, y: -76778 } };
+        let segment = XSegment {
+            a: IntPoint {
+                x: -83143,
+                y: 65289,
+            },
+            b: IntPoint {
+                x: 45253,
+                y: -76778,
+            },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 
@@ -673,7 +1287,16 @@ mod tests {
 
         let mut buffer = FragmentBuffer::new(layout);
 
-        let segment = XSegment { a: IntPoint { x: -78454, y: -40819 }, b: IntPoint { x: 47599, y: -57780 } };
+        let segment = XSegment {
+            a: IntPoint {
+                x: -78454,
+                y: -40819,
+            },
+            b: IntPoint {
+                x: 47599,
+                y: -57780,
+            },
+        };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
 

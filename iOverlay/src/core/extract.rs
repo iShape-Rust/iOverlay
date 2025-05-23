@@ -1,5 +1,6 @@
-use crate::core::extract::vec::Vec;
+use crate::i_shape::flat::buffer::FlatContoursBuffer;
 use alloc::vec;
+use crate::core::extract::vec::Vec;
 use crate::core::link::OverlayLinkFilter;
 use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};
@@ -11,9 +12,16 @@ use crate::core::overlay::ContourDirection;
 use crate::geom::v_segment::VSegment;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::int::path::PointPathExtension;
+use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
+use i_shape::util::reserve::Reserve;
+
+#[derive(Default)]
+pub struct BooleanExtractionBuffer {
+    points: Vec<IntPoint>,
+    visited: Vec<bool>
+}
 
 impl OverlayGraph<'_> {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -26,56 +34,56 @@ impl OverlayGraph<'_> {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
-    #[inline(always)]
-    pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> IntShapes {
-        let visited = self.links.filter_by_overlay(overlay_rule);
-        let mut buffer = Vec::new();
-        self.extract(visited, overlay_rule, &mut buffer)
+    #[inline]
+    pub fn extract_shapes(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer) -> IntShapes {
+        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.extract(overlay_rule, buffer)
     }
 
-    pub(crate) fn extract(
+    #[inline]
+    pub fn extract_contours_into(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer, output: &mut FlatContoursBuffer) {
+        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.extract_contours(overlay_rule, buffer, output);
+    }
+
+    fn extract(
         &self,
-        mut filter: Vec<bool>,
         overlay_rule: OverlayRule,
-        contour_buffer: &mut IntContour,
+        buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
 
-        let visited = filter.as_mut_slice();
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
         let mut anchors = Vec::new();
 
-        if contour_buffer.capacity() < visited.len() {
-            contour_buffer.reserve(visited.len() - contour_buffer.capacity());
-        }
+        buffer.points.reserve_capacity(buffer.visited.len());
 
         let mut link_index = 0;
         let mut is_all_anchors_sorted = true;
-        while link_index < visited.len() {
-            if visited.is_visited(link_index) {
+        while link_index < buffer.visited.len() {
+            if buffer.visited.is_visited(link_index) {
                 link_index += 1;
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, visited);
-            let link = self.link(left_top_link);
+            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &mut buffer.visited);
+            let link = unsafe { self.links.get_unchecked(left_top_link) };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            contour_buffer.clear();
-            self.feed_contour(&start_data, direction, visited, contour_buffer);
+            self.find_contour(&start_data, direction, buffer);
             let (is_valid, is_modified) =
-                contour_buffer.validate(self.options.min_output_area, self.options.preserve_output_collinear);
+                buffer.points.validate(self.options.min_output_area, self.options.preserve_output_collinear);
 
             if !is_valid {
                 link_index += 1;
                 continue;
             }
 
-            let contour = contour_buffer.as_slice().to_vec();
+            let contour = buffer.points.as_slice().to_vec();
 
             if is_hole {
                 let mut v_segment = if clockwise {
@@ -115,20 +123,19 @@ impl OverlayGraph<'_> {
         shapes
     }
 
-    fn feed_contour(
+    fn find_contour(
         &self,
         start_data: &StartPathData,
         clockwise: bool,
-        visited: &mut [bool],
-        contour: &mut IntContour,
+        buffer: &mut BooleanExtractionBuffer,
     ) {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        visited.visit(link_id);
-
-        contour.push(start_data.begin);
+        buffer.visited.visit(link_id);
+        buffer.points.clear();
+        buffer.points.push(start_data.begin);
 
         // Find a closed tour
         while node_id != last_node_id {
@@ -138,19 +145,52 @@ impl OverlayGraph<'_> {
                 link_id,
                 node_id,
                 clockwise,
-                visited,
+                &mut buffer.visited,
             );
 
             let link = unsafe { self.links.get_unchecked(link_id) };
-            node_id = contour.push_node_and_get_other(link, node_id);
+            node_id = buffer.points.push_node_and_get_other(link, node_id);
 
-            visited.visit(link_id);
+            buffer.visited.visit(link_id);
         }
     }
 
-    #[inline(always)]
-    pub(crate) fn link(&self, index: usize) -> &OverlayLink {
-        unsafe { self.links.get_unchecked(index) }
+    fn extract_contours(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer,
+        output: &mut FlatContoursBuffer
+    ) {
+        let clockwise = self.options.output_direction == ContourDirection::Clockwise;
+        let len = buffer.visited.len();
+        buffer.points.reserve_capacity(len);
+        output.clear_and_reserve(len, 4);
+
+        let mut link_index = 0;
+        while link_index < len {
+            if buffer.visited.is_visited(link_index) {
+                link_index += 1;
+                continue;
+            }
+
+            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &mut buffer.visited);
+            let link = unsafe { self.links.get_unchecked(left_top_link) };
+            let is_hole = overlay_rule.is_fill_top(link.fill);
+
+            let direction = is_hole == clockwise;
+            let start_data = StartPathData::new(direction, link, left_top_link);
+
+            self.find_contour(&start_data, direction, buffer);
+            let (is_valid, _) =
+                buffer.points.validate(self.options.min_output_area, self.options.preserve_output_collinear);
+
+            if !is_valid {
+                link_index += 1;
+                continue;
+            }
+
+            output.add_contour(buffer.points.as_slice());
+        }
     }
 }
 

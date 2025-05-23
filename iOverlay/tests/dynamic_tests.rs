@@ -29,7 +29,7 @@ mod tests {
                             .build_graph_view(FillRule::NonZero)
                     {
                         graph.validate();
-                        let result = graph.extract_shapes(OverlayRule::Union);
+                        let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                         assert!(result.len() > 0);
                     }
                     a += 0.005
@@ -51,7 +51,7 @@ mod tests {
                         .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
-                    let _ = graph.extract_shapes(OverlayRule::Xor);
+                    let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
                 a += 0.001
             }
@@ -71,7 +71,7 @@ mod tests {
                         .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
-                    let _ = graph.extract_shapes(OverlayRule::Xor);
+                    let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
                 a += 0.001
             }
@@ -91,7 +91,7 @@ mod tests {
                         .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
-                    let _ = graph.extract_shapes(OverlayRule::Xor);
+                    let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
                 a += 0.001
             }
@@ -111,7 +111,7 @@ mod tests {
                         .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
-                    let _ = graph.extract_shapes(OverlayRule::Xor);
+                    let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
                 a += 0.000_000_01
             }
@@ -131,7 +131,7 @@ mod tests {
                     .build_graph_view(FillRule::NonZero)
             {
                 graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Xor);
+                let result = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 assert!(result.len() > 0);
             }
         }
@@ -150,7 +150,7 @@ mod tests {
                         .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
-                    let _ = graph.extract_shapes(OverlayRule::Xor);
+                    let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
                 a += 0.000_000_1
             }
@@ -167,7 +167,7 @@ mod tests {
 
         if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
             graph.validate();
-            let result = graph.extract_shapes(OverlayRule::Subject);
+            let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
             assert!(result.len() > 0);
         }
     }
@@ -185,7 +185,7 @@ mod tests {
 
                     if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                         graph.validate();
-                        let result = graph.extract_shapes(OverlayRule::Subject);
+                        let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                         assert!(result.len() > 0);
                     }
                 }
@@ -209,7 +209,7 @@ mod tests {
                         .build_graph_view(FillRule::NonZero)
                     {
                         graph.validate();
-                        let result = graph.extract_shapes(OverlayRule::Union);
+                        let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                         assert!(result.len() > 0);
                     }
                     a += 0.005
@@ -231,7 +231,7 @@ mod tests {
             .build_graph_view(FillRule::NonZero)
         {
             graph.validate();
-            let result = graph.extract_shapes(OverlayRule::Union);
+            let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
             assert!(result.len() > 0);
         }
     }
@@ -251,7 +251,7 @@ mod tests {
                 overlay.build_graph_view(FillRule::NonZero)
             {
                 graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Union);
+                let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                 assert!(result.len() > 0);
             }
         }
@@ -268,7 +268,7 @@ mod tests {
                 overlay.build_graph_view(FillRule::NonZero)
             {
                 graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Subject);
+                let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                 assert!(result.len() > 0);
             }
         }
@@ -285,7 +285,7 @@ mod tests {
                 overlay.build_graph_view(FillRule::NonZero)
             {
                 graph.graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Subject);
+                let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                 assert!(result.len() > 0);
             }
         }
@@ -313,7 +313,7 @@ mod tests {
             overlay.add_contours(&subj_paths, ShapeType::Subject);
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
-                let result = graph.extract_shapes(OverlayRule::Subject);
+                let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                 assert!(result.len() > 0);
             }
         }
@@ -342,7 +342,7 @@ mod tests {
         overlay.add_contours(&subj_paths, ShapeType::Subject);
         if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
             graph.validate();
-            let result = graph.extract_shapes(OverlayRule::Subject);
+            let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
             assert!(result.len() > 0);
         }
     }

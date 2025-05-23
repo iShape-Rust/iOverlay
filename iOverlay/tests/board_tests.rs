@@ -44,7 +44,7 @@ mod tests {
         overlay.add_contours(&clip_paths, ShapeType::Clip);
 
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
-        let result = graph.extract_shapes(rule);
+        let result = graph.extract_shapes(rule, &mut Default::default());
 
         result.len()
     }

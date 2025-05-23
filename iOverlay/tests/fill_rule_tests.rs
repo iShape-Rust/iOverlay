@@ -17,10 +17,12 @@ mod tests {
             overlay
         }
 
-        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
-        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
-        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
+        let mut buffer = Default::default();
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);
@@ -45,10 +47,12 @@ mod tests {
             overlay
         }
 
-        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
-        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
-        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
+        let mut buffer = Default::default();
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);
@@ -73,10 +77,12 @@ mod tests {
             overlay
         }
 
-        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
-        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
-        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
+        let mut buffer = Default::default();
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);
@@ -103,10 +109,12 @@ mod tests {
             overlay
         }
 
-        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject);
-        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject);
-        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject);
-        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject);
+        let mut buffer = Default::default();
+
+        let even_odd = overlay().build_graph_view(FillRule::EvenOdd).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let non_zero = overlay().build_graph_view(FillRule::NonZero).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let positive = overlay().build_graph_view(FillRule::Positive).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
+        let negative = overlay().build_graph_view(FillRule::Negative).unwrap().extract_shapes(OverlayRule::Subject, &mut buffer);
 
         assert_eq!(even_odd.len(), 1);
         assert_eq!(even_odd[0].len(), 2);

@@ -6,4 +6,3 @@ pub mod string_graph;
 pub mod slice;
 pub mod clip;
 pub mod single;
-pub mod source;

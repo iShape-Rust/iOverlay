@@ -1,7 +1,7 @@
+use crate::i_shape::source::resource::ShapeResource;
 use crate::mesh::stroke::offset::vec::Vec;
 use alloc::vec;
 use crate::float::overlay::OverlayOptions;
-use crate::float::source::resource::OverlayResource;
 use crate::mesh::stroke::builder::StrokeBuilder;
 use crate::mesh::style::StrokeStyle;
 use i_float::adapter::FloatPointAdapter;
@@ -46,7 +46,7 @@ pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
 
 impl<S, P, T> StrokeOffset<P, T> for S
 where
-    S: OverlayResource<P, T>,
+    S: ShapeResource<P, T>,
     P: FloatPointCompatible<T> + 'static,
     T: FloatNumber + 'static,
 {

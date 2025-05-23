@@ -7,7 +7,7 @@ use crate::segm::segment::SUBJ_TOP;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use crate::string::split::{BinStore, Split};
-use i_shape::int::path::{IntPath, PointPathExtension};
+use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
 
 impl StringGraph<'_> {

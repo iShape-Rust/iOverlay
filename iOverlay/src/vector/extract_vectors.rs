@@ -44,7 +44,7 @@ impl OverlayGraph<'_> {
                 link_index,
                 visited
             );
-            let link = self.link(left_top_link);
+            let link = unsafe { self.links.get_unchecked(left_top_link) };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
             if is_hole {

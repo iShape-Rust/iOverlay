@@ -97,6 +97,8 @@ mod tests {
                 IntPoint::new(3, 0)
             ].to_vec();
 
+        let mut buffer = Default::default();
+
         let mut solver_0 = Solver::default();
         solver_0.precision = Precision::ABSOLUTE;
 
@@ -109,15 +111,13 @@ mod tests {
         let mut overlay_1 = Overlay::new_custom(4, Default::default(), solver_1);
         overlay_1.add_contour(&path, ShapeType::Subject);
 
-
-
         let simple_0 = overlay_0
             .build_graph_view(FillRule::NonZero)
-            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject, &mut buffer));
 
         let simple_1 = overlay_1
             .build_graph_view(FillRule::NonZero)
-            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject));
+            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject, &mut buffer));
 
         assert_eq!(simple_0.len(), 1);
         assert_eq!(simple_0[0].len(), 1);

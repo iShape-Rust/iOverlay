@@ -21,6 +21,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         while i < segments.len() {
             let mut na = 1;
             let a = segments[i].x_segment.a;
+            i += 1;
             while i < segments.len() && a == segments[i].x_segment.a {
                 i += 1;
                 na += 1;
@@ -38,6 +39,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
                     1
                 };
 
+                j += 1;
                 while j < self.ends.len() && b == self.ends[j].point {
                     j += 1;
                     n += 1;
@@ -53,6 +55,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         while j < self.ends.len() {
             let b = self.ends[j].point;
             let mut n = 1;
+            j += 1;
             while j < self.ends.len() && b == self.ends[j].point {
                 j += 1;
                 n += 1;
@@ -70,12 +73,12 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     fn ends_for_seg_b(&mut self, segments: &[Segment<C>], solver: &Solver) {
         if let Some(layout) = self.layout(segments) {
             self.bin_store.init(layout);
-            self.bin_store.reserve_bins_space(self.links.iter().map(|link|&link.b.point.x));
+            self.bin_store.reserve_bins_space(segments.iter().map(|s|&s.x_segment.b.x));
             let count = self.bin_store.prepare_bins();
             self.ends.resize(count, End::default());
 
-            for (i, link) in self.links.iter().enumerate() {
-                self.bin_store.feed_vec(&mut self.ends, End { index: i, point: link.b.point });
+            for (i, s) in segments.iter().enumerate() {
+                self.bin_store.feed_vec(&mut self.ends, End { index: i, point: s.x_segment.b });
             }
 
             for bin in self.bin_store.bins.iter() {
@@ -87,12 +90,12 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
             }
         } else {
             self.ends.clear();
-            let additional = self.links.len().saturating_sub(self.ends.capacity());
+            let additional = segments.len().saturating_sub(self.ends.capacity());
             if additional > 0 {
                 self.ends.reserve(additional);
             }
-            for (i, link) in self.links.iter().enumerate() {
-                self.ends.push(End { index: i, point: link.b.point });
+            for (i, s) in segments.iter().enumerate() {
+                self.ends.push(End { index: i, point: s.x_segment.b });
             }
             self.ends.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
         }

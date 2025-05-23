@@ -2,6 +2,8 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
+use crate::i_shape::flat::buffer::FlatContoursBuffer;
+use crate::core::extract::BooleanExtractionBuffer;
 use alloc::vec::Vec;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::split::solver::SplitSolver;
@@ -59,6 +61,7 @@ pub enum ContourDirection {
 pub struct Overlay {
     pub solver: Solver,
     pub options: IntOverlayOptions,
+    pub boolean_buffer: Option<BooleanExtractionBuffer>,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
     pub(crate) split_solver: SplitSolver,
     pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>
@@ -72,6 +75,7 @@ impl Overlay {
         Self {
             solver: Default::default(),
             options: Default::default(),
+            boolean_buffer: Some(Default::default()),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
@@ -87,6 +91,7 @@ impl Overlay {
         Self {
             solver,
             options,
+            boolean_buffer: Some(Default::default()),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
@@ -228,6 +233,17 @@ impl Overlay {
         self.segments.clear();
     }
 
+    /// Adds multiple shapes to the overlay as either subject or clip shapes.
+    /// - `buffer`: A buffer of `IntShapes` instances to be added to the overlay.
+    /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_flat_buffer(&mut self, buffer: &FlatContoursBuffer, shape_type: ShapeType) {
+        for range in buffer.ranges.iter() {
+            let contour = &buffer.points[range.clone()];
+            self.add_contour(contour, shape_type);
+        }
+    }
+
     /// Convert into vector shapes from the added paths or shapes, applying the specified build and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
@@ -319,9 +335,12 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        self.graph_builder
+        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+        let shapes = self.graph_builder
             .build_boolean_overlay(fill_rule, overlay_rule, self.options, &self.solver, &self.segments)
-            .extract_shapes(overlay_rule)
+            .extract_shapes(overlay_rule, &mut buffer);
+        self.boolean_buffer = Some(buffer);
+        shapes
     }
 }
 

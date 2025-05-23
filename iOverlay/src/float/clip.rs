@@ -1,15 +1,15 @@
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Paths;
+use i_shape::source::resource::ShapeResource;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
-use crate::float::source::resource::OverlayResource;
 use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::clip::ClipRule;
 
 pub trait FloatClip<R, P, T>
 where
-    R: OverlayResource<P, T>,
+    R: ShapeResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {
@@ -43,8 +43,8 @@ where
 
 impl<R0, R1, P, T> FloatClip<R0, P, T> for R1
 where
-    R0: OverlayResource<P, T>,
-    R1: OverlayResource<P, T>,
+    R0: ShapeResource<P, T>,
+    R1: ShapeResource<P, T>,
     P: FloatPointCompatible<T>,
     T: FloatNumber,
 {

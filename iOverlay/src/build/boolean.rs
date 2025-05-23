@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use i_shape::util::reserve::Reserve;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::graph::OverlayNode;
@@ -275,7 +276,6 @@ impl BooleanFillFilter for SegmentFill {
     }
 }
 
-
 impl OverlayLinkFilter for [OverlayLink] {
     #[inline]
     fn filter_by_overlay(&self, overlay_rule: OverlayRule) -> Vec<bool> {
@@ -286,11 +286,23 @@ impl OverlayLinkFilter for [OverlayLink] {
             OverlayRule::Union => filter_union(self),
             OverlayRule::Difference => filter_difference(self),
             OverlayRule::Xor => filter_xor(self),
-            OverlayRule::InverseDifference => { filter_inverse_difference(self) }
+            OverlayRule::InverseDifference => filter_inverse_difference(self),
+        }
+    }
+
+    #[inline]
+    fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<bool>) {
+        match overlay_rule {
+            OverlayRule::Subject => filter_subject_into(&self, buffer),
+            OverlayRule::Clip => filter_clip_into(&self, buffer),
+            OverlayRule::Intersect => filter_intersect_into(&self, buffer),
+            OverlayRule::Union => filter_union_into(&self, buffer),
+            OverlayRule::Difference => filter_difference_into(&self, buffer),
+            OverlayRule::Xor => filter_xor_into(&self, buffer),
+            OverlayRule::InverseDifference => filter_inverse_difference_into(&self, buffer),
         }
     }
 }
-
 
 #[inline]
 fn filter_subject(links: &[OverlayLink]) -> Vec<bool> {
@@ -325,4 +337,67 @@ fn filter_inverse_difference(links: &[OverlayLink]) -> Vec<bool> {
 #[inline]
 fn filter_xor(links: &[OverlayLink]) -> Vec<bool> {
     links.iter().map(|link| !link.fill.is_xor()).collect()
+}
+
+#[inline]
+fn filter_subject_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_subject());
+    }
+}
+
+#[inline]
+fn filter_clip_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_clip());
+    }
+}
+
+#[inline]
+fn filter_intersect_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_intersect());
+    }
+}
+
+#[inline]
+fn filter_union_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_union());
+    }
+}
+
+#[inline]
+fn filter_difference_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_difference());
+    }
+}
+
+#[inline]
+fn filter_inverse_difference_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_inverse_difference());
+    }
+}
+
+#[inline]
+fn filter_xor_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
+    buffer.clear();
+    buffer.reserve_capacity(links.len());
+    for link in links.iter() {
+        buffer.push(!link.fill.is_xor());
+    }
 }

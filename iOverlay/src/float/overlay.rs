@@ -2,6 +2,7 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
+use crate::i_shape::source::resource::ShapeResource;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -15,7 +16,6 @@ use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeTy
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
-use crate::float::source::resource::OverlayResource;
 
 #[derive(Debug, Clone, Copy)]
 pub struct OverlayOptions<T: FloatNumber> {
@@ -95,8 +95,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
-        R0: OverlayResource<P, T> +?Sized,
-        R1: OverlayResource<P, T> +?Sized,
+        R0: ShapeResource<P, T> +?Sized,
+        R1: ShapeResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -121,8 +121,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `solver`: Type of solver to use.
     pub fn with_subj_and_clip_custom<R0, R1>(subj: &R0, clip: &R1, options: OverlayOptions<T>, solver: Solver) -> Self
     where
-        R0: OverlayResource<P, T> +?Sized,
-        R1: OverlayResource<P, T> +?Sized,
+        R0: ShapeResource<P, T> +?Sized,
+        R1: ShapeResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -144,7 +144,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn with_subj<R>(subj: &R) -> Self
     where
-        R: OverlayResource<P, T> +?Sized,
+        R: ShapeResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -166,7 +166,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `solver`: Type of solver to use.
     pub fn with_subj_custom<R>(subj: &R, options: OverlayOptions<T>, solver: Solver) -> Self
     where
-        R: OverlayResource<P, T> +?Sized,
+        R: ShapeResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -186,7 +186,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn unsafe_add_source<R: OverlayResource<P, T> +?Sized>(mut self, resource: &R, shape_type: ShapeType) -> Self {
+    pub fn unsafe_add_source<R: ShapeResource<P, T> +?Sized>(mut self, resource: &R, shape_type: ShapeType) -> Self {
         self.add_source(resource, shape_type);
         self
     }
@@ -207,7 +207,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     #[inline]
-    fn add_source<R: OverlayResource<P, T> +?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
+    fn add_source<R: ShapeResource<P, T> +?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
         for contour in resource.iter_paths() {
             self.overlay.add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         }
@@ -222,8 +222,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
     where
-        R0: OverlayResource<P, T> +?Sized,
-        R1: OverlayResource<P, T> +?Sized,
+        R0: ShapeResource<P, T> +?Sized,
+        R1: ShapeResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -243,7 +243,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn reinit_with_subj<R>(&mut self, subj: &R)
     where
-        R: OverlayResource<P, T> +?Sized,
+        R: ShapeResource<P, T> +?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {

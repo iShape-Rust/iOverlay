@@ -1,10 +1,10 @@
+use i_shape::source::resource::ShapeResource;
 use alloc::vec;
 use alloc::vec::Vec;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
-use crate::float::source::resource::OverlayResource;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
 use i_float::adapter::FloatPointAdapter;
@@ -41,7 +41,7 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
 
 impl<S, P, T> OutlineOffset<P, T> for S
 where
-    S: OverlayResource<P, T>,
+    S: ShapeResource<P, T>,
     P: FloatPointCompatible<T> + 'static,
     T: FloatNumber + 'static,
 {

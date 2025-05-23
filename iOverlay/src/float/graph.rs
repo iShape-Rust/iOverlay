@@ -11,6 +11,7 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use crate::core::extract::BooleanExtractionBuffer;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
@@ -45,10 +46,10 @@ impl<'a, P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<'a, P, T>
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline]
-    pub fn extract_shapes(&self, overlay_rule: OverlayRule) -> Shapes<P> {
+    pub fn extract_shapes(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer) -> Shapes<P> {
         let shapes = self
             .graph
-            .extract_shapes(overlay_rule);
+            .extract_shapes(overlay_rule, buffer);
         let mut float = shapes.to_float(&self.adapter);
 
         if self.clean_result {
