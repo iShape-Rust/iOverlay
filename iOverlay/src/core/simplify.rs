@@ -37,7 +37,7 @@ impl Simplify for [IntPoint] {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
         match Overlay::new_custom(self.len(), options, Default::default())
-            .simplify_contour(&self, fill_rule)
+            .simplify_contour(self, fill_rule)
         {
             Some(shapes) => shapes,
             None => vec![vec![self.to_vec()]],
@@ -49,7 +49,7 @@ impl Simplify for [IntContour] {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
         match Overlay::new_custom(self.len(), options, Default::default())
-            .simplify_shape(&self, fill_rule)
+            .simplify_shape(self, fill_rule)
         {
             Some(shapes) => shapes,
             None => vec![self.to_vec()],
@@ -87,7 +87,7 @@ impl Overlay {
     ) -> Option<IntShapes> {
         self.clear();
 
-        let is_perfect = self.find_intersections(&contour);
+        let is_perfect = self.find_intersections(contour);
 
         if is_perfect {
             // the path is already perfect

@@ -67,7 +67,7 @@ impl OverlayGraph<'_> {
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &mut buffer.visited);
+            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited);
             let link = unsafe { self.links.get_unchecked(left_top_link) };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
@@ -145,7 +145,7 @@ impl OverlayGraph<'_> {
                 link_id,
                 node_id,
                 clockwise,
-                &mut buffer.visited,
+                &buffer.visited,
             );
 
             let link = unsafe { self.links.get_unchecked(link_id) };
@@ -173,7 +173,7 @@ impl OverlayGraph<'_> {
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &mut buffer.visited);
+            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited);
             let link = unsafe { self.links.get_unchecked(left_top_link) };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 

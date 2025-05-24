@@ -293,13 +293,13 @@ impl OverlayLinkFilter for [OverlayLink] {
     #[inline]
     fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<bool>) {
         match overlay_rule {
-            OverlayRule::Subject => filter_subject_into(&self, buffer),
-            OverlayRule::Clip => filter_clip_into(&self, buffer),
-            OverlayRule::Intersect => filter_intersect_into(&self, buffer),
-            OverlayRule::Union => filter_union_into(&self, buffer),
-            OverlayRule::Difference => filter_difference_into(&self, buffer),
-            OverlayRule::Xor => filter_xor_into(&self, buffer),
-            OverlayRule::InverseDifference => filter_inverse_difference_into(&self, buffer),
+            OverlayRule::Subject => filter_subject_into(self, buffer),
+            OverlayRule::Clip => filter_clip_into(self, buffer),
+            OverlayRule::Intersect => filter_intersect_into(self, buffer),
+            OverlayRule::Union => filter_union_into(self, buffer),
+            OverlayRule::Difference => filter_difference_into(self, buffer),
+            OverlayRule::Xor => filter_xor_into(self, buffer),
+            OverlayRule::InverseDifference => filter_inverse_difference_into(self, buffer),
         }
     }
 }

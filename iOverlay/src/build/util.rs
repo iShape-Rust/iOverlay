@@ -55,7 +55,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         } else {
             buffer.clear();
             buffer.extend_from_slice(contour);
-            buffer.sort_unstable_by(|a, b| a.cmp(b));
+            buffer.sort_unstable();
             for w in buffer.windows(2) {
                 if w[0] == w[1] {
                     return true;
@@ -69,7 +69,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     fn contour_bin_layout(min: i32, contour: &[IntPoint]) -> Option<BinLayout<i32>> {
         let count = contour.len();
 
-        if count < 64 || count > 1000_000 {
+        if !(64..=1_000_000).contains(&count) {
             // direct approach work better for small and large data
             return None
         }
