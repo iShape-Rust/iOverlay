@@ -19,8 +19,8 @@ use i_shape::util::reserve::Reserve;
 
 #[derive(Default)]
 pub struct BooleanExtractionBuffer {
-    points: Vec<IntPoint>,
-    visited: Vec<bool>
+    pub(crate) points: Vec<IntPoint>,
+    pub(crate) visited: Vec<bool>
 }
 
 impl OverlayGraph<'_> {

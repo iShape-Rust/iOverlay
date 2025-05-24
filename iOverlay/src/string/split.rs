@@ -2,6 +2,7 @@ use i_shape::int::path::ContourExtension;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::IntContour;
+use i_shape::util::reserve::Reserve;
 
 pub(super) trait Split {
     fn split_loops(self, min_area: u64, contour_buffer: &mut IntContour, bin_store: &mut BinStore) -> Vec<Self>
@@ -14,15 +15,12 @@ impl Split for IntContour {
         if self.is_empty() {
             return Vec::new();
         }
-        let additional = self.len().saturating_sub(contour_buffer.capacity());
-        if additional > 0 {
-            contour_buffer.reserve(additional);
-        }
+        contour_buffer.reserve_capacity(self.len());
         contour_buffer.clear();
 
         bin_store.init(&self);
 
-        let mut result: Vec<IntContour> = Vec::new();
+        let mut result: Vec<IntContour> = Vec::with_capacity(16);
 
         for point in self {
             let next_pos = contour_buffer.len() + 1;
