@@ -32,13 +32,13 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `shape`: A `OverlayResource` define the shape.
-    ///   `OverlayResource` can be one of the following:
+    /// - `shape`: A `ShapeResource` define the shape.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    /// - `string`: A `OverlayResource` define the string paths.
-    ///   `OverlayResource` can be one of the following:
+    /// - `string`: A `ShapeResource` define the string paths.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Path`: A path representing a string line.
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
@@ -60,8 +60,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     }
 
     /// Adds a shapes to the overlay.
-    /// - `source`: A `OverlayResource` that define shape.
-    ///   `OverlayResource` can be one of the following:
+    /// - `source`: A `ShapeResource` that define shape.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -75,8 +75,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     }
 
     /// Adds a string line paths to the overlay.
-    /// - `resource`: A `OverlayResource` that define shape.
-    ///   `OverlayResource` can be one of the following:
+    /// - `resource`: A `ShapeResource` that define shape.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Path`: A path representing a string line.
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.

@@ -27,7 +27,7 @@ mod tests {
         overlay.add_contour(&subj, ShapeType::Subject);
         overlay.add_contour(&clip, ShapeType::Clip);
 
-        let shapes = overlay.into_shape_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
+        let shapes = overlay.build_shape_vectors(FillRule::NonZero, OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -79,7 +79,7 @@ mod tests {
         overlay.add_contour(&subj, ShapeType::Subject);
         overlay.add_contour(&clip, ShapeType::Clip);
 
-        let shapes = overlay.into_shape_vectors(FillRule::NonZero, OverlayRule::Subject, Solver::AUTO);
+        let shapes = overlay.build_shape_vectors(FillRule::NonZero, OverlayRule::Subject);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);

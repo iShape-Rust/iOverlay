@@ -19,7 +19,7 @@ where
     /// Slices the current shapes by string lines.
     ///
     /// - `resource`: A string lines.
-    ///   `OverlayResource` can be one of the following:
+    ///   `ShapeResource` can be one of the following:
     ///     - `Path`: A path representing a string line.
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
@@ -33,7 +33,7 @@ where
     /// Slices the current shapes by string lines.
     ///
     /// - `resource`: A string lines.
-    ///   `OverlayResource` can be one of the following:
+    ///   `ShapeResource` can be one of the following:
     ///     - `Path`: A path representing a string line.
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.

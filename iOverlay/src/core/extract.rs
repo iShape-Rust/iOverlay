@@ -1,6 +1,6 @@
-use crate::i_shape::flat::buffer::FlatContoursBuffer;
 use alloc::vec;
-use crate::core::extract::vec::Vec;
+use alloc::vec::Vec;
+use crate::i_shape::flat::buffer::FlatContoursBuffer;
 use crate::core::link::OverlayLinkFilter;
 use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};
@@ -26,6 +26,7 @@ pub struct BooleanExtractionBuffer {
 impl OverlayGraph<'_> {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
+    /// - `buffer`: Reusable buffer, optimisation purpose only.
     /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
     /// The output is a `IntShapes`, where:
@@ -40,6 +41,17 @@ impl OverlayGraph<'_> {
         self.extract(overlay_rule, buffer)
     }
 
+    /// Extracts the flat contours from the overlay graph based on the specified overlay rule.
+    ///
+    /// This method performs a Boolean operation (e.g., union or intersection) and stores the result
+    /// directly into a flat buffer of contours, without nesting them into shapes (i.e., no hole-joining or grouping).
+    ///
+    /// It is optimized for performance and suitable when raw contour data is sufficient,
+    /// such as during intermediate processing, visualization, or tesselation.
+    ///
+    /// - `overlay_rule`: The boolean operation rule to apply (e.g., union, intersection, xor).
+    /// - `buffer`: Reusable working buffer to avoid reallocations.
+    /// - `output`: A flat buffer to which the resulting valid contours will be written.
     #[inline]
     pub fn extract_contours_into(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer, output: &mut FlatContoursBuffer) {
         self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -60,7 +72,7 @@ impl OverlayGraph<'_> {
         buffer.points.reserve_capacity(buffer.visited.len());
 
         let mut link_index = 0;
-        let mut is_all_anchors_sorted = true;
+        let mut anchors_already_sorted = true;
         while link_index < buffer.visited.len() {
             if buffer.visited.is_visited(link_index) {
                 link_index += 1;
@@ -101,7 +113,7 @@ impl OverlayGraph<'_> {
                     let most_left = contour.left_bottom_segment();
                     if most_left != v_segment {
                         v_segment = most_left;
-                        is_all_anchors_sorted = false;
+                        anchors_already_sorted = false;
                     }
                 };
 
@@ -114,7 +126,7 @@ impl OverlayGraph<'_> {
             }
         }
 
-        if !is_all_anchors_sorted {
+        if !anchors_already_sorted {
             anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 

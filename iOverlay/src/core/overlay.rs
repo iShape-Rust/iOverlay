@@ -2,21 +2,21 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
-use crate::i_shape::flat::buffer::FlatContoursBuffer;
+use crate::build::builder::GraphBuilder;
 use crate::core::extract::BooleanExtractionBuffer;
-use alloc::vec::Vec;
-use crate::segm::boolean::ShapeCountBoolean;
-use crate::split::solver::SplitSolver;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
+use crate::core::solver::Solver;
+use crate::i_shape::flat::buffer::FlatContoursBuffer;
+use crate::segm::boolean::ShapeCountBoolean;
+use crate::segm::build::BuildSegments;
+use crate::segm::segment::Segment;
+use crate::split::solver::SplitSolver;
+use crate::vector::edge::{VectorEdge, VectorShape};
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use crate::build::builder::GraphBuilder;
-use crate::core::solver::Solver;
-use crate::segm::build::BuildSegments;
-use crate::segm::segment::Segment;
-use crate::vector::edge::{VectorEdge, VectorShape};
 
 use super::graph::{OverlayGraph, OverlayNode};
 
@@ -64,7 +64,7 @@ pub struct Overlay {
     pub boolean_buffer: Option<BooleanExtractionBuffer>,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
     pub(crate) split_solver: SplitSolver,
-    pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>
+    pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>,
 }
 
 impl Overlay {
@@ -78,7 +78,7 @@ impl Overlay {
             boolean_buffer: Some(Default::default()),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
         }
     }
 
@@ -94,7 +94,7 @@ impl Overlay {
             boolean_buffer: Some(Default::default()),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new()
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
         }
     }
 
@@ -139,13 +139,15 @@ impl Overlay {
     /// - `subj`: An array of contours that together define the subject shape.
     /// - `clip`: An array of contours that together define the clip shape.
     /// - `options`: Adjust custom behavior.
+    /// - `solver`: Type of solver to use.
     pub fn with_contours_custom(
         subj: &[IntContour],
         clip: &[IntContour],
         options: IntOverlayOptions,
         solver: Solver,
     ) -> Self {
-        let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
+        let mut overlay =
+            Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
         overlay.add_contours(subj, ShapeType::Subject);
         overlay.add_contours(clip, ShapeType::Clip);
         overlay
@@ -165,13 +167,15 @@ impl Overlay {
     /// - `subj`: An array of shapes to be used as the subject in the overlay operation.
     /// - `clip`: An array of shapes to be used as the clip in the overlay operation.
     /// - `options`: Adjust custom behavior.
+    /// - `solver`: Type of solver to use.
     pub fn with_shapes_options(
         subj: &[IntShape],
         clip: &[IntShape],
         options: IntOverlayOptions,
         solver: Solver,
     ) -> Self {
-        let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
+        let mut overlay =
+            Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
         overlay.add_shapes(subj, ShapeType::Subject);
         overlay.add_shapes(clip, ShapeType::Clip);
         overlay
@@ -233,7 +237,7 @@ impl Overlay {
         self.segments.clear();
     }
 
-    /// Adds multiple shapes to the overlay as either subject or clip shapes.
+    /// Adds multiple flat-shape to the overlay as either subject or clip shapes.
     /// - `buffer`: A buffer of `IntShapes` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
@@ -247,32 +251,37 @@ impl Overlay {
     /// Convert into vector shapes from the added paths or shapes, applying the specified build and overlay rules. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
     /// - `overlay_rule`: The overlay rule to apply.
-    /// - `solver`: Type of solver to use.
-    pub fn into_shape_vectors(
-        mut self,
+    pub fn build_shape_vectors(
+        &mut self,
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
-        solver: Solver,
     ) -> Vec<VectorShape> {
-        self.split_solver.split_segments(&mut self.segments, &solver);
+        self.split_solver
+            .split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
         self.graph_builder
-            .build_boolean_overlay(fill_rule, overlay_rule, self.options, &solver, &self.segments)
+            .build_boolean_overlay(
+                fill_rule,
+                overlay_rule,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
             .extract_shape_vectors(overlay_rule)
     }
 
     /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
-    /// - `solver`: Type of solver to use.
-    pub fn into_separate_vectors(mut self, fill_rule: FillRule, solver: Solver) -> Vec<VectorEdge> {
-        self.split_solver.split_segments(&mut self.segments, &solver);
+    pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<VectorEdge> {
+        self.split_solver
+            .split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
         self.graph_builder
-            .build_boolean_all(fill_rule, self.options, &solver, &self.segments)
+            .build_boolean_all(fill_rule, self.options, &self.solver, &self.segments)
             .extract_separate_vectors()
     }
 
@@ -280,13 +289,17 @@ impl Overlay {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
     pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph> {
-        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        self.split_solver
+            .split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return None;
         }
-        let graph = self
-            .graph_builder
-            .build_boolean_all(fill_rule, self.options, &self.solver, &self.segments);
+        let graph = self.graph_builder.build_boolean_all(
+            fill_rule,
+            self.options,
+            &self.solver,
+            &self.segments,
+        );
 
         Some(graph)
     }
@@ -331,13 +344,21 @@ impl Overlay {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
-        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        self.split_solver
+            .split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
-        let shapes = self.graph_builder
-            .build_boolean_overlay(fill_rule, overlay_rule, self.options, &self.solver, &self.segments)
+        let shapes = self
+            .graph_builder
+            .build_boolean_overlay(
+                fill_rule,
+                overlay_rule,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
             .extract_shapes(overlay_rule, &mut buffer);
         self.boolean_buffer = Some(buffer);
         shapes

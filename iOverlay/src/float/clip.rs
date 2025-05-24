@@ -15,7 +15,7 @@ where
 {
     /// Clips paths according to the specified build and clip rules.
     /// - `resource`: A clipping shape.
-    ///   `OverlayResource` can be one of the following:
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -28,7 +28,7 @@ where
 
     /// Clips paths according to the specified build and clip rules.
     /// - `resource`: A clipping shape.
-    ///   `OverlayResource` can be one of the following:
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.

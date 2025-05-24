@@ -87,9 +87,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `subj`: A `OverlayResource` that define the subject.
-    /// - `clip`: A `OverlayResource` that define the clip.
-    ///   `OverlayResource` can be one of the following:
+    /// - `subj`: A `ShapeResource` that define the subject.
+    /// - `clip`: A `ShapeResource` that define the clip.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -111,9 +111,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `subj`: A `OverlayResource` that define the subject.
-    /// - `clip`: A `OverlayResource` that define the clip.
-    ///   `OverlayResource` can be one of the following:
+    /// - `subj`: A `ShapeResource` that define the subject.
+    /// - `clip`: A `ShapeResource` that define the clip.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -137,8 +137,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `subj`: A `OverlayResource` that define the subject.
-    ///   `OverlayResource` can be one of the following:
+    /// - `subj`: A `ShapeResource` that define the subject.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -157,8 +157,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject.
-    /// - `subj`: A `OverlayResource` that define the subject.
-    ///   `OverlayResource` can be one of the following:
+    /// - `subj`: A `ShapeResource` that define the subject.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -179,8 +179,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Adds a shapes to the overlay.
-    /// - `resource`: A `OverlayResource` that define subject or clip.
-    ///   `OverlayResource` can be one of the following:
+    /// - `resource`: A `ShapeResource` that define subject or clip.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -214,9 +214,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Reinit `FloatOverlay` instance and initializes it with subject and clip shapes.
-    /// - `subj`: A `OverlayResource` that define the subject.
-    /// - `clip`: A `OverlayResource` that define the clip.
-    ///   `OverlayResource` can be one of the following:
+    /// - `subj`: A `ShapeResource` that define the subject.
+    /// - `clip`: A `ShapeResource` that define the clip.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
@@ -236,8 +236,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     /// Reinit `FloatOverlay` instance and initializes it with subject
-    /// - `subj`: A `OverlayResource` that define the subject.
-    ///   `OverlayResource` can be one of the following:
+    /// - `subj`: A `ShapeResource` that define the subject.
+    ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
