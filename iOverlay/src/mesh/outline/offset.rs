@@ -13,7 +13,7 @@ use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
-use i_shape::float::area::IntArea;
+use i_shape::float::int_area::IntArea;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use crate::mesh::overlay::OffsetOverlay;
