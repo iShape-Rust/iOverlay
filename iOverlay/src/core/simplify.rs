@@ -237,7 +237,7 @@ impl Overlay {
             .split_solver
             .split_segments(&mut self.segments, &self.solver);
 
-        if self.segments.is_empty() {
+        if split_modified || append_modified || self.segments.is_empty() {
             return false;
         }
 
@@ -247,7 +247,7 @@ impl Overlay {
         let has_loops = self.graph_builder.test_contour_for_loops(min, contour, &mut buffer.points);
         self.boolean_buffer = Some(buffer);
 
-        !split_modified && !append_modified && !has_loops
+        !has_loops
     }
 }
 
