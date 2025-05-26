@@ -13,6 +13,12 @@ pub enum FillRule {
     Negative
 }
 
+impl Default for FillRule {
+    fn default() -> Self {
+        FillRule::NonZero
+    }
+}
+
 impl fmt::Display for FillRule {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let text = match self {
