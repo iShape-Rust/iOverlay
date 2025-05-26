@@ -33,14 +33,15 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
     }
 
     pub(super) fn round_points(angle: T, r: T) -> Vec<P> {
-        let n = if angle > T::from_float(0.0) {
-            let count = PI / angle.to_f64();
+        let angle_f64 = angle.to_f64();
+        let n = if angle_f64 > 0.0 {
+            let count = PI / angle_f64;
             (count as usize).clamp(2, 1024)
         } else {
             1024
         };
 
-        let fix_angle = PI / n as f64;
+        let fix_angle = T::from_float(PI / n as f64);
         let rotator = Rotator::with_angle(fix_angle);
         let mut v = P::from_xy(T::from_float(0.0), T::from_float(-1.0));
         let mut points = Vec::with_capacity(n);

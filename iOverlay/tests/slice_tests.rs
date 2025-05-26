@@ -518,10 +518,10 @@ mod tests {
         let a = radius / 2;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..n {
-            let x = rng.gen_range(range.clone());
-            let y = rng.gen_range(range.clone());
+            let x = rng.random_range(range.clone());
+            let y = rng.random_range(range.clone());
             points.push(IntPoint { x, y })
         }
 
@@ -532,12 +532,12 @@ mod tests {
         let a = radius / 2;
         let range = -a..=a;
         let mut lines = Vec::with_capacity(n);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..n {
-            let x0 = rng.gen_range(range.clone());
-            let y0 = rng.gen_range(range.clone());
-            let x1 = rng.gen_range(range.clone());
-            let y1 = rng.gen_range(range.clone());
+            let x0 = rng.random_range(range.clone());
+            let y0 = rng.random_range(range.clone());
+            let x1 = rng.random_range(range.clone());
+            let y1 = rng.random_range(range.clone());
             lines.push([IntPoint { x: x0, y: y0 }, IntPoint { x: x1, y: y1 }])
         }
 

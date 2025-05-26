@@ -95,17 +95,20 @@ pub(super) struct MiterJoinBuilder<T> {
 impl<T: FloatNumber> MiterJoinBuilder<T> {
     pub(super) fn new(angle: T, radius: T) -> Self {
         // angle - min possible angle
-        let fixed_angle = angle.to_f64().max(0.01);
-        let limit_dot_product = -T::from_float(fixed_angle.cos());
+        let fixed_angle = angle.max(T::from_float(0.01));
+        let limit_dot_product = -fixed_angle.cos();
 
-        let half_angle = 0.5 * fixed_angle;
+        let half_angle = T::from_float(0.5) * fixed_angle;
         let tan = half_angle.tan();
 
-        let r = radius.to_f64();
-        let l = r / tan;
+        let r = radius;
+        let max_length = r / tan;
+        let sqr_len = max_length * max_length;
+        let sqr_rad = r * r;
         // add extra 10% to avoid problems with floating point precision.
-        let max_offset = T::from_float(1.1 * (r * r + l * l).sqrt());
-        let max_length = T::from_float(l);
+        let extra_scale = T::from_float(1.1);
+
+        let max_offset = extra_scale * (sqr_rad + sqr_len).sqrt();
 
         Self {
             limit_dot_product,
@@ -215,7 +218,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
 }
 
 pub(super) struct RoundJoinBuilder<T> {
-    inv_ratio: f64,
+    inv_ratio: T,
     average_count: usize,
     radius: T,
     limit_dot_product: T,
@@ -224,11 +227,11 @@ pub(super) struct RoundJoinBuilder<T> {
 impl<T: FloatNumber> RoundJoinBuilder<T> {
     pub(super) fn new(ratio: T, radius: T) -> Self {
         // ratio = A / R
-        let fixed_ratio = ratio.to_f64().min(0.25 * PI);
-        let limit_dot_product = T::from_float(fixed_ratio.cos());
-        let average_count = (0.6 * PI / fixed_ratio) as usize + 2;
+        let fixed_ratio = ratio.min(T::from_float(0.25 * PI));
+        let limit_dot_product = fixed_ratio.cos();
+        let average_count = (T::from_float(0.6 * PI) / fixed_ratio).to_usize() + 2;
         Self {
-            inv_ratio: 1.0 / fixed_ratio,
+            inv_ratio: T::from_float(1.0) / fixed_ratio,
             average_count,
             radius,
             limit_dot_product,
@@ -250,10 +253,9 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
             return;
         }
 
-        let angle = dot_product.to_f64().acos();
-        let n = (angle * self.inv_ratio).round();
-        let cnt = n as usize;
-        let delta_angle = angle / n;
+        let angle = dot_product.acos();
+        let n = (angle * self.inv_ratio).to_usize();
+        let delta_angle = angle / T::from_usize(n);
 
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
         let (start, end, dir) = if cross_product > T::from_float(0.0) {
@@ -270,7 +272,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
         let center = s0.b;
         let mut v = dir;
         let mut a = adapter.float_to_int(&start);
-        for _ in 1..cnt {
+        for _ in 1..n {
             v = rotator.rotate(&v);
             let p = FloatPointMath::add(&center, &FloatPointMath::scale(&v, self.radius));
 

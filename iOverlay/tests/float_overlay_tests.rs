@@ -245,13 +245,13 @@ mod tests {
 
     #[test]
     fn test_random() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for n in 5..=10 {
             let mut points = vec![FPoint::new(0.0, 0.0); n];
             for _ in 0..=1000 {
                 for i in 0..n {
-                    let x = rng.gen_range(-1.0..=1.0);
-                    let y = rng.gen_range(-1.0..=1.0);
+                    let x = rng.random_range(-1.0..=1.0);
+                    let y = rng.random_range(-1.0..=1.0);
                     points[i] = FPoint::new(x, y);
                 }
             }

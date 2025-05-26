@@ -1474,13 +1474,13 @@ mod tests {
         let range = layout.min_x..=layout.max_x;
         let mut buffer = FragmentBuffer::new(layout);
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..100_000 {
-            let x0 = rng.gen_range(range.clone());
-            let y0 = rng.gen_range(range.clone());
-            let x1 = rng.gen_range(range.clone());
-            let y1 = rng.gen_range(range.clone());
+            let x0 = rng.random_range(range.clone());
+            let y0 = rng.random_range(range.clone());
+            let x1 = rng.random_range(range.clone());
+            let y1 = rng.random_range(range.clone());
 
             let a = IntPoint::new(x0, y0);
             let b = IntPoint::new(x1, y1);
@@ -1518,13 +1518,13 @@ mod tests {
         let range = layout.min_x..=layout.max_x;
         let mut buffer = FragmentBuffer::new(layout);
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10_000 {
-            let x0 = rng.gen_range(range.clone());
-            let y0 = rng.gen_range(range.clone());
-            let x1 = rng.gen_range(range.clone());
-            let y1 = rng.gen_range(range.clone());
+            let x0 = rng.random_range(range.clone());
+            let y0 = rng.random_range(range.clone());
+            let x1 = rng.random_range(range.clone());
+            let y1 = rng.random_range(range.clone());
 
             let a = IntPoint::new(x0, y0);
             let b = IntPoint::new(x1, y1);

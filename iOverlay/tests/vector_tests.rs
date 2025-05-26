@@ -4,7 +4,6 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::core::solver::Solver;
     use i_overlay::vector::edge::VectorEdge;
 
     #[test]

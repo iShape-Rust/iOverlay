@@ -2,13 +2,12 @@ use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
 use i_triangle::float::builder::TriangulationBuilder;
 use i_triangle::float::triangulation::Triangulation;
-use i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
+use i_triangle::int::triangulatable::IntTriangulatable;
 use i_triangle::int::triangulation::IntTriangulation;
-use i_triangle::int::triangulator::Triangulator;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
@@ -26,9 +25,9 @@ pub(crate) struct ShapeWidget {
 }
 
 impl ShapeWidget {
-    pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, fill_rule: Option<FillRule>, fill_color: Option<Color>, stroke_color: Option<Color>, stroke_width: f32) -> Self {
+    pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, fill_color: Option<Color>, stroke_color: Option<Color>, stroke_width: f32) -> Self {
         let offset = Self::offset_for_shapes(shapes, camera);
-        let fill = Self::fill_mesh_for_shapes(shapes, camera, offset, fill_rule, fill_color);
+        let fill = Self::fill_mesh_for_shapes(shapes, camera, offset, fill_color);
         let stroke = Self::stroke_mesh_for_shapes(shapes, camera, offset, stroke_color, stroke_width);
         Self {
             fill,
@@ -36,9 +35,9 @@ impl ShapeWidget {
         }
     }
 
-    pub(crate) fn with_paths(paths: &IntPaths, camera: Camera, fill_rule: Option<FillRule>, fill_color: Option<Color>, stroke_color: Option<Color>, stroke_width: f32) -> Self {
+    pub(crate) fn with_paths(paths: &IntPaths, camera: Camera, fill_color: Option<Color>, stroke_color: Option<Color>, stroke_width: f32) -> Self {
         let offset = Self::offset_for_paths(paths, camera);
-        let fill = Self::fill_mesh_for_paths(paths, camera, offset, fill_rule, fill_color);
+        let fill = Self::fill_mesh_for_paths(paths, camera, offset, fill_color);
         let stroke = Self::stroke_mesh_for_paths(paths, camera, offset, stroke_color, stroke_width);
         Self {
             fill,
@@ -46,26 +45,24 @@ impl ShapeWidget {
         }
     }
 
-    fn fill_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, fill_rule: Option<FillRule>, color: Option<Color>) -> Option<Mesh> {
+    fn fill_mesh_for_shapes(shapes: &IntShapes, camera: Camera, offset: Vector<f32>, color: Option<Color>) -> Option<Mesh> {
         if shapes.is_empty() {
             return None;
         }
         let color = color?;
 
-        let triangulation = Triangulator::with_fill_rule(fill_rule.unwrap_or(FillRule::NonZero))
-            .triangulate_shapes(shapes).into_triangulation();
+        let triangulation = shapes.triangulate().into_triangulation();
 
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
 
-    fn fill_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, fill_rule: Option<FillRule>, color: Option<Color>) -> Option<Mesh> {
+    fn fill_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Option<Color>) -> Option<Mesh> {
         if paths.is_empty() {
             return None;
         }
         let color = color?;
 
-        let triangulation = Triangulator::with_fill_rule(fill_rule.unwrap_or(FillRule::NonZero))
-            .triangulate_shape(paths).into_triangulation();
+        let triangulation = paths.triangulate().into_triangulation();
 
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
@@ -105,7 +102,7 @@ impl ShapeWidget {
                     FloatPoint::new(v.x, v.y)
                 }).collect();
 
-                let sub_triangulation = stroke_builder.build_closed_path_mesh::<FloatPoint<f32>, usize>(&world_path);
+                let sub_triangulation = stroke_builder.build_closed_path_mesh(&world_path);
                 builder.append(sub_triangulation);
             }
         }

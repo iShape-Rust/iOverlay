@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod overlay {
-    extern crate std;
+    // extern crate std;
 
     use std::path::PathBuf;
     use i_shape::int::path::IntPaths;

@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn test_14() {
         let p = IntPoint::new(0, 0);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let paths_count = 3;
         let mut subj_paths = Vec::with_capacity(paths_count);
         for _ in 0..1000_000 {
@@ -302,10 +302,10 @@ mod tests {
             let x_range = 0..=8;
             let y_range = -8..=8;
             for _ in 0..paths_count {
-                let ax = rng.gen_range(x_range.clone());
-                let ay = rng.gen_range(y_range.clone());
-                let bx = rng.gen_range(x_range.clone());
-                let by = rng.gen_range(y_range.clone());
+                let ax = rng.random_range(x_range.clone());
+                let ay = rng.random_range(y_range.clone());
+                let bx = rng.random_range(x_range.clone());
+                let by = rng.random_range(y_range.clone());
                 subj_paths.push(vec![p, IntPoint::new(ax, ay), IntPoint::new(bx, by)]);
             }
 
@@ -396,10 +396,10 @@ mod tests {
         let a = radius / 2;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..n {
-            let x = rng.gen_range(range.clone());
-            let y = rng.gen_range(range.clone());
+            let x = rng.random_range(range.clone());
+            let y = rng.random_range(range.clone());
             points.push(IntPoint { x, y })
         }
 
@@ -410,10 +410,10 @@ mod tests {
         let a = 0.5 * radius;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..n {
-            let x = rng.gen_range(range.clone());
-            let y = rng.gen_range(range.clone());
+            let x = rng.random_range(range.clone());
+            let y = rng.random_range(range.clone());
             points.push([x, y])
         }
 

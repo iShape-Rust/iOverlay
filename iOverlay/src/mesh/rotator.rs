@@ -26,10 +26,8 @@ impl<T: FloatNumber> Rotator<T> {
     }
 
     #[inline]
-    pub(crate) fn with_angle(angle: f64) -> Self {
-        let (sn, cs) = angle.sin_cos();
-        let sin = T::from_float(sn);
-        let cos = T::from_float(cs);
+    pub(crate) fn with_angle(angle: T) -> Self {
+        let (sin, cos) = angle.sin_cos();
         Self::new(cos, sin)
     }
 
@@ -58,12 +56,12 @@ mod tests {
     fn test_ccw_rotate() {
         let deg_45 = 0.25 * PI;
         let rotator = Rotator::with_angle(deg_45);
-        let v0 = [1.0f32, 0.0f32];
+        let v0 = [1.0, 0.0];
         let v1 = rotator.rotate(&v0);
         let v2 = rotator.rotate(&v1);
         let v3 = rotator.rotate(&v2);
 
-        let i_sqrt2 = 1.0f32 / 2.0f32.sqrt();
+        let i_sqrt2 = 1.0 / 2.0f64.sqrt();
 
         compare_vecs(v1, [i_sqrt2, i_sqrt2]);
         compare_vecs(v2, [0.0, 1.0]);
@@ -74,19 +72,19 @@ mod tests {
     fn test_cw_rotate() {
         let deg_45 = -0.25 * PI;
         let rotator = Rotator::with_angle(deg_45);
-        let v0 = [1.0f32, 0.0f32];
+        let v0 = [1.0, 0.0];
         let v1 = rotator.rotate(&v0);
         let v2 = rotator.rotate(&v1);
         let v3 = rotator.rotate(&v2);
 
-        let i_sqrt2 = 1.0f32 / 2.0f32.sqrt();
+        let i_sqrt2 = 1.0 / 2.0f64.sqrt();
 
         compare_vecs(v1, [i_sqrt2, -i_sqrt2]);
         compare_vecs(v2, [0.0, -1.0]);
         compare_vecs(v3, [-i_sqrt2, -i_sqrt2]);
     }
 
-    fn compare_vecs(v0: [f32; 2], v1: [f32; 2]) {
+    fn compare_vecs(v0: [f64; 2], v1: [f64; 2]) {
         assert!((v0[0] - v1[0]).abs() < 0.0001);
         assert!((v0[1] - v1[1]).abs() < 0.0001);
     }
