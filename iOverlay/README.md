@@ -38,6 +38,7 @@ Starting from v3.0.0, the default output contour direction has changed:
   - [Offseting a Polygon](#offseting-a-polygon)
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
+- [FAQ](#faq)
 - [Versioning Policy](#versioning-policy)
 
 &nbsp;
@@ -66,7 +67,7 @@ Starting from v3.0.0, the default output contour direction has changed:
 Add the following to your Cargo.toml:
 ```
 [dependencies]
-i_overlay = "^3.0"
+i_overlay = "^4.0"
 ```
 
 &nbsp;
@@ -339,6 +340,38 @@ println!("shapes: {:?}", &shapes);
 | <img src="readme/line_join_bevel.svg" alt="Bevel" style="width:100px;"> | <img src="readme/line_join_mitter.svg" alt="Mitter" style="width:100px;"> | <img src="readme/line_join_round.svg" alt="Round" style="width:100px;"> |
 
 &nbsp;
+
+# FAQ
+### 1. When should I use `FloatOverlay`, `SingleFloatOverlay`, or `FloatOverlayGraph`?
+
+- Use **`FloatOverlay`** when you perform **repeated overlay operations**:
+  ```rust
+  let mut overlay = FloatOverlay::new();
+  loop {
+      overlay.clear();
+      overlay.add_source(shape);
+      let result = overlay.overlay(overlay_rule, fill_rule);
+      // ...
+  }
+  ```
+
+- Use **`SingleFloatOverlay`** trait for **one-shot operations**.
+
+- Use **`FloatOverlayGraph`** if you need to extract **multiple boolean results** (e.g. union and intersection) from the **same input geometry** without recomputing.
+
+---
+
+### 2. I need to union many shapes at once. What's the most efficient way?
+
+Use the [`simplify`](https://github.com/iShape-Rust/iOverlay/blob/main/iOverlay/src/float/simplify.rs) operation:
+
+```rust
+let result = shapes.simplify(fill_rule);
+```
+
+It internally merges shapes efficiently and is typically faster and more robust than chaining many `overlay()` calls manually.
+
+---
 
 # Versioning Policy
 
