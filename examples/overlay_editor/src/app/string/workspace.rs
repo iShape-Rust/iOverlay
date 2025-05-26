@@ -54,7 +54,6 @@ impl EditorApp {
                                 Container::new(VaricoloredWidget::with_shapes(
                                     shapes,
                                     self.state.string.workspace.camera,
-                                    None,
                                     4.0,
                                 ))
                                     .width(Length::Fill)

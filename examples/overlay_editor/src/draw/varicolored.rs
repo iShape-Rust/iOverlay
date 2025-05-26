@@ -2,13 +2,12 @@ use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
 use i_triangle::float::builder::TriangulationBuilder;
 use i_triangle::float::triangulation::Triangulation;
-use i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths;
 use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
+use i_triangle::int::triangulatable::IntTriangulatable;
 use i_triangle::int::triangulation::IntTriangulation;
-use i_triangle::int::triangulator::Triangulator;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
@@ -41,7 +40,7 @@ impl VaricoloredWidget {
         [255, 214, 10],   // Teal
     ];
 
-    pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, fill_rule: Option<FillRule>, stroke_width: f32) -> Self {
+    pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_width: f32) -> Self {
         let offset = Self::offset_for_shapes(shapes, camera);
 
         let mut fill = Vec::new();
@@ -50,7 +49,7 @@ impl VaricoloredWidget {
             let data = Self::SHAPE_COLOR_STORE[index % Self::SHAPE_COLOR_STORE.len()];
             let color = Color::from_rgb8(data[0], data[1], data[2]);
 
-            if let Some(mesh) = Self::fill_mesh_for_paths(shape, camera, offset, fill_rule, color.scale_alpha(0.2)) {
+            if let Some(mesh) = Self::fill_mesh_for_paths(shape, camera, offset, color.scale_alpha(0.2)) {
                 fill.push(mesh);
             }
             if let Some(mesh) = Self::stroke_mesh_for_paths(shape, camera, offset, color, stroke_width) {
@@ -64,13 +63,12 @@ impl VaricoloredWidget {
         }
     }
 
-    fn fill_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, fill_rule: Option<FillRule>, color: Color) -> Option<Mesh> {
+    fn fill_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
         if paths.is_empty() {
             return None;
         }
 
-        let triangulation = Triangulator::with_fill_rule(fill_rule.unwrap_or(FillRule::NonZero))
-            .triangulate_shape(paths).into_triangulation();
+        let triangulation = paths.triangulate().into_triangulation();
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
 
@@ -107,7 +105,8 @@ impl VaricoloredWidget {
                 FloatPoint::new(v.x, v.y)
             }).collect();
 
-            let sub_triangulation = stroke_builder.build_closed_path_mesh(&world_path);
+            let sub_triangulation: Triangulation<FloatPoint<f32>, usize> = stroke_builder.build_closed_path_mesh(&world_path);
+
             builder.append(sub_triangulation);
         }
 

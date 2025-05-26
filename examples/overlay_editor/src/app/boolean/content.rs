@@ -202,13 +202,11 @@ impl BooleanState {
         match self.mode {
             ModeOption::Edit => {},
             ModeOption::Debug => {
-                self.workspace.vectors = Overlay::with_contours(subj, clip).into_separate_vectors(fill_rule, Default::default());
+                self.workspace.vectors = Overlay::with_contours(subj, clip).build_separate_vectors(fill_rule);
             },
             _ => {
                 let overlay_rule = self.mode.overlay_rule().unwrap();
-                let solution = Overlay::with_contours(subj, clip)
-                    .into_graph(fill_rule)
-                    .extract_shapes(overlay_rule);
+                let solution = Overlay::with_contours(subj, clip).overlay(overlay_rule, fill_rule);
                 self.workspace.solution = solution;
             }
         }

@@ -29,7 +29,7 @@ console_error_panic_hook = "^0"
 #i_triangle = "^0.33.0"
 #i_mesh = "^0.2.0"
 
-i_triangle = { path = "../../../../iShape/iTriangle/iTriangle" }
+i_triangle = { path = "../../../../iShape/iTriangle/iTriangle", default-features = true, features = ["serde"] }
 i_mesh = { path = "../../../../iShape/iMesh/iMesh" }
 
 #ICED_BACKEND=wgpu cargo r -r
