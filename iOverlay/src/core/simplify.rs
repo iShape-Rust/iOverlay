@@ -236,6 +236,11 @@ impl Overlay {
         let split_modified = self
             .split_solver
             .split_segments(&mut self.segments, &self.solver);
+
+        if self.segments.is_empty() {
+            return false;
+        }
+
         let min = self.segments[0].x_segment.a.x;
 
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
@@ -244,8 +249,6 @@ impl Overlay {
 
         !split_modified && !append_modified && !has_loops
     }
-
-
 }
 
 #[cfg(test)]
