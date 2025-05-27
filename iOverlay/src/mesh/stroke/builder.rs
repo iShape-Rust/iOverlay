@@ -142,11 +142,6 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         let n = path.len();
         if n < 2 {
-            if let Some(first) = path.first() {
-                let s = Section::one_point(self.radius, first);
-                self.start_cap_builder.add_to_start(&s, adapter, segments);
-                self.end_cap_builder.add_to_end(&s, adapter, segments);
-            }
             return
         }
 
