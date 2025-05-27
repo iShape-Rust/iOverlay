@@ -116,7 +116,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
         if is_closed_path {
             self.join_builder.capacity() * points_count - 2
         } else {
-            self.join_builder.capacity() * (points_count - 1)
+            self.join_builder.capacity() * (points_count.saturating_sub(1))
                 + paths_count
                     * (self.end_cap_builder.capacity() + self.start_cap_builder.capacity())
         }
