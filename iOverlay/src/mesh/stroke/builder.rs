@@ -141,6 +141,15 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         // build segments only from points which are not equal in int space
 
         let n = path.len();
+        if n < 2 {
+            if let Some(first) = path.first() {
+                let s = Section::one_point(self.radius, first);
+                self.start_cap_builder.add_to_start(&s, adapter, segments);
+                self.end_cap_builder.add_to_end(&s, adapter, segments);
+            }
+            return
+        }
+
         let mut ip0 = adapter.float_to_int(&path[0]);
         let mut ip = adapter.float_to_int(&path[1]);
         let mut j = 1;

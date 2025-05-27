@@ -115,6 +115,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec::Vec;
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
     use core::f32::consts::PI;
@@ -243,5 +244,47 @@ mod tests {
 
         let shape = shapes.first().unwrap();
         assert_eq!(shape.len(), 1);
+    }
+
+    #[test]
+    fn test_degenerate_0() {
+        let path: Vec<[f64; 2]> = Vec::new();
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_degenerate_1() {
+        let path = [[0.0, 0.0]];
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_degenerate_2() {
+        let path = [[0.0, 0.0]];
+
+        let style = StrokeStyle::new(2.0).end_cap(LineCap::Round(0.25 * PI));
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_degenerate_3() {
+        let path = [[0.0, 0.0]];
+
+        let style = StrokeStyle::new(2.0)
+            .start_cap(LineCap::Butt)
+            .end_cap(LineCap::Round(0.25 * PI));
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
     }
 }
