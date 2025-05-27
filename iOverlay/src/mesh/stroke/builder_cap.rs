@@ -123,12 +123,4 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
             T::from_float(0.0)
         }
     }
-
-    pub(super) fn is_empty(&self) -> bool {
-        if let Some(points) = &self.points {
-            points.is_empty()
-        } else {
-            true
-        }
-    }
 }

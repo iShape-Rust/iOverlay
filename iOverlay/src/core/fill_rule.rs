@@ -5,18 +5,13 @@ use core::fmt;
 /// - `NonZero`: Only non-zero sub-regions are filled.
 /// - `Positive`: Fills regions where the winding number is positive.
 /// - `Negative`: Fills regions where the winding number is negative.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum FillRule {
     EvenOdd,
+    #[default]
     NonZero,
     Positive,
     Negative
-}
-
-impl Default for FillRule {
-    fn default() -> Self {
-        FillRule::NonZero
-    }
 }
 
 impl fmt::Display for FillRule {
