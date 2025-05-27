@@ -34,6 +34,7 @@ fn run_desktop() -> iced::Result {
         .resizable(true)
         .centered()
         .title("iOverlay Editor")
+        .subscription(EditorApp::subscription)
         .run()
 }
 

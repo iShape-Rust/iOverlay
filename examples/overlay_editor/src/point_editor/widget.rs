@@ -53,7 +53,7 @@ impl<'a, Message> PointsEditorWidget<'a, Message> {
         Self {
             points,
             camera,
-            mesh_radius: 6.0,
+            mesh_radius: 4.0,
             hover_radius: 12.0,
             main_color,
             hover_color,

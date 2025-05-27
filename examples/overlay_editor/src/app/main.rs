@@ -6,13 +6,12 @@ use crate::app::string::content::StringMessage;
 use crate::app::string::content::StringState;
 use crate::app::stroke::content::StrokeMessage;
 use crate::app::stroke::content::StrokeState;
-use iced::event::{self, Event as MainEvent};
+use iced::event::Event as MainEvent;
 use iced::keyboard::key::Named;
-use iced::keyboard::Event as KeyboardEvent;
-use iced::keyboard::Key::Named as NamedBox;
+use iced::keyboard::Key;
 use iced::widget::{vertical_rule, Space};
 use iced::widget::{Button, Column, Container, Row, Text};
-use iced::{Alignment, Element, Length};
+use iced::{keyboard, Alignment, Element, Length};
 use iced::{Subscription, Task};
 
 use crate::app::design::style_separator;
@@ -66,6 +65,8 @@ pub(crate) enum AppMessage {
     Stroke(StrokeMessage),
     Outline(OutlineMessage),
     EventOccurred(MainEvent),
+    NextTest,
+    PrevTest,
 }
 
 impl EditorApp {
@@ -98,20 +99,18 @@ impl EditorApp {
             AppMessage::String(msg) => self.string_update(msg),
             AppMessage::Stroke(msg) => self.stroke_update(msg),
             AppMessage::Outline(msg) => self.outline_update(msg),
-            AppMessage::EventOccurred(MainEvent::Keyboard(KeyboardEvent::KeyPressed {
-                key: NamedBox(named @ (Named::ArrowDown | Named::ArrowUp)),
-                ..
-            })) => match (named, self.state.selected_action.clone()) {
-                (Named::ArrowDown, MainAction::Boolean) => self.boolean_next_test(),
-                (Named::ArrowDown, MainAction::String) => self.string_next_test(),
-                (Named::ArrowDown, MainAction::Stroke) => self.stroke_next_test(),
-                (Named::ArrowDown, MainAction::Outline) => self.outline_next_test(),
-                (Named::ArrowUp, MainAction::Boolean) => self.boolean_prev_test(),
-                (Named::ArrowUp, MainAction::String) => self.string_prev_test(),
-                (Named::ArrowUp, MainAction::Stroke) => self.stroke_prev_test(),
-                (Named::ArrowUp, MainAction::Outline) => self.outline_prev_test(),
-                _ => {}
-            },
+            AppMessage::NextTest => match self.state.selected_action {
+                    MainAction::Boolean => self.boolean_next_test(),
+                    MainAction::String => self.string_next_test(),
+                    MainAction::Stroke => self.stroke_next_test(),
+                    MainAction::Outline => self.outline_next_test(),
+                },
+            AppMessage::PrevTest => match self.state.selected_action {
+                MainAction::Boolean => self.boolean_prev_test(),
+                MainAction::String => self.string_prev_test(),
+                MainAction::Stroke => self.stroke_prev_test(),
+                MainAction::Outline => self.outline_prev_test(),
+            }
             _ => {}
         }
 
@@ -119,7 +118,17 @@ impl EditorApp {
     }
 
     pub fn subscription(&self) -> Subscription<AppMessage> {
-        event::listen().map(AppMessage::EventOccurred)
+        keyboard::on_key_press(|key, _mods| {
+            match key.as_ref() {
+                Key::Named(Named::ArrowDown) => {
+                    Some(AppMessage::NextTest)
+                }
+                Key::Named(Named::ArrowUp) => {
+                    Some(AppMessage::PrevTest)
+                }
+                _ => None,
+            }
+        })
     }
 
     fn update_main(&mut self, message: MainMessage) {

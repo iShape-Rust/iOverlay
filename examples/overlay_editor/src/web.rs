@@ -52,6 +52,7 @@ impl WebApp {
             .resizable(true)
             .centered()
             .title("iOverlay Editor")
+            .subscription(EditorApp::subscription)
             .run()
             .unwrap();
 
