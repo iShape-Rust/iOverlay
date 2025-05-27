@@ -26,10 +26,10 @@ log = "0.4.22"
 console_log = "^1.0.0"
 console_error_panic_hook = "^0"
 
-i_mesh = "^0.3.0"
-i_triangle = { version = "^0.35.0", features = ["serde"] }
+#i_mesh = "^0.3.0"
+#i_triangle = { version = "^0.35.0", features = ["serde"] }
 
-#i_triangle = { path = "../../../../iShape/iTriangle/iTriangle", default-features = true, features = ["serde"] }
-#i_mesh = { path = "../../../../iShape/iMesh/iMesh" }
+i_triangle = { path = "../../../../iShape/iTriangle/iTriangle", default-features = true, features = ["serde"] }
+i_mesh = { path = "../../../../iShape/iMesh/iMesh" }
 
 #ICED_BACKEND=wgpu cargo r -r

@@ -1,3 +1,4 @@
+use i_triangle::i_overlay::core::fill_rule::FillRule;
 use crate::draw::path::PathWidget;
 use crate::draw::shape::ShapeWidget;
 use crate::geom::camera::Camera;
@@ -44,8 +45,8 @@ impl EditorApp {
                         Container::new(ShapeWidget::with_paths(
                             &self.state.stroke.workspace.stroke_output,
                             self.state.stroke.workspace.camera,
-                            None,
-                            None,
+                            Some(FillRule::NonZero),
+                            Some(Design::solution_color().scale_alpha(0.1)),
                             Some(Design::solution_color()),
                             2.0,
                         ))

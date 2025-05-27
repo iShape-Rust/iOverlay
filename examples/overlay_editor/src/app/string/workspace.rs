@@ -54,7 +54,7 @@ impl EditorApp {
                                 Container::new(VaricoloredWidget::with_shapes(
                                     shapes,
                                     self.state.string.workspace.camera,
-                                    4.0,
+                                    2.0,
                                 ))
                                     .width(Length::Fill)
                                     .height(Length::Fill)
@@ -65,7 +65,7 @@ impl EditorApp {
                                 &self.state.string.workspace.string,
                                 self.state.string.workspace.camera,
                                 Design::negative_color(),
-                                4.0,
+                                2.0,
                                 true,
                             ))
                                 .width(Length::Fill)
@@ -80,7 +80,7 @@ impl EditorApp {
                                 Some(self.state.string.fill.fill_rule()),
                                 Some(Design::clip_color().scale_alpha(0.3)),
                                 Some(Design::clip_color()),
-                                4.0,
+                                2.0,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)
@@ -89,7 +89,7 @@ impl EditorApp {
                                 &self.state.string.workspace.string,
                                 self.state.string.workspace.camera,
                                 Design::negative_color(),
-                                4.0,
+                                2.0,
                                 true,
                             ))
                                 .width(Length::Fill)
@@ -101,7 +101,7 @@ impl EditorApp {
                                     paths,
                                     self.state.string.workspace.camera,
                                     Design::subject_color(),
-                                    4.0,
+                                    2.0,
                                     true,
                                 ))
                                     .width(Length::Fill)
@@ -117,7 +117,7 @@ impl EditorApp {
                                 Some(self.state.string.fill.fill_rule()),
                                 Some(Design::subject_color().scale_alpha(0.2)),
                                 Some(Design::subject_color()),
-                                4.0,
+                                2.0,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)
@@ -126,7 +126,7 @@ impl EditorApp {
                                 &self.state.string.workspace.string,
                                 self.state.string.workspace.camera,
                                 Design::negative_color(),
-                                4.0,
+                                2.0,
                                 true,
                             ))
                                 .width(Length::Fill)

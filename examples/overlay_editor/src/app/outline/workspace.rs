@@ -1,3 +1,4 @@
+use i_triangle::i_overlay::core::fill_rule::FillRule;
 use crate::draw::shape::ShapeWidget;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
@@ -41,8 +42,8 @@ impl EditorApp {
                     Container::new(ShapeWidget::with_paths(
                         &self.state.outline.workspace.outline_output,
                         self.state.outline.workspace.camera,
-                        None,
-                        None,
+                        Some(FillRule::NonZero),
+                        Some(Design::solution_color().scale_alpha(0.1)),
                         Some(Design::solution_color()),
                         2.0,
                     ))
@@ -53,8 +54,8 @@ impl EditorApp {
                     Container::new(ShapeWidget::with_paths(
                         &self.state.outline.workspace.outline_input,
                         self.state.outline.workspace.camera,
-                        None,
-                        None,
+                        Some(FillRule::NonZero),
+                        Some(Design::subject_color().scale_alpha(0.1)),
                         Some(Design::subject_color()),
                         1.0,
                     ))

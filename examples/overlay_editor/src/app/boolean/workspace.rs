@@ -49,7 +49,7 @@ impl EditorApp {
                                 Some(self.state.boolean.fill.fill_rule()),
                                 Some(Design::subject_color().scale_alpha(0.2)),
                                 Some(Design::subject_color()),
-                                4.0,
+                                2.0,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)
@@ -60,7 +60,7 @@ impl EditorApp {
                                 Some(self.state.boolean.fill.fill_rule()),
                                 Some(Design::clip_color().scale_alpha(0.2)),
                                 Some(Design::clip_color()),
-                                4.0,
+                                2.0,
                             ))
                                 .width(Length::Fill)
                                 .height(Length::Fill)
@@ -110,7 +110,7 @@ impl EditorApp {
                                     None,
                                     Some(Design::solution_color().scale_alpha(0.2)),
                                     Some(Design::solution_color()),
-                                    4.0,
+                                    2.0,
                                 ))
                                     .width(Length::Fill)
                                     .height(Length::Fill)
