@@ -50,7 +50,6 @@ impl WebApp {
 
         application(app_initializer, EditorApp::update, EditorApp::view)
             .resizable(true)
-            .default_font(custom_font)
             .centered()
             .title("iOverlay Editor")
             .run()
