@@ -273,7 +273,7 @@ mod tests {
         let style = StrokeStyle::new(2.0).end_cap(LineCap::Round(0.25 * PI));
         let shapes = path.stroke(style, false);
 
-        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes.len(), 0);
     }
 
     #[test]
@@ -285,6 +285,6 @@ mod tests {
             .end_cap(LineCap::Round(0.25 * PI));
         let shapes = path.stroke(style, false);
 
-        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes.len(), 0);
     }
 }

@@ -42,28 +42,6 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> Section<P, T> {
             _phantom: Default::default(),
         }
     }
-
-    pub(crate) fn one_point(radius: T, a: &P) -> Self {
-        let dir = P::from_xy(T::from_float(1.0), T::from_float(0.0));
-        let t = Math::ortho_and_scale(&dir, radius);
-
-        let a_top = FloatPointMath::add(a, &t);
-        let a_bot = FloatPointMath::sub(a, &t);
-
-        let b_top = a_top;
-        let b_bot = b_top;
-
-        Section {
-            a: *a,
-            b: *a,
-            a_top,
-            b_top,
-            a_bot,
-            b_bot,
-            dir,
-            _phantom: Default::default(),
-        }
-    }
 }
 
 pub(crate) trait SectionToSegment<T: FloatNumber, P: FloatPointCompatible<T>> {
