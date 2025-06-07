@@ -8,6 +8,7 @@ license = "MIT"
 repository = "https://github.com/iShape-Rust/iOverlay"
 readme = "README.md"
 
+keywords = ["polygon-boolean", "clipping", "intersection", "union", "buffering"]
 categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 
 [dependencies]
