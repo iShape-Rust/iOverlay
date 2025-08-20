@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 use crate::core::link::OverlayLink;
 use crate::i_float::int::point::IntPoint;
 use i_key_sort::bin_key::index::BinLayout;
+use i_shape::util::reserve::Reserve;
 use crate::build::builder::{GraphBuilder, GraphNode};
 use crate::core::solver::Solver;
 use crate::geom::end::End;
@@ -17,11 +18,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         }
 
         self.build_ends(solver);
-
-        let additional = self.links.len().saturating_sub(self.nodes.capacity());
-        if additional > 0 {
-            self.nodes.reserve(additional);
-        }
+        self.nodes.reserve_capacity(self.links.len());
         self.nodes.clear();
 
         let mut ai = 0;

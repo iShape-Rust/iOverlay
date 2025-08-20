@@ -7,6 +7,7 @@ use crate::segm::winding::WindingCount;
 use crate::util::log::Int;
 use i_float::triangle::Triangle;
 use i_key_sort::sort::layout::BinStore;
+use i_shape::util::reserve::Reserve;
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
 use i_tree::key::tree::KeyExpTree;
@@ -116,11 +117,8 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
 
     #[inline]
     pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(&mut self, segments: &[Segment<C>]) {
-        let additional = segments.len().saturating_sub(self.links.len());
-        if additional > 0 {
-            self.links.reserve(additional);
-        }
         self.links.clear();
+        self.links.reserve_capacity(segments.len());
 
         for (segment, &fill) in segments.iter().zip(&self.fills) {
             if !F::is_included(fill) {
@@ -136,11 +134,8 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
 
     #[inline]
     pub(super) fn build_links_all(&mut self, segments: &[Segment<C>]) {
-        let additional = segments.len().saturating_sub(self.links.len());
-        if additional > 0 {
-            self.links.reserve(additional);
-        }
         self.links.clear();
+        self.links.reserve_capacity(segments.len());
 
         for (segment, &fill) in segments.iter().zip(&self.fills) {
             self.links.push(OverlayLink::new(
