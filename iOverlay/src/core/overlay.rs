@@ -394,3 +394,34 @@ impl IntOverlayOptions {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    extern crate std;
+
+    use i_float::int::point::IntPoint;
+    use i_shape::int::area::Area;
+    use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::Overlay;
+    use crate::core::overlay_rule::OverlayRule;
+
+    #[test]
+    fn test_0() {
+        let subj = [[
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+        ]
+            .to_vec()];
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
+
+        assert_eq!(result.len(), 1);
+        let shape = &result[0];
+        assert_eq!(shape.len(), 1);
+        assert_eq!(shape[0].len(), 4);
+        assert_eq!(shape[0].area(), -100);
+    }
+}
