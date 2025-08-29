@@ -115,6 +115,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use alloc::vec::Vec;
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
@@ -286,5 +287,22 @@ mod tests {
         let shapes = path.stroke(style, false);
 
         assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_many_paths() {
+        let paths = [
+            vec![[0.0, -5.0], [0.0, 5.0]],
+            vec![[-5.0, 0.0], [5.0, 0.0]]
+        ];
+
+        let style = StrokeStyle::new(2.0)
+            .start_cap(LineCap::Butt)
+            .end_cap(LineCap::Butt);
+        let shapes = paths.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 12);
     }
 }
