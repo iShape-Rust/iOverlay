@@ -241,10 +241,8 @@ impl Overlay {
             return false;
         }
 
-        let min = self.segments[0].x_segment.a.x;
-
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
-        let has_loops = self.graph_builder.test_contour_for_loops(min, contour, &mut buffer.points);
+        let has_loops = self.graph_builder.test_contour_for_loops(contour, &mut buffer.points);
         self.boolean_buffer = Some(buffer);
 
         !has_loops

@@ -4,7 +4,6 @@ use crate::segm::winding::WindingCount;
 
 pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self) -> bool;
-    fn copy_and_merge(&mut self, resource: &Self);
 }
 
 impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
@@ -24,34 +23,6 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
 
         false
     }
-
-    fn copy_and_merge(&mut self, resource: &Self) {
-        self.clear();
-        let mut iter = resource.iter();
-        let first_item = if let Some(first) = iter.next() {
-            first
-        } else {
-            return;
-        };
-
-        let mut prev = *first_item;
-
-        for item in iter {
-            if prev.x_segment.eq(&item.x_segment) {
-                prev.count.apply(item.count);
-            } else {
-                if prev.count.is_not_empty() {
-                    self.push(prev);
-                }
-                prev = *item;
-            }
-        }
-
-        if prev.count.is_not_empty() {
-            self.push(prev);
-        }
-    }
-
 }
 
 fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {

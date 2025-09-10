@@ -1,5 +1,5 @@
 {
-  "clipPaths" : [
+  "clipPaths": [
     [
       [
         2,
@@ -19,8 +19,8 @@
       ]
     ]
   ],
-  "fillRule" : 1,
-  "xor" : [
+  "fillRule": 1,
+  "xor": [
     [
       [
         [
@@ -56,7 +56,7 @@
       ]
     ]
   ],
-  "clip" : [
+  "clip": [
     [
       [
         [
@@ -92,7 +92,7 @@
       ]
     ]
   ],
-  "difference" : [
+  "difference": [
     [
       [
         [
@@ -112,7 +112,7 @@
       ]
     ]
   ],
-  "inverseDifference" : [
+  "inverseDifference": [
     [
       [
         [
@@ -148,12 +148,11 @@
       ]
     ]
   ],
-  "intersect" : [
+  "intersect": [
     [
-
     ]
   ],
-  "subject" : [
+  "subject": [
     [
       [
         [
@@ -173,7 +172,7 @@
       ]
     ]
   ],
-  "subjPaths" : [
+  "subjPaths": [
     [
       [
         1,
@@ -197,7 +196,7 @@
       ]
     ]
   ],
-  "union" : [
+  "union": [
     [
       [
         [

@@ -1,16 +1,14 @@
-use alloc::vec::Vec;
-use crate::core::link::OverlayLink;
-use crate::i_float::int::point::IntPoint;
-use i_key_sort::bin_key::index::BinLayout;
-use i_shape::util::reserve::Reserve;
 use crate::build::builder::{GraphBuilder, GraphNode};
+use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
 use crate::geom::end::End;
+use crate::i_float::int::point::IntPoint;
 use crate::segm::winding::WindingCount;
-use crate::util::sort::SmartBinSort;
+use alloc::vec::Vec;
+use i_key_sort::sort::key_sort::KeySort;
+use i_shape::util::reserve::Reserve;
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
-
     pub(super) fn build_nodes_and_connect_links(&mut self, solver: &Solver) {
         let n = self.links.len();
         if n == 0 {
@@ -72,53 +70,18 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         }
     }
 
-    fn build_ends(&mut self, solver: &Solver) {
-        if let Some(layout) = self.bin_layout() {
-            self.bin_store.init(layout);
-            self.bin_store.reserve_bins_space(self.links.iter().map(|link|&link.b.point.x));
-            let count = self.bin_store.prepare_bins();
-            self.ends.resize(count, End::default());
-
-            for (i, link) in self.links.iter().enumerate() {
-                self.bin_store.feed_vec(&mut self.ends, End { index: i, point: link.b.point });
-            }
-
-            for bin in self.bin_store.bins.iter() {
-                let start = bin.offset;
-                let end = bin.data;
-                if start < end {
-                    self.ends[start..end].sort_by(|a, b| a.point.cmp(&b.point));
-                }
-            }
-        } else {
-            self.ends.clear();
-            let additional = self.links.len().saturating_sub(self.ends.capacity());
-            if additional > 0 {
-                self.ends.reserve(additional);
-            }
-            for (i, link) in self.links.iter().enumerate() {
-                self.ends.push(End { index: i, point: link.b.point });
-            }
-            self.ends.smart_bin_sort_by(solver, |a, b| a.point.cmp(&b.point));
-        }
-    }
-
     #[inline]
-    fn bin_layout(&self) -> Option<BinLayout<i32>> {
-        let count = self.links.len();
-        if !(64..=1_000_000).contains(&count) {
-            // direct approach work better for small and large data
-            return None
+    fn build_ends(&mut self, solver: &Solver) {
+        self.ends.clear();
+        self.ends.reserve_capacity(self.links.len());
+        for (i, link) in self.links.iter().enumerate() {
+            self.ends.push(End {
+                index: i,
+                point: link.b.point,
+            });
         }
-
-        let mut min = i32::MAX;
-        let mut max = i32::MIN;
-        for link in self.links.iter() {
-            min = min.min(link.b.point.x);
-            max = max.max(link.b.point.x);
-        }
-
-        BinLayout::new(min..max, count)
+        self.ends
+            .sort_by_two_keys(solver.is_parallel_sort_allowed(), |e| e.point.x, |e| e.point.y);
     }
 }
 

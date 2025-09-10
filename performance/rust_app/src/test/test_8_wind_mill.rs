@@ -55,8 +55,8 @@ impl WindMillTest {
             // }
         } else {
             for _ in 0..sq_it_count {
-                let _ = Overlay::with_contours(&subj_paths, &clip_paths)
-                    .overlay_custom(rule, FillRule::NonZero, solver);
+                let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                    .overlay(rule, FillRule::NonZero);
             }
         }
 
@@ -69,8 +69,8 @@ impl WindMillTest {
     pub(crate) fn validate(n: usize, rule: OverlayRule, solver: Solver) {
         let (subj_paths, clip_paths) = Self::geometry(80, n);
 
-        let res = Overlay::with_contours(&subj_paths, &clip_paths)
-            .overlay_custom(rule, FillRule::NonZero, solver);
+        let res = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+            .overlay(rule, FillRule::NonZero);
 
         assert_eq!(res.len(), n * n);
         println!("result validation PASS");

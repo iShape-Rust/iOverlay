@@ -1,15 +1,15 @@
-use alloc::vec;
-use alloc::vec::Vec;
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::geom::v_segment::VSegment;
 use crate::util::log::Int;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::cmp::Ordering;
+use i_key_sort::sort::key_sort::KeySort;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
 use i_tree::key::tree::KeyExpTree;
-use core::cmp::Ordering;
-use i_key_sort::sort::key_sort::KeyBinSort;
 
 pub(crate) struct BindSolution {
     pub(crate) parent_for_child: Vec<usize>,
@@ -112,7 +112,7 @@ pub(crate) trait JoinHoles {
         &mut self,
         holes: Vec<IntContour>,
         anchors: Vec<IdSegment>,
-        clockwise: bool
+        clockwise: bool,
     );
     fn scan_join(&mut self, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
@@ -150,7 +150,7 @@ impl JoinHoles for Vec<IntShape> {
         &mut self,
         holes: Vec<IntContour>,
         anchors: Vec<IdSegment>,
-        clockwise: bool
+        clockwise: bool,
     ) {
         if self.is_empty() || holes.is_empty() {
             return;
@@ -175,11 +175,23 @@ impl JoinHoles for Vec<IntShape> {
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
+            shape[0].append_id_segments(
+                &mut segments,
+                ContourIndex::new_shape(i),
+                x_min,
+                x_max,
+                clockwise,
+            );
         }
 
         for (i, hole) in holes.iter().enumerate() {
-            hole.append_id_segments(&mut segments, ContourIndex::new_hole(i), x_min, x_max, clockwise);
+            hole.append_id_segments(
+                &mut segments,
+                ContourIndex::new_hole(i),
+                x_min,
+                x_max,
+                clockwise,
+            );
         }
 
         segments.sort_by_a_then_by_angle();
@@ -247,7 +259,12 @@ pub(crate) trait SortByAngle {
 impl SortByAngle for [IdSegment] {
     #[inline]
     fn sort_by_a_then_by_angle(&mut self) {
-        self.sort_with_bins(|s0, s1| s0.cmp_by_a_then_by_angle(s1));
+        self.sort_by_two_keys_then_by(
+            false,
+            |s| s.v_segment.a.x,
+            |s| s.v_segment.a.y,
+            |s0, s1| s0.v_segment.cmp_by_angle(&s1.v_segment),
+        );
     }
 
     #[inline]
@@ -274,11 +291,11 @@ impl SortByAngle for [IdSegment] {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
     use crate::bind::solver::JoinHoles;
     use crate::geom::v_segment::VSegment;
-    use i_float::int::point::IntPoint;
+    use alloc::vec;
     use core::cmp::Ordering;
+    use i_float::int::point::IntPoint;
 
     #[test]
     fn test_0() {

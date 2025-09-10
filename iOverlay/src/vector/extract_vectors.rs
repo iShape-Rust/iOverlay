@@ -1,7 +1,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key_sort::KeyBinSort;
+use i_key_sort::sort::key_sort::KeySort;
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
 use crate::core::extract::GraphUtil;
@@ -181,7 +181,7 @@ impl JoinHoles for Vec<VectorShape> {
             shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
         }
 
-        segments.sort_with_bins(|a, b| a.v_segment.a.x.cmp(&b.v_segment.a.x));
+        segments.sort_by_one_key(false, |s|s.v_segment.a.x);
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 

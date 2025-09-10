@@ -6,7 +6,6 @@ use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::winding::WindingCount;
 use crate::util::log::Int;
 use i_float::triangle::Triangle;
-use i_key_sort::sort::layout::BinStore;
 use i_shape::util::reserve::Reserve;
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
@@ -33,7 +32,6 @@ pub(crate) struct GraphBuilder<C, N> {
     pub(super) nodes: Vec<N>,
     pub(super) fills: Vec<SegmentFill>,
     pub(super) ends: Vec<End>,
-    pub(super) bin_store: BinStore<i32>,
 }
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
@@ -47,7 +45,6 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
             nodes: Vec::new(),
             fills: Vec::new(),
             ends: Vec::new(),
-            bin_store: BinStore::empty(0, 0),
         }
     }
 

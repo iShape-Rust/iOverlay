@@ -11,5 +11,5 @@ codegen-units = 1
 [dependencies]
 
 #i_overlay = { path = "../../iOverlay", default-features = true }
-#i_overlay = { path = "../../iOverlay", default-features = false }
-i_overlay = "~3.4.0"
+i_overlay = { path = "../../iOverlay", features = ["allow_multithreading"] }
+#i_overlay = "~3.4.0"

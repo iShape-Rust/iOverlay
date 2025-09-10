@@ -1,6 +1,5 @@
 use core::cmp::Ordering;
 use i_float::int::point::IntPoint;
-use i_key_sort::bin_key::index::{BinKey, BinLayout};
 use crate::geom::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,17 +46,5 @@ impl Ord for XSegment {
         } else {
             a
         }
-    }
-}
-
-impl BinKey<i32> for XSegment {
-    #[inline(always)]
-    fn bin_key(&self) -> i32 {
-        self.a.x
-    }
-
-    #[inline(always)]
-    fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
-        layout.index(self.a.x)
     }
 }

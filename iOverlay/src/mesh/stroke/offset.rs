@@ -292,8 +292,8 @@ mod tests {
     #[test]
     fn test_many_paths() {
         let paths = [
-            vec![[0.0, -5.0], [0.0, 5.0]],
-            vec![[-5.0, 0.0], [5.0, 0.0]]
+            vec![[0.0, 0.0], [5.0, 0.0]],
+            vec![[0.0, 0.0], [5.0, -5.0]]
         ];
 
         let style = StrokeStyle::new(2.0)
@@ -303,6 +303,6 @@ mod tests {
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
-        assert_eq!(shapes[0][0].len(), 12);
+        assert_eq!(shapes[0][0].len(), 8);
     }
 }

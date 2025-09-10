@@ -103,8 +103,8 @@ impl NotOverlapTest {
             // }
         } else {
             for _i in 0..sq_it_count {
-                let _ = Overlay::with_contours(&subj_paths, &clip_paths)
-                    .overlay_custom(rule, FillRule::NonZero, solver);
+                let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                    .overlay(rule, FillRule::NonZero);
             }
         }
 

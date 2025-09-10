@@ -64,8 +64,8 @@ impl ConcentricTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let overlay = FloatOverlay::with_subj_and_clip(&subj_paths, &clip_paths);
-            let _res = overlay.overlay_custom(rule, FillRule::NonZero, solver);
+            let mut overlay = FloatOverlay::with_subj_and_clip_custom(&subj_paths, &clip_paths, Default::default(), solver);
+            let _res = overlay.overlay(rule, FillRule::NonZero);
         }
         let duration = start.elapsed();
         let time = duration.as_secs_f64() / sq_it_count as f64;

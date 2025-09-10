@@ -69,7 +69,7 @@ impl SpiralTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ = subj_path.simplify_shape(FillRule::NonZero, Default::default());
+            let _ = subj_path.simplify_shape(FillRule::NonZero);
         }
 
         let duration = start.elapsed();

@@ -2,7 +2,7 @@ use crate::core::overlay::ShapeType;
 
 pub(crate) trait WindingCount
 where
-    Self: Clone + Copy + Send,
+    Self: Clone + Copy + Send + Sync,
 {
     fn is_not_empty(&self) -> bool;
     fn new(subj: i32, clip: i32) -> Self;

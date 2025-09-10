@@ -80,7 +80,7 @@ impl SplitSolver {
             any_intersection = true;
             tree.clear();
 
-            self.apply(segments, need_to_fix, solver);
+            self.apply(segments, solver);
 
             snap_radius.increment();
         }

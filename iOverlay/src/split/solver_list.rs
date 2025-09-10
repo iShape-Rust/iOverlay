@@ -45,7 +45,7 @@ impl SplitSolver {
                 return any_intersection;
             }
             any_intersection = true;
-            self.apply(segments, need_to_fix, solver);
+            self.apply(segments, solver);
 
             snap_radius.increment();
 

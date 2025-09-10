@@ -180,4 +180,10 @@ impl Solver {
             Auto => segments.len() < Self::MAX_FILL_LIST_COUNT,
         }
     }
+
+    #[inline(always)]
+    pub(crate) fn is_parallel_sort_allowed(&self) -> bool {
+        self.multithreading.is_some()
+    }
+
 }

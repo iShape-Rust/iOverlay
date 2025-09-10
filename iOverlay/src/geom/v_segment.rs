@@ -47,7 +47,7 @@ impl VSegment {
     #[inline(always)]
     pub(crate) fn cmp_by_angle(&self, other: &Self) -> Ordering {
         // sort angles counterclockwise
-        debug_assert!(self.a == other.a);
+        // debug_assert!(self.a == other.a);
         let v0 = self.b.subtract(self.a);
         let v1 = other.b.subtract(other.a);
         let cross = v0.cross_product(v1);

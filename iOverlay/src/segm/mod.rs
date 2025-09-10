@@ -5,3 +5,4 @@ pub mod offset;
 pub(crate) mod segment;
 pub(crate) mod merge;
 pub(crate) mod build;
+pub(crate) mod sort;
