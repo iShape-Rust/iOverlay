@@ -7,6 +7,7 @@ use crate::segm::winding::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::line_mark::{LineMark, SortMarkByIndexAndPoint};
 use alloc::vec::Vec;
+use core::mem::MaybeUninit;
 
 #[derive(Clone)]
 pub(crate) struct SplitSolver {
@@ -132,10 +133,11 @@ impl SplitSolver {
     pub(super) fn apply<C: WindingCount>(
         &mut self,
         segments: &mut Vec<Segment<C>>,
+        reusable_buffer: &mut Vec<MaybeUninit<LineMark>>,
         solver: &Solver,
     ) {
         self.marks
-            .sort_by_index_and_point(solver.is_parallel_sort_allowed());
+            .sort_by_index_and_point(solver.is_parallel_sort_allowed(), reusable_buffer);
         self.marks.dedup();
 
         segments.reserve(self.marks.len());

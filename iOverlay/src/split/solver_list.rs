@@ -16,6 +16,7 @@ impl SplitSolver {
 
         let mut snap_radius = snap_radius;
         let mut any_intersection = false;
+        let mut reusable_buffer = Vec::new();
 
         while need_to_fix && segments.len() > 1 {
             need_to_fix = false;
@@ -45,7 +46,7 @@ impl SplitSolver {
                 return any_intersection;
             }
             any_intersection = true;
-            self.apply(segments, solver);
+            self.apply(segments, &mut reusable_buffer, solver);
 
             snap_radius.increment();
 

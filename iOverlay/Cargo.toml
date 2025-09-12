@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "4.0.3"
+version = "4.0.4"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."
@@ -15,7 +15,7 @@ categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 i_float = { version = "~1.15.0" }
 i_shape = { version = "~1.14.0" }
 i_tree = { version = "~0.16.0" }
-i_key_sort = { version = "~0.7.0" }
+i_key_sort = { version = "~0.9.0" }
 
 #i_float = { path = "../../iFloat"}
 #i_shape = { path = "../../iShape"}

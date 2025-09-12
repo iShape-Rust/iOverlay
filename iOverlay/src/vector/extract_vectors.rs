@@ -1,7 +1,3 @@
-use alloc::vec;
-use alloc::vec::Vec;
-use i_float::int::point::IntPoint;
-use i_key_sort::sort::key_sort::KeySort;
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
 use crate::core::extract::GraphUtil;
@@ -11,6 +7,10 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
+use alloc::vec;
+use alloc::vec::Vec;
+use i_float::int::point::IntPoint;
+use i_key_sort::sort::one_key::OneKeySort;
 
 impl OverlayGraph<'_> {
     pub fn extract_separate_vectors(&self) -> Vec<VectorEdge> {
@@ -38,12 +38,8 @@ impl OverlayGraph<'_> {
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(
-                self.links,
-                self.nodes,
-                link_index,
-                visited
-            );
+            let left_top_link =
+                GraphUtil::find_left_top_link(self.links, self.nodes, link_index, visited);
             let link = unsafe { self.links.get_unchecked(left_top_link) };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
@@ -98,14 +94,8 @@ impl OverlayGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id = GraphUtil::next_link(
-                self.links,
-                self.nodes,
-                link_id,
-                node_id,
-                clockwise,
-                visited,
-            );
+            link_id =
+                GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe { self.links.get_unchecked(link_id) };
             node_id = if link.a.id == node_id {
@@ -178,10 +168,16 @@ impl JoinHoles for Vec<VectorShape> {
 
         let mut segments = Vec::new();
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
+            shape[0].append_id_segments(
+                &mut segments,
+                ContourIndex::new_shape(i),
+                x_min,
+                x_max,
+                clockwise,
+            );
         }
 
-        segments.sort_by_one_key(false, |s|s.v_segment.a.x);
+        segments.sort_by_one_key(false, |s| s.v_segment.a.x);
 
         let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
 

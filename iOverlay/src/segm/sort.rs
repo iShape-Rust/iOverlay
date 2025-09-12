@@ -1,5 +1,5 @@
+use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use crate::segm::segment::Segment;
-use i_key_sort::sort::key_sort::KeySort;
 
 pub(crate) trait ShapeSegmentsSort {
     fn sort_by_ab(&mut self, parallel: bool);

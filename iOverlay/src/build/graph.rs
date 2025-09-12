@@ -1,3 +1,4 @@
+use i_key_sort::sort::two_keys::TwoKeysSort;
 use crate::build::builder::{GraphBuilder, GraphNode};
 use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
@@ -5,7 +6,6 @@ use crate::geom::end::End;
 use crate::i_float::int::point::IntPoint;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
-use i_key_sort::sort::key_sort::KeySort;
 use i_shape::util::reserve::Reserve;
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {

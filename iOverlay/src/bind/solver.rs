@@ -4,7 +4,7 @@ use crate::util::log::Int;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
-use i_key_sort::sort::key_sort::KeySort;
+use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
 use i_tree::key::exp::KeyExpCollection;
