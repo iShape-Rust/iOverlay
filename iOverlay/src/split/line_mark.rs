@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use core::mem::MaybeUninit;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::one_key_cmp::OneKeyAndCmpSort;
 
@@ -13,7 +12,7 @@ pub(super) trait SortMarkByIndexAndPoint {
     fn sort_by_index_and_point(
         &mut self,
         parallel: bool,
-        reusable_buffer: &mut Vec<MaybeUninit<LineMark>>,
+        reusable_buffer: &mut Vec<LineMark>,
     );
 }
 
@@ -22,7 +21,7 @@ impl SortMarkByIndexAndPoint for [LineMark] {
     fn sort_by_index_and_point(
         &mut self,
         parallel: bool,
-        reusable_buffer: &mut Vec<MaybeUninit<LineMark>>,
+        reusable_buffer: &mut Vec<LineMark>,
     ) {
         self.sort_by_one_key_then_by_and_buffer(
             parallel,
