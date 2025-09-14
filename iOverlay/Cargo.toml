@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "4.0.5"
+version = "4.0.6"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."
@@ -8,21 +8,20 @@ license = "MIT"
 repository = "https://github.com/iShape-Rust/iOverlay"
 readme = "README.md"
 
-keywords = ["polygon-boolean", "clipping", "intersection", "union", "buffering"]
 categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 
 [dependencies]
 i_float = { version = "~1.15.0" }
 i_shape = { version = "~1.14.0" }
 i_tree = { version = "~0.16.0" }
-i_key_sort = { version = "~0.10.0" }
+i_key_sort = { version = "~0.6.0" }
 
 #i_float = { path = "../../iFloat"}
 #i_shape = { path = "../../iShape"}
 #i_tree = { path = "../../iTree" }
-#i_key_sort = { path = "../../iKeySort/iKeySort" }
+#i_key_sort = { path = "../../iKeySort" }
 
-rayon = { optional = true, version = "^1.11" }
+rayon = { optional = true, version = "^1.10" }
 
 
 [features]
@@ -30,7 +29,7 @@ default = []
 
 glam = ["i_float/glam"]
 serde = ["i_float/serde", "i_shape/serde"]
-allow_multithreading = ["dep:rayon", "i_key_sort/allow_multithreading"]
+allow_multithreading = ["dep:rayon"]
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
