@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
@@ -24,7 +25,6 @@ impl SplitSolver {
             return self.tree_split(snap_radius, segments, solver);
         };
 
-        let mut reusable_buffer = Vec::new();
         let mut buffer = FragmentBuffer::new(layout);
 
         let mut need_to_fix = true;
@@ -66,7 +66,7 @@ impl SplitSolver {
             any_intersection = true;
             buffer.clear();
 
-            self.apply(segments, &mut reusable_buffer, solver);
+            self.apply(segments, solver);
 
             snap_radius.increment();
         }
@@ -93,7 +93,7 @@ impl SplitSolver {
             if group.is_empty() {
                 continue;
             }
-            let any_round = SplitSolver::bin_split(radius, group, &mut self.marks);
+            let any_round = Self::bin_split(radius, group, &mut self.marks);
             is_any_round = is_any_round || any_round;
         }
         is_any_round
@@ -132,10 +132,8 @@ impl SplitSolver {
             return false;
         }
 
-        if self.marks.capacity() < size {
-            let additional = size - self.marks.capacity();
-            self.marks.reserve(additional);
-        }
+        self.marks.clear();
+        self.marks.reserve(size);
 
         for mut result in results.into_iter() {
             self.marks.append(&mut result.marks);

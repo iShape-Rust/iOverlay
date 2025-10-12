@@ -37,8 +37,6 @@ impl SplitSolver {
             return self.list_split(snap_radius, segments, solver);
         };
 
-        let mut reusable_buffer = Vec::new();
-
         let mut need_to_fix = true;
         let mut any_intersection = false;
 
@@ -82,7 +80,7 @@ impl SplitSolver {
             any_intersection = true;
             tree.clear();
 
-            self.apply(segments, &mut reusable_buffer, solver);
+            self.apply(segments, solver);
 
             snap_radius.increment();
         }

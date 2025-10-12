@@ -18,8 +18,8 @@ impl OffsetOverlay {
     pub fn new(capacity: usize) -> Self {
         Self {
             segments: Vec::with_capacity(capacity),
-            split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountOffset, OverlayNode>::new()
+            split_solver: Default::default(),
+            graph_builder: GraphBuilder::new(),
         }
     }
 
@@ -38,13 +38,13 @@ impl OffsetOverlay {
     pub fn with_segments(segments: Vec<Segment<ShapeCountOffset>>) -> Self {
         Self {
             segments,
-            split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountOffset, OverlayNode>::new()
+            split_solver: Default::default(),
+            graph_builder: GraphBuilder::new()
         }
     }
 
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, solver: Solver) -> Option<OffsetGraph> {
+    pub fn build_graph_view_with_solver(&mut self, solver: Solver) -> Option<OffsetGraph<'_>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return None;

@@ -160,16 +160,18 @@ mod tests {
     fn print_json(index: usize, fill_rule: FillRule) {
         let test = BooleanTest::load(index);
         let mut overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
-        let mut buffer = overlay.boolean_buffer.take().unwrap_or_default();
+
+        let mut extraction_buffer = overlay.extraction_buffer.take().unwrap_or_default();
+
         let graph = overlay.build_graph_view(fill_rule).unwrap();
 
-        let subject = graph.extract_shapes(OverlayRule::Subject, &mut buffer);
-        let clip = graph.extract_shapes(OverlayRule::Clip, &mut buffer);
-        let union = graph.extract_shapes(OverlayRule::Union, &mut buffer);
-        let intersect = graph.extract_shapes(OverlayRule::Intersect, &mut buffer);
-        let difference = graph.extract_shapes(OverlayRule::Difference, &mut buffer);
-        let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference, &mut buffer);
-        let xor = graph.extract_shapes(OverlayRule::Xor, &mut buffer);
+        let subject = graph.extract_shapes(OverlayRule::Subject, &mut extraction_buffer);
+        let clip = graph.extract_shapes(OverlayRule::Clip, &mut extraction_buffer);
+        let union = graph.extract_shapes(OverlayRule::Union, &mut extraction_buffer);
+        let intersect = graph.extract_shapes(OverlayRule::Intersect, &mut extraction_buffer);
+        let difference = graph.extract_shapes(OverlayRule::Difference, &mut extraction_buffer);
+        let inverse_difference = graph.extract_shapes(OverlayRule::InverseDifference, &mut extraction_buffer);
+        let xor = graph.extract_shapes(OverlayRule::Xor, &mut extraction_buffer);
 
         println!(
             "\"fillRule\": {},",

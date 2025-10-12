@@ -107,7 +107,7 @@ impl Overlay {
             }
         }
 
-        let mut boolean_buffer = self.boolean_buffer.take().unwrap_or_default();
+        let mut extraction_buffer = self.extraction_buffer.take().unwrap_or_default();
 
         let result = self
             .graph_builder
@@ -118,9 +118,9 @@ impl Overlay {
                 &self.solver,
                 &self.segments,
             )
-            .extract_shapes(OverlayRule::Subject, &mut boolean_buffer);
+            .extract_shapes(OverlayRule::Subject, &mut extraction_buffer);
 
-        self.boolean_buffer = Some(boolean_buffer);
+        self.extraction_buffer = Some(extraction_buffer);
 
         Some(result)
     }
@@ -210,8 +210,6 @@ impl Overlay {
             }
         }
 
-        let mut boolean_buffer = self.boolean_buffer.take().unwrap_or_default();
-
         self
             .graph_builder
             .build_boolean_overlay(
@@ -221,9 +219,7 @@ impl Overlay {
                 &self.solver,
                 &self.segments,
             )
-            .extract_contours_into(OverlayRule::Subject, &mut boolean_buffer, flat_buffer);
-
-        self.boolean_buffer = Some(boolean_buffer);
+            .extract_contours_into(OverlayRule::Subject, &mut Default::default(), flat_buffer);
     }
 
     fn find_intersections(&mut self, contour: &[IntPoint]) -> bool {
@@ -233,17 +229,14 @@ impl Overlay {
             self.options.preserve_input_collinear,
         );
 
-        let split_modified = self
-            .split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        let split_modified = self.split_solver.split_segments(&mut self.segments, &self.solver);
 
         if split_modified || append_modified || self.segments.is_empty() {
             return false;
         }
-
-        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
-        let has_loops = self.graph_builder.test_contour_for_loops(contour, &mut buffer.points);
-        self.boolean_buffer = Some(buffer);
+        let mut extraction_buffer = self.extraction_buffer.take().unwrap_or_default();
+        let has_loops = self.graph_builder.test_contour_for_loops(contour, &mut extraction_buffer.points);
+        self.extraction_buffer = Some(extraction_buffer);
 
         !has_loops
     }

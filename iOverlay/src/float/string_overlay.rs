@@ -116,7 +116,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatStringGraph<P, T>> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatStringGraph<'_, P, T>> {
         self.build_graph_view_with_solver(fill_rule, Default::default())
     }
 
@@ -126,7 +126,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<FloatStringGraph<P, T>> {
+    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<FloatStringGraph<'_, P, T>> {
         let graph = self.overlay.build_graph_view_with_solver(fill_rule, solver)?;
         Some(FloatStringGraph { graph, adapter: self.adapter.clone() })
     }

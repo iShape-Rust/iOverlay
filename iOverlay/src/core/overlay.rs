@@ -2,8 +2,6 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
-use crate::build::builder::GraphBuilder;
-use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
@@ -11,13 +9,14 @@ use crate::i_shape::flat::buffer::FlatContoursBuffer;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
-use crate::split::solver::SplitSolver;
 use crate::vector::edge::{VectorEdge, VectorShape};
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
-
+use crate::build::builder::GraphBuilder;
+use crate::core::extract::BooleanExtractionBuffer;
+use crate::split::solver::SplitSolver;
 use super::graph::{OverlayGraph, OverlayNode};
 
 /// Configuration options for polygon Boolean operations using [`Overlay`].
@@ -61,10 +60,10 @@ pub enum ContourDirection {
 pub struct Overlay {
     pub solver: Solver,
     pub options: IntOverlayOptions,
-    pub boolean_buffer: Option<BooleanExtractionBuffer>,
-    pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
     pub(crate) split_solver: SplitSolver,
+    pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
     pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>,
+    pub extraction_buffer: Option<BooleanExtractionBuffer>,
 }
 
 impl Overlay {
@@ -75,10 +74,10 @@ impl Overlay {
         Self {
             solver: Default::default(),
             options: Default::default(),
-            boolean_buffer: Some(Default::default()),
+            split_solver: Default::default(),
             segments: Vec::with_capacity(capacity),
-            split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
+            extraction_buffer: None,
+            graph_builder: GraphBuilder::new(),
         }
     }
 
@@ -91,10 +90,10 @@ impl Overlay {
         Self {
             solver,
             options,
-            boolean_buffer: Some(Default::default()),
+            split_solver: Default::default(),
             segments: Vec::with_capacity(capacity),
-            split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
+            extraction_buffer: None,
+            graph_builder: GraphBuilder::new(),
         }
     }
 
@@ -256,8 +255,7 @@ impl Overlay {
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
     ) -> Vec<VectorShape> {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
@@ -275,8 +273,7 @@ impl Overlay {
     /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
     pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<VectorEdge> {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
@@ -288,9 +285,8 @@ impl Overlay {
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph> {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph<'_>> {
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return None;
         }
@@ -344,12 +340,11 @@ impl Overlay {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
-        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+        let mut extraction_buffer = self.extraction_buffer.take().unwrap_or_default();
         let shapes = self
             .graph_builder
             .build_boolean_overlay(
@@ -359,8 +354,10 @@ impl Overlay {
                 &self.solver,
                 &self.segments,
             )
-            .extract_shapes(overlay_rule, &mut buffer);
-        self.boolean_buffer = Some(buffer);
+            .extract_shapes(overlay_rule, &mut extraction_buffer);
+
+        self.extraction_buffer = Some(extraction_buffer);
+
         shapes
     }
 }

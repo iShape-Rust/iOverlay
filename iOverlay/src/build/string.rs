@@ -13,7 +13,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
                                     fill_rule: FillRule,
                                     solver: &Solver,
                                     segments: &[Segment<ShapeCountString>],
-    ) -> StringGraph {
+    ) -> StringGraph<'_> {
         self.build_string_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
         self.string_graph(solver)
@@ -25,7 +25,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
                                     clip_rule: ClipRule,
                                     solver: &Solver,
                                     segments: &[Segment<ShapeCountString>],
-    ) -> StringGraph {
+    ) -> StringGraph<'_> {
         self.build_string_fills(fill_rule, solver, segments);
         match clip_rule {
             ClipRule {
@@ -59,7 +59,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
     }
 
     #[inline]
-    fn string_graph(&mut self, solver: &Solver) -> StringGraph {
+    fn string_graph(&mut self, solver: &Solver) -> StringGraph<'_> {
         self.build_nodes_and_connect_links(solver);
         StringGraph {
             nodes: &self.nodes,

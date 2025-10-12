@@ -8,20 +8,15 @@ use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::line_mark::{LineMark, SortMarkByIndexAndPoint};
 use alloc::vec::Vec;
 
-#[derive(Clone)]
+#[derive(Default)]
 pub(crate) struct SplitSolver {
     pub(super) marks: Vec<LineMark>,
+    pub(super) buffer: Vec<LineMark>,
 }
 
 impl SplitSolver {
-    #[inline(always)]
-    pub(crate) fn new() -> Self {
-        Self { marks: Vec::new() }
-    }
-
     #[inline]
-    pub(crate) fn split_segments<C: WindingCount>(
-        &mut self,
+    pub(crate) fn split_segments<C: WindingCount>(&mut self,
         segments: &mut Vec<Segment<C>>,
         solver: &Solver,
     ) -> bool {
@@ -31,6 +26,7 @@ impl SplitSolver {
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
         let any_merged = segments.merge_if_needed();
+
         let any_intersection = self.split(segments, solver);
 
         any_merged | any_intersection
@@ -38,6 +34,7 @@ impl SplitSolver {
 
     #[inline]
     fn split<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, solver: &Solver) -> bool {
+        self.clear();
         let is_list = solver.is_list_split(segments);
         let snap_radius = solver.snap_radius();
         if is_list {
@@ -132,11 +129,9 @@ impl SplitSolver {
     pub(super) fn apply<C: WindingCount>(
         &mut self,
         segments: &mut Vec<Segment<C>>,
-        reusable_buffer: &mut Vec<LineMark>,
         solver: &Solver,
     ) {
-        self.marks
-            .sort_by_index_and_point(solver.is_parallel_sort_allowed(), reusable_buffer);
+        self.marks.sort_by_index_and_point(solver.is_parallel_sort_allowed(), &mut self.buffer);
         self.marks.dedup();
 
         segments.reserve(self.marks.len());
@@ -241,5 +236,11 @@ impl SplitSolver {
             // reverse the order to sort the range in descending order by the y-coordinate.
             marks.reverse();
         }
+    }
+
+    #[inline]
+    fn clear(&mut self) {
+        self.marks.clear();
+        self.buffer.clear();
     }
 }

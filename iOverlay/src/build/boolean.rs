@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use i_shape::util::reserve::Reserve;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::graph::OverlayNode;
@@ -20,7 +19,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
                                     options: IntOverlayOptions,
                                     solver: &Solver,
                                     segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph {
+    ) -> OverlayGraph<'_> {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
         self.boolean_graph(options, solver)
@@ -33,7 +32,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
                                         options: IntOverlayOptions,
                                         solver: &Solver,
                                         segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph {
+    ) -> OverlayGraph<'_> {
         self.build_boolean_fills(fill_rule, solver, segments);
         match overlay_rule {
             OverlayRule::Subject => self.build_links_by_filter::<SubjectFilter>(segments),
@@ -58,7 +57,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     }
 
     #[inline]
-    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph {
+    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph<'_> {
         self.build_nodes_and_connect_links(solver);
         OverlayGraph {
             nodes: &self.nodes,
@@ -342,7 +341,7 @@ fn filter_xor(links: &[OverlayLink]) -> Vec<bool> {
 #[inline]
 fn filter_subject_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_subject());
     }
@@ -351,7 +350,7 @@ fn filter_subject_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
 #[inline]
 fn filter_clip_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_clip());
     }
@@ -360,7 +359,7 @@ fn filter_clip_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
 #[inline]
 fn filter_intersect_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_intersect());
     }
@@ -369,7 +368,7 @@ fn filter_intersect_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
 #[inline]
 fn filter_union_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_union());
     }
@@ -378,7 +377,7 @@ fn filter_union_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
 #[inline]
 fn filter_difference_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_difference());
     }
@@ -387,7 +386,7 @@ fn filter_difference_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
 #[inline]
 fn filter_inverse_difference_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_inverse_difference());
     }
@@ -396,7 +395,7 @@ fn filter_inverse_difference_into(links: &[OverlayLink], buffer: &mut Vec<bool>)
 #[inline]
 fn filter_xor_into(links: &[OverlayLink], buffer: &mut Vec<bool>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(!link.fill.is_xor());
     }

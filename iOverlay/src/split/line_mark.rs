@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::one_key_cmp::OneKeyAndCmpSort;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Default)]
 pub(super) struct LineMark {
     pub(super) index: usize,
     pub(super) point: IntPoint,
