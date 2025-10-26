@@ -55,17 +55,10 @@ impl VSegment {
     }
 }
 
-impl From<VSegment> for XSegment {
-    #[inline(always)]
-    fn from(seg: VSegment) -> Self {
-        unsafe { mem::transmute(seg) }
-    }
-}
-
 impl From<XSegment> for VSegment {
     #[inline(always)]
     fn from(seg: XSegment) -> Self {
-        unsafe { mem::transmute(seg) }
+        VSegment { a: seg.a, b: seg.b }
     }
 }
 
