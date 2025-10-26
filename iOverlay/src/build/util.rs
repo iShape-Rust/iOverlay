@@ -10,29 +10,20 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         contour: &[IntPoint],
         buffer: &mut Vec<IntPoint>,
     ) -> bool {
-        if contour.len() < 64 {
-            let n = contour.len();
-            if n > 1 {
-                for i in 0..n - 1 {
-                    let a = unsafe { contour.get_unchecked(i) };
-                    for j in i + 1..n {
-                        let b = unsafe { contour.get_unchecked(j) };
-                        if a == b {
-                            return true;
-                        }
-                    }
-                }
-            }
-        } else {
-            buffer.clear();
-            buffer.extend_from_slice(contour);
-            buffer.sort_by_two_keys(false, |p| p.x, |p| p.y);
-            for w in buffer.windows(2) {
-                if w[0] == w[1] {
+        let n = contour.len();
+        if n < 64 {
+            for (i, a) in contour[..n.saturating_sub(1)].iter().enumerate() {
+                if contour[i + 1..].contains(a) {
                     return true;
                 }
             }
+            return false;
         }
-        false
+
+        buffer.clear();
+        buffer.extend_from_slice(contour);
+        buffer.sort_by_two_keys(false, |p| p.x, |p| p.y);
+
+        buffer.windows(2).any(|w| w[0] == w[1])
     }
 }

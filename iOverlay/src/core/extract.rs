@@ -1,15 +1,15 @@
-use alloc::vec;
-use alloc::vec::Vec;
-use crate::i_shape::flat::buffer::FlatContoursBuffer;
-use crate::core::link::OverlayLinkFilter;
 use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::graph::{OverlayGraph, OverlayNode};
 use crate::core::link::OverlayLink;
+use crate::core::link::OverlayLinkFilter;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::ContourDirection;
 use crate::geom::v_segment::VSegment;
+use crate::i_shape::flat::buffer::FlatContoursBuffer;
+use alloc::vec;
+use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_shape::int::path::ContourExtension;
@@ -20,7 +20,7 @@ use i_shape::util::reserve::Reserve;
 #[derive(Default)]
 pub struct BooleanExtractionBuffer {
     pub(crate) points: Vec<IntPoint>,
-    pub(crate) visited: Vec<bool>
+    pub(crate) visited: Vec<bool>,
 }
 
 impl OverlayGraph<'_> {
@@ -36,8 +36,13 @@ impl OverlayGraph<'_> {
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline]
-    pub fn extract_shapes(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer) -> IntShapes {
-        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+    pub fn extract_shapes(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer,
+    ) -> IntShapes {
+        self.links
+            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         self.extract(overlay_rule, buffer)
     }
 
@@ -53,8 +58,14 @@ impl OverlayGraph<'_> {
     /// - `buffer`: Reusable working buffer to avoid reallocations.
     /// - `output`: A flat buffer to which the resulting valid contours will be written.
     #[inline]
-    pub fn extract_contours_into(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer, output: &mut FlatContoursBuffer) {
-        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+    pub fn extract_contours_into(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer,
+        output: &mut FlatContoursBuffer,
+    ) {
+        self.links
+            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         self.extract_contours(overlay_rule, buffer, output);
     }
 
@@ -79,16 +90,26 @@ impl OverlayGraph<'_> {
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited);
-            let link = unsafe { self.links.get_unchecked(left_top_link) };
+            let left_top_link = unsafe {
+                // Safety: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
+                GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited)
+            };
+
+            let link = unsafe {
+                // Safety: `left_top_link` originates from `find_left_top_link`, which only returns
+                // indices in 0..self.links.len(), so this lookup cannot go out of bounds.
+                self.links.get_unchecked(left_top_link)
+            };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
             self.find_contour(&start_data, direction, buffer);
-            let (is_valid, is_modified) =
-                buffer.points.validate(self.options.min_output_area, self.options.preserve_output_collinear);
+            let (is_valid, is_modified) = buffer.points.validate(
+                self.options.min_output_area,
+                self.options.preserve_output_collinear,
+            );
 
             if !is_valid {
                 link_index += 1;
@@ -160,7 +181,11 @@ impl OverlayGraph<'_> {
                 &buffer.visited,
             );
 
-            let link = unsafe { self.links.get_unchecked(link_id) };
+            let link = unsafe {
+                // Safety: `link_id` is always derived from a previous in-bounds index or
+                // from `find_left_top_link`, so it remains in `0..self.links.len()`.
+                self.links.get_unchecked(link_id)
+            };
             node_id = buffer.points.push_node_and_get_other(link, node_id);
 
             buffer.visited.visit(link_id);
@@ -171,7 +196,7 @@ impl OverlayGraph<'_> {
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-        output: &mut FlatContoursBuffer
+        output: &mut FlatContoursBuffer,
     ) {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         let len = buffer.visited.len();
@@ -185,16 +210,26 @@ impl OverlayGraph<'_> {
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited);
-            let link = unsafe { self.links.get_unchecked(left_top_link) };
+            let left_top_link = unsafe {
+                // Safety: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
+                GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited)
+            };
+
+            let link = unsafe {
+                // Safety: `left_top_link` originates from `find_left_top_link`, which only returns
+                // indices in 0..self.links.len(), so this lookup cannot go out of bounds.
+                self.links.get_unchecked(left_top_link)
+            };
             let is_hole = overlay_rule.is_fill_top(link.fill);
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
             self.find_contour(&start_data, direction, buffer);
-            let (is_valid, _) =
-                buffer.points.validate(self.options.min_output_area, self.options.preserve_output_collinear);
+            let (is_valid, _) = buffer.points.validate(
+                self.options.min_output_area,
+                self.options.preserve_output_collinear,
+            );
 
             if !is_valid {
                 link_index += 1;
@@ -280,6 +315,9 @@ pub(crate) trait Visit {
     fn visit(&mut self, index: usize);
 }
 
+// Safety: every call site creates `visited` slices with one entry per link/node,
+// and they only pass indices directly obtained from those slices. That keeps
+// `index < self.len()` true for the lifetime of the traversal.
 impl Visit for [bool] {
     #[inline(always)]
     fn is_visited(&self, index: usize) -> bool {
@@ -300,12 +338,26 @@ impl Visit for [bool] {
 pub(crate) struct GraphUtil;
 
 impl GraphUtil {
-
+    /// # Safety
+    /// * `link_index < links.len()`
+    /// * `links[top.a.id]` must exist for every link
+    /// * For bridge nodes, both `bridge[k] < links.len()`
+    /// * `visited` is at least `links.len()` long (or whatever invariant applies)
     #[inline]
-    pub(crate) fn find_left_top_link(links: &[OverlayLink], nodes: &[OverlayNode], link_index: usize, visited: &[bool]) -> usize {
+    pub(crate) unsafe fn find_left_top_link(
+        links: &[OverlayLink],
+        nodes: &[OverlayNode],
+        link_index: usize,
+        visited: &[bool],
+    ) -> usize {
         let top = unsafe { links.get_unchecked(link_index) };
+        let node = unsafe {
+            // Safety: GraphBuilder assigns `a.id` from the index in the `nodes` vector,
+            // so every `id` is guaranteed to lie in 0..nodes.len().
+            nodes.get_unchecked(top.a.id)
+        };
+
         debug_assert!(top.is_direct());
-        let node = unsafe { nodes.get_unchecked(top.a.id) };
 
         match node {
             OverlayNode::Bridge(bridge) => Self::find_left_top_link_on_bridge(links, bridge),
@@ -352,8 +404,14 @@ impl GraphUtil {
 
     #[inline(always)]
     fn find_left_top_link_on_bridge(links: &[OverlayLink], bridge: &[usize; 2]) -> usize {
-        let l0 = unsafe { links.get_unchecked(bridge[0]) };
-        let l1 = unsafe { links.get_unchecked(bridge[1]) };
+        // Safety: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
+        // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
+        let (l0, l1) = unsafe {
+            (
+                links.get_unchecked(bridge[0]),
+                links.get_unchecked(bridge[1]),
+            )
+        };
         if Triangle::is_clockwise_point(l0.a.point, l0.b.point, l1.b.point) {
             bridge[0]
         } else {
@@ -370,7 +428,11 @@ impl GraphUtil {
         clockwise: bool,
         visited: &[bool],
     ) -> usize {
-        let node = unsafe { nodes.get_unchecked(node_id) };
+        let node = unsafe {
+            // Safety: all node ids flowing through traversal originate from GraphBuilder,
+            // hence are within `0..nodes.len()`.
+            nodes.get_unchecked(node_id)
+        };
         match node {
             OverlayNode::Bridge(bridge) => {
                 if bridge[0] == link_id {
@@ -379,12 +441,15 @@ impl GraphUtil {
                     bridge[0]
                 }
             }
-            OverlayNode::Cross(indices) => {
-                GraphUtil::find_nearest_link_to(links, link_id, node_id, clockwise, indices, visited)
-            }
+            OverlayNode::Cross(indices) => GraphUtil::find_nearest_link_to(
+                links, link_id, node_id, clockwise, indices, visited,
+            ),
         }
     }
 
+    // Assumes: `indices` comes from an OverlayNode::Cross built by GraphBuilder,
+    // so every element is a valid index into `links`, and at least one of them is
+    // still unvisited when we enter. The unchecked accesses rely on that invariant.
     #[inline]
     fn find_nearest_link_to(
         links: &[OverlayLink],
@@ -415,7 +480,11 @@ impl GraphUtil {
             return first_index;
         }
 
-        let target = unsafe { links.get_unchecked(target_index) };
+        let target = unsafe {
+            // Safety: `target_index` is either the caller’s `link_id` (already in range) or
+            // one of the `indices` entries, guaranteed valid.
+            links.get_unchecked(target_index)
+        };
         let (c, a) = if target.a.id == node_id {
             (target.a.point, target.b.point)
         } else {
@@ -423,16 +492,35 @@ impl GraphUtil {
         };
 
         // more the one vectors
-        let b = unsafe { links.get_unchecked(first_index) }.other(node_id).point;
+        let b = unsafe {
+            // Safety: `first_index` comes from `indices`, which only holds valid link ids.
+            links.get_unchecked(first_index)
+        }
+        .other(node_id)
+        .point;
         let mut vector_solver = NearestVector::new(c, a, b, first_index, clockwise);
 
         // add second vector
-        vector_solver.add(unsafe { links.get_unchecked(second_index) }.other(node_id).point, second_index);
+        vector_solver.add(
+            unsafe {
+                // Safety: `second_index` is also pulled from `indices`.
+                links.get_unchecked(second_index)
+            }
+            .other(node_id)
+            .point,
+            second_index,
+        );
 
         // check the rest vectors
         for &link_index in indices.iter().skip(pos + 1) {
             if visited.is_not_visited(link_index) {
-                let p = unsafe { links.get_unchecked(link_index) }.other(node_id).point;
+                let p = unsafe {
+                    // Safety: every `link_index` produced by iterating `indices` stays within
+                    // `0..links.len()`.
+                    links.get_unchecked(link_index)
+                }
+                .other(node_id)
+                .point;
                 vector_solver.add(p, link_index);
             }
         }

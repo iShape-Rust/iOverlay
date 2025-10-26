@@ -38,7 +38,10 @@ impl OffsetGraph<'_> {
                 continue;
             }
 
-            let left_top_link = GraphUtil::find_left_top_link(self.links, self.nodes, link_index, visited);
+            let left_top_link = unsafe {
+                // Safety: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
+                GraphUtil::find_left_top_link(self.links, self.nodes, link_index, visited)
+            };
             let link = self.link(left_top_link);
             let is_hole = link.fill & SUBJ_TOP == SUBJ_TOP;
             let mut bold = link.is_bold();

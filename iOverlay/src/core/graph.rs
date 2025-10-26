@@ -2,10 +2,10 @@
 //! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
 //! based on the overlay rule applied.
 
-use alloc::vec::Vec;
 use super::link::OverlayLink;
 use crate::build::builder::GraphNode;
 use crate::core::overlay::IntOverlayOptions;
+use alloc::vec::Vec;
 
 /// A representation of geometric shapes organized for efficient boolean operations.
 ///
@@ -29,7 +29,7 @@ impl GraphNode for OverlayNode {
     #[inline]
     fn with_indices(indices: &[usize]) -> Self {
         if indices.len() == 2 {
-            Self::Bridge(unsafe { [*indices.get_unchecked(0), *indices.get_unchecked(1)] })
+            Self::Bridge([indices[0], indices[1]])
         } else {
             Self::Cross(indices.to_vec())
         }
