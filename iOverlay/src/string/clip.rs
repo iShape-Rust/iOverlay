@@ -32,7 +32,7 @@ impl StringGraph<'_> {
         let mut link_index = 0;
         let mut sub_path = Vec::new();
         while link_index < links.len() {
-            let link = unsafe { links.get_unchecked_mut(link_index) };
+            let link = &mut links[link_index];
             let fill = link.fill & CLIP_ALL;
             if fill == 0 {
                 link_index += 1;
@@ -61,9 +61,15 @@ impl StringGraph<'_> {
 
     #[inline]
     fn find_next_point(nodes: &[Vec<usize>], links: &mut [OverlayLink], a: IdPoint, is_out_node: bool) -> Option<IdPoint> {
-        let node = unsafe { nodes.get_unchecked(a.id) };
+        let node = unsafe {
+            // SAFETY: a.id comes from an existing link endpoint, so it indexes nodes.
+            nodes.get_unchecked(a.id)
+        };
         for &index in node.iter() {
-            let link = unsafe { links.get_unchecked_mut(index) };
+            let link = unsafe {
+                // SAFETY: adjacency lists contain link indices built by GraphBuilder; each index < links.len().
+                links.get_unchecked_mut(index)
+            };
             let b = link.other(a.id);
             let is_forward = is_out_node == (a.point > b.point);
             let is_move_possible = link.visit_if_possible(is_forward);

@@ -1,5 +1,3 @@
-use alloc::vec;
-use alloc::vec::Vec;
 use crate::bind::solver::JoinHoles;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions};
@@ -7,6 +5,8 @@ use crate::segm::segment::SUBJ_TOP;
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use crate::string::split::{BinStore, Split};
+use alloc::vec;
+use alloc::vec::Vec;
 use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
 
@@ -22,10 +22,7 @@ impl StringGraph<'_> {
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
     pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
-        self.extract_shapes_custom(
-            string_rule,
-            Default::default(),
-        )
+        self.extract_shapes_custom(string_rule, Default::default())
     }
 
     /// Extracts shapes from the graph with a minimum area constraint.
@@ -47,8 +44,8 @@ impl StringGraph<'_> {
     ) -> IntShapes {
         let clockwise = options.output_direction == ContourDirection::Clockwise;
         let mut fills = self.filter(string_rule);
-        let mut shapes= Vec::new();
-        let mut holes= Vec::new();
+        let mut shapes = Vec::new();
+        let mut holes = Vec::new();
 
         let mut contour_buffer = Vec::new();
         let mut bin_store = BinStore::new();
@@ -70,7 +67,8 @@ impl StringGraph<'_> {
                 let order = path.is_clockwise_ordered();
                 let is_hole = order == direction;
                 if is_hole {
-                    if clockwise == order { // clockwise == direction
+                    if clockwise == order {
+                        // clockwise == direction
                         path.reverse();
                     }
                     holes.push(path);
@@ -90,7 +88,10 @@ impl StringGraph<'_> {
 
     #[inline]
     fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath {
-        let start_link = self.link(start_index);
+        let start_link = unsafe {
+            // SAFETY: start_index originates from iterating the fills array, which mirrors links.
+            self.links.get_unchecked(start_index)
+        };
 
         let mut link_id = start_index;
         let mut node_id = start_link.b.id;
@@ -103,10 +104,12 @@ impl StringGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-
             link_id = self.find_nearest_link_to(link_id, node_id, clockwise, fills);
 
-            let link = self.link(link_id);
+            let link = unsafe {
+                // SAFETY: link_id comes from find_nearest_link_to, which only yields valid link indices.
+                self.links.get_unchecked(link_id)
+            };
             fills[link_id] = link.visit_fill(fills[link_id], node_id, clockwise);
 
             node_id = if link.a.id == node_id {
@@ -128,7 +131,10 @@ impl StringGraph<'_> {
         clockwise: bool,
         fills: &[u8],
     ) -> usize {
-        let indices = self.node(node_id);
+        let indices = unsafe {
+            // SAFETY: node_id comes from an endpoint of an existing link, so it indexes nodes.
+            self.nodes.get_unchecked(node_id)
+        };
         let mut is_first = true;
         let mut first_index = usize::MAX;
         let mut second_index = usize::MAX;
@@ -137,7 +143,11 @@ impl StringGraph<'_> {
             if link_index == target_index {
                 continue;
             }
-            if self.link(link_index).is_move_possible(fills[link_index], node_id, clockwise) {
+            let (link, fill) = unsafe {
+                // SAFETY: link_index comes from the adjacency list; fills shares the same length as links.
+                (self.links.get_unchecked(link_index), *fills.get_unchecked(link_index))
+            };
+            if link.is_move_possible(fill, node_id, clockwise) {
                 if is_first {
                     first_index = link_index;
                     is_first = false;
@@ -150,7 +160,11 @@ impl StringGraph<'_> {
         }
 
         if first_index == usize::MAX {
-            if self.link(target_index).is_move_possible(fills[target_index], node_id, clockwise) {
+            let (link, fill) = unsafe {
+                // SAFETY: target_index is the caller's current link id, so it is within bounds for both arrays.
+                (self.links.get_unchecked(target_index), *fills.get_unchecked(target_index))
+            };
+            if link.is_move_possible(fill, node_id, clockwise) {
                 return target_index;
             } else {
                 panic!("no move found")
@@ -161,7 +175,11 @@ impl StringGraph<'_> {
             return first_index;
         }
 
-        let target = self.link(target_index);
+
+        let target = unsafe {
+            // SAFETY: target_index is either target_index or first_index; both were validated above.
+            self.links.get_unchecked(target_index)
+        };
         let (c, a) = if target.a.id == node_id {
             (target.a.point, target.b.point)
         } else {
@@ -169,16 +187,31 @@ impl StringGraph<'_> {
         };
 
         // more the one vectors
-        let b = self.link(first_index).other(node_id).point;
+        let b = unsafe {
+            // SAFETY: first_index came from indices, so it indexes links.
+            self.links.get_unchecked(first_index)
+        }
+        .other(node_id)
+        .point;
         let mut vector_solver = NearestVector::new(c, a, b, first_index, clockwise);
 
         // add second vector
-        vector_solver.add(self.link(second_index).other(node_id).point, second_index);
+        let point = unsafe {
+            // SAFETY: second_index is also sourced from indices, matching links' bounds.
+            self.links.get_unchecked(second_index)
+        }
+        .other(node_id)
+        .point;
+        vector_solver.add(point, second_index);
 
         // check the rest vectors
         for &link_index in indices.iter().skip(pos + 1) {
-            if self.link(link_index).is_move_possible(fills[link_index], node_id, clockwise) {
-                let p = self.link(link_index).other(node_id).point;
+            let (link, fill) = unsafe {
+                // SAFETY: link_index traverses the same adjacency slice; indices and arrays are aligned.
+                (self.links.get_unchecked(link_index), *fills.get_unchecked(link_index))
+            };
+            if link.is_move_possible(fill, node_id, clockwise) {
+                let p = link.other(node_id).point;
                 vector_solver.add(p, link_index);
             }
         }
@@ -189,12 +222,12 @@ impl StringGraph<'_> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
     use crate::core::fill_rule::FillRule;
-    use crate::string::slice::IntSlice;
-    use i_float::int::point::IntPoint;
     use crate::string::overlay::StringOverlay;
     use crate::string::rule::StringRule;
+    use crate::string::slice::IntSlice;
+    use alloc::vec;
+    use i_float::int::point::IntPoint;
 
     #[test]
     fn test_0() {
@@ -248,14 +281,12 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let paths = vec![
-            vec![
-                IntPoint::new(-10, 10),
-                IntPoint::new(-10, -10),
-                IntPoint::new(10, -10),
-                IntPoint::new(10, 10),
-            ],
-        ];
+        let paths = vec![vec![
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, -10),
+            IntPoint::new(10, -10),
+            IntPoint::new(10, 10),
+        ]];
 
         let window = vec![
             IntPoint::new(-5, -5),
@@ -268,10 +299,7 @@ mod tests {
         overlay.add_string_contour(&window);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
 
-        let r = graph.extract_shapes_custom(
-            StringRule::Slice,
-            Default::default(),
-        );
+        let r = graph.extract_shapes_custom(StringRule::Slice, Default::default());
 
         assert_eq!(r.len(), 2);
     }

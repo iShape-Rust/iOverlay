@@ -100,9 +100,15 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
             let mut fill: SegmentFill;
 
             for se in node.iter() {
-                let sid = unsafe { segments.get_unchecked(se.index) };
+                let sid = unsafe {
+                    // SAFETY: `se.index` was produced from `i` while iterating i ∈ [0, n) over `segments`
+                    segments.get_unchecked(se.index)
+                };
                 (sum_count, fill) = F::add_and_fill(sid.count, sum_count);
-                unsafe { *self.fills.get_unchecked_mut(se.index) = fill }
+                unsafe {
+                    // SAFETY: `se.index` was produced from `i` while iterating i ∈ [0, n) over `segments` and segments.len == self.fills.len
+                    *self.fills.get_unchecked_mut(se.index) = fill
+                }
                 if sid.x_segment.is_not_vertical() {
                     scan_list.insert(sid.x_segment.into(), sum_count, p.x);
                 }

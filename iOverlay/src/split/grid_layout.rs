@@ -53,6 +53,11 @@ impl FragmentBuffer {
 
     #[inline]
     fn insert(&mut self, fragment: Fragment, bin_index: usize) {
+        debug_assert!(bin_index < self.groups.len());
+        // SAFETY: `bin_index` is produced by GridLayout::index(...) on coordinates clamped to
+        // [min_x, max_x]. We sized `groups` to `index(max_x) + 1` in `new`, so
+        // bin_index < groups.len() always holds (see callers). We take a unique &mut to the slot
+        // and only push into the inner Vec<Fragment>, which cannot reallocate `self.groups`.
         unsafe { self.groups.get_unchecked_mut(bin_index) }.push(fragment);
     }
 

@@ -321,17 +321,26 @@ pub(crate) trait Visit {
 impl Visit for [bool] {
     #[inline(always)]
     fn is_visited(&self, index: usize) -> bool {
-        unsafe { *self.get_unchecked(index) }
+        unsafe {
+            // SAFETY: callers only pass indices derived from the visited slice itself, so index < len.
+            *self.get_unchecked(index)
+        }
     }
 
     #[inline(always)]
     fn is_not_visited(&self, index: usize) -> bool {
-        !unsafe { *self.get_unchecked(index) }
+        !unsafe {
+            // SAFETY: same invariant as is_visited — index is guaranteed to address the slice.
+            *self.get_unchecked(index)
+        }
     }
 
     #[inline(always)]
     fn visit(&mut self, index: usize) {
-        unsafe { *self.get_unchecked_mut(index) = true }
+        unsafe {
+            // SAFETY: index is in-bounds and we only ever take one mutable reference to that slot.
+            *self.get_unchecked_mut(index) = true
+        }
     }
 }
 
@@ -350,9 +359,13 @@ impl GraphUtil {
         link_index: usize,
         visited: &[bool],
     ) -> usize {
-        let top = unsafe { links.get_unchecked(link_index) };
+        let top = unsafe {
+            // SAFETY: link_index is always < links.len(); callers either iterate that range or
+            // pull the value from visited, which mirrors links.
+            links.get_unchecked(link_index)
+        };
         let node = unsafe {
-            // Safety: GraphBuilder assigns `a.id` from the index in the `nodes` vector,
+            // SAFETY: GraphBuilder assigns `a.id` from the index in the `nodes` vector,
             // so every `id` is guaranteed to lie in 0..nodes.len().
             nodes.get_unchecked(top.a.id)
         };
@@ -384,7 +397,10 @@ impl GraphUtil {
             if i == link_index {
                 continue;
             }
-            let link = unsafe { links.get_unchecked(i) };
+            let link = unsafe {
+                // SAFETY: indices holds link ids emitted by GraphBuilder, so each i < links.len().
+                links.get_unchecked(i)
+            };
             if !link.is_direct()
                 || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point)
             {
@@ -404,7 +420,7 @@ impl GraphUtil {
 
     #[inline(always)]
     fn find_left_top_link_on_bridge(links: &[OverlayLink], bridge: &[usize; 2]) -> usize {
-        // Safety: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
+        // SAFETY: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
         // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
         let (l0, l1) = unsafe {
             (
@@ -429,7 +445,7 @@ impl GraphUtil {
         visited: &[bool],
     ) -> usize {
         let node = unsafe {
-            // Safety: all node ids flowing through traversal originate from GraphBuilder,
+            // SAFETY: all node ids flowing through traversal originate from GraphBuilder,
             // hence are within `0..nodes.len()`.
             nodes.get_unchecked(node_id)
         };
@@ -481,8 +497,7 @@ impl GraphUtil {
         }
 
         let target = unsafe {
-            // Safety: `target_index` is either the caller’s `link_id` (already in range) or
-            // one of the `indices` entries, guaranteed valid.
+            // SAFETY: target_index is either the incoming link_id or an entry from indices, both validated.
             links.get_unchecked(target_index)
         };
         let (c, a) = if target.a.id == node_id {
@@ -493,7 +508,7 @@ impl GraphUtil {
 
         // more the one vectors
         let b = unsafe {
-            // Safety: `first_index` comes from `indices`, which only holds valid link ids.
+            // SAFETY: first_index originates from indices, so it is within links.
             links.get_unchecked(first_index)
         }
         .other(node_id)
@@ -503,7 +518,7 @@ impl GraphUtil {
         // add second vector
         vector_solver.add(
             unsafe {
-                // Safety: `second_index` is also pulled from `indices`.
+                // SAFETY: second_index comes from indices just like first_index.
                 links.get_unchecked(second_index)
             }
             .other(node_id)
@@ -515,8 +530,7 @@ impl GraphUtil {
         for &link_index in indices.iter().skip(pos + 1) {
             if visited.is_not_visited(link_index) {
                 let p = unsafe {
-                    // Safety: every `link_index` produced by iterating `indices` stays within
-                    // `0..links.len()`.
+                    // SAFETY: every link_index here is sourced from indices, so it addresses links.
                     links.get_unchecked(link_index)
                 }
                 .other(node_id)

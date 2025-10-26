@@ -4,7 +4,7 @@ use i_shape::int::shape::{IntContour, IntShapes};
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::extract::{GraphUtil, StartPathData, GraphContour, Visit};
-use crate::core::link::{OverlayLink, OverlayLinkFilter};
+use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
@@ -39,10 +39,15 @@ impl OffsetGraph<'_> {
             }
 
             let left_top_link = unsafe {
-                // Safety: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
+                // SAFETY: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
                 GraphUtil::find_left_top_link(self.links, self.nodes, link_index, visited)
             };
-            let link = self.link(left_top_link);
+
+            let link = unsafe {
+                // SAFETY: `left_top_link` originates from `find_left_top_link`, which only returns
+                // indices in 0..self.links.len(), so this lookup cannot go out of bounds.
+                self.links.get_unchecked(left_top_link)
+            };
             let is_hole = link.fill & SUBJ_TOP == SUBJ_TOP;
             let mut bold = link.is_bold();
             let direction = is_hole == clockwise;
@@ -127,7 +132,11 @@ impl OffsetGraph<'_> {
                 visited,
             );
 
-            let link = unsafe { self.links.get_unchecked(link_id) };
+            let link = unsafe {
+                // SAFETY: `link_id` is always derived from a previous in-bounds index or
+                // from `find_left_top_link`, so it remains in `0..self.links.len()`.
+                self.links.get_unchecked(link_id)
+            };
             *bold = *bold || link.is_bold();
 
             node_id = contour.push_node_and_get_other(link, node_id);
@@ -136,10 +145,5 @@ impl OffsetGraph<'_> {
         }
 
         contour
-    }
-
-    #[inline(always)]
-    fn link(&self, index: usize) -> &OverlayLink {
-        unsafe { self.links.get_unchecked(index) }
     }
 }

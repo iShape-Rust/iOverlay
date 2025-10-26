@@ -1,17 +1,27 @@
-use i_shape::int::path::ContourExtension;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
+use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::IntContour;
 use i_shape::util::reserve::Reserve;
 
 pub(super) trait Split {
-    fn split_loops(self, min_area: u64, contour_buffer: &mut IntContour, bin_store: &mut BinStore) -> Vec<Self>
+    fn split_loops(
+        self,
+        min_area: u64,
+        contour_buffer: &mut IntContour,
+        bin_store: &mut BinStore,
+    ) -> Vec<Self>
     where
         Self: Sized;
 }
 
 impl Split for IntContour {
-    fn split_loops(self, min_area: u64, contour_buffer: &mut IntContour, bin_store: &mut BinStore) -> Vec<Self> {
+    fn split_loops(
+        self,
+        min_area: u64,
+        contour_buffer: &mut IntContour,
+        bin_store: &mut BinStore,
+    ) -> Vec<Self> {
         if self.is_empty() {
             return Vec::new();
         }
@@ -86,13 +96,22 @@ impl BinStore {
         self.bins.resize(bins_count, Bin { offset: 0, data: 0 });
 
         self.items.clear();
-        self.items.resize(contour.len(), PointItem { point: IntPoint::EMPTY, pos: 0 });
+        self.items.resize(
+            contour.len(),
+            PointItem {
+                point: IntPoint::EMPTY,
+                pos: 0,
+            },
+        );
 
         self.mask = bins_count.wrapping_sub(1) as u32;
 
         for &p in contour.iter() {
             let index = self.bin_index(p);
-            unsafe { self.bins.get_unchecked_mut(index).data += 1 };
+            unsafe {
+                // SAFETY: bin_index comes from bin_index(point); mask == bins_count - 1 with bins sized to bins_count, so this lookup is always in-bounds.
+                self.bins.get_unchecked_mut(index).data += 1
+            };
         }
 
         let mut offset = 0;
@@ -109,17 +128,26 @@ impl BinStore {
     #[inline]
     fn insert_if_not_exist(&mut self, point: IntPoint, pos: usize) -> usize {
         let index = self.bin_index(point);
-        let bin = unsafe { self.bins.get_unchecked_mut(index) };
+        let bin = unsafe {
+            // SAFETY: insert_if_not_exist only touches bins within the pre-sized array; bin_index shares the same invariant.
+            self.bins.get_unchecked_mut(index)
+        };
         let start = bin.offset;
         let end = bin.data;
         for i in start..end {
-            let item = unsafe { self.items.get_unchecked_mut(i) };
+            let item = unsafe {
+                // SAFETY: items is pre-resized to contour.len(); start..end stays inside that range while we probe, so the mutable borrow is valid.
+                self.items.get_unchecked_mut(i)
+            };
             if item.point == point {
                 return item.pos;
             }
         }
         bin.data = end + 1;
-        unsafe { *self.items.get_unchecked_mut(end) = PointItem { point, pos } }
+        unsafe {
+            // SAFETY: end < items.len() because we grow data one slot at a time inside the reserved window.
+            *self.items.get_unchecked_mut(end) = PointItem { point, pos }
+        }
 
         usize::MAX
     }
@@ -150,8 +178,8 @@ impl ValidateArea for IntContour {
 
 #[cfg(test)]
 mod tests {
-    use crate::i_shape::int::path::IntPath;
     use super::*;
+    use crate::i_shape::int::path::IntPath;
     use alloc::vec;
 
     #[test]

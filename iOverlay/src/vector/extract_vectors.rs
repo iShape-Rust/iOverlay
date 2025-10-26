@@ -38,12 +38,12 @@ impl OverlayGraph<'_> {
             }
 
             let left_top_link = unsafe {
-                // Safety: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
+                // SAFETY: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
                 GraphUtil::find_left_top_link(self.links, self.nodes, link_index, visited)
             };
 
             let link = unsafe {
-                // Safety: `left_top_link` came from `find_left_top_link`, which only
+                // SAFETY: `left_top_link` came from `find_left_top_link`, which only
                 // ever returns indices in 0..self.links.len().
                 self.links.get_unchecked(left_top_link)
             };
@@ -92,7 +92,7 @@ impl OverlayGraph<'_> {
         let last_node_id = start_data.last_node_id;
 
         unsafe {
-            // Safety: `link_id` was returned by `find_left_top_link` or `next_link`,
+            // SAFETY: `link_id` was returned by `find_left_top_link` or `next_link`,
             // both of which guarantee the index lies in 0..visited.len().
             *visited.get_unchecked_mut(link_id) = true;
         };
@@ -106,7 +106,7 @@ impl OverlayGraph<'_> {
                 GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
-                // Safety: `link_id` is always a valid link index obtained from the
+                // SAFETY: `link_id` is always a valid link index obtained from the
                 // traversal helpers, so this stays in-bounds.
                 self.links.get_unchecked(link_id)
             };
@@ -119,7 +119,7 @@ impl OverlayGraph<'_> {
             };
 
             unsafe {
-                // Safety: same reasoning as above - `link_id` refers to a real link and
+                // SAFETY: same reasoning as above - `link_id` refers to a real link and
                 // therefore a real visited flag.
                 *visited.get_unchecked_mut(link_id) = true;
             };

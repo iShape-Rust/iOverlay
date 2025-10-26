@@ -153,7 +153,12 @@ impl SplitSolver {
                 i += 1;
             }
 
-            let s0 = unsafe { segments.get_unchecked_mut(m0.index) };
+            let s0 = unsafe {
+                // SAFETY: m0.index < segments.len() (marks are built from valid segment indices).
+                // We take at most one &mut to that element per group. We drop the &mut before any push,
+                // so no aliasing or reallocation invalidation can occur.
+                segments.get_unchecked_mut(m0.index)
+            };
 
             let count = s0.count;
             let x_seg = s0.x_segment;
