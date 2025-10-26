@@ -9,6 +9,7 @@ use alloc::vec::Vec;
 use i_shape::util::reserve::Reserve;
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
+
     pub(super) fn build_nodes_and_connect_links(&mut self, solver: &Solver) {
         let n = self.links.len();
         if n == 0 {
@@ -16,55 +17,70 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         }
 
         self.build_ends(solver);
-        self.nodes.reserve_capacity(self.links.len());
+
         self.nodes.clear();
+        self.nodes.reserve(n);
 
         let mut ai = 0;
         let mut bi = 0;
-        let mut a = self.links[0].a.point;
-        let mut b = self.ends[0].point;
-        let mut next_a_cnt = self.links.size(a, ai);
-        let mut next_b_cnt = self.ends.size(b, bi);
         let mut indices = Vec::with_capacity(4);
-        while next_a_cnt > 0 || next_b_cnt > 0 {
-            let (a_cnt, b_cnt) = if a == b {
-                (next_a_cnt, next_b_cnt)
-            } else if next_a_cnt > 0 && a < b {
-                (next_a_cnt, 0)
+
+        while ai < n || bi < n {
+            let (a_cnt, next_ai, a_point) = if ai < n {
+                let point = self.links[ai].a.point;
+                let mut end = ai + 1;
+                while end < n && self.links[end].a.point == point {
+                    end += 1;
+                }
+                (end - ai, end, Some(point))
             } else {
-                (0, next_b_cnt)
+                (0, ai, None)
+            };
+
+            let (b_cnt, next_bi, b_point) = if bi < n {
+                let point = self.ends[bi].point;
+                let mut end = bi + 1;
+                while end < n && self.ends[end].point == point {
+                    end += 1;
+                }
+                (end - bi, end, Some(point))
+            } else {
+                (0, bi, None)
+            };
+
+            let (consume_a, consume_b) = match (a_point, b_point) {
+                (Some(a), Some(b)) if a == b => (a_cnt, b_cnt),
+                (Some(a), Some(b)) if a < b => (a_cnt, 0),
+                (Some(_), Some(_)) => (0, b_cnt),
+                (Some(_), None) => (a_cnt, 0),
+                (None, Some(_)) => (0, b_cnt),
+                (None, None) => break,
             };
 
             let node_id = self.nodes.len();
 
-            if a_cnt > 0 {
-                next_a_cnt = 0;
-                for _ in 0..a_cnt {
-                    unsafe { self.links.get_unchecked_mut(ai) }.a.id = node_id;
-                    indices.push(ai);
-                    ai += 1;
+            if consume_a > 0 {
+                let start = ai;
+                let end = ai + consume_a;
+                for idx in start..end {
+                    self.links[idx].a.id = node_id;
+                    indices.push(idx);
                 }
-                if ai < n {
-                    a = unsafe { self.links.get_unchecked(ai) }.a.point;
-                    next_a_cnt = self.links.size(a, ai);
-                }
+                ai = next_ai;
             }
 
-            if b_cnt > 0 {
-                next_b_cnt = 0;
-                for _ in 0..b_cnt {
-                    let e = unsafe { self.ends.get_unchecked(bi) };
-                    indices.push(e.index);
-                    unsafe { self.links.get_unchecked_mut(e.index) }.b.id = node_id;
-                    bi += 1;
+            if consume_b > 0 {
+                let start = bi;
+                let end = bi + consume_b;
+                for idx in start..end {
+                    let link_idx = self.ends[idx].index;
+                    indices.push(link_idx);
+                    self.links[link_idx].b.id = node_id;
                 }
-
-                if bi < n {
-                    b = unsafe { self.ends.get_unchecked(bi) }.point;
-                    next_b_cnt = self.ends.size(b, bi);
-                }
+                bi = next_bi;
             }
 
+            debug_assert!(!indices.is_empty());
             self.nodes.push(N::with_indices(indices.as_slice()));
             indices.clear();
         }
@@ -73,7 +89,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     #[inline]
     fn build_ends(&mut self, solver: &Solver) {
         self.ends.clear();
-        self.ends.reserve_capacity(self.links.len());
+        self.ends.reserve(self.links.len());
         for (i, link) in self.links.iter().enumerate() {
             self.ends.push(End {
                 index: i,
@@ -82,33 +98,5 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         }
         self.ends
             .sort_by_two_keys(solver.is_parallel_sort_allowed(), |e| e.point.x, |e| e.point.y);
-    }
-}
-
-trait Size {
-    fn size(&self, point: IntPoint, index: usize) -> usize;
-}
-
-impl Size for [OverlayLink] {
-    #[inline]
-    fn size(&self, point: IntPoint, index: usize) -> usize {
-        let mut i = index + 1;
-        while i < self.len() && self[i].a.point == point {
-            i += 1;
-        }
-
-        i - index
-    }
-}
-
-impl Size for Vec<End> {
-    #[inline]
-    fn size(&self, point: IntPoint, index: usize) -> usize {
-        let mut i = index + 1;
-        while i < self.len() && self[i].point == point {
-            i += 1;
-        }
-
-        i - index
     }
 }
