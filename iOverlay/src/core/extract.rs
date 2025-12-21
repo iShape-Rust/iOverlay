@@ -17,10 +17,20 @@ use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
 use i_shape::util::reserve::Reserve;
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+pub(crate) enum VisitState {
+    #[default]
+    Unvisited = 0,
+    Skipped = 1,
+    HoleVisited = 2,
+    HullVisited = 3,
+}
+
 #[derive(Default)]
 pub struct BooleanExtractionBuffer {
     pub(crate) points: Vec<IntPoint>,
-    pub(crate) visited: Vec<bool>,
+    pub(crate) visited: Vec<VisitState>,
 }
 
 impl OverlayGraph<'_> {
@@ -101,11 +111,12 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
+            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, direction, buffer);
+            self.find_contour(&start_data, direction, visited_state, buffer);
             let (is_valid, is_modified) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -160,13 +171,14 @@ impl OverlayGraph<'_> {
         &self,
         start_data: &StartPathData,
         clockwise: bool,
+        visited_state: VisitState,
         buffer: &mut BooleanExtractionBuffer,
     ) {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        buffer.visited.visit(link_id);
+        buffer.visited.visit_edge(link_id, visited_state);
         buffer.points.clear();
         buffer.points.push(start_data.begin);
 
@@ -188,7 +200,7 @@ impl OverlayGraph<'_> {
             };
             node_id = buffer.points.push_node_and_get_other(link, node_id);
 
-            buffer.visited.visit(link_id);
+            buffer.visited.visit_edge(link_id, visited_state);
         }
     }
 
@@ -221,11 +233,12 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
+            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, direction, buffer);
+            self.find_contour(&start_data, direction, visited_state, buffer);
             let (is_valid, _) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -309,37 +322,57 @@ impl GraphContour for IntContour {
     }
 }
 
+impl VisitState {
+    #[inline(always)]
+    pub(crate) fn new(skipped: bool) -> Self {
+        let raw = skipped as u8; // 0 or 1
+        debug_assert!(raw <= VisitState::Skipped as u8);
+        // SAFETY: repr(u8) and raw is in range 0..=1
+        unsafe { core::mem::transmute(raw) }
+    }
+}
+
+
 pub(crate) trait Visit {
     fn is_visited(&self, index: usize) -> bool;
     fn is_not_visited(&self, index: usize) -> bool;
     fn visit(&mut self, index: usize);
+    fn visit_edge(&mut self, index: usize, state: VisitState);
 }
 
 // Safety: every call site creates `visited` slices with one entry per link/node,
 // and they only pass indices directly obtained from those slices. That keeps
 // `index < self.len()` true for the lifetime of the traversal.
-impl Visit for [bool] {
+impl Visit for [VisitState] {
     #[inline(always)]
     fn is_visited(&self, index: usize) -> bool {
         unsafe {
             // SAFETY: callers only pass indices derived from the visited slice itself, so index < len.
-            *self.get_unchecked(index)
+            *self.get_unchecked(index) != VisitState::Unvisited
         }
     }
 
     #[inline(always)]
     fn is_not_visited(&self, index: usize) -> bool {
-        !unsafe {
-            // SAFETY: same invariant as is_visited — index is guaranteed to address the slice.
-            *self.get_unchecked(index)
+        unsafe {
+            // SAFETY: callers only pass indices derived from the visited slice itself, so index < len.
+            *self.get_unchecked(index) == VisitState::Unvisited
         }
     }
 
     #[inline(always)]
     fn visit(&mut self, index: usize) {
         unsafe {
-            // SAFETY: index is in-bounds and we only ever take one mutable reference to that slot.
-            *self.get_unchecked_mut(index) = true
+            // SAFETY: callers only pass indices derived from the visited slice itself, so index < len.
+            *self.get_unchecked_mut(index) = VisitState::Skipped;
+        }
+    }
+
+    #[inline(always)]
+    fn visit_edge(&mut self, index: usize, state: VisitState) {
+        unsafe {
+            // SAFETY: callers only pass indices derived from the visited slice itself, so index < len.
+            *self.get_unchecked_mut(index) = state;
         }
     }
 }
@@ -357,7 +390,7 @@ impl GraphUtil {
         links: &[OverlayLink],
         nodes: &[OverlayNode],
         link_index: usize,
-        visited: &[bool],
+        visited: &[VisitState],
     ) -> usize {
         let top = unsafe {
             // SAFETY: link_index is always < links.len(); callers either iterate that range or
@@ -386,7 +419,7 @@ impl GraphUtil {
         link: &OverlayLink,
         link_index: usize,
         indices: &[usize],
-        visited: &[bool],
+        visited: &[VisitState],
     ) -> usize {
         let mut top_index = link_index;
         let mut top = link;
@@ -442,7 +475,7 @@ impl GraphUtil {
         link_id: usize,
         node_id: usize,
         clockwise: bool,
-        visited: &[bool],
+        visited: &[VisitState],
     ) -> usize {
         let node = unsafe {
             // SAFETY: all node ids flowing through traversal originate from GraphBuilder,
@@ -473,7 +506,7 @@ impl GraphUtil {
         node_id: usize,
         clockwise: bool,
         indices: &[usize],
-        visited: &[bool],
+        visited: &[VisitState],
     ) -> usize {
         let mut is_first = true;
         let mut first_index = 0;

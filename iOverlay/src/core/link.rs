@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use crate::core::extract::VisitState;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
@@ -28,6 +29,6 @@ impl OverlayLink {
 }
 
 pub(crate) trait OverlayLinkFilter {
-    fn filter_by_overlay(&self, fill_rule: OverlayRule) -> Vec<bool>;
-    fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<bool>);
+    fn filter_by_overlay(&self, fill_rule: OverlayRule) -> Vec<VisitState>;
+    fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<VisitState>);
 }

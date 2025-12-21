@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use i_shape::int::shape::{IntContour, IntShapes};
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
-use crate::core::extract::{GraphUtil, StartPathData, GraphContour, Visit};
+use crate::core::extract::{GraphUtil, StartPathData, GraphContour, Visit, VisitState};
 use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
@@ -19,7 +19,7 @@ impl OffsetGraph<'_> {
 
     fn extract_offset_shapes(
         &self,
-        filter: Vec<bool>,
+        filter: Vec<VisitState>,
         main_direction: ContourDirection,
         min_area: u64,
     ) -> IntShapes {
@@ -54,7 +54,8 @@ impl OffsetGraph<'_> {
 
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            let mut contour = self.get_fill_contour(&start_data, direction, &mut bold, visited);
+            let mut contour =
+                self.get_fill_contour(&start_data, direction, &mut bold, visited);
             if !bold {
                 link_index += 1;
                 continue;
@@ -110,7 +111,7 @@ impl OffsetGraph<'_> {
         start_data: &StartPathData,
         clockwise: bool,
         bold: &mut bool,
-        visited: &mut [bool],
+        visited: &mut [VisitState],
     ) -> IntContour {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;

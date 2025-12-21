@@ -1,6 +1,6 @@
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
-use crate::core::extract::GraphUtil;
+use crate::core::extract::{GraphUtil, Visit, VisitState};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay_rule::OverlayRule;
@@ -32,7 +32,7 @@ impl OverlayGraph<'_> {
 
         let mut link_index = 0;
         while link_index < visited.len() {
-            if visited[link_index] {
+            if visited[link_index] != VisitState::Unvisited {
                 link_index += 1;
                 continue;
             }
@@ -85,17 +85,15 @@ impl OverlayGraph<'_> {
         &self,
         start_data: StartVectorPathData,
         clockwise: bool,
-        visited: &mut [bool],
+        visited: &mut [VisitState],
     ) -> VectorPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        unsafe {
-            // SAFETY: `link_id` was returned by `find_left_top_link` or `next_link`,
-            // both of which guarantee the index lies in 0..visited.len().
-            *visited.get_unchecked_mut(link_id) = true;
-        };
+        let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][clockwise as usize];
+
+        visited.visit_edge(link_id, visited_state);
 
         let mut contour = VectorPath::new();
         contour.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
@@ -118,11 +116,7 @@ impl OverlayGraph<'_> {
                 link.a.id
             };
 
-            unsafe {
-                // SAFETY: same reasoning as above - `link_id` refers to a real link and
-                // therefore a real visited flag.
-                *visited.get_unchecked_mut(link_id) = true;
-            };
+            visited.visit_edge(link_id, visited_state);
         }
 
         contour
