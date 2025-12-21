@@ -12,7 +12,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::int::path::ContourExtension;
+use i_shape::int::path::{ContourExtension, IntPaths};
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
 use i_shape::util::reserve::Reserve;
@@ -79,13 +79,67 @@ impl OverlayGraph<'_> {
         self.extract_contours(overlay_rule, buffer, output);
     }
 
-    fn extract(
+    pub(crate) fn extract(
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
 
+        let (mut shapes, holes, mut anchors, anchors_already_sorted) = self.extract_disjoint_contours(clockwise, overlay_rule, buffer);
+
+        if !anchors_already_sorted {
+            anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
+        }
+
+        shapes.join_sorted_holes(holes, anchors, clockwise);
+
+        shapes
+    }
+
+    pub(crate) fn find_contour(
+        &self,
+        start_data: &StartPathData,
+        clockwise: bool,
+        visited_state: VisitState,
+        buffer: &mut BooleanExtractionBuffer,
+    ) {
+        let mut link_id = start_data.link_id;
+        let mut node_id = start_data.node_id;
+        let last_node_id = start_data.last_node_id;
+
+        buffer.visited.visit_edge(link_id, visited_state);
+        buffer.points.clear();
+        buffer.points.push(start_data.begin);
+
+        // Find a closed tour
+        while node_id != last_node_id {
+            link_id = GraphUtil::next_link(
+                self.links,
+                self.nodes,
+                link_id,
+                node_id,
+                clockwise,
+                &buffer.visited,
+            );
+
+            let link = unsafe {
+                // Safety: `link_id` is always derived from a previous in-bounds index or
+                // from `find_left_top_link`, so it remains in `0..self.links.len()`.
+                self.links.get_unchecked(link_id)
+            };
+            node_id = buffer.points.push_node_and_get_other(link, node_id);
+
+            buffer.visited.visit_edge(link_id, visited_state);
+        }
+    }
+
+    pub(crate) fn extract_disjoint_contours(
+        &self,
+        clockwise: bool,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer,
+    ) -> (IntShapes, IntPaths, Vec<IdSegment>, bool) {
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
         let mut anchors = Vec::new();
@@ -111,7 +165,8 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state =
+                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
@@ -158,50 +213,7 @@ impl OverlayGraph<'_> {
             }
         }
 
-        if !anchors_already_sorted {
-            anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
-        }
-
-        shapes.join_sorted_holes(holes, anchors, clockwise);
-
-        shapes
-    }
-
-    fn find_contour(
-        &self,
-        start_data: &StartPathData,
-        clockwise: bool,
-        visited_state: VisitState,
-        buffer: &mut BooleanExtractionBuffer,
-    ) {
-        let mut link_id = start_data.link_id;
-        let mut node_id = start_data.node_id;
-        let last_node_id = start_data.last_node_id;
-
-        buffer.visited.visit_edge(link_id, visited_state);
-        buffer.points.clear();
-        buffer.points.push(start_data.begin);
-
-        // Find a closed tour
-        while node_id != last_node_id {
-            link_id = GraphUtil::next_link(
-                self.links,
-                self.nodes,
-                link_id,
-                node_id,
-                clockwise,
-                &buffer.visited,
-            );
-
-            let link = unsafe {
-                // Safety: `link_id` is always derived from a previous in-bounds index or
-                // from `find_left_top_link`, so it remains in `0..self.links.len()`.
-                self.links.get_unchecked(link_id)
-            };
-            node_id = buffer.points.push_node_and_get_other(link, node_id);
-
-            buffer.visited.visit_edge(link_id, visited_state);
-        }
+        (shapes, holes, anchors, anchors_already_sorted)
     }
 
     fn extract_contours(
@@ -233,7 +245,8 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state =
+                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
@@ -331,7 +344,6 @@ impl VisitState {
         unsafe { core::mem::transmute(raw) }
     }
 }
-
 
 pub(crate) trait Visit {
     fn is_visited(&self, index: usize) -> bool;

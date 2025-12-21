@@ -363,6 +363,30 @@ impl Overlay {
         self.boolean_buffer = Some(buffer);
         shapes
     }
+
+    /// Executes a single Boolean operation and extracts OGC-valid shapes
+    /// by splitting composite holes into separate polygons.
+    #[inline]
+    pub fn overlay_ocg(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
+        self.split_solver
+            .split_segments(&mut self.segments, &self.solver);
+        if self.segments.is_empty() {
+            return Vec::new();
+        }
+        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+        let shapes = self
+            .graph_builder
+            .build_boolean_overlay(
+                fill_rule,
+                overlay_rule,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
+            .extract_shapes_ocg(overlay_rule, &mut buffer);
+        self.boolean_buffer = Some(buffer);
+        shapes
+    }
 }
 
 impl Default for IntOverlayOptions {
