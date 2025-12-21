@@ -11,8 +11,8 @@ readme = "README.md"
 categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 
 [dependencies]
-i_float = { version = "~1.15.0" }
-i_shape = { version = "~1.14.0" }
+i_float = { version = "~1.16.0" }
+i_shape = { version = "~1.15.0" }
 i_tree = { version = "~0.16.0" }
 i_key_sort = { version = "~0.10.1" }
 
@@ -37,5 +37,5 @@ serde_json = "^1.0"
 rand = { version = "~0.9", features = ["alloc"] }
 #i_float = { path = "../../iFloat", features = ["serde"] }
 #i_shape = { path = "../../iShape", features = ["serde"] }
-i_float = { version = "~1.15.0", features = ["serde"] }
-i_shape = { version = "~1.14.0", features = ["serde"] }
+i_float = { version = "~1.16.0", features = ["serde"] }
+i_shape = { version = "~1.15.0", features = ["serde"] }
