@@ -69,9 +69,10 @@ mod tests {
         ]];
 
         let clip_paths = int_shape![
+            [[1, 2], [1, 3], [2, 3], [2, 2]],
             [[2, 3], [2, 4], [3, 4], [3, 3]],
-            [[1, 2], [1, 3], [4, 3], [4, 2]],
             [[2, 1], [2, 2], [3, 2], [3, 1]],
+            [[3, 2], [3, 3], [4, 3], [4, 2]],
         ];
 
         let mut overlay = Overlay::with_contours(&subj_paths, &clip_paths);
