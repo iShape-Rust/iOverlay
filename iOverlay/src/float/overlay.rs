@@ -318,25 +318,6 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
 
         float
     }
-
-    /// Executes a single Boolean operation and extracts OGC-valid shapes
-    /// by splitting composite holes into separate polygons.
-    #[inline]
-    pub fn overlay_ocg(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
-        let shapes = self.overlay.overlay_ocg(overlay_rule, fill_rule);
-        let mut float = shapes.to_float(&self.adapter);
-
-        if self.clean_result {
-            if preserve_output_collinear {
-                float.despike_contour(&self.adapter);
-            } else {
-                float.simplify_contour(&self.adapter);
-            }
-        }
-
-        float
-    }
 }
 
 impl<T: FloatNumber> Default for OverlayOptions<T> {
@@ -372,6 +353,19 @@ impl<T: FloatNumber> OverlayOptions<T> {
             preserve_output_collinear: self.preserve_output_collinear,
             min_output_area: 0,
             ocg: self.ocg,
+        }
+    }
+
+    pub fn ocg() -> Self {
+        // f32 precision is not enough to cover i32
+        let clean_result = T::bit_width() <= 32;
+        Self {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: false,
+            min_output_area: T::from_float(0.0),
+            ocg: true,
+            clean_result,
         }
     }
 }

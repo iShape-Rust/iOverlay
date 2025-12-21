@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::Overlay;
+    use i_overlay::core::overlay::{IntOverlayOptions, Overlay};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_shape::int_shape;
 
@@ -30,9 +30,10 @@ mod tests {
             [[2, 1], [2, 2], [3, 2], [3, 3], [4, 3], [4, 1]],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj_paths, &clip_paths);
 
-        let result = overlay.overlay_ocg(OverlayRule::Difference, FillRule::EvenOdd);
+        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, IntOverlayOptions::ocg(), Default::default());
+
+        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 2);
     }
@@ -61,9 +62,9 @@ mod tests {
             [[3, 2], [3, 3], [4, 3], [4, 2]],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj_paths, &clip_paths);
+        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, IntOverlayOptions::ocg(), Default::default());
 
-        let result = overlay.overlay_ocg(OverlayRule::Difference, FillRule::EvenOdd);
+        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 2);
     }
@@ -101,9 +102,9 @@ mod tests {
             [[5, 3], [5, 4], [6, 4], [6, 3]],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj_paths, &clip_paths);
+        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, IntOverlayOptions::ocg(), Default::default());
 
-        let result = overlay.overlay_ocg(OverlayRule::Difference, FillRule::EvenOdd);
+        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 5);
     }

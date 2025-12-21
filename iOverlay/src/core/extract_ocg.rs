@@ -6,7 +6,6 @@ use crate::core::graph::OverlayGraph;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay::ContourDirection;
 use alloc::vec;
-use alloc::vec::Vec;
 use i_shape::int::shape::IntShapes;
 
 impl OverlayGraph<'_> {
@@ -47,7 +46,7 @@ impl OverlayGraph<'_> {
         start_data: &StartPathData,
         clockwise: bool,
         visited_state: VisitState,
-        visited: &mut Vec<VisitState>,
+        visited: &mut [VisitState],
     ) {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
@@ -58,7 +57,7 @@ impl OverlayGraph<'_> {
         // Find a closed tour
         while node_id != last_node_id {
             link_id = GraphUtil::next_link(
-                self.links, self.nodes, link_id, node_id, clockwise, &visited,
+                self.links, self.nodes, link_id, node_id, clockwise, visited,
             );
 
             let link = unsafe {
