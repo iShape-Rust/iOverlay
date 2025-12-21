@@ -288,7 +288,7 @@ impl Overlay {
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph<'_>> {
         self.split_solver
             .split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {

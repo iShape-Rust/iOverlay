@@ -20,7 +20,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
                                     options: IntOverlayOptions,
                                     solver: &Solver,
                                     segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph {
+    ) -> OverlayGraph<'_> {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
         self.boolean_graph(options, solver)
@@ -33,7 +33,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
                                         options: IntOverlayOptions,
                                         solver: &Solver,
                                         segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph {
+    ) -> OverlayGraph<'_> {
         self.build_boolean_fills(fill_rule, solver, segments);
         match overlay_rule {
             OverlayRule::Subject => self.build_links_by_filter::<SubjectFilter>(segments),
@@ -58,7 +58,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     }
 
     #[inline]
-    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph {
+    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph<'_> {
         self.build_nodes_and_connect_links(solver);
         OverlayGraph {
             nodes: &self.nodes,

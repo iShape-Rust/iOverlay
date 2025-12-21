@@ -257,7 +257,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatOverlayGraph<P, T>> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatOverlayGraph<'_, P, T>> {
         let graph = self.overlay.build_graph_view(fill_rule)?;
         Some(FloatOverlayGraph::new(graph, self.adapter.clone(), self.clean_result))
     }

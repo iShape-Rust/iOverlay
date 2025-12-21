@@ -44,7 +44,7 @@ impl OffsetOverlay {
     }
 
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, solver: Solver) -> Option<OffsetGraph> {
+    pub fn build_graph_view_with_solver(&mut self, solver: Solver) -> Option<OffsetGraph<'_>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return None;

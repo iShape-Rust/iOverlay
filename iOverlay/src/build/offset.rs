@@ -11,14 +11,14 @@ impl GraphBuilder<ShapeCountOffset, OverlayNode> {
     pub(crate) fn build_offset(&mut self,
                                solver: &Solver,
                                segments: &[Segment<ShapeCountOffset>],
-    ) -> OffsetGraph {
+    ) -> OffsetGraph<'_> {
         self.build_fills_with_strategy::<SubjectOffsetStrategy>(solver, segments);
         self.build_links_all(segments);
         self.offset_graph(solver)
     }
 
     #[inline]
-    fn offset_graph(&mut self, solver: &Solver) -> OffsetGraph {
+    fn offset_graph(&mut self, solver: &Solver) -> OffsetGraph<'_> {
         self.build_nodes_and_connect_links(solver);
         OffsetGraph {
             nodes: &self.nodes,

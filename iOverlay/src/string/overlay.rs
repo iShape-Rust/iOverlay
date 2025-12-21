@@ -223,7 +223,7 @@ impl StringOverlay {
     /// This graph is used for string operations, enabling analysis and manipulation of geometric data.
     /// - `fill_rule`: The rule that defines how to build shapes (e.g., non-zero, even-odd).
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<StringGraph> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<StringGraph<'_>> {
         self.build_graph_view_with_solver(fill_rule, Default::default())
     }
 
@@ -232,7 +232,7 @@ impl StringOverlay {
     /// - `fill_rule`: The rule that defines how to build shapes (e.g., non-zero, even-odd).
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<StringGraph> {
+    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<StringGraph<'_>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return None;
