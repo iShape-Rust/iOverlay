@@ -25,6 +25,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
+            ocg: false,
         };
 
         let simplified = paths.simplify(FillRule::NonZero, op);
@@ -52,6 +53,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
+            ocg: false,
         };
 
         let simplified = paths.simplify(FillRule::NonZero, op);
@@ -79,6 +81,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
+            ocg: false,
         };
 
         let simplified = shapes.simplify(FillRule::NonZero, op);
@@ -145,6 +148,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
+            ocg: false,
         };
 
         let simple = paths.simplify(FillRule::NonZero, op);

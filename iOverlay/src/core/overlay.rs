@@ -38,6 +38,9 @@ pub struct IntOverlayOptions {
 
     /// Minimum area threshold to include a contour in the result.
     pub min_output_area: u64,
+
+    /// If true, extract OGC-valid shapes by splitting composite holes.
+    pub ocg: bool,
 }
 
 /// Specifies the type of shape being processed, influencing how the shape participates in Boolean operations.
@@ -396,6 +399,7 @@ impl Default for IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
+            ocg: false,
         }
     }
 }
@@ -407,6 +411,7 @@ impl IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
+            ocg: false,
         }
     }
     pub fn keep_output_points() -> Self {
@@ -415,6 +420,7 @@ impl IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
+            ocg: false,
         }
     }
 }

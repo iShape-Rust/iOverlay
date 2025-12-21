@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use i_shape::int_shape;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::Overlay;
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_shape::int_shape;
 
     #[test]
     fn test_0() {
@@ -23,12 +23,7 @@ mod tests {
         // OGC Simple Feature Specification (ISO 19125-1) states:
         // "The interior of every Surface is a connected point set."
 
-        let subj_paths = int_shape![[
-            [0, 0],
-            [5, 0],
-            [5, 5],
-            [0, 5],
-        ]];
+        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5],]];
 
         let clip_paths = int_shape![
             [[1, 2], [1, 4], [3, 4], [3, 3], [2, 3], [2, 2]],
@@ -57,12 +52,7 @@ mod tests {
         //     │                   │
         //   0 └───────────────────┘
 
-        let subj_paths = int_shape![[
-            [0, 0],
-            [5, 0],
-            [5, 5],
-            [0, 5],
-        ]];
+        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5],]];
 
         let clip_paths = int_shape![
             [[1, 2], [1, 3], [2, 3], [2, 2]],
@@ -97,12 +87,7 @@ mod tests {
         //     │                           │
         //   0 └───────────────────────────┘
 
-        let subj_paths = int_shape![[
-            [0, 0],
-            [7, 0],
-            [7, 7],
-            [0, 7],
-        ]];
+        let subj_paths = int_shape![[[0, 0], [7, 0], [7, 7], [0, 7],]];
 
         let clip_paths = int_shape![
             [[1, 3], [1, 4], [2, 4], [2, 3]],

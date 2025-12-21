@@ -31,6 +31,9 @@ pub struct OverlayOptions<T: FloatNumber> {
     /// Minimum area threshold to include a contour in the result.
     pub min_output_area: T,
 
+    /// If true, extract OGC-valid shapes by splitting composite holes.
+    pub ocg: bool,
+
     /// If true, the result will be cleaned from precision-related issues
     /// such as duplicate or nearly identical points. Especially useful for `f32` coordinates.
     pub clean_result: bool,
@@ -345,6 +348,7 @@ impl<T: FloatNumber> Default for OverlayOptions<T> {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: T::from_float(0.0),
+            ocg: false,
             clean_result,
         }
     }
@@ -357,6 +361,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
             min_output_area: adapter.sqr_float_to_int(self.min_output_area),
+            ocg: self.ocg,
         }
     }
 
@@ -366,6 +371,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
             min_output_area: 0,
+            ocg: self.ocg,
         }
     }
 }

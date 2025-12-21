@@ -21,6 +21,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
+            ocg: false,
         };
 
         let op1 = IntOverlayOptions {
@@ -28,6 +29,7 @@ mod tests {
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
+            ocg: false,
         };
 
         let r0 = &path.simplify(FillRule::NonZero, op0)[0][0];
@@ -59,6 +61,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
+            ocg: false,
         };
 
         let op1 = IntOverlayOptions {
@@ -66,6 +69,7 @@ mod tests {
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
+            ocg: false,
         };
         
         let r0 = &path.simplify(FillRule::NonZero, op0)[0];
