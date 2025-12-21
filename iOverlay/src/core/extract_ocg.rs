@@ -1,5 +1,4 @@
 use super::overlay_rule::OverlayRule;
-use crate::bind::solver::JoinHoles;
 use crate::core::extract::{
     BooleanExtractionBuffer, GraphContour, GraphUtil, StartPathData, Visit, VisitState,
 };
@@ -28,10 +27,7 @@ impl OverlayGraph<'_> {
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
-        let clockwise = self.options.output_direction == ContourDirection::Clockwise;
-
-        let (mut shapes, holes, mut anchors, anchors_already_sorted) =
-            self.extract_disjoint_contours(clockwise, overlay_rule, buffer);
+        let mut shapes = self.extract(overlay_rule, buffer);
 
         // Keep only hole edges; skip everything else for the second pass.
         for state in buffer.visited.iter_mut() {
@@ -41,13 +37,7 @@ impl OverlayGraph<'_> {
             };
         }
 
-        self.extract_inner_polygons_into(overlay_rule, clockwise, buffer, &mut shapes);
-
-        if !anchors_already_sorted {
-            anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
-        }
-
-        shapes.join_sorted_holes(holes, anchors, clockwise);
+        self.extract_inner_polygons_into(overlay_rule, buffer, &mut shapes);
 
         shapes
     }
@@ -90,10 +80,11 @@ impl OverlayGraph<'_> {
     fn extract_inner_polygons_into(
         &self,
         overlay_rule: OverlayRule,
-        clockwise: bool,
         buffer: &mut BooleanExtractionBuffer,
         shapes: &mut IntShapes,
     ) {
+        let clockwise = self.options.output_direction == ContourDirection::Clockwise;
+
         let mut link_index = 0;
         while link_index < buffer.visited.len() {
             if buffer.visited.is_visited(link_index) {
