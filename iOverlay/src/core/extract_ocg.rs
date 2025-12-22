@@ -3,31 +3,18 @@ use crate::core::extract::{
     BooleanExtractionBuffer, GraphContour, GraphUtil, StartPathData, Visit, VisitState,
 };
 use crate::core::graph::OverlayGraph;
-use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay::ContourDirection;
 use alloc::vec;
 use i_shape::int::shape::IntShapes;
 
 impl OverlayGraph<'_> {
-    /// Extracts shapes while ensuring OGC-valid connected interiors by splitting composite holes.
-    #[inline]
-    pub fn extract_shapes_ocg(
+
+    pub(super) fn extract_ocg_inner_polygons_into(
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
-        self.links
-            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
-        self.extract_ocg(overlay_rule, buffer)
-    }
-
-    fn extract_ocg(
-        &self,
-        overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
-        let mut shapes = self.extract(overlay_rule, buffer);
-
+        shapes: &mut IntShapes,
+    ) {
         // Keep only hole edges; skip everything else for the second pass.
         for state in buffer.visited.iter_mut() {
             *state = match *state {
@@ -36,52 +23,6 @@ impl OverlayGraph<'_> {
             };
         }
 
-        self.extract_inner_polygons_into(overlay_rule, buffer, &mut shapes);
-
-        shapes
-    }
-
-    fn skip_contour(
-        &self,
-        start_data: &StartPathData,
-        clockwise: bool,
-        visited_state: VisitState,
-        visited: &mut [VisitState],
-    ) {
-        let mut link_id = start_data.link_id;
-        let mut node_id = start_data.node_id;
-        let last_node_id = start_data.last_node_id;
-
-        visited.visit_edge(link_id, visited_state);
-
-        // Find a closed tour
-        while node_id != last_node_id {
-            link_id = GraphUtil::next_link(
-                self.links, self.nodes, link_id, node_id, clockwise, visited,
-            );
-
-            let link = unsafe {
-                // Safety: `link_id` is always derived from a previous in-bounds index or
-                // from `find_left_top_link`, so it remains in `0..self.links.len()`.
-                self.links.get_unchecked(link_id)
-            };
-
-            node_id = if link.a.id == node_id {
-                link.b.id
-            } else {
-                link.a.id
-            };
-
-            visited.visit_edge(link_id, visited_state);
-        }
-    }
-
-    fn extract_inner_polygons_into(
-        &self,
-        overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-        shapes: &mut IntShapes,
-    ) {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut link_index = 0;
@@ -128,6 +69,41 @@ impl OverlayGraph<'_> {
             let contour = buffer.points.as_slice().to_vec();
 
             shapes.push(vec![contour]);
+        }
+    }
+
+    fn skip_contour(
+        &self,
+        start_data: &StartPathData,
+        clockwise: bool,
+        visited_state: VisitState,
+        visited: &mut [VisitState],
+    ) {
+        let mut link_id = start_data.link_id;
+        let mut node_id = start_data.node_id;
+        let last_node_id = start_data.last_node_id;
+
+        visited.visit_edge(link_id, visited_state);
+
+        // Find a closed tour
+        while node_id != last_node_id {
+            link_id = GraphUtil::next_link(
+                self.links, self.nodes, link_id, node_id, clockwise, visited,
+            );
+
+            let link = unsafe {
+                // Safety: `link_id` is always derived from a previous in-bounds index or
+                // from `find_left_top_link`, so it remains in `0..self.links.len()`.
+                self.links.get_unchecked(link_id)
+            };
+
+            node_id = if link.a.id == node_id {
+                link.b.id
+            } else {
+                link.a.id
+            };
+
+            visited.visit_edge(link_id, visited_state);
         }
     }
 }

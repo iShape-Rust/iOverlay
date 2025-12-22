@@ -51,10 +51,6 @@ impl OverlayGraph<'_> {
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
-        if self.options.ocg {
-            return self.extract_shapes_ocg(overlay_rule, buffer);
-        }
-
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         self.extract(overlay_rule, buffer)
@@ -167,7 +163,13 @@ impl OverlayGraph<'_> {
             anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
+        let has_holes = !holes.is_empty();
+
         shapes.join_sorted_holes(holes, anchors, clockwise);
+
+        if has_holes && self.options.ocg {
+            self.extract_ocg_inner_polygons_into(overlay_rule, buffer, &mut shapes);
+        }
 
         shapes
     }
