@@ -106,7 +106,10 @@ where
         is_closed_path: bool,
         options: OverlayOptions<T>,
     ) -> Shapes<P> {
-        StrokeSolver::make_offset(self, style, is_closed_path, options, None).unwrap()
+        match StrokeSolver::prepare(self, style) {
+            Some(solver) => solver.build(self, is_closed_path, options),
+            None => vec![],
+        }
     }
 
     fn stroke_custom_fixed_scale(
@@ -116,26 +119,25 @@ where
         options: OverlayOptions<T>,
         scale: T,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-        StrokeSolver::make_offset(self, style, is_closed_path, options, Some(s))
+        let mut solver = match StrokeSolver::prepare(self, style) {
+            Some(solver) => solver,
+            None => return Ok(vec![]),
+        };
+        solver.apply_scale(scale)?;
+        Ok(solver.build(self, is_closed_path, options))
     }
 }
 
-struct StrokeSolver;
+struct StrokeSolver<P: FloatPointCompatible<T>, T: FloatNumber> {
+    r: T,
+    builder: StrokeBuilder<P, T>,
+    adapter: FloatPointAdapter<P, T>,
+    paths_count: usize,
+    points_count: usize,
+}
 
-impl StrokeSolver {
-    fn make_offset<S: ShapeResource<P, T>, P, T >(
-        source: &S,
-        style: StrokeStyle<P, T>,
-        is_closed_path: bool,
-        options: OverlayOptions<T>,
-        scale: Option<f64>,
-    ) -> Result<Shapes<P>, FixedScaleOverlayError>
-    where
-        S: ShapeResource<P, T>,
-        P: 'static + FloatPointCompatible<T>,
-        T: 'static + FloatNumber,
-    {
+impl<P: 'static + FloatPointCompatible<T>, T: 'static + FloatNumber> StrokeSolver<P, T> {
+    fn prepare<S: ShapeResource<P, T>>(source: &S, style: StrokeStyle<P, T>) -> Option<Self> {
         let mut paths_count = 0;
         let mut points_count = 0;
         for path in source.iter_paths() {
@@ -144,58 +146,78 @@ impl StrokeSolver {
         }
 
         if paths_count == 0 {
-            return Ok(vec![]);
+            return None;
         }
 
         let r = T::from_float(0.5 * style.width.to_f64());
-        let builder = StrokeBuilder::new(style.clone());
+        let builder = StrokeBuilder::new(style);
         let a = builder.additional_offset(r);
 
         let mut rect =
             FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(a);
-        let mut adapter = FloatPointAdapter::new(rect);
+        let adapter = FloatPointAdapter::new(rect);
 
-        if let Some(scale) = scale {
-            let s = T::from_float(scale);
-            if adapter.dir_scale < s {
-                return Err(FixedScaleOverlayError::ScaleTooLarge);
-            } else {
-                adapter.dir_scale = s;
-                adapter.inv_scale = T::from_float(1.0 / scale);
-            }
+        Some(Self {
+            r,
+            builder,
+            adapter,
+            paths_count,
+            points_count,
+        })
+    }
+
+    fn apply_scale(&mut self, scale: T) -> Result<(), FixedScaleOverlayError> {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+        if self.adapter.dir_scale < scale {
+            return Err(FixedScaleOverlayError::ScaleTooLarge);
         }
 
-        let ir = adapter.len_float_to_int(r).abs();
+        self.adapter.dir_scale = scale;
+        self.adapter.inv_scale = T::from_float(1.0 / s);
+
+        Ok(())
+    }
+
+    fn build<S: ShapeResource<P, T>>(
+        self,
+        source: &S,
+        is_closed_path: bool,
+        options: OverlayOptions<T>,
+    ) -> Shapes<P> {
+        let ir = self.adapter.len_float_to_int(self.r).abs();
         if ir <= 1 {
             // offset is too small
-            return Ok(vec![]);
+            return vec![];
         }
 
-        let capacity = builder.capacity(paths_count, points_count, is_closed_path);
+        let capacity = self
+            .builder
+            .capacity(self.paths_count, self.points_count, is_closed_path);
         let mut segments = Vec::with_capacity(capacity);
 
         for path in source.iter_paths() {
-            builder.build(path, is_closed_path, &adapter, &mut segments);
+            self.builder
+                .build(path, is_closed_path, &self.adapter, &mut segments);
         }
 
-        let min_area = adapter.sqr_float_to_int(options.min_output_area);
+        let min_area = self.adapter.sqr_float_to_int(options.min_output_area);
         let shapes = OffsetOverlay::with_segments(segments)
             .build_graph_view_with_solver(Default::default())
             .map(|graph| graph.extract_offset(options.output_direction, min_area))
             .unwrap_or_default();
 
-        let mut float = shapes.to_float(&adapter);
+        let mut float = shapes.to_float(&self.adapter);
 
         if options.clean_result {
             if options.preserve_output_collinear {
-                float.despike_contour(&adapter);
+                float.despike_contour(&self.adapter);
             } else {
-                float.simplify_contour(&adapter);
+                float.simplify_contour(&self.adapter);
             }
         };
 
-        Ok(float)
+        float
     }
 }
 
