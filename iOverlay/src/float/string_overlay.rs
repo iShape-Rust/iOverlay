@@ -85,13 +85,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
-        let s = scale.to_f64();
-        if !s.is_finite() {
-            return Err(FixedScaleOverlayError::ScaleNotFinite);
-        }
-        if s <= 0.0 {
-            return Err(FixedScaleOverlayError::ScaleNonPositive);
-        }
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
 
         let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
         let mut adapter = FloatPointAdapter::with_iter(iter);

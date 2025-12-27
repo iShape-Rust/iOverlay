@@ -19,6 +19,20 @@ pub enum FixedScaleOverlayError {
     ScaleNotFinite,
 }
 
+impl FixedScaleOverlayError {
+    #[inline]
+    pub fn validate_scale<T: FloatNumber>(scale: T) -> Result<f64, Self> {
+        let s = scale.to_f64();
+        if !s.is_finite() {
+            return Err(Self::ScaleNotFinite);
+        }
+        if s <= 0.0 {
+            return Err(Self::ScaleNonPositive);
+        }
+        Ok(s)
+    }
+}
+
 /// Trait `FixedScaleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and build rules.
 ///
@@ -98,13 +112,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
-        let s = scale.to_f64();
-        if !s.is_finite() {
-            return Err(FixedScaleOverlayError::ScaleNotFinite);
-        }
-        if s <= 0.0 {
-            return Err(FixedScaleOverlayError::ScaleNonPositive);
-        }
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
 
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
         let mut adapter = FloatPointAdapter::with_iter(iter);
@@ -150,13 +158,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
-        let s = scale.to_f64();
-        if !s.is_finite() {
-            return Err(FixedScaleOverlayError::ScaleNotFinite);
-        }
-        if s <= 0.0 {
-            return Err(FixedScaleOverlayError::ScaleNonPositive);
-        }
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
 
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
         let mut adapter = FloatPointAdapter::with_iter(iter);

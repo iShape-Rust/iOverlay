@@ -26,7 +26,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
             LineCap::Butt => None,
             LineCap::Round(ratio) => Some(Self::round_points(ratio, radius)),
             LineCap::Square => Some(Self::square_points(radius)),
-            LineCap::Custom(points) => Some(Self::custom_points(points, radius))
+            LineCap::Custom(points) => Some(Self::custom_points(points.to_vec(), radius))
         };
 
         Self { points, _phantom: Default::default() }
