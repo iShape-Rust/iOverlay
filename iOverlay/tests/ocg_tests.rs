@@ -30,12 +30,21 @@ mod tests {
             [[2, 1], [2, 2], [3, 2], [3, 3], [4, 3], [4, 1]],
         ];
 
-
-        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, IntOverlayOptions::ocg(), Default::default());
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            IntOverlayOptions::ocg(),
+            Default::default(),
+        );
 
         let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 8);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
     }
 
     #[test]
@@ -62,11 +71,21 @@ mod tests {
             [[3, 2], [3, 3], [4, 3], [4, 2]],
         ];
 
-        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, IntOverlayOptions::ocg(), Default::default());
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            IntOverlayOptions::ocg(),
+            Default::default(),
+        );
 
         let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 12);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
     }
 
     #[test]
@@ -102,11 +121,21 @@ mod tests {
             [[5, 3], [5, 4], [6, 4], [6, 3]],
         ];
 
-        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, IntOverlayOptions::ocg(), Default::default());
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            IntOverlayOptions::ocg(),
+            Default::default(),
+        );
 
         let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 5);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[2].len(), 1);
+        assert_eq!(result[3].len(), 1);
+        assert_eq!(result[4].len(), 1);
     }
 
     #[test]
@@ -147,7 +176,12 @@ mod tests {
         let x1 = 2 * m + 2;
         let y1 = 2 * m + 2;
 
-        subj_paths.push(int_path!([x0 - 1, y1 + 1], [x0 - 1, y0 - 1], [x1 + 1, y0 - 1], [x1 + 1, y1 + 1]));
+        subj_paths.push(int_path!(
+            [x0 - 1, y1 + 1],
+            [x0 - 1, y0 - 1],
+            [x1 + 1, y0 - 1],
+            [x1 + 1, y1 + 1]
+        ));
 
         for i in 0..m {
             let x = 2 * (i + 1);
@@ -160,14 +194,18 @@ mod tests {
             subj_paths.push(hz_line);
         }
 
-        let mut overlay = Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ocg(), Default::default());
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &[],
+            IntOverlayOptions::ocg(),
+            Default::default(),
+        );
 
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 
-        let holes_count = 2 * n * (n + 1);
         let polygons_count = n * n + (n - 1) * (n - 1) + 1;
 
         assert_eq!(result.len(), polygons_count);
-        assert_eq!(result[0].len(), holes_count + 1);
+        assert_eq!(result[0].len(), 2);
     }
 }

@@ -8,4 +8,3 @@ pub mod simplify;
 pub(crate) mod link;
 pub(crate) mod nearest_vector;
 pub mod divide;
-mod extract_ocg;
