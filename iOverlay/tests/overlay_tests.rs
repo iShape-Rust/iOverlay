@@ -22,7 +22,7 @@ mod tests {
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
-            prefer_small_holes: true,
+            ocg: false,
         };
 
         fn overlay(test: &BooleanTest, options: IntOverlayOptions, solver: Solver) -> Overlay {

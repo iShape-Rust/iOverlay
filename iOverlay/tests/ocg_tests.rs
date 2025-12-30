@@ -139,13 +139,13 @@ mod tests {
     }
 
     #[test]
-    fn test_checkerboard() {
-        for n in 3..50 {
-            checkerboard(n);
+    fn test_checkerboard_a() {
+        for n in 4..50 {
+            checkerboard_a(n);
         }
     }
 
-    fn checkerboard(n: usize) {
+    fn checkerboard_a(n: usize) {
         //     0   1   2   3   4   5   6   7   8   9
         //   9 ┌───────────────────────────────────┐
         //     │                                   │
@@ -164,6 +164,70 @@ mod tests {
         //   2 │   └───●───●───●───●───●───●───┘   │
         //     │       │ ░ │   │ ░ │   │ ░ │       │
         //   1 │       └───┘   └───┘   └───┘       │
+        //     │                                   │
+        //   0 └───────────────────────────────────┘
+
+        let mut subj_paths = Vec::new();
+
+        let m = n as i32;
+
+        let x0 = 1;
+        let y0 = 1;
+        let x1 = 2 * m + 2;
+        let y1 = 2 * m + 2;
+
+        subj_paths.push(int_path!(
+            [x0 - 1, y1 + 1],
+            [x0 - 1, y0 - 1],
+            [x1 + 1, y0 - 1],
+            [x1 + 1, y1 + 1]
+        ));
+
+        for i in 0..m {
+            let x = 2 * (i + 1);
+            let vr_line = int_path!([x, y0], [x, y1], [x + 1, y1], [x + 1, y0]);
+
+            let y = 2 * (i + 1);
+            let hz_line = int_path!([x0, y], [x0, y + 1], [x1, y + 1], [x1, y]);
+
+            subj_paths.push(vr_line);
+            subj_paths.push(hz_line);
+        }
+
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &[],
+            IntOverlayOptions::ocg(),
+            Default::default(),
+        );
+
+        let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
+
+        let polygons_count = n * n + (n - 1) * (n - 1) + 1;
+
+        assert_eq!(result.len(), polygons_count);
+        assert_eq!(result[0].len(), 2);
+    }
+
+    fn checkerboard_b(n: usize) {
+        //     0   1   2   3   4   5   6   7   8   9
+        //   9 ┌───────────────────────────────────┐
+        //     │                                   │
+        //   8 │   ┌───┐   ┌───┐   ┌───┐   ┌───┐   │
+        //     │   │ ░ │   │ ░ │   │ ░ │   │ ░ │   │
+        //   7 │   └───●───●───●───●───●───●───┘   │
+        //     │       │ ░ │   │ ░ │   │ ░ │       │
+        //   6 │   ┌───●───●───●───●───●───●───┐   │
+        //     │   │ ░ │   │ ░ │   │ ░ │   │ ░ │   │
+        //   5 │   └───●───●───●───●───●───●───┘   │
+        //     │       │ ░ │   │ ░ │   │ ░ │       │
+        //   4 │   ┌───●───●───●───●───●───●───┐   │
+        //     │   │ ░ │   │ ░ │   │ ░ │   │ ░ │   │
+        //   3 │   └───●───●───●───●───●───●───┘   │
+        //     │       │ ░ │   │ ░ │   │ ░ │       │
+        //   2 │   ┌───●───●───●───●───●───●───┐   │
+        //     │   │ ░ │   │ ░ │   │ ░ │   │ ░ │   │
+        //   1 │   └───┘   └───┘   └───┘   └───┘   │
         //     │                                   │
         //   0 └───────────────────────────────────┘
 

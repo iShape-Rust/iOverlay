@@ -53,12 +53,11 @@ impl OverlayGraph<'_> {
     ) -> IntShapes {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
-        // if self.options.ocg {
-        //     self.extract_ocg(overlay_rule, buffer)
-        // } else {
-        //
-        // }
-        self.extract(overlay_rule, buffer)
+        if self.options.ocg {
+            self.extract_ocg(overlay_rule, buffer)
+        } else {
+            self.extract(overlay_rule, buffer)
+        }
     }
 
     /// Extracts the flat contours from the overlay graph based on the specified overlay rule.
@@ -90,7 +89,6 @@ impl OverlayGraph<'_> {
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
         let is_main_dir_cw = self.options.output_direction == ContourDirection::Clockwise;
-        let prefer_small_holes = self.options.prefer_small_holes;
 
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
@@ -120,15 +118,10 @@ impl OverlayGraph<'_> {
             let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == is_main_dir_cw;
-            let traversal_direction = if prefer_small_holes {
-                direction
-            } else {
-                !is_main_dir_cw
-            };
 
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, traversal_direction, visited_state, buffer);
+            self.find_contour(&start_data, direction, visited_state, buffer);
             let (is_valid, is_modified) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,

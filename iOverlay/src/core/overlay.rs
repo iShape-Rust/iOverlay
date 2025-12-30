@@ -39,8 +39,8 @@ pub struct IntOverlayOptions {
     /// Minimum area threshold to include a contour in the result.
     pub min_output_area: u64,
 
-    /// If false, extract OGC-valid shapes.
-    pub prefer_small_holes: bool,
+    /// If true, extract OGC-valid shapes.
+    pub ocg: bool,
 }
 
 /// Specifies the type of shape being processed, influencing how the shape participates in Boolean operations.
@@ -375,7 +375,7 @@ impl Default for IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
-            prefer_small_holes: true,
+            ocg: false,
         }
     }
 }
@@ -387,7 +387,7 @@ impl IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
-            prefer_small_holes: true,
+            ocg: false,
         }
     }
     pub fn keep_output_points() -> Self {
@@ -396,7 +396,7 @@ impl IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
             min_output_area: 0,
-            prefer_small_holes: true,
+            ocg: false,
         }
     }
     pub fn ocg() -> Self {
@@ -405,7 +405,7 @@ impl IntOverlayOptions {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: 0,
-            prefer_small_holes: false,
+            ocg: true,
         }
     }
 }
