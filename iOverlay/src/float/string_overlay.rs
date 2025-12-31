@@ -1,18 +1,22 @@
+use crate::core::fill_rule::FillRule;
+use crate::core::solver::Solver;
+use crate::float::scale::FixedScaleOverlayError;
+use crate::float::string_graph::FloatStringGraph;
+use crate::string::clip::ClipRule;
+use crate::string::overlay::StringOverlay;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::ShapeToFloat;
 use i_shape::source::resource::ShapeResource;
-use crate::core::fill_rule::FillRule;
-use crate::core::solver::Solver;
-use crate::float::string_graph::FloatStringGraph;
-use crate::string::clip::ClipRule;
-use crate::string::overlay::StringOverlay;
 
 /// The `FloatStringOverlay` struct is a builder for overlaying geometric shapes by converting
 /// floating-point geometry to integer space. It provides methods for adding paths and shapes,
 /// as well as for converting the overlay into a `FloatStringGraph`.
+///
+/// The float-to-integer conversion is controlled by the `FloatPointAdapter` scale:
+/// `x_int = (x_float - offset_x) * scale`. Use a fixed scale if you need predictable precision.
 pub struct FloatStringOverlay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) overlay: StringOverlay,
     pub(super) adapter: FloatPointAdapter<P, T>,
@@ -24,14 +28,21 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     ///
     /// - `adapter`: A `FloatPointAdapter` instance responsible for coordinate conversion between
     ///   float and integer values, ensuring accuracy during geometric transformations.
+    ///   Use `FloatPointAdapter::with_scale` to set a fixed scale, or `FloatPointAdapter::new`
+    ///   for automatic scaling based on bounds.
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
     pub fn with_adapter(adapter: FloatPointAdapter<P, T>, capacity: usize) -> Self {
-        Self { overlay: StringOverlay::new(capacity), adapter }
+        Self {
+            overlay: StringOverlay::new(capacity),
+            adapter,
+        }
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    ///
+    /// This variant uses automatic scaling based on the combined bounds of `shape` and `string`.
     /// - `shape`: A `ShapeResource` define the shape.
     ///   `ShapeResource` can be one of the following:
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
@@ -57,6 +68,42 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         Self::with_adapter(adapter, shape_capacity + string_capacity)
             .unsafe_add_shapes(shape)
             .unsafe_add_string_lines(string)
+    }
+
+    /// Creates a new `FloatStringOverlay` instance with a fixed float-to-integer scale.
+    ///
+    /// This variant validates that the requested scale is finite, positive, and fits the
+    /// input bounds. Use `scale = 1.0 / grid_size` if you want a grid-size style parameter.
+    pub fn with_shape_and_string_fixed_scale<R0, R1>(
+        shape: &R0,
+        string: &R1,
+        scale: T,
+    ) -> Result<Self, FixedScaleOverlayError>
+    where
+        R0: ShapeResource<P, T>,
+        R1: ShapeResource<P, T>,
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+
+        let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
+        let mut adapter = FloatPointAdapter::with_iter(iter);
+        if adapter.dir_scale < scale {
+            return Err(FixedScaleOverlayError::ScaleTooLarge);
+        }
+
+        adapter.dir_scale = scale;
+        adapter.inv_scale = T::from_float(1.0 / s);
+
+        let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
+        let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
+
+        Ok(
+            Self::with_adapter(adapter, shape_capacity + string_capacity)
+                .unsafe_add_shapes(shape)
+                .unsafe_add_string_lines(string),
+        )
     }
 
     /// Adds a shapes to the overlay.
@@ -93,7 +140,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
     pub fn unsafe_add_shape_contour(mut self, contour: &[P]) -> Self {
-        self.overlay.add_shape_contour_iter(contour.iter().map(|p| self.adapter.float_to_int(p)));
+        self.overlay
+            .add_shape_contour_iter(contour.iter().map(|p| self.adapter.float_to_int(p)));
         self
     }
 
@@ -126,9 +174,18 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - `solver`: A custom solver for optimizing or modifying the graph creation process.
     /// - Returns: A `FloatStringGraph` containing the graph representation of the overlay's geometry.
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<FloatStringGraph<'_, P, T>> {
-        let graph = self.overlay.build_graph_view_with_solver(fill_rule, solver)?;
-        Some(FloatStringGraph { graph, adapter: self.adapter.clone() })
+    pub fn build_graph_view_with_solver(
+        &mut self,
+        fill_rule: FillRule,
+        solver: Solver,
+    ) -> Option<FloatStringGraph<'_, P, T>> {
+        let graph = self
+            .overlay
+            .build_graph_view_with_solver(fill_rule, solver)?;
+        Some(FloatStringGraph {
+            graph,
+            adapter: self.adapter.clone(),
+        })
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified build and clip rules.
@@ -139,8 +196,52 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
     /// - `solver`: Type of solver to use.
     /// - Returns: A `Paths<P>` collection of string lines that meet the clipping conditions.
     #[inline]
-    pub fn clip_string_lines_with_solver(self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Paths<P> {
-        let paths = self.overlay.clip_string_lines_with_solver(fill_rule, clip_rule, solver);
+    pub fn clip_string_lines_with_solver(
+        self,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: Solver,
+    ) -> Paths<P> {
+        let paths = self
+            .overlay
+            .clip_string_lines_with_solver(fill_rule, clip_rule, solver);
         paths.to_float(&self.adapter)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::float::string_overlay::FloatStringOverlay;
+    use alloc::vec;
+
+    #[test]
+    fn test_fixed_scale_ok() {
+        let shape = vec![vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]];
+        let string = vec![[0.0, 0.5], [2.0, 0.5]];
+
+        let overlay = FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, 10.0);
+
+        assert!(overlay.is_ok());
+    }
+
+    #[test]
+    fn test_fixed_scale_invalid() {
+        let shape = vec![vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]];
+        let string = vec![[0.0, 0.5], [2.0, 0.5]];
+
+        assert!(
+            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, 0.0).is_err()
+        );
+        assert!(
+            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, -1.0).is_err()
+        );
+        assert!(
+            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, f64::NAN)
+                .is_err()
+        );
+        assert!(
+            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, f64::INFINITY)
+                .is_err()
+        );
     }
 }

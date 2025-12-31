@@ -1,10 +1,10 @@
-use alloc::vec::Vec;
+use alloc::rc::Rc;
 use core::f64::consts::PI;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 
 /// The endpoint style of a line.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LineCap<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// A line with a squared-off end. This is the default.
     Butt,
@@ -14,7 +14,7 @@ pub enum LineCap<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// A line with a squared-off end. An extended distance equal to half the line width.
     Square,
     /// Set a custom end with template points.
-    Custom(Vec<P>)
+    Custom(Rc<[P]>)
 }
 
 /// The join style of a line.
@@ -33,7 +33,7 @@ pub enum LineJoin<T: FloatNumber> {
 }
 
 /// Defines the stroke style for outlining paths.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StrokeStyle<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// The width of the stroke.
     pub width: T,

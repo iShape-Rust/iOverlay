@@ -1,9 +1,11 @@
-use crate::i_shape::source::resource::ShapeResource;
-use crate::mesh::stroke::offset::vec::Vec;
-use alloc::vec;
 use crate::float::overlay::OverlayOptions;
+use crate::float::scale::FixedScaleOverlayError;
+use crate::i_shape::source::resource::ShapeResource;
+use crate::mesh::overlay::OffsetOverlay;
 use crate::mesh::stroke::builder::StrokeBuilder;
+use crate::mesh::stroke::offset::vec::Vec;
 use crate::mesh::style::StrokeStyle;
+use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -12,7 +14,6 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::mesh::overlay::OffsetOverlay;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates a stroke shapes for paths, contours, or shapes.
@@ -42,6 +43,42 @@ pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
         is_closed_path: bool,
         options: OverlayOptions<T>,
     ) -> Shapes<P>;
+
+    /// Generates a stroke shapes for paths, contours, or shapes with a fixed float-to-integer scale.
+    ///
+    /// - `style`: Defines the stroke properties, including width, line caps, and joins.
+    /// - `is_closed_path`: Specifies whether the path is closed (true) or open (false).
+    /// - `scale`: Fixed float-to-integer scale. Use `scale = 1.0 / grid_size` if you prefer grid size semantics.
+    ///
+    /// # Returns
+    /// A collection of `Shapes<P>` representing the stroke geometry.
+    ///
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
+    fn stroke_fixed_scale(
+        &self,
+        style: StrokeStyle<P, T>,
+        is_closed_path: bool,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Generates a stroke mesh for paths, contours, or shapes with optional filtering and fixed scaling.
+    ///
+    /// - `style`: Defines the stroke properties, including width, line caps, and joins.
+    /// - `is_closed_path`: Specifies whether the path is closed (true) or open (false).
+    /// - `options`: Adjust custom behavior.
+    /// - `scale`: Fixed float-to-integer scale. Use `scale = 1.0 / grid_size` if you prefer grid size semantics.
+    ///
+    /// # Returns
+    /// A collection of `Shapes<P>` representing the stroke geometry.
+    ///
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
+    fn stroke_custom_fixed_scale(
+        &self,
+        style: StrokeStyle<P, T>,
+        is_closed_path: bool,
+        options: OverlayOptions<T>,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>;
 }
 
 impl<S, P, T> StrokeOffset<P, T> for S
@@ -54,21 +91,62 @@ where
         self.stroke_custom(style, is_closed_path, Default::default())
     }
 
+    fn stroke_fixed_scale(
+        &self,
+        style: StrokeStyle<P, T>,
+        is_closed_path: bool,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError> {
+        self.stroke_custom_fixed_scale(style, is_closed_path, Default::default(), scale)
+    }
+
     fn stroke_custom(
         &self,
         style: StrokeStyle<P, T>,
         is_closed_path: bool,
         options: OverlayOptions<T>,
     ) -> Shapes<P> {
+        match StrokeSolver::prepare(self, style) {
+            Some(solver) => solver.build(self, is_closed_path, options),
+            None => vec![],
+        }
+    }
+
+    fn stroke_custom_fixed_scale(
+        &self,
+        style: StrokeStyle<P, T>,
+        is_closed_path: bool,
+        options: OverlayOptions<T>,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError> {
+        let mut solver = match StrokeSolver::prepare(self, style) {
+            Some(solver) => solver,
+            None => return Ok(vec![]),
+        };
+        solver.apply_scale(scale)?;
+        Ok(solver.build(self, is_closed_path, options))
+    }
+}
+
+struct StrokeSolver<P: FloatPointCompatible<T>, T: FloatNumber> {
+    r: T,
+    builder: StrokeBuilder<P, T>,
+    adapter: FloatPointAdapter<P, T>,
+    paths_count: usize,
+    points_count: usize,
+}
+
+impl<P: 'static + FloatPointCompatible<T>, T: 'static + FloatNumber> StrokeSolver<P, T> {
+    fn prepare<S: ShapeResource<P, T>>(source: &S, style: StrokeStyle<P, T>) -> Option<Self> {
         let mut paths_count = 0;
         let mut points_count = 0;
-        for path in self.iter_paths() {
+        for path in source.iter_paths() {
             paths_count += 1;
             points_count += path.len();
         }
 
         if paths_count == 0 {
-            return vec![];
+            return None;
         }
 
         let r = T::from_float(0.5 * style.width.to_f64());
@@ -76,36 +154,66 @@ where
         let a = builder.additional_offset(r);
 
         let mut rect =
-            FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
+            FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(a);
         let adapter = FloatPointAdapter::new(rect);
 
-        let ir = adapter.len_float_to_int(r).abs();
+        Some(Self {
+            r,
+            builder,
+            adapter,
+            paths_count,
+            points_count,
+        })
+    }
+
+    fn apply_scale(&mut self, scale: T) -> Result<(), FixedScaleOverlayError> {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+        if self.adapter.dir_scale < scale {
+            return Err(FixedScaleOverlayError::ScaleTooLarge);
+        }
+
+        self.adapter.dir_scale = scale;
+        self.adapter.inv_scale = T::from_float(1.0 / s);
+
+        Ok(())
+    }
+
+    fn build<S: ShapeResource<P, T>>(
+        self,
+        source: &S,
+        is_closed_path: bool,
+        options: OverlayOptions<T>,
+    ) -> Shapes<P> {
+        let ir = self.adapter.len_float_to_int(self.r).abs();
         if ir <= 1 {
             // offset is too small
             return vec![];
         }
 
-        let capacity = builder.capacity(paths_count, points_count, is_closed_path);
+        let capacity = self
+            .builder
+            .capacity(self.paths_count, self.points_count, is_closed_path);
         let mut segments = Vec::with_capacity(capacity);
 
-        for path in self.iter_paths() {
-            builder.build(path, is_closed_path, &adapter, &mut segments);
+        for path in source.iter_paths() {
+            self.builder
+                .build(path, is_closed_path, &self.adapter, &mut segments);
         }
 
-        let min_area = adapter.sqr_float_to_int(options.min_output_area);
+        let min_area = self.adapter.sqr_float_to_int(options.min_output_area);
         let shapes = OffsetOverlay::with_segments(segments)
             .build_graph_view_with_solver(Default::default())
             .map(|graph| graph.extract_offset(options.output_direction, min_area))
             .unwrap_or_default();
 
-        let mut float = shapes.to_float(&adapter);
+        let mut float = shapes.to_float(&self.adapter);
 
         if options.clean_result {
             if options.preserve_output_collinear {
-                float.despike_contour(&adapter);
+                float.despike_contour(&self.adapter);
             } else {
-                float.simplify_contour(&adapter);
+                float.simplify_contour(&self.adapter);
             }
         };
 
@@ -115,10 +223,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
-    use alloc::vec::Vec;
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
+    use alloc::vec;
+    use alloc::vec::Vec;
     use core::f32::consts::PI;
 
     #[test]
@@ -291,10 +399,7 @@ mod tests {
 
     #[test]
     fn test_many_paths() {
-        let paths = [
-            vec![[0.0, 0.0], [5.0, 0.0]],
-            vec![[0.0, 0.0], [5.0, -5.0]]
-        ];
+        let paths = [vec![[0.0, 0.0], [5.0, 0.0]], vec![[0.0, 0.0], [5.0, -5.0]]];
 
         let style = StrokeStyle::new(2.0)
             .start_cap(LineCap::Butt)
@@ -304,5 +409,32 @@ mod tests {
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[0][0].len(), 8);
+    }
+
+    #[test]
+    fn test_stroke_fixed_scale_ok() {
+        let path = [[0.0, 0.0], [10.0, 0.0]];
+        let style = StrokeStyle::new(2.0);
+
+        let shapes = path.stroke_fixed_scale(style, false, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_stroke_fixed_scale_invalid() {
+        let path = [[0.0, 0.0], [10.0, 0.0]];
+        let style = StrokeStyle::new(2.0);
+
+        assert!(path.stroke_fixed_scale(style.clone(), false, 0.0).is_err());
+        assert!(path.stroke_fixed_scale(style.clone(), false, -1.0).is_err());
+        assert!(
+            path.stroke_fixed_scale(style.clone(), false, f64::NAN)
+                .is_err()
+        );
+        assert!(
+            path.stroke_fixed_scale(style.clone(), false, f64::INFINITY)
+                .is_err()
+        );
     }
 }

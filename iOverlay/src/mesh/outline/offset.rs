@@ -5,6 +5,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
+use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
 use i_float::adapter::FloatPointAdapter;
@@ -37,6 +38,36 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// A collection of `Shapes<P>` representing the outline geometry.
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     fn outline_custom(&self, style: &OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P>;
+
+    /// Generates an outline shapes for contours, or shapes with a fixed float-to-integer scale.
+    ///
+    /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `scale`: Fixed float-to-integer scale. Use `scale = 1.0 / grid_size` if you prefer grid size semantics.
+    ///
+    /// # Returns
+    /// A collection of `Shapes<P>` representing the outline geometry.
+    /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
+    fn outline_fixed_scale(
+        &self,
+        style: &OutlineStyle<T>,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Generates an outline shapes for contours, or shapes with optional filtering and fixed scaling.
+    ///
+    /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `options`: Adjust custom behavior.
+    /// - `scale`: Fixed float-to-integer scale. Use `scale = 1.0 / grid_size` if you prefer grid size semantics.
+    ///
+    /// # Returns
+    /// A collection of `Shapes<P>` representing the outline geometry.
+    /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
+    fn outline_custom_fixed_scale(
+        &self,
+        style: &OutlineStyle<T>,
+        options: OverlayOptions<T>,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>;
 }
 
 impl<S, P, T> OutlineOffset<P, T> for S
@@ -50,87 +81,152 @@ where
     }
 
     fn outline_custom(&self, style: &OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P> {
+        match OutlineSolver::prepare(self, style) {
+            Some(solver) => solver.build(self, options),
+            None => vec![],
+        }
+    }
+
+    fn outline_fixed_scale(
+        &self,
+        style: &OutlineStyle<T>,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError> {
+        self.outline_custom_fixed_scale(style, Default::default(), scale)
+    }
+
+    fn outline_custom_fixed_scale(
+        &self,
+        style: &OutlineStyle<T>,
+        options: OverlayOptions<T>,
+        scale: T,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError> {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match OutlineSolver::prepare(self, style) {
+            Some(solver) => solver,
+            None => return Ok(vec![]),
+        };
+        solver.apply_scale(s)?;
+        Ok(solver.build(self, options))
+    }
+}
+
+struct OutlineSolver<P: FloatPointCompatible<T>, T: FloatNumber> {
+    outer_builder: OutlineBuilder<P, T>,
+    inner_builder: OutlineBuilder<P, T>,
+    adapter: FloatPointAdapter<P, T>,
+    points_count: usize,
+    paths_count: usize,
+}
+
+impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolver<P, T> {
+    fn prepare<S: ShapeResource<P, T>>(source: &S, style: &OutlineStyle<T>) -> Option<Self> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
             let mut paths_count = 0;
-            for path in self.iter_paths() {
+            for path in source.iter_paths() {
                 points_count += path.len();
                 paths_count += 1;
             }
             (points_count, paths_count)
         };
 
-        let join = style.join.clone().normalize();
+        if paths_count == 0 {
+            return None;
+        }
 
+        let join = style.join.clone().normalize();
         let outer_builder = OutlineBuilder::new(-style.outer_offset, &join);
         let inner_builder = OutlineBuilder::new(style.inner_offset, &join);
 
-        let adapter = {
-            let outer_radius = style.outer_offset;
-            let inner_radius = style.inner_offset;
+        let outer_radius = style.outer_offset;
+        let inner_radius = style.inner_offset;
 
-            let outer_additional_offset = outer_builder.additional_offset(outer_radius);
-            let inner_additional_offset = inner_builder.additional_offset(inner_radius);
+        let outer_additional_offset = outer_builder.additional_offset(outer_radius);
+        let inner_additional_offset = inner_builder.additional_offset(inner_radius);
 
-            let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
+        let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
 
-            let mut rect =
-                FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or(FloatRect::zero());
-            rect.add_offset(additional_offset);
+        let mut rect =
+            FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
+        rect.add_offset(additional_offset);
 
-            FloatPointAdapter::new(rect)
-            // FloatPointAdapter::with_scale(rect, 1.0) // Debug !!!
-        };
+        let adapter = FloatPointAdapter::new(rect);
 
-        let int_min_area = adapter.sqr_float_to_int(options.min_output_area).max(1);
+        Some(Self {
+            outer_builder,
+            inner_builder,
+            adapter,
+            points_count,
+            paths_count,
+        })
+    }
 
-        let shapes = if paths_count <= 1 {
+    fn apply_scale(&mut self, scale: f64) -> Result<(), FixedScaleOverlayError> {
+        let s = T::from_float(scale);
+        if self.adapter.dir_scale < s {
+            return Err(FixedScaleOverlayError::ScaleTooLarge);
+        }
+
+        self.adapter.dir_scale = s;
+        self.adapter.inv_scale = T::from_float(1.0 / scale);
+
+        Ok(())
+    }
+
+    fn build<S: ShapeResource<P, T>>(self, source: &S, options: OverlayOptions<T>) -> Shapes<P> {
+        let int_min_area = self.adapter.sqr_float_to_int(options.min_output_area).max(1);
+
+        let shapes = if self.paths_count <= 1 {
             // fast solution for a single path
-
-            let path = if let Some(first) = self.iter_paths().next() {
+            let path = if let Some(first) = source.iter_paths().next() {
                 first
             } else {
                 return vec![];
             };
 
-            let area = path.unsafe_int_area(&adapter);
+            let area = path.unsafe_int_area(&self.adapter);
             if area >= -1 {
                 // single path must be clock-wised
                 return vec![];
             }
 
-            let capacity = outer_builder.capacity(path.len());
+            let capacity = self.outer_builder.capacity(path.len());
             let mut segments = Vec::with_capacity(capacity);
-            outer_builder.build(path, &adapter, &mut segments);
+            self.outer_builder.build(path, &self.adapter, &mut segments);
 
             OffsetOverlay::with_segments(segments)
                 .build_graph_view_with_solver(Default::default())
                 .map(|graph| graph.extract_offset(options.output_direction, int_min_area))
                 .unwrap_or_default()
         } else {
-            let total_capacity = outer_builder.capacity(points_count);
+            let total_capacity = self.outer_builder.capacity(self.points_count);
 
-            let mut overlay = Overlay::new_custom(total_capacity, options.int_with_adapter(&adapter), Default::default());
+            let mut overlay = Overlay::new_custom(
+                total_capacity,
+                options.int_with_adapter(&self.adapter),
+                Default::default(),
+            );
             let mut offset_overlay = OffsetOverlay::new(128);
 
             let mut segments = Vec::new();
 
-            for path in self.iter_paths() {
-                let area = path.unsafe_int_area(&adapter);
+            for path in source.iter_paths() {
+                let area = path.unsafe_int_area(&self.adapter);
                 if area.abs() <= 1 {
                     // ignore degenerate paths
                     continue;
                 }
 
                 if area < 0 {
-                    let capacity = outer_builder.capacity(path.len());
+                    let capacity = self.outer_builder.capacity(path.len());
                     let additional = capacity.saturating_sub(segments.capacity());
                     if additional > 0 {
                         segments.reserve(additional);
                     }
                     segments.clear();
 
-                    outer_builder.build(path, &adapter, &mut segments);
+                    self.outer_builder.build(path, &self.adapter, &mut segments);
 
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
@@ -142,20 +238,19 @@ where
 
                     overlay.add_shapes(&shapes, ShapeType::Subject);
                 } else {
-                    // TODO switch to reverse
                     let mut inverted = Vec::with_capacity(path.len());
                     for p in path.iter().rev() {
                         inverted.push(*p);
                     }
 
-                    let capacity = inner_builder.capacity(inverted.len());
+                    let capacity = self.inner_builder.capacity(inverted.len());
                     let additional = capacity.saturating_sub(segments.capacity());
                     if additional > 0 {
                         segments.reserve(additional);
                     }
                     segments.clear();
 
-                    inner_builder.build(&inverted, &adapter, &mut segments);
+                    self.inner_builder.build(&inverted, &self.adapter, &mut segments);
 
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
@@ -175,22 +270,19 @@ where
                 }
             }
 
-            overlay.overlay(
-                OverlayRule::Subject,
-                FillRule::Positive
-            )
+            overlay.overlay(OverlayRule::Subject, FillRule::Positive)
         };
 
         if options.clean_result {
-            let mut float = shapes.to_float(&adapter);
+            let mut float = shapes.to_float(&self.adapter);
             if options.preserve_output_collinear {
-                float.despike_contour(&adapter);
+                float.despike_contour(&self.adapter);
             } else {
-                float.simplify_contour(&adapter);
+                float.simplify_contour(&self.adapter);
             }
             float
         } else {
-            shapes.to_float(&adapter)
+            shapes.to_float(&self.adapter)
         }
     }
 }
@@ -198,7 +290,7 @@ where
 #[cfg(test)]
 mod tests {
     use alloc::vec;
-use crate::mesh::outline::offset::OutlineOffset;
+    use crate::mesh::outline::offset::OutlineOffset;
     use crate::mesh::style::{LineJoin, OutlineStyle};
     use core::f32::consts::PI;
 
@@ -330,5 +422,26 @@ use crate::mesh::outline::offset::OutlineOffset;
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 8);
+    }
+
+    #[test]
+    fn test_outline_fixed_scale_ok() {
+        let path = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]];
+        let style = OutlineStyle::new(1.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_outline_fixed_scale_invalid() {
+        let path = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]];
+        let style = OutlineStyle::new(1.0);
+
+        assert!(path.outline_fixed_scale(&style, 0.0).is_err());
+        assert!(path.outline_fixed_scale(&style, -1.0).is_err());
+        assert!(path.outline_fixed_scale(&style, f64::NAN).is_err());
+        assert!(path.outline_fixed_scale(&style, f64::INFINITY).is_err());
     }
 }
