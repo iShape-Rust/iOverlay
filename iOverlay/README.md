@@ -366,8 +366,7 @@ It internally merges shapes efficiently and is typically faster and more robust 
 ### 3. How do I use a fixed grid size (fixed precision) for float overlays?
 
 Use `FixedScaleFloatOverlay` or `FloatOverlay::with_subj_and_clip_fixed_scale`. The scale is
-`scale = 1.0 / grid_size`, and the API validates that the chosen scale fits into safe integer
-bounds.
+`scale = 1.0 / grid_size`.
 
 ```rust
 use i_overlay::core::fill_rule::FillRule;
@@ -391,8 +390,7 @@ If you need more control, use `FloatPointAdapter::with_scale` and `FloatOverlay:
 
 ### 4. How do I enable OGC-valid output?
 
-Set the `ocg` flag in `OverlayOptions` (or use `OverlayOptions::ocg()`), then pass the options to
-the float overlay constructor.
+Set the `ocg` flag in `OverlayOptions`.
 
 ```rust
 use i_overlay::core::fill_rule::FillRule;
