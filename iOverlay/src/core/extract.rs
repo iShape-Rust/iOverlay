@@ -51,8 +51,7 @@ impl OverlayGraph<'_> {
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
-        self.links
-            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ocg {
             self.extract_ocg(overlay_rule, buffer)
         } else {
@@ -88,7 +87,7 @@ impl OverlayGraph<'_> {
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
-        let is_main_dir_cw = self.options.output_direction == ContourDirection::Clockwise;
+        let clockwise = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut shapes = Vec::new();
         let mut holes = Vec::new();
@@ -115,10 +114,10 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state =
+                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
-            let direction = is_hole == is_main_dir_cw;
-
+            let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
             self.find_contour(&start_data, direction, visited_state, buffer);
@@ -135,7 +134,7 @@ impl OverlayGraph<'_> {
             let contour = buffer.points.as_slice().to_vec();
 
             if is_hole {
-                let mut v_segment = if is_main_dir_cw {
+                let mut v_segment = if clockwise {
                     VSegment {
                         a: contour[1],
                         b: contour[2],
@@ -167,7 +166,7 @@ impl OverlayGraph<'_> {
             anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
-        shapes.join_sorted_holes(holes, anchors, is_main_dir_cw);
+        shapes.join_sorted_holes(holes, anchors, clockwise);
 
         shapes
     }
@@ -242,7 +241,6 @@ impl OverlayGraph<'_> {
                 [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
-
             let start_data = StartPathData::new(direction, link, left_top_link);
 
             self.find_contour(&start_data, direction, visited_state, buffer);
@@ -550,8 +548,8 @@ impl GraphUtil {
             // SAFETY: first_index originates from indices, so it is within links.
             links.get_unchecked(first_index)
         }
-        .other(node_id)
-        .point;
+            .other(node_id)
+            .point;
         let mut vector_solver = NearestVector::new(c, a, b, first_index, clockwise);
 
         // add second vector
@@ -560,8 +558,8 @@ impl GraphUtil {
                 // SAFETY: second_index comes from indices just like first_index.
                 links.get_unchecked(second_index)
             }
-            .other(node_id)
-            .point,
+                .other(node_id)
+                .point,
             second_index,
         );
 
@@ -572,8 +570,8 @@ impl GraphUtil {
                     // SAFETY: every link_index here is sourced from indices, so it addresses links.
                     links.get_unchecked(link_index)
                 }
-                .other(node_id)
-                .point;
+                    .other(node_id)
+                    .point;
                 vector_solver.add(p, link_index);
             }
         }
