@@ -363,11 +363,10 @@ It internally merges shapes efficiently and is typically faster and more robust 
 
 ---
 
-### 3. How do I use a custom grid size (fixed precision) for float overlays?
+### 3. How do I use a fixed grid size?
 
 Use `FixedScaleFloatOverlay` or `FloatOverlay::with_subj_and_clip_fixed_scale`. The scale is
-`scale = 1.0 / grid_size`, and the API validates that the chosen scale fits into safe integer
-bounds.
+`scale = 1.0 / grid_size`.
 
 ```rust
 use i_overlay::core::fill_rule::FillRule;
