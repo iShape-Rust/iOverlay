@@ -363,7 +363,7 @@ It internally merges shapes efficiently and is typically faster and more robust 
 
 ---
 
-### 3. How do I use a custom grid size (fixed precision) for float overlays?
+### 3. How do I use a fixed grid size (fixed precision) for float overlays?
 
 Use `FixedScaleFloatOverlay` or `FloatOverlay::with_subj_and_clip_fixed_scale`. The scale is
 `scale = 1.0 / grid_size`, and the API validates that the chosen scale fits into safe integer
@@ -386,6 +386,47 @@ let result = subj
 ```
 
 If you need more control, use `FloatPointAdapter::with_scale` and `FloatOverlay::with_adapter`.
+
+---
+
+### 4. How do I enable OGC-valid output?
+
+Set the `ocg` flag in `OverlayOptions` (or use `OverlayOptions::ocg()`), then pass the options to
+the float overlay constructor.
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
+
+//     0   1   2   3   4   5
+//   5 ┌───────────────────┐
+//     │                   │
+//   4 │   ┌───────┐       │
+//     │   │ ░   ░ │       │   Two L-shaped holes share vertices at (2,2) and (3,3)
+//   3 │   │   ┌───●───┐   │
+//     │   │ ░ │   │ ░ │   │   ░ = holes
+//   2 │   └───●───┘   │   │
+//     │       │ ░   ░ │   │   The shared edge disconnects the interior
+//   1 │       └───────┘   │
+//     │                   │
+//   0 └───────────────────┘
+//
+// OGC Simple Feature Specification (ISO 19125-1) states:
+// "The interior of every Surface is a connected point set."
+
+let subj = vec![vec![[0.0, 0.0], [5.0, 0.0], [5.0, 5.0], [0.0, 5.0]]];
+let clip = vec![
+    vec![[1.0, 2.0], [1.0, 4.0], [3.0, 4.0], [3.0, 3.0], [2.0, 3.0], [2.0, 2.0]],
+    vec![[2.0, 1.0], [2.0, 2.0], [3.0, 2.0], [3.0, 3.0], [4.0, 3.0], [4.0, 1.0]],
+];
+
+let options = OverlayOptions::<f64>::ocg();
+let mut overlay = FloatOverlay::with_subj_and_clip_custom(&subj, &clip, options, Default::default());
+let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+
+assert_eq!(result.len(), 2);
+```
 
 ---
 
