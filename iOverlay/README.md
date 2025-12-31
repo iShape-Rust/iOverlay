@@ -363,6 +363,32 @@ It internally merges shapes efficiently and is typically faster and more robust 
 
 ---
 
+### 3. How do I use a custom grid size (fixed precision) for float overlays?
+
+Use `FixedScaleFloatOverlay` or `FloatOverlay::with_subj_and_clip_fixed_scale`. The scale is
+`scale = 1.0 / grid_size`, and the API validates that the chosen scale fits into safe integer
+bounds.
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::scale::FixedScaleFloatOverlay;
+
+let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+
+let grid_size = 0.001;
+let scale = 1.0 / grid_size;
+
+let result = subj
+    .overlay_with_fixed_scale(&clip, OverlayRule::Difference, FillRule::EvenOdd, scale)
+    .expect("scale does not fit input bounds");
+```
+
+If you need more control, use `FloatPointAdapter::with_scale` and `FloatOverlay::with_adapter`.
+
+---
+
 # Versioning Policy
 
 This crate follows a pragmatic versioning approach:
