@@ -60,20 +60,20 @@ impl OverlayGraph<'_> {
             let direction = is_hole == clockwise;
             let start_data = StartVectorPathData::new(direction, link, left_top_link);
 
-            let mut path = self.find_vector_contour(start_data, direction, visited_state, visited);
+            let mut contour = self.find_vector_contour(start_data, direction, visited_state, visited);
             if !self.options.preserve_output_collinear {
-                path.simplify_contour();
+                contour.simplify_contour();
             }
 
-            if !is_vector_path_valid(&path, self.options.min_output_area) {
+            if !is_vector_path_valid(&contour, self.options.min_output_area) {
                 link_index += 1;
                 continue;
             }
 
             if is_hole {
-                holes.push(path);
+                holes.push(contour);
             } else {
-                shapes.push(vec![path]);
+                shapes.push(vec![contour]);
             }
 
             link_index += 1;
@@ -95,11 +95,7 @@ impl OverlayGraph<'_> {
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        unsafe {
-            // SAFETY: `link_id` was returned by `find_left_top_link` or `next_link`,
-            // both of which guarantee the index lies in 0..visited.len().
-            *visited.get_unchecked_mut(link_id) = visited_state;
-        };
+        visited.visit_edge(link_id, visited_state);
 
         let mut contour = VectorPath::new();
         contour.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
@@ -121,12 +117,7 @@ impl OverlayGraph<'_> {
                 contour.push(VectorEdge::new(link.fill, link.b.point, link.a.point));
                 link.a.id
             };
-
-            unsafe {
-                // SAFETY: same reasoning as above - `link_id` refers to a real link and
-                // therefore a real visited flag.
-                *visited.get_unchecked_mut(link_id) = visited_state;
-            };
+            visited.visit_edge(link_id, visited_state);
         }
 
         contour
@@ -272,18 +263,18 @@ fn is_vector_path_valid(path: &VectorPath, min_output_area: u64) -> bool {
         return true;
     }
 
-    let double_area = path.iter().fold(0i64, |acc, edge| {
-        acc + edge.a.cross_product(edge.b)
-    });
+    let double_area = path
+        .iter()
+        .fold(0i64, |acc, edge| acc + edge.a.cross_product(edge.b));
     (double_area.unsigned_abs() >> 1) >= min_output_area
 }
 
 #[cfg(test)]
 mod tests {
-    use i_shape::int_shape;
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay::{IntOverlayOptions, Overlay};
     use crate::core::overlay_rule::OverlayRule;
+    use i_shape::int_shape;
 
     #[test]
     fn test_keep_output_points() {
@@ -294,13 +285,19 @@ mod tests {
         ];
         let mut overlay = Overlay::with_contours(&subj, &[]);
         overlay.options = IntOverlayOptions::keep_all_points();
-        let shapes = overlay.build_graph_view(FillRule::NonZero).unwrap().extract_shape_vectors(OverlayRule::Subject);
+        let shapes = overlay
+            .build_graph_view(FillRule::NonZero)
+            .unwrap()
+            .extract_shape_vectors(OverlayRule::Subject);
 
         debug_assert!(shapes[0][0].len() == 6);
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
         overlay.options = IntOverlayOptions::default();
-        let shapes = overlay.build_graph_view(FillRule::NonZero).unwrap().extract_shape_vectors(OverlayRule::Subject);
+        let shapes = overlay
+            .build_graph_view(FillRule::NonZero)
+            .unwrap()
+            .extract_shape_vectors(OverlayRule::Subject);
 
         debug_assert!(shapes[0][0].len() == 4);
     }
