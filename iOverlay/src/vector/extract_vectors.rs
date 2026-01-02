@@ -2,11 +2,13 @@ use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::ShapeBinder;
 use crate::core::extract::{GraphUtil, Visit, VisitState};
 use crate::core::graph::OverlayGraph;
-use crate::core::link::OverlayLinkFilter;
+use crate::core::link::{OverlayLink, OverlayLinkFilter};
+use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
+use crate::vector::simplify::VectorSimplify;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
@@ -25,14 +27,17 @@ impl OverlayGraph<'_> {
     }
 
     pub fn extract_shape_vectors(&self, overlay_rule: OverlayRule) -> Vec<VectorShape> {
+        let clockwise = self.options.output_direction == ContourDirection::Clockwise;
+
         let mut binding = self.links.filter_by_overlay(overlay_rule);
         let visited = binding.as_mut_slice();
+
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
 
         let mut link_index = 0;
         while link_index < visited.len() {
-            if visited[link_index] != VisitState::Unvisited {
+            if visited.is_visited(link_index) {
                 link_index += 1;
                 continue;
             }
@@ -47,53 +52,54 @@ impl OverlayGraph<'_> {
                 // ever returns indices in 0..self.links.len().
                 self.links.get_unchecked(left_top_link)
             };
+
             let is_hole = overlay_rule.is_fill_top(link.fill);
+            let visited_state =
+                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+
+            let direction = is_hole == clockwise;
+            let start_data = StartVectorPathData::new(direction, link, left_top_link);
+
+            let mut path = self.find_vector_contour(start_data, direction, visited_state, visited);
+            if !self.options.preserve_output_collinear {
+                path.simplify_contour();
+            }
+
+            if !is_vector_path_valid(&path, self.options.min_output_area) {
+                link_index += 1;
+                continue;
+            }
 
             if is_hole {
-                let start_data = StartVectorPathData {
-                    a: link.b.point,
-                    b: link.a.point,
-                    node_id: link.a.id,
-                    link_id: left_top_link,
-                    last_node_id: link.b.id,
-                    fill: link.fill,
-                };
-                let path = self.get_vector_path(start_data, true, visited);
                 holes.push(path);
             } else {
-                let start_data = StartVectorPathData {
-                    a: link.a.point,
-                    b: link.b.point,
-                    node_id: link.b.id,
-                    link_id: left_top_link,
-                    last_node_id: link.a.id,
-                    fill: link.fill,
-                };
-                let path = self.get_vector_path(start_data, false, visited);
                 shapes.push(vec![path]);
-            };
+            }
 
             link_index += 1;
         }
 
-        shapes.join(holes, true);
+        shapes.join(holes, clockwise);
 
         shapes
     }
 
-    fn get_vector_path(
+    fn find_vector_contour(
         &self,
         start_data: StartVectorPathData,
         clockwise: bool,
+        visited_state: VisitState,
         visited: &mut [VisitState],
     ) -> VectorPath {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][clockwise as usize];
-
-        visited.visit_edge(link_id, visited_state);
+        unsafe {
+            // SAFETY: `link_id` was returned by `find_left_top_link` or `next_link`,
+            // both of which guarantee the index lies in 0..visited.len().
+            *visited.get_unchecked_mut(link_id) = visited_state;
+        };
 
         let mut contour = VectorPath::new();
         contour.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
@@ -116,7 +122,11 @@ impl OverlayGraph<'_> {
                 link.a.id
             };
 
-            visited.visit_edge(link_id, visited_state);
+            unsafe {
+                // SAFETY: same reasoning as above - `link_id` refers to a real link and
+                // therefore a real visited flag.
+                *visited.get_unchecked_mut(link_id) = visited_state;
+            };
         }
 
         contour
@@ -130,6 +140,31 @@ struct StartVectorPathData {
     link_id: usize,
     last_node_id: usize,
     fill: SegmentFill,
+}
+
+impl StartVectorPathData {
+    #[inline(always)]
+    fn new(direction: bool, link: &OverlayLink, link_id: usize) -> Self {
+        if direction {
+            Self {
+                a: link.b.point,
+                b: link.a.point,
+                node_id: link.a.id,
+                link_id,
+                last_node_id: link.b.id,
+                fill: link.fill,
+            }
+        } else {
+            Self {
+                a: link.a.point,
+                b: link.b.point,
+                node_id: link.b.id,
+                link_id,
+                last_node_id: link.a.id,
+                fill: link.fill,
+            }
+        }
+    }
 }
 
 trait JoinHoles {
@@ -225,4 +260,48 @@ fn is_sorted(segments: &[IdSegment]) -> bool {
     segments
         .windows(2)
         .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
+}
+
+#[inline]
+fn is_vector_path_valid(path: &VectorPath, min_output_area: u64) -> bool {
+    if path.len() < 3 {
+        return false;
+    }
+
+    if min_output_area == 0 {
+        return true;
+    }
+
+    let double_area = path.iter().fold(0i64, |acc, edge| {
+        acc + edge.a.cross_product(edge.b)
+    });
+    (double_area.unsigned_abs() >> 1) >= min_output_area
+}
+
+#[cfg(test)]
+mod tests {
+    use i_shape::int_shape;
+    use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::{IntOverlayOptions, Overlay};
+    use crate::core::overlay_rule::OverlayRule;
+
+    #[test]
+    fn test_keep_output_points() {
+        #[rustfmt::skip]
+        let subj = int_shape![
+            [[0, 0], [2, 0], [2, 2], [0, 2]],
+            [[2, 0], [4, 0], [4, 2], [2, 2]],
+        ];
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        overlay.options = IntOverlayOptions::keep_all_points();
+        let shapes = overlay.build_graph_view(FillRule::NonZero).unwrap().extract_shape_vectors(OverlayRule::Subject);
+
+        debug_assert!(shapes[0][0].len() == 6);
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        overlay.options = IntOverlayOptions::default();
+        let shapes = overlay.build_graph_view(FillRule::NonZero).unwrap().extract_shape_vectors(OverlayRule::Subject);
+
+        debug_assert!(shapes[0][0].len() == 4);
+    }
 }
