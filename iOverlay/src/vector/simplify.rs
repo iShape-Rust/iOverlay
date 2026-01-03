@@ -1,3 +1,4 @@
+use alloc::vec;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
@@ -115,40 +116,95 @@ impl VectorSimpleContour for [VectorEdge] {
     }
 
     fn simplified(&self) -> Option<VectorPath> {
-        let mut path = self.to_vec();
-        let mut index = 0;
+        if self.len() < 3 {
+            return None;
+        }
 
-        while index < path.len() {
-            if path.len() < 3 {
-                return None;
+        let mut n = self.len();
+        let mut nodes: Vec<Node> = vec![Node { next: 0, index: 0, prev: 0 }; n];
+        let mut validated: Vec<bool> = vec![false; n];
+
+        let mut i0 = n - 2;
+        let mut i1 = n - 1;
+        for i2 in 0..n {
+            nodes[i1] = Node { next: i2, index: i1, prev: i0 };
+            i0 = i1;
+            i1 = i2;
+        }
+
+        let mut first: usize = 0;
+        let mut node = nodes[first];
+        let mut i = 0;
+        while i < n {
+            if validated[node.index] {
+                node = nodes[node.next];
+                continue;
             }
 
-            let prev = if index == 0 { path.len() - 1 } else { index - 1 };
+            let p0 = self[node.prev].b;
+            let p1 = self[node.index].b;
+            let p2 = self[node.next].b;
 
-            let a = path[prev].a;
-            let b = path[index].a;
-            let c = path[index].b;
-
-            if is_collinear(a, b, c) {
-                path[prev].b = c;
-                path.remove(index);
-
-                if path.len() < 3 {
+            if p1.subtract(p0).cross_product(p2.subtract(p1)) == 0 {
+                n -= 1;
+                if n < 3 {
                     return None;
                 }
 
-                if index == 0 {
-                    index = path.len() - 1;
-                } else {
-                    index -= 1;
+                // remove node
+                nodes[node.prev].next = node.next;
+                nodes[node.next].prev = node.prev;
+
+                if node.index == first {
+                    first = node.next
+                }
+
+                node = nodes[node.prev];
+
+                if validated[node.prev] {
+                    i -= 1;
+                    validated[node.prev] = false
+                }
+
+                if validated[node.next] {
+                    i -= 1;
+                    validated[node.next] = false
+                }
+
+                if validated[node.index] {
+                    i -= 1;
+                    validated[node.index] = false
                 }
             } else {
-                index += 1;
+                validated[node.index] = true;
+                i += 1;
+                node = nodes[node.next];
             }
         }
 
-        Some(path)
+        let mut buffer = vec![VectorEdge::new(0, IntPoint::ZERO, IntPoint::ZERO); n];
+        node = nodes[first];
+
+        let mut e0 = &self[node.index];
+        for item in buffer.iter_mut().take(n) {
+            node = nodes[node.next];
+            let e1 = &self[node.index];
+            item.a = e0.b;
+            item.b = e1.b;
+            item.fill = e1.fill;
+
+            e0 = e1;
+        }
+
+        Some(buffer)
     }
+}
+
+#[derive(Clone, Copy)]
+struct Node {
+    next: usize,
+    index: usize,
+    prev: usize,
 }
 
 impl VectorSimpleShape for [VectorPath] {
@@ -183,4 +239,30 @@ fn is_collinear(a: IntPoint, b: IntPoint, c: IntPoint) -> bool {
     let ab = b.subtract(a);
     let bc = c.subtract(b);
     ab.cross_product(bc) == 0
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::vector::simplify::{IntPoint, VectorSimplify};
+    use alloc::vec;
+    use i_float::int_pnt;
+    use crate::vector::edge::VectorEdge;
+
+    #[test]
+    fn test_0() {
+        #[rustfmt::skip]
+        let mut contour = vec![
+            VectorEdge::new(1, int_pnt!(0, -1), int_pnt!(0, -3)),
+            VectorEdge::new(2, int_pnt!(0, -3), int_pnt!(1, -3)),
+            VectorEdge::new(3, int_pnt!(1, -3), int_pnt!(3, -3)),
+            VectorEdge::new(4, int_pnt!(3, -3), int_pnt!(3,  0)),
+            VectorEdge::new(5, int_pnt!(3,  0), int_pnt!(0,  0)),
+            VectorEdge::new(6, int_pnt!(0,  0), int_pnt!(0, -1)),
+        ];
+
+        let result = contour.simplify_contour();
+
+        debug_assert!(result);
+        debug_assert!(contour.len() == 4);
+    }
 }

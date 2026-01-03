@@ -277,7 +277,7 @@ mod tests {
     use i_shape::int_shape;
 
     #[test]
-    fn test_keep_output_points() {
+    fn test_keep_output_points_0() {
         #[rustfmt::skip]
         let subj = int_shape![
             [[0, 0], [2, 0], [2, 2], [0, 2]],
@@ -291,6 +291,31 @@ mod tests {
             .extract_shape_vectors(OverlayRule::Subject);
 
         debug_assert!(shapes[0][0].len() == 6);
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        overlay.options = IntOverlayOptions::default();
+        let shapes = overlay
+            .build_graph_view(FillRule::NonZero)
+            .unwrap()
+            .extract_shape_vectors(OverlayRule::Subject);
+
+        debug_assert!(shapes[0][0].len() == 4);
+    }
+
+    #[test]
+    fn test_keep_output_points_1() {
+        #[rustfmt::skip]
+        let subj = int_shape![
+            [[0, 0], [3, 0], [3, -3], [0, -3], [0, -1], [1, -1], [1, -3], [0, -3]],
+        ];
+        // let mut overlay = Overlay::with_contours(&subj, &[]);
+        // overlay.options = IntOverlayOptions::keep_all_points();
+        // let shapes = overlay
+        //     .build_graph_view(FillRule::NonZero)
+        //     .unwrap()
+        //     .extract_shape_vectors(OverlayRule::Subject);
+        //
+        // debug_assert!(shapes[0][0].len() == 6);
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
         overlay.options = IntOverlayOptions::default();
