@@ -264,7 +264,10 @@ impl Overlay {
         if self.segments.is_empty() {
             return Vec::new();
         }
-        self.graph_builder
+
+        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+
+        let shapes = self.graph_builder
             .build_boolean_overlay(
                 fill_rule,
                 overlay_rule,
@@ -272,7 +275,11 @@ impl Overlay {
                 &self.solver,
                 &self.segments,
             )
-            .extract_shape_vectors(overlay_rule)
+            .extract_shape_vectors(overlay_rule, &mut buffer);
+
+        self.boolean_buffer = Some(buffer);
+
+        shapes
     }
 
     /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.

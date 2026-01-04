@@ -579,3 +579,38 @@ impl GraphUtil {
         vector_solver.best_id
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::{ContourDirection, Overlay};
+    use crate::core::overlay_rule::OverlayRule;
+    use i_shape::int_shape;
+
+    #[test]
+    fn test_0() {
+        #[rustfmt::skip]
+        let subj = int_shape![
+            [[0, 0], [4, 0], [4, 4], [0, 4]],
+            [[1, 1], [1, 3], [3, 3], [3, 1]],
+        ];
+
+        let mut buffer = Default::default();
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+
+        let shapes_0 = overlay
+            .build_graph_view(FillRule::NonZero)
+            .unwrap()
+            .extract_shapes(OverlayRule::Subject, &mut buffer);
+
+        debug_assert!(shapes_0.len() == 1);
+
+        overlay.options.output_direction = ContourDirection::Clockwise;
+        let shapes_1 = overlay
+            .build_graph_view(FillRule::NonZero)
+            .unwrap()
+            .extract_shapes(OverlayRule::Subject, &mut buffer);
+
+        debug_assert!(shapes_1.len() == 1);
+    }
+}

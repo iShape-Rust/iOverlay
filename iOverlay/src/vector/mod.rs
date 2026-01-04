@@ -1,3 +1,3 @@
 pub mod edge;
-pub mod extract_vectors;
+pub mod extract;
 mod simplify;
