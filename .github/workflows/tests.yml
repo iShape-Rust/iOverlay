@@ -16,3 +16,14 @@ jobs:
       - name: Run tests
         working-directory: iOverlay
         run: cargo test
+      - name: Install tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+      - name: Run coverage
+        working-directory: iOverlay
+        run: cargo tarpaulin --out Lcov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: iOverlay/lcov.info

@@ -3,6 +3,7 @@
 [![crates.io version](https://img.shields.io/crates/v/i_overlay.svg)](https://crates.io/crates/i_overlay)
 [![docs.rs docs](https://docs.rs/i_overlay/badge.svg)](https://docs.rs/i_overlay)
 [![tests](https://github.com/iShape-Rust/iOverlay/actions/workflows/tests.yml/badge.svg)](https://github.com/iShape-Rust/iOverlay/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/iShape-Rust/iOverlay/branch/main/graph/badge.svg)](https://codecov.io/gh/iShape-Rust/iOverlay)
 
 ![Balloons](readme/balloons.svg)
 
