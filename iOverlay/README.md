@@ -152,7 +152,7 @@ The `overlay` function returns a `Vec<Shapes>`:
 ## Custom Point Type Support
 `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 ```rust
-use i_float::float::compatible::FloatPointCompatible;
+use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::float::single::SingleFloatOverlay;
@@ -205,7 +205,6 @@ println!("result: {:?}", result);
 
 ```rust
 use i_overlay::core::fill_rule::FillRule;
-use i_overlay::float::single::SingleFloatOverlay;
 use i_overlay::float::slice::FloatSlice;
 
 let polygon = [
@@ -234,7 +233,6 @@ println!("result: {:?}", result);
 ```rust
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::float::clip::FloatClip;
-use i_overlay::float::single::SingleFloatOverlay;
 use i_overlay::string::clip::ClipRule;
 
 let polygon = [
@@ -328,7 +326,7 @@ let shape = vec![
 ];
 
 let style = OutlineStyle::new(0.2).line_join(LineJoin::Round(0.1));
-let shapes = shape.outline(style);
+let shapes = shape.outline(&style);
 
 println!("shapes: {:?}", &shapes);
 ```
