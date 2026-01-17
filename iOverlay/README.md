@@ -10,8 +10,6 @@
 iOverlay is a high-performance polygon overlay engine for Rust. It solves robust boolean operations on complex polygons for GIS, CAD, and graphics workflows, built for developers who need reliable geometry at scale across integer and floating-point APIs.
 
 iOverlay is the core overlay engine used in [geo](https://github.com/georust/geo).
-
-Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
     
 ## Table of Contents
 
@@ -81,6 +79,8 @@ Add the following to your Cargo.toml:
 i_overlay = "^4.0"
 ```
 
+Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
+
 ### Quick Start
 
 ```rust
@@ -91,7 +91,7 @@ use i_overlay::float::single::SingleFloatOverlay;
 let subj = [[0.0, 0.0], [4.0, 0.0], [4.0, 4.0], [0.0, 4.0]];
 let clip = [[2.0, 2.0], [6.0, 2.0], [6.0, 6.0], [2.0, 6.0]];
 
-let result = subj.overlay(&clip, OverlayRule::Intersection, FillRule::EvenOdd);
+let result = subj.overlay(&clip, OverlayRule::Intersect, FillRule::EvenOdd);
 println!("result: {:?}", result);
 ```
 
