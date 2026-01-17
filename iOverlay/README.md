@@ -7,17 +7,24 @@
 
 ![Balloons](readme/balloons.svg)
 
+iOverlay is a high-performance polygon overlay engine for Rust. It solves robust boolean operations on complex polygons for GIS, CAD, and graphics workflows, built for developers who need reliable geometry at scale across integer and floating-point APIs.
+
+iOverlay is the core overlay engine used in [geo](https://github.com/georust/geo).
+
 The iOverlay library provides high-performance boolean operations on polygons, including **union**, **intersection**, **difference**, and **xor**. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (`i32`) and floating-point (`f32`, `f64`) APIs, iOverlay offers flexibility and precision across diverse use cases. 
 
-*For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
+*For detailed benchmarks, see the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
     
 ## Table of Contents
 
+- [Why iOverlay?](#why-ioverlay)
 - [Features](#features)
 - [Demo](#demo)
+- [Performance](#performance)
 - [Getting Started](#getting-started)
+  - [Quick Start](#quick-start)
 - [Boolean Operations](#boolean-operations)
   - [Simple Example](#simple-example)
   - [Overlay Rules](#overlay-rules)
@@ -32,6 +39,15 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
   - [LineJoin](#linejoin)
 - [FAQ](#faq)
 - [Versioning Policy](#versioning-policy)
+
+&nbsp;
+## Why iOverlay?
+
+- Built for robust polygon overlays where precision matters (GIS, CAD, graphics).
+- High performance with predictable results across complex inputs.
+- Supports both integer and floating-point APIs for flexible pipelines.
+- OGC-valid output is available when strict topology is required.
+- Core overlay engine used in [geo](https://github.com/georust/geo).
 
 &nbsp;
 ## Features
@@ -54,12 +70,33 @@ Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_
 - [Overlay Editor](https://ishape-rust.github.io/iShape-js/overlay/overlay_editor.html)
 
 &nbsp;
+## Performance
+
+iOverlay is optimized for large and complex inputs while preserving robust geometry semantics. The benchmark report compares iOverlay to other polygon overlay engines and includes both throughput and correctness notes.
+
+See the detailed report: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
+
+&nbsp;
 ## Getting Started
 
 Add the following to your Cargo.toml:
 ```
 [dependencies]
 i_overlay = "^4.0"
+```
+
+### Quick Start
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::single::SingleFloatOverlay;
+
+let subj = [[0.0, 0.0], [4.0, 0.0], [4.0, 4.0], [0.0, 4.0]];
+let clip = [[2.0, 2.0], [6.0, 2.0], [6.0, 6.0], [2.0, 6.0]];
+
+let result = subj.overlay(&clip, OverlayRule::Intersection, FillRule::EvenOdd);
+println!("result: {:?}", result);
 ```
 
 &nbsp;
