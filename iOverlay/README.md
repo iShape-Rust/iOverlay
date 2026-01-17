@@ -79,7 +79,7 @@ Add the following to your Cargo.toml:
 i_overlay = "^4.0"
 ```
 
-Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
+Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/doc.html)
 
 ### Quick Start
 
