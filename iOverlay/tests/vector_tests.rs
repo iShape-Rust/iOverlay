@@ -34,24 +34,24 @@ mod tests {
         let vectors = &shapes[0][0];
         let template = [
             VectorEdge {
-                a: IntPoint::new(-10240,-10240),
-                b: IntPoint::new(-10240,10240),
-                fill: 2
-            },
-            VectorEdge {
                 a: IntPoint::new(-10240,10240),
-                b: IntPoint::new(10240,10240),
-                fill: 2
+                b: IntPoint::new(-10240,-10240),
+                fill: 1
             },
             VectorEdge {
-                a: IntPoint::new(10240,10240),
+                a: IntPoint::new(-10240,-10240),
                 b: IntPoint::new(10240,-10240),
-                fill: 2
+                fill: 1
             },
             VectorEdge {
                 a: IntPoint::new(10240,-10240),
-                b: IntPoint::new(-10240,-10240),
-                fill: 2
+                b: IntPoint::new(10240,10240),
+                fill: 1
+            },
+            VectorEdge {
+                a: IntPoint::new(10240,10240),
+                b: IntPoint::new(-10240,10240),
+                fill: 1
             }
         ];
 
@@ -78,7 +78,7 @@ mod tests {
         overlay.add_contour(&subj, ShapeType::Subject);
         overlay.add_contour(&clip, ShapeType::Clip);
 
-        let shapes = overlay.build_shape_vectors(FillRule::NonZero, OverlayRule::Subject);
+        let shapes = overlay.build_shape_vectors(FillRule::NonZero, OverlayRule::Difference);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -86,34 +86,34 @@ mod tests {
         let vectors = &shapes[0][0];
         let template = [
             VectorEdge {
-                a: IntPoint::new(-10240,-10240),
-                b: IntPoint::new(-10240,10240),
-                fill: 2
-            },
-            VectorEdge {
                 a: IntPoint::new(-10240,10240),
-                b: IntPoint::new(-5120,10240),
-                fill: 2
+                b: IntPoint::new(-10240,-10240),
+                fill: 1
             },
             VectorEdge {
-                a: IntPoint::new(-5120,10240),
-                b: IntPoint::new(10240,10240),
-                fill: 14
-            },
-            VectorEdge {
-                a: IntPoint::new(10240,10240),
-                b: IntPoint::new(10240,-5120),
-                fill: 14
-            },
-            VectorEdge {
-                a: IntPoint::new(10240,-5120),
+                a: IntPoint::new(-10240,-10240),
                 b: IntPoint::new(10240,-10240),
-                fill: 2
+                fill: 1
             },
             VectorEdge {
                 a: IntPoint::new(10240,-10240),
-                b: IntPoint::new(-10240,-10240),
-                fill: 2
+                b: IntPoint::new(10240,-5120),
+                fill: 1
+            },
+            VectorEdge {
+                a: IntPoint::new(10240,-5120),
+                b: IntPoint::new(-5120,-5120),
+                fill: 11
+            },
+            VectorEdge {
+                a: IntPoint::new(-5120,-5120),
+                b: IntPoint::new(-5120,10240),
+                fill: 11
+            },
+            VectorEdge {
+                a: IntPoint::new(-5120,10240),
+                b: IntPoint::new(-10240,10240),
+                fill: 1
             }
         ];
 
