@@ -4,6 +4,7 @@
 [![docs.rs docs](https://docs.rs/i_overlay/badge.svg)](https://docs.rs/i_overlay)
 [![tests](https://github.com/iShape-Rust/iOverlay/actions/workflows/tests.yml/badge.svg)](https://github.com/iShape-Rust/iOverlay/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/iShape-Rust/iOverlay/branch/main/graph/badge.svg)](https://codecov.io/gh/iShape-Rust/iOverlay)
+[![license](https://img.shields.io/crates/l/i_overlay.svg)](https://crates.io/crates/i_overlay)
 
 ![Balloons](readme/balloons.svg)
 
@@ -33,6 +34,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
   - [LineJoin](#linejoin)
 - [FAQ](#faq)
 - [Versioning Policy](#versioning-policy)
+- [License](#license)
 
 &nbsp;
 ## Why iOverlay?
@@ -494,3 +496,9 @@ This crate follows a pragmatic versioning approach:
     MAJOR updates (e.g., 1.x.x → 2.x.x): Reserved for significant breaking changes or major redesigns.
 
 To minimize disruption, consider pinning dependencies when relying on specific versions.
+
+## License
+
+Licensed under either of:
+- MIT license (LICENSE-MIT)
+- Apache License, Version 2.0 (LICENSE-APACHE)
