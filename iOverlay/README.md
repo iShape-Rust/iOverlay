@@ -66,7 +66,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 &nbsp;
 ## Performance
 
-iOverlay is optimized for large and complex inputs while preserving robust geometry semantics. The benchmark report compares iOverlay to other polygon overlay engines and includes both throughput and correctness notes.
+iOverlay is optimized for large and complex inputs while preserving robust geometry semantics. The benchmark report compares iOverlay to other polygon overlay engines with a focus on throughput and performance.
 
 See the detailed report: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
 
