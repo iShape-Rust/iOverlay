@@ -71,6 +71,10 @@ i_overlay = "^4.0"
 Here's an example of performing a union operation between two polygons:
 
 ```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::single::SingleFloatOverlay;
+
 // Define the subject "O"
 let subj = [
     // main contour
@@ -148,6 +152,11 @@ The `overlay` function returns a `Vec<Shapes>`:
 ## Custom Point Type Support
 `iOverlay` allows users to define custom point types, as long as they implement the `FloatPointCompatible` trait.
 ```rust
+use i_float::float::compatible::FloatPointCompatible;
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::single::SingleFloatOverlay;
+
 #[derive(Clone, Copy, Debug)]
 struct CustomPoint {
   x: f32,
@@ -195,6 +204,10 @@ println!("result: {:?}", result);
 <img src="readme/example_slice.svg" alt="Slicing Example" style="width:400px;">
 
 ```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::float::single::SingleFloatOverlay;
+use i_overlay::float::slice::FloatSlice;
+
 let polygon = [
     [1.0, 1.0],
     [1.0, 4.0],
@@ -219,6 +232,11 @@ println!("result: {:?}", result);
 <img src="readme/example_clip.svg" alt="Clip Example" style="width:400px;">
 
 ```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::float::clip::FloatClip;
+use i_overlay::float::single::SingleFloatOverlay;
+use i_overlay::string::clip::ClipRule;
+
 let polygon = [
     [1.0, 1.0],
     [1.0, 4.0],
@@ -243,10 +261,13 @@ println!("result: {:?}", result);
 
 ## Buffering
 
-### Offseting a Path
+### Offsetting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
 
 ```rust
+use i_overlay::mesh::stroke::offset::StrokeOffset;
+use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
+
 let path = [
     [ 2.0, 1.0],
     [ 5.0, 1.0],
@@ -269,10 +290,13 @@ println!("result: {:?}", shapes);
 ```
 &nbsp;
 
-### Offseting a Polygon
+### Offsetting a Polygon
 <img src="readme/example_offseting_polygon.svg" alt="Path Example" style="width:400px;">
 
 ```rust
+use i_overlay::mesh::outline::offset::OutlineOffset;
+use i_overlay::mesh::style::{LineJoin, OutlineStyle};
+
 let shape = vec![
     vec![
         [2.0, 1.0],
@@ -314,7 +338,7 @@ println!("shapes: {:?}", &shapes);
   - No self-intersections.
   - Outer boundaries are **counterclockwise**, holes are **clockwise**—unless `main_direction` is set.
   
-  If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/src/float/simplify.rs) operation before offsetting.  
+  If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/iOverlay/src/float/simplify.rs) operation before offsetting.  
   [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) on contour orientation.
 
 - Using `LineJoin::Bevel` with a large offset may produce visual artifacts.
@@ -327,13 +351,13 @@ println!("shapes: {:?}", &shapes);
 
 &nbsp;
 ### LineJoin
-| Bevel | Mitter | Round |
+| Bevel | Miter | Round |
 |-------|--------|-------|
-| <img src="readme/line_join_bevel.svg" alt="Bevel" style="width:100px;"> | <img src="readme/line_join_mitter.svg" alt="Mitter" style="width:100px;"> | <img src="readme/line_join_round.svg" alt="Round" style="width:100px;"> |
+| <img src="readme/line_join_bevel.svg" alt="Bevel" style="width:100px;"> | <img src="readme/line_join_mitter.svg" alt="Miter" style="width:100px;"> | <img src="readme/line_join_round.svg" alt="Round" style="width:100px;"> |
 
 &nbsp;
 
-# FAQ
+## FAQ
 ### 1. When should I use `FloatOverlay`, `SingleFloatOverlay`, or `FloatOverlayGraph`?
 
 - Use **`FloatOverlay`** when you perform **repeated overlay operations**:
@@ -430,7 +454,7 @@ assert_eq!(result.len(), 2);
 
 ---
 
-# Versioning Policy
+## Versioning Policy
 
 This crate follows a pragmatic versioning approach:
 
