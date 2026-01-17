@@ -11,10 +11,6 @@ iOverlay is a high-performance polygon overlay engine for Rust. It solves robust
 
 iOverlay is the core overlay engine used in [geo](https://github.com/georust/geo).
 
-The iOverlay library provides high-performance boolean operations on polygons, including **union**, **intersection**, **difference**, and **xor**. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (`i32`) and floating-point (`f32`, `f64`) APIs, iOverlay offers flexibility and precision across diverse use cases. 
-
-*For detailed benchmarks, see the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
-
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/stars_demo.html)
     
 ## Table of Contents
