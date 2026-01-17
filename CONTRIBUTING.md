@@ -21,7 +21,6 @@ Thanks for your interest in contributing!
 - Include tests for new behavior or bug fixes.
 - Update docs/examples if behavior changes.
 - Link the related issue when applicable.
-- By submitting a PR, you agree that your contribution is licensed under MIT OR Apache-2.0.
 
 ## Communication
 
