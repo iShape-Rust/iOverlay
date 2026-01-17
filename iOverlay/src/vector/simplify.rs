@@ -234,13 +234,6 @@ fn direction(edge: &VectorEdge) -> IntPoint {
     edge.b - edge.a
 }
 
-#[inline]
-fn is_collinear(a: IntPoint, b: IntPoint, c: IntPoint) -> bool {
-    let ab = b.subtract(a);
-    let bc = c.subtract(b);
-    ab.cross_product(bc) == 0
-}
-
 #[cfg(test)]
 mod tests {
     use crate::vector::simplify::{IntPoint, VectorSimplify};
