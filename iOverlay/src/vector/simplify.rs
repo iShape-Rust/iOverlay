@@ -264,15 +264,15 @@ mod tests {
         #[rustfmt::skip]
         let mut contour = vec![
             VectorEdge::new(1, int_pnt!(-1, 3), int_pnt!(-1, 1)),
-            VectorEdge::new(2, int_pnt!(-1, 3), int_pnt!(-1, 1)),
+            VectorEdge::new(2, int_pnt!(-1, 1), int_pnt!(-1, 1)),
             VectorEdge::new(3, int_pnt!(-1, 1), int_pnt!(-3, 1)),
             VectorEdge::new(4, int_pnt!(-3, 1), int_pnt!(-3, -2)),
             VectorEdge::new(5, int_pnt!(-3, -2), int_pnt!(3, -2)),
             VectorEdge::new(6, int_pnt!(3, -2), int_pnt!(3, 1)),
-            VectorEdge::new(7, int_pnt!(3, -2), int_pnt!(1, 1)),
-            VectorEdge::new(8, int_pnt!(1, 1), int_pnt!(1, 3)),
-            VectorEdge::new(9, int_pnt!(1, 3), int_pnt!(-1, 3)),
-            VectorEdge::new(10, int_pnt!(-1, 3), int_pnt!(-1, -1)),
+            VectorEdge::new(7, int_pnt!(3, 1), int_pnt!(3, 1)),
+            VectorEdge::new(8, int_pnt!(3, 1), int_pnt!(1, 1)),
+            VectorEdge::new(9, int_pnt!(1, 1), int_pnt!(1, 3)),
+            VectorEdge::new(10, int_pnt!(1, 3), int_pnt!(-1, 3)),
         ];
 
         let result = contour.simplify_contour();
@@ -285,12 +285,12 @@ mod tests {
     fn test_tiny_segments() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(0, 1), int_pnt!(-1, 0)),
-            VectorEdge::new(2, int_pnt!(-1, 0), int_pnt!(0, -1)),
-            VectorEdge::new(3, int_pnt!(-1, 0), int_pnt!(0, -1)),
-            VectorEdge::new(4, int_pnt!(0, -1), int_pnt!(1, 0)),
-            VectorEdge::new(5, int_pnt!(1, 0), int_pnt!(0, 1)),
-            VectorEdge::new(6, int_pnt!(1, 0), int_pnt!(0, 1)),
+            VectorEdge::new(1, int_pnt!(0, 2), int_pnt!(-1, 1)),
+            VectorEdge::new(2, int_pnt!(-1, 1), int_pnt!(-2, 0)),
+            VectorEdge::new(3, int_pnt!(-2, 0), int_pnt!(0, -1)),
+            VectorEdge::new(4, int_pnt!(0, -1), int_pnt!(2, 0)),
+            VectorEdge::new(5, int_pnt!(2, 0), int_pnt!(1, 1)),
+            VectorEdge::new(6, int_pnt!(1, 1), int_pnt!(0, 2)),
         ];
 
         let result = contour.simplify_contour();
@@ -303,26 +303,29 @@ mod tests {
     fn test_collinear_runs() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(-3, 0), int_pnt!(3, 0)),
-            VectorEdge::new(2, int_pnt!(-3, 0), int_pnt!(-1, 0)),
-            VectorEdge::new(3, int_pnt!(-2, 0), int_pnt!(2, 0)),
-            VectorEdge::new(4, int_pnt!(3, 0), int_pnt!(0, -3)),
-            VectorEdge::new(5, int_pnt!(0, -3), int_pnt!(-3, 0)),
+            VectorEdge::new(1, int_pnt!(-2, -2), int_pnt!(0, -2)),
+            VectorEdge::new(2, int_pnt!(0, -2), int_pnt!(2, -2)),
+            VectorEdge::new(3, int_pnt!(2, -2), int_pnt!(2, 0)),
+            VectorEdge::new(4, int_pnt!(2, 0), int_pnt!(2, 2)),
+            VectorEdge::new(5, int_pnt!(2, 2), int_pnt!(0, 2)),
+            VectorEdge::new(6, int_pnt!(0, 2), int_pnt!(-2, 2)),
+            VectorEdge::new(7, int_pnt!(-2, 2), int_pnt!(-2, 0)),
+            VectorEdge::new(8, int_pnt!(-2, 0), int_pnt!(-2, -2)),
         ];
 
         let result = contour.simplify_contour();
 
         debug_assert!(result);
-        debug_assert!(contour.len() == 3);
+        debug_assert!(contour.len() == 4);
     }
 
     #[test]
     fn test_zero_area_path() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(-3, 0), int_pnt!(3, 0)),
-            VectorEdge::new(2, int_pnt!(-3, 0), int_pnt!(-1, 0)),
-            VectorEdge::new(3, int_pnt!(-2, 0), int_pnt!(2, 0)),
+            VectorEdge::new(1, int_pnt!(-3, 0), int_pnt!(0, 0)),
+            VectorEdge::new(2, int_pnt!(0, 0), int_pnt!(3, 0)),
+            VectorEdge::new(3, int_pnt!(3, 0), int_pnt!(-3, 0)),
         ];
 
         let result = contour.simplify_contour();
