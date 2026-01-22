@@ -363,4 +363,64 @@ mod tests {
         assert_eq!(r1.len(), 1);
         assert_eq!(r1[0][0].len(), 3);
     }
+
+    #[test]
+    fn test_without_points() {
+        let contour: &[IntPoint] = &[];
+
+        let mut rev_contour = contour.to_vec();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 0);
+
+        let r1 = rev_contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 0);
+    }
+
+    #[test]
+    fn test_with_single_point() {
+        let contour = vec![IntPoint::new(0, 0)];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 0);
+
+        let r1 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 0);
+    }
+
+    #[test]
+    fn test_with_pair_of_points() {
+        let contour = vec![IntPoint::new(0, 0), IntPoint::new(1, 1)];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 0);
+
+        let r1 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 0);
+    }
+
+    #[test]
+    fn test_near_collinear_paths() {
+        let contour = vec![
+            IntPoint::new(-100, -100), 
+            IntPoint::new(0, 0),
+            IntPoint::new(101, 100),
+        ];
+
+        let mut rev_contour = contour.clone();
+        rev_contour.reverse();
+
+        let r0 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r0.len(), 1);
+
+        let r1 = contour.simplify(FillRule::NonZero, Default::default());
+        assert_eq!(r1.len(), 1);
+    }
 }
