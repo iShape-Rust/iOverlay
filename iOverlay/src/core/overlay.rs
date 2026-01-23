@@ -419,24 +419,24 @@ impl IntOverlayOptions {
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
-
     use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::area::Area;
+    use i_shape::int::shape::IntContour;
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay::Overlay;
     use crate::core::overlay_rule::OverlayRule;
 
     #[test]
     fn test_0() {
-        let subj = [[
-            IntPoint::new(0, 0),
-            IntPoint::new(10, 0),
-            IntPoint::new(10, 10),
-            IntPoint::new(0, 10),
-        ]
-            .to_vec()];
+        let subj = [
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(10, 0),
+                IntPoint::new(10, 10),
+                IntPoint::new(0, 10),
+            ],
+        ];
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
@@ -753,4 +753,97 @@ mod tests {
         assert_eq!(result[0].len(), 1);
         assert_eq!(result.area(), -14);
     }
+
+    #[test]
+    fn test_12() {
+        let subj = [
+            vec![
+                IntPoint::new(2, 0),
+                IntPoint::new(5, 0),
+                IntPoint::new(5, 5),
+                IntPoint::new(2, 5),
+            ],
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(5, 0),
+                IntPoint::new(5, 5),
+                IntPoint::new(0, 5),
+            ],
+        ];
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result.area(), -25);
+    }
+
+    #[test]
+    fn test_13() {
+        let subj = [
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(5, 0),
+                IntPoint::new(5, 5),
+                IntPoint::new(0, 5),
+            ],
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(5, 0),
+                IntPoint::new(5, 5),
+                IntPoint::new(0, 5),
+            ],
+        ];
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result.area(), -25);
+    }
+
+    #[test]
+    fn test_14() {
+        let subj = [
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(0, 2),
+                IntPoint::new(2, 0),
+            ],
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(2, 0),
+                IntPoint::new(0, -2),
+            ],
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(0, -2),
+                IntPoint::new(-2, 0),
+            ],
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(-2, 0),
+                IntPoint::new(0, 2),
+            ],
+        ];
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result.area(), -8);
+    }
+
+    #[test]
+    fn test_empty_input() {
+        let subj: &[IntContour] = &[];
+
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+
+        assert_eq!(result.len(), 0);
+    }    
 }
