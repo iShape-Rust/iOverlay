@@ -419,8 +419,6 @@ impl IntOverlayOptions {
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
-
     use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::area::Area;
