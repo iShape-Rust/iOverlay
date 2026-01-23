@@ -429,13 +429,14 @@ mod tests {
 
     #[test]
     fn test_0() {
-        let subj = [[
-            IntPoint::new(0, 0),
-            IntPoint::new(10, 0),
-            IntPoint::new(10, 10),
-            IntPoint::new(0, 10),
-        ]
-            .to_vec()];
+        let subj = [
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(10, 0),
+                IntPoint::new(10, 10),
+                IntPoint::new(0, 10),
+            ],
+        ];
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
