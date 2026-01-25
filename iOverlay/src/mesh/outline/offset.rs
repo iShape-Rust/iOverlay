@@ -199,8 +199,9 @@ where
 mod tests {
     use alloc::vec;
 use crate::mesh::outline::offset::OutlineOffset;
-    use crate::mesh::style::{LineJoin, OutlineStyle};
+    use crate::mesh::style::{LineCap, LineJoin, OutlineStyle, StrokeStyle};
     use core::f32::consts::PI;
+    use crate::mesh::stroke::offset::StrokeOffset;
 
     #[test]
     fn test_doc() {
@@ -312,7 +313,6 @@ use crate::mesh::outline::offset::OutlineOffset;
         assert_eq!(shapes[0].len(), 2);
     }
 
-    // [[[[300.0, 300.0], [500.0, 300.0], [500.0, 500.0], [300.0, 500.0]]]]
     #[test]
     fn test_float_square_0() {
         let shape = vec![vec![
@@ -330,5 +330,45 @@ use crate::mesh::outline::offset::OutlineOffset;
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 8);
+    }
+
+    #[test]
+    fn test_infinity_loop_0() {
+        let path = [
+            [2681.39599938213, 5892784.488998892],
+            [5419.06964821636, 5891947.742386343],
+            [5419.1446127397, 5891949.316633703],
+            [5422.8669123155, 5892027.484991552],
+            [5034.8682417375, 5892817.151239874],
+            [4804.8188261491, 5892876.799252035],
+            [4804.81882805645, 5892876.799253942],
+            [4551.3436274034, 5892942.5211854],
+            [2681.39599938213, 5892784.488998892],
+        ];
+
+        let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);
+        let style = OutlineStyle::new(150.0).line_join(LineJoin::Round(angle));
+
+        if let Some(shape) = path.outline(&style).first() {
+            assert!(shape[0].len() < 1_000);
+        };
+    }
+
+    #[test]
+    fn test_infinity_loop_1() {
+        let path = [
+            [2681.39599938213, 5892876.0],
+            [5400.0, 5891947.742386343],
+            [5400.0, 5892817.151239874],
+            [4804.8188261491, 5892876.799252035],
+            [4804.81882805645, 5892876.799253942]
+        ];
+
+        let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);
+        let style = OutlineStyle::new(150.0).line_join(LineJoin::Round(angle));
+
+        if let Some(shape) = path.outline(&style).first() {
+            assert!(shape[0].len() < 1_000);
+        };
     }
 }
