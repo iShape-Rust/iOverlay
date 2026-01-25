@@ -444,4 +444,44 @@ mod tests {
         assert!(path.outline_fixed_scale(&style, f64::NAN).is_err());
         assert!(path.outline_fixed_scale(&style, f64::INFINITY).is_err());
     }
+
+    #[test]
+    fn test_zero_length_segment_0() {
+        let path = [
+            [2681.39599938213, 5892784.488998892],
+            [5419.06964821636, 5891947.742386343],
+            [5419.1446127397, 5891949.316633703],
+            [5422.8669123155, 5892027.484991552],
+            [5034.8682417375, 5892817.151239874],
+            [4804.8188261491, 5892876.799252035],
+            [4804.81882805645, 5892876.799253942],
+            [4551.3436274034, 5892942.5211854],
+            [2681.39599938213, 5892784.488998892],
+        ];
+
+        let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);
+        let style = OutlineStyle::new(150.0).line_join(LineJoin::Round(angle));
+
+        if let Some(shape) = path.outline(&style).first() {
+            assert!(shape[0].len() < 1_000);
+        };
+    }
+
+    #[test]
+    fn test_zero_length_segment_1() {
+        let path = [
+            [2681.39599938213, 5892876.0],
+            [5400.0, 5891947.742386343],
+            [5400.0, 5892817.151239874],
+            [4804.8188261491, 5892876.799252035],
+            [4804.81882805645, 5892876.799253942]
+        ];
+
+        let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);
+        let style = OutlineStyle::new(150.0).line_join(LineJoin::Round(angle));
+
+        if let Some(shape) = path.outline(&style).first() {
+            assert!(shape[0].len() < 1_000);
+        };
+    }
 }
