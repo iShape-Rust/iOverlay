@@ -138,3 +138,280 @@ impl IntSlice for [IntPoint] {
             .unwrap_or_default()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::vec;
+    use i_float::int::point::IntPoint;
+    use crate::core::fill_rule::FillRule;
+    use crate::string::slice::IntSlice;
+
+    #[test]
+    fn test_empty_input() {
+        #[rustfmt::skip]
+        let shapes = [].slice_by_line(
+            [IntPoint::new(0, 0), IntPoint::new(0, 0)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_0() {
+        let paths = vec![vec![
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, -10),
+            IntPoint::new(10, -10),
+            IntPoint::new(10, 10),
+        ]];
+
+        let result = paths.slice_by_line(
+            [IntPoint::new(-20, 0), IntPoint::new(20, 0)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
+    }
+
+    #[test]
+    fn test_1() {
+        let paths = vec![
+            vec![
+                IntPoint::new(-10, 10),
+                IntPoint::new(-10, -10),
+                IntPoint::new(10, -10),
+                IntPoint::new(10, 10),
+            ],
+            vec![
+                IntPoint::new(-5, -5),
+                IntPoint::new(-5, 5),
+                IntPoint::new(5, 5),
+                IntPoint::new(5, -5),
+            ],
+        ];
+
+        let result = paths.slice_by_line(
+            [IntPoint::new(-20, 0), IntPoint::new(20, 0)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[0][0].len(), 8);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 8);
+    }
+
+    #[test]
+    fn test_2() {
+        let paths = vec![
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(35, 0),
+                IntPoint::new(35, 20),
+                IntPoint::new(0, 20),
+            ],
+            vec![
+                IntPoint::new(5, 5),
+                IntPoint::new(5, 15),
+                IntPoint::new(15, 15),
+                IntPoint::new(15, 5),
+            ],
+            vec![
+                IntPoint::new(20, 5),
+                IntPoint::new(20, 15),
+                IntPoint::new(30, 15),
+                IntPoint::new(30, 5),
+            ],
+        ];
+
+        let result = paths.slice_by_line(
+            [IntPoint::new(15, 10), IntPoint::new(20, 10)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 3);
+    }
+
+    #[test]
+    fn test_3() {
+        let paths = vec![
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(35, 0),
+                IntPoint::new(35, 20),
+                IntPoint::new(0, 20),
+            ],
+            vec![
+                IntPoint::new(5, 5),
+                IntPoint::new(5, 15),
+                IntPoint::new(15, 15),
+                IntPoint::new(15, 5),
+            ],
+            vec![
+                IntPoint::new(20, 5),
+                IntPoint::new(20, 15),
+                IntPoint::new(30, 15),
+                IntPoint::new(30, 5),
+            ],
+        ];
+
+        let result = paths.slice_by_lines(
+            &vec![
+                [IntPoint::new(15, 5), IntPoint::new(20, 5)],
+                [IntPoint::new(15, 15), IntPoint::new(20, 15)],
+            ],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[1].len(), 1);
+    }
+
+    #[test]
+    fn test_4() {
+        let paths = vec![
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(35, 0),
+                IntPoint::new(35, 35),
+                IntPoint::new(0, 35),
+            ],
+            vec![
+                IntPoint::new(5, 5),
+                IntPoint::new(5, 15),
+                IntPoint::new(15, 15),
+                IntPoint::new(15, 5),
+            ],
+            vec![
+                IntPoint::new(20, 5),
+                IntPoint::new(20, 15),
+                IntPoint::new(30, 15),
+                IntPoint::new(30, 5),
+            ],
+            vec![
+                IntPoint::new(5, 20),
+                IntPoint::new(5, 30),
+                IntPoint::new(15, 30),
+                IntPoint::new(15, 20),
+            ],
+            vec![
+                IntPoint::new(20, 20),
+                IntPoint::new(20, 30),
+                IntPoint::new(30, 30),
+                IntPoint::new(30, 20),
+            ],
+        ];
+
+        let result = paths.slice_by_lines(
+            &vec![
+                [IntPoint::new(10, 15), IntPoint::new(10, 20)],
+                [IntPoint::new(25, 15), IntPoint::new(25, 20)],
+                [IntPoint::new(15, 10), IntPoint::new(20, 10)],
+                [IntPoint::new(15, 25), IntPoint::new(20, 25)],
+            ],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[1].len(), 1);
+    }
+
+    #[test]
+    fn test_5() {
+        #[rustfmt::skip]
+        let shapes = vec![
+            IntPoint::new(-2, -2),
+            IntPoint::new(2, -2),
+            IntPoint::new(2, 2),
+            IntPoint::new(-2, 2),
+        ]
+        .slice_by_line(
+            [IntPoint::new(-5, 5), IntPoint::new(5, -5)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(shapes.len(), 2);
+        assert_eq!(shapes[0][0].len(), 3);
+        assert_eq!(shapes[1][0].len(), 3);        
+    }
+
+    #[test]
+    fn test_6() {
+        #[rustfmt::skip]
+        let shapes = vec![
+            IntPoint::new(-2, -2),
+            IntPoint::new(2, -2),
+            IntPoint::new(2, 2),
+            IntPoint::new(-2, 2),
+        ]
+        .slice_by_line(
+            [IntPoint::new(-5, 5), IntPoint::new(5, 5)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_7() {
+        #[rustfmt::skip]
+        let shapes = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(2, 0),
+            IntPoint::new(2, 3),
+            IntPoint::new(1, 1),
+            IntPoint::new(0, 3),
+        ]
+        .slice_by_line(
+            [IntPoint::new(-5, 2), IntPoint::new(5, 2)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(shapes.len(), 3);
+        assert_eq!(shapes[0][0].len(), 5);
+        assert_eq!(shapes[1][0].len(), 3);
+        assert_eq!(shapes[2][0].len(), 3);
+    }
+
+    #[test]
+    fn test_8() {
+        #[rustfmt::skip]
+        let shapes = vec![
+            IntPoint::new(-2, -2),
+            IntPoint::new(2, -2),
+            IntPoint::new(2, 2),
+            IntPoint::new(-2, 2),
+        ]
+        .slice_by_line(
+            [IntPoint::new(-2, 5), IntPoint::new(-2, -5)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_9() {
+        #[rustfmt::skip]
+        let shapes = vec![
+            IntPoint::new(-2, 0),
+            IntPoint::new(2, 0),
+            IntPoint::new(0, 2),
+        ]
+        .slice_by_line(
+            [IntPoint::new(-5, 2), IntPoint::new(5, 2)],
+            FillRule::NonZero,
+        );
+
+        assert_eq!(shapes.len(), 1);
+    }
+}
