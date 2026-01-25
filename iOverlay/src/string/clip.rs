@@ -247,7 +247,7 @@ impl IntClip for [IntPoint] {
 #[cfg(test)]
 mod tests {
     use alloc::vec;
-use i_float::int::point::IntPoint;
+    use i_float::int::point::IntPoint;
     use i_shape::int::path::IntPath;
     use crate::core::fill_rule::FillRule;
     use crate::string::clip::{ClipRule, IntClip};
@@ -344,11 +344,11 @@ use i_float::int::point::IntPoint;
         ];
 
         let result_0 = rect.clip_path(&path, FillRule::NonZero,
-                                      ClipRule { invert: false, boundary_included: false },
+            ClipRule { invert: false, boundary_included: false },
         );
 
         let result_1 = rect.clip_path(&path, FillRule::NonZero,
-                                      ClipRule { invert: false, boundary_included: true },
+            ClipRule { invert: false, boundary_included: true },
         );
 
         assert_eq!(result_0.len(), 3);
