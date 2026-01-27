@@ -243,7 +243,6 @@ impl IntClip for [IntPoint] {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use alloc::vec;
@@ -353,5 +352,108 @@ mod tests {
 
         assert_eq!(result_0.len(), 3);
         assert_eq!(result_1.len(), 2);
+    }
+
+    #[test]
+    fn test_tiny_shape() {
+        let path = vec![
+            IntPoint::new(-1, 0),
+            IntPoint::new(1, 0),
+            IntPoint::new(0, 1),
+        ];
+
+        let result_0 = path.clip_line(
+            [IntPoint::new(0, -1), IntPoint::new(0, 2)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = path.clip_line(
+            [IntPoint::new(0, -1), IntPoint::new(0, 2)],
+            FillRule::NonZero,
+            ClipRule { invert: true, boundary_included: false },
+        );
+
+        assert_eq!(result_0.len(), 1);
+        assert_eq!(result_1.len(), 2);
+    }
+
+    #[test]
+    fn test_shared_vertices_0() {
+        let path = vec![
+            IntPoint::new(-1, -1),
+            IntPoint::new(1, -1),
+            IntPoint::new(1, 1),
+            IntPoint::new(-1, 1),
+        ];
+
+        let result_0 = path.clip_line(
+            [IntPoint::new(-1, -1), IntPoint::new(1, -1)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = path.clip_line(
+            [IntPoint::new(-1, -1), IntPoint::new(1, -1)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: true },
+        );
+
+        assert_eq!(result_0.len(), 0);
+        assert_eq!(result_1.len(), 1);
+    }
+
+    #[test]
+    fn test_shared_vertices_1() {
+        let contour = vec![
+            IntPoint::new(-2, -2),
+            IntPoint::new(2, -2),
+            IntPoint::new(3, 0),
+            IntPoint::new(-3, 0),
+        ];
+
+        let path = vec![
+            IntPoint::new(-4, 1),
+            IntPoint::new(-2, -2),
+            IntPoint::new(2, -2),
+            IntPoint::new(4, 1),
+        ];
+
+        let result_0 = contour.clip_path(&path, FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = contour.clip_path(&path, FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: true },
+        );
+
+        assert_eq!(result_0.len(), 0);
+        assert_eq!(result_1.len(), 1);
+    }
+
+    #[test]
+    fn test_sliding_intersection() {
+        let path = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(2, 0),
+            IntPoint::new(2, 2),
+            IntPoint::new(1, 0),
+            IntPoint::new(0, 2),
+        ];
+
+        let result_0 = path.clip_line(
+            [IntPoint::new(-3, 2), IntPoint::new(3, 2)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        let result_1 = path.clip_line(
+            [IntPoint::new(-3, 2), IntPoint::new(3, 2)],
+            FillRule::NonZero,
+            ClipRule { invert: false, boundary_included: false },
+        );
+
+        assert_eq!(result_0.len(), 0);
+        assert_eq!(result_1.len(), 0);
     }
 }
