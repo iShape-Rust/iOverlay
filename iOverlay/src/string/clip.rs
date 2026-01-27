@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn test_shared_vertices_1() {
-        let rect = vec![
+        let contour = vec![
             IntPoint::new(-2, -2),
             IntPoint::new(2, -2),
             IntPoint::new(3, 0),
@@ -419,11 +419,11 @@ mod tests {
             IntPoint::new(4, 1),
         ];
 
-        let result_0 = rect.clip_path(&path, FillRule::NonZero,
+        let result_0 = contour.clip_path(&path, FillRule::NonZero,
             ClipRule { invert: false, boundary_included: false },
         );
 
-        let result_1 = rect.clip_path(&path, FillRule::NonZero,
+        let result_1 = contour.clip_path(&path, FillRule::NonZero,
             ClipRule { invert: false, boundary_included: true },
         );
 
