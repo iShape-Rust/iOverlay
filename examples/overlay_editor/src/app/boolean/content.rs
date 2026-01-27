@@ -41,7 +41,11 @@ pub(crate) enum BooleanMessage {
 impl EditorApp {
     fn boolean_sidebar(&self) -> Column<AppMessage> {
         let count = self.app_resource.boolean.count;
-        let mut column = Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0)));
+        let mut column = Column::new().push(
+            Space::new()
+                .width(Length::Fill)
+                .height(Length::Fixed(2.0)),
+        );
         for index in 0..count {
             let is_selected = self.state.boolean.test == index;
 
@@ -62,7 +66,7 @@ impl EditorApp {
         column
     }
 
-    pub(crate) fn boolean_content(&self) -> Row<AppMessage> {
+    pub(crate) fn boolean_content(&self) -> Row<'_, AppMessage> {
         Row::new()
             .push(
                 scrollable(
@@ -223,4 +227,3 @@ impl BooleanState {
         self.update_solution();
     }
 }
-

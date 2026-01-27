@@ -58,7 +58,7 @@ impl std::fmt::Display for JoinOption {
 }
 
 impl EditorApp {
-    pub(crate) fn stroke_control(&self) -> Column<AppMessage> {
+    pub(crate) fn stroke_control(&self) -> Column<'_, AppMessage> {
         let width_list = Row::new()
             .push(
                 Text::new("Stroke Width:")
@@ -185,14 +185,22 @@ impl EditorApp {
         Column::new()
             .push(width_list)
             .push(start_cap_pick_list)
-            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(
+                Space::new()
+                    .width(Length::Shrink)
+                    .height(Length::Fixed(4.0)),
+            )
             .push(end_cap_pick_list)
-            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(
+                Space::new()
+                    .width(Length::Shrink)
+                    .height(Length::Fixed(4.0)),
+            )
             .push(join_pick_list)
             .push(
-                checkbox("Is Closed", self.state.stroke.is_closed)
-                    .on_toggle(on_set_is_closed)
-
+                checkbox(self.state.stroke.is_closed)
+                    .label("Is Closed")
+                    .on_toggle(on_set_is_closed),
             )
     }
 }

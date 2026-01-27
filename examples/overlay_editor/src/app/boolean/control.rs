@@ -7,7 +7,7 @@ use iced::{Alignment, Length};
 use iced::widget::{Column, Container, pick_list, Row, Space, Text};
 
 impl EditorApp {
-    pub(crate) fn boolean_control(&self) -> Column<AppMessage> {
+    pub(crate) fn boolean_control(&self) -> Column<'_, AppMessage> {
         let solver_pick_list =
             Row::new()
                 .push(Text::new("Solver:")
@@ -64,9 +64,17 @@ impl EditorApp {
 
         Column::new()
             .push(solver_pick_list)
-            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(
+                Space::new()
+                    .width(Length::Shrink)
+                    .height(Length::Fixed(4.0)),
+            )
             .push(fill_pick_list)
-            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(
+                Space::new()
+                    .width(Length::Shrink)
+                    .height(Length::Fixed(4.0)),
+            )
             .push(mode_pick_list)
     }
 }

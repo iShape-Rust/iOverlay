@@ -162,7 +162,7 @@ impl<Message> Widget<Message, Theme, Renderer> for VaricoloredWidget {
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _renderer: &Renderer,
         limits: &layout::Limits,
@@ -183,19 +183,21 @@ impl<Message> Widget<Message, Theme, Renderer> for VaricoloredWidget {
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let offset = Vector::point(layout.position());
+        let bounds = layout.bounds();
+        renderer.with_layer(bounds, |renderer| {
+            let offset = Vector::point(layout.position());
 
-        renderer.with_translation(offset, |renderer| {
-            for mesh in self.fill.iter() {
-                renderer.draw_mesh(mesh.clone())
-            }
-        });
+            renderer.with_translation(offset, |renderer| {
+                for mesh in self.fill.iter() {
+                    renderer.draw_mesh(mesh.clone())
+                }
+            });
 
-
-        renderer.with_translation(offset, |renderer| {
-            for mesh in self.stroke.iter() {
-                renderer.draw_mesh(mesh.clone())
-            }
+            renderer.with_translation(offset, |renderer| {
+                for mesh in self.stroke.iter() {
+                    renderer.draw_mesh(mesh.clone())
+                }
+            });
         });
     }
 }

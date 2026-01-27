@@ -39,9 +39,13 @@ pub(crate) enum OutlineMessage {
 }
 
 impl EditorApp {
-    fn outline_sidebar(&self) -> Column<AppMessage> {
+    fn outline_sidebar(&self) -> Column<'_, AppMessage> {
         let count = self.app_resource.outline.count;
-        let mut column = Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0)));
+        let mut column = Column::new().push(
+            Space::new()
+                .width(Length::Fill)
+                .height(Length::Fixed(2.0)),
+        );
         for index in 0..count {
             let is_selected = self.state.outline.test == index;
             column = column.push(
@@ -70,7 +74,7 @@ impl EditorApp {
         column
     }
 
-    pub(crate) fn outline_content(&self) -> Row<AppMessage> {
+    pub(crate) fn outline_content(&self) -> Row<'_, AppMessage> {
         Row::new()
             .push(
                 scrollable(

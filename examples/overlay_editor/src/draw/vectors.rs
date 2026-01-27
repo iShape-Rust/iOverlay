@@ -199,7 +199,7 @@ impl<Message> Widget<Message, Theme, Renderer> for VectorsWidget {
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _renderer: &Renderer,
         limits: &layout::Limits,
@@ -220,12 +220,15 @@ impl<Message> Widget<Message, Theme, Renderer> for VectorsWidget {
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let offset = Vector::point(layout.position());
-        if let Some(mesh) = &self.stroke {
-            renderer.with_translation(offset, |renderer| {
-                renderer.draw_mesh(mesh.clone())
-            });
-        }
+        let bounds = layout.bounds();
+        renderer.with_layer(bounds, |renderer| {
+            let offset = Vector::point(layout.position());
+            if let Some(mesh) = &self.stroke {
+                renderer.with_translation(offset, |renderer| {
+                    renderer.draw_mesh(mesh.clone())
+                });
+            }
+        });
     }
 }
 

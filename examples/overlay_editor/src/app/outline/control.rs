@@ -30,7 +30,7 @@ impl std::fmt::Display for JoinOption {
 }
 
 impl EditorApp {
-    pub(crate) fn outline_control(&self) -> Column<AppMessage> {
+    pub(crate) fn outline_control(&self) -> Column<'_, AppMessage> {
         let outer_offset_list = Row::new()
             .push(
                 Text::new("Outer Offset:")
@@ -103,7 +103,11 @@ impl EditorApp {
         Column::new()
             .push(outer_offset_list)
             .push(inner_offset_list)
-            .push(Space::new(Length::Shrink, Length::Fixed(4.0)))
+            .push(
+                Space::new()
+                    .width(Length::Shrink)
+                    .height(Length::Fixed(4.0)),
+            )
             .push(join_pick_list)
     }
 }
