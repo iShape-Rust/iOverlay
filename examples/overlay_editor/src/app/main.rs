@@ -9,7 +9,7 @@ use crate::app::stroke::content::StrokeState;
 use iced::event::Event as MainEvent;
 use iced::keyboard::key::Named;
 use iced::keyboard::Key;
-use iced::widget::{vertical_rule, Space};
+use iced::widget::{rule, Space};
 use iced::widget::{Button, Column, Container, Row, Text};
 use iced::{keyboard, Alignment, Element, Length};
 use iced::{Subscription, Task};
@@ -118,16 +118,13 @@ impl EditorApp {
     }
 
     pub fn subscription(&self) -> Subscription<AppMessage> {
-        keyboard::on_key_press(|key, _mods| {
-            match key.as_ref() {
-                Key::Named(Named::ArrowDown) => {
-                    Some(AppMessage::NextTest)
-                }
-                Key::Named(Named::ArrowUp) => {
-                    Some(AppMessage::PrevTest)
-                }
+        keyboard::listen().filter_map(|event| match event {
+            keyboard::Event::KeyPressed { key, .. } => match key {
+                Key::Named(Named::ArrowDown) => Some(AppMessage::NextTest),
+                Key::Named(Named::ArrowUp) => Some(AppMessage::PrevTest),
                 _ => None,
-            }
+            },
+            _ => None,
         })
     }
 
@@ -145,7 +142,7 @@ impl EditorApp {
         }
     }
 
-    pub fn view(&self) -> Element<AppMessage> {
+    pub fn view(&self) -> Element<'_, AppMessage> {
         let content = Row::new().push(
             Container::new(self.main_navigation())
                 .width(Length::Fixed(160.0))
@@ -155,25 +152,29 @@ impl EditorApp {
 
         let content = match self.state.selected_action {
             MainAction::Boolean => content
-                .push(vertical_rule(1).style(style_separator))
+                .push(rule::vertical(1).style(style_separator))
                 .push(self.boolean_content()),
             MainAction::String => content
-                .push(vertical_rule(1).style(style_separator))
+                .push(rule::vertical(1).style(style_separator))
                 .push(self.string_content()),
             MainAction::Stroke => content
-                .push(vertical_rule(1).style(style_separator))
+                .push(rule::vertical(1).style(style_separator))
                 .push(self.stroke_content()),
             MainAction::Outline => content
-                .push(vertical_rule(1).style(style_separator))
+                .push(rule::vertical(1).style(style_separator))
                 .push(self.outline_content()),
         };
 
         content.height(Length::Fill).into()
     }
 
-    fn main_navigation(&self) -> Column<AppMessage> {
+    fn main_navigation(&self) -> Column<'_, AppMessage> {
         self.main_actions.iter().fold(
-            Column::new().push(Space::new(Length::Fill, Length::Fixed(2.0))),
+            Column::new().push(
+                Space::new()
+                    .width(Length::Fill)
+                    .height(Length::Fixed(2.0)),
+            ),
             |column, item| {
                 let is_selected = self.state.selected_action.eq(item);
                 column.push(

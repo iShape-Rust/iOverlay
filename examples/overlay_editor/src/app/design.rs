@@ -23,7 +23,7 @@ impl Design {
     }
 
     pub(crate) fn negative_color() -> Color {
-        if iced::Theme::default().extended_palette().is_dark {
+        if Theme::Dark.extended_palette().is_dark {
             Color::from_rgb8(224, 224, 224)
         } else {
             Color::from_rgb8(32, 32, 32)
@@ -58,23 +58,22 @@ impl Design {
 
 pub(super) fn style_sidebar_button(theme: &Theme, status: button::Status) -> button::Style {
     let palette = theme.extended_palette();
+    let text_color = theme.palette().text;
     let base = button::Style {
-        background: Some(Background::Color(palette.primary.strong.color)),
-        text_color: palette.primary.strong.text,
+        background: Some(Background::Color(Color::TRANSPARENT)),
+        text_color,
         border: border::rounded(6),
         ..button::Style::default()
     };
 
     match status {
-        button::Status::Pressed => base,
-        button::Status::Hovered => button::Style {
-            background: Some(Background::Color(palette.background.weak.color.scale_alpha(0.2))),
+        button::Status::Pressed | button::Status::Hovered => button::Style {
+            background: Some(Background::Color(
+                palette.background.weak.color.scale_alpha(0.2),
+            )),
             ..base
         },
-        button::Status::Disabled | button::Status::Active => button::Style {
-            background: Some(Background::Color(Color::TRANSPARENT)),
-            ..base
-        },
+        button::Status::Disabled | button::Status::Active => base,
     }
 }
 
@@ -127,9 +126,9 @@ pub(super) fn style_separator(theme: &Theme) -> rule::Style {
 
     rule::Style {
         color,
-        width: 1,
         radius: border::Radius::new(0),
         fill_mode: rule::FillMode::Padded(0),
+        snap: true,
     }
 }
 

@@ -15,7 +15,7 @@ crate-type = ["cdylib"]
 [dependencies]
 
 #iced = {  path = "../../../../iced", features = ["wgpu", "advanced"] }
-iced = { git = "https://github.com/iced-rs/iced", branch = "master", features = ["wgpu", "advanced", "fira-sans"] }
+iced = { version = "0.14.0", features = ["wgpu", "advanced", "fira-sans"] }
 
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"

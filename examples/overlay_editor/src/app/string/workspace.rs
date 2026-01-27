@@ -31,7 +31,7 @@ pub(crate) struct WorkspaceState {
 }
 
 impl EditorApp {
-    pub(crate) fn string_workspace(&self) -> Container<AppMessage> {
+    pub(crate) fn string_workspace(&self) -> Container<'_, AppMessage> {
         Container::new({
             let mut stack = Stack::new();
             stack = stack.push(

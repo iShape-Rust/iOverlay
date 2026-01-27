@@ -33,7 +33,7 @@ impl<'a, Message> PointsEditorWidget<'a, Message> {
         camera: Camera,
         on_update: impl Fn(PointEditUpdate) -> Message + 'a,
     ) -> Self {
-        let binding = Theme::default();
+        let binding = Theme::Dark;
         let palette = binding.extended_palette();
 
         let (main_color, hover_color, drag_color) = if palette.is_dark {
@@ -90,7 +90,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         _renderer: &Renderer,
         limits: &layout::Limits,
@@ -181,30 +181,33 @@ impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Messag
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let offset = layout.position() - Point::new(self.mesh_radius, self.mesh_radius);
+        let bounds = layout.bounds();
+        renderer.with_layer(bounds, |renderer| {
+            let offset = layout.position() - Point::new(self.mesh_radius, self.mesh_radius);
 
-        for (index, p) in self.points.iter().enumerate() {
-            let position = self.camera.world_to_screen(offset, p.pos);
-            let mesh = match &state.select {
-                SelectState::Hover(hover_index) => {
-                    if index == *hover_index {
-                        mesh.hover.clone()
-                    } else {
-                        mesh.main.clone()
+            for (index, p) in self.points.iter().enumerate() {
+                let position = self.camera.world_to_screen(offset, p.pos);
+                let mesh = match &state.select {
+                    SelectState::Hover(hover_index) => {
+                        if index == *hover_index {
+                            mesh.hover.clone()
+                        } else {
+                            mesh.main.clone()
+                        }
                     }
-                }
-                SelectState::Drag(drag) => {
-                    if index == drag.index {
-                        mesh.drag.clone()
-                    } else {
-                        mesh.main.clone()
+                    SelectState::Drag(drag) => {
+                        if index == drag.index {
+                            mesh.drag.clone()
+                        } else {
+                            mesh.main.clone()
+                        }
                     }
-                }
-                SelectState::None => mesh.main.clone(),
-            };
+                    SelectState::None => mesh.main.clone(),
+                };
 
-            renderer.with_translation(position, |renderer| renderer.draw_mesh(mesh));
-        }
+                renderer.with_translation(position, |renderer| renderer.draw_mesh(mesh));
+            }
+        });
     }
 }
 

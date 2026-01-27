@@ -22,7 +22,7 @@ pub(crate) struct WorkspaceState {
 }
 
 impl EditorApp {
-    pub(crate) fn outline_workspace(&self) -> Container<AppMessage> {
+    pub(crate) fn outline_workspace(&self) -> Container<'_, AppMessage> {
         Container::new({
             let mut stack = Stack::new();
             stack = stack.push(

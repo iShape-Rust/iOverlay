@@ -85,7 +85,7 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _renderer: &Renderer,
         limits: &layout::Limits,
@@ -181,49 +181,58 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
         // stroke radius
         let r = 1.0;
 
-        let rect = layout.bounds();
-
-        let view_min = Vector::new(0.0, 0.0);
-        let view_max = Vector::new(rect.width, rect.height);
-
-        let world_min = self.camera.view_to_world(view_min);
-        let world_max = self.camera.view_to_world(view_max);
-
-        let round_world_min_x = world_min.x.ceil();
-        let round_world_min_y = world_min.y.ceil();
-
-        let round_world_max_x = world_max.x.trunc();
-        let round_world_max_y = world_max.y.trunc();
-
-        let nfx = (round_world_max_x - round_world_min_x + 0.001).round().abs();
-        let nfy = (round_world_max_y - round_world_min_y + 0.001).round().abs();
-
-        let nx = nfx as usize;
-        let ny = nfy as usize;
-
-        let vr_mesh = self.line_mesh(-r, view_min.y, r, view_max.y, s);
-        let hz_mesh = self.line_mesh(view_min.x, -r, view_max.x, r, s);
-
         use iced::advanced::graphics::mesh::Renderer as _;
         use iced::advanced::Renderer as _;
 
-        let round_view_min = self.camera.world_to_view(Vector::new(round_world_min_x, round_world_min_y));
-        let round_view_max = self.camera.world_to_view(Vector::new(round_world_max_x, round_world_max_y));
+        let rect = layout.bounds();
+        renderer.with_layer(rect, |renderer| {
+            let view_min = Vector::new(0.0, 0.0);
+            let view_max = Vector::new(rect.width, rect.height);
 
-        let dx = (round_view_max.x - round_view_min.x) / nfx;
-        let dy = (round_view_max.y - round_view_min.y) / nfy;
+            let world_min = self.camera.view_to_world(view_min);
+            let world_max = self.camera.view_to_world(view_max);
 
-        let mut position = Vector::new(round_view_min.x + rect.x, view_min.y + rect.y);
-        for _ in 0..=nx {
-            renderer.with_translation(position, |renderer| renderer.draw_mesh(vr_mesh.clone()));
-            position.x += dx;
-        }
+            let round_world_min_x = world_min.x.ceil();
+            let round_world_min_y = world_min.y.ceil();
 
-        let mut position = Vector::new(view_min.x + rect.x, round_view_min.y + rect.y);
-        for _ in 0..=ny {
-            renderer.with_translation(position, |renderer| renderer.draw_mesh(hz_mesh.clone()));
-            position.y += dy;
-        }
+            let round_world_max_x = world_max.x.trunc();
+            let round_world_max_y = world_max.y.trunc();
+
+            let nfx = (round_world_max_x - round_world_min_x + 0.001).round().abs();
+            let nfy = (round_world_max_y - round_world_min_y + 0.001).round().abs();
+
+            let nx = nfx as usize;
+            let ny = nfy as usize;
+
+            let vr_mesh = self.line_mesh(-r, view_min.y, r, view_max.y, s);
+            let hz_mesh = self.line_mesh(view_min.x, -r, view_max.x, r, s);
+
+            let round_view_min = self
+                .camera
+                .world_to_view(Vector::new(round_world_min_x, round_world_min_y));
+            let round_view_max = self
+                .camera
+                .world_to_view(Vector::new(round_world_max_x, round_world_max_y));
+
+            let dx = (round_view_max.x - round_view_min.x) / nfx;
+            let dy = (round_view_max.y - round_view_min.y) / nfy;
+
+            let mut position = Vector::new(round_view_min.x + rect.x, view_min.y + rect.y);
+            for _ in 0..=nx {
+                renderer.with_translation(position, |renderer| {
+                    renderer.draw_mesh(vr_mesh.clone())
+                });
+                position.x += dx;
+            }
+
+            let mut position = Vector::new(view_min.x + rect.x, round_view_min.y + rect.y);
+            for _ in 0..=ny {
+                renderer.with_translation(position, |renderer| {
+                    renderer.draw_mesh(hz_mesh.clone())
+                });
+                position.y += dy;
+            }
+        });
     }
 }
 
