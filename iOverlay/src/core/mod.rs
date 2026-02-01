@@ -1,5 +1,5 @@
 pub mod divide;
-mod exract_ogc;
+mod extract_ogc;
 pub mod extract;
 pub mod fill_rule;
 pub mod graph;
