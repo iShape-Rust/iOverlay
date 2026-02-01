@@ -1,16 +1,16 @@
-use alloc::boxed::Box;
-use alloc::vec::Vec;
 use crate::mesh::stroke::builder_cap::CapBuilder;
 use crate::mesh::stroke::builder_join::{
     BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
 };
 use crate::mesh::stroke::section::{Section, SectionToSegment};
 use crate::mesh::style::{LineJoin, StrokeStyle};
+use crate::segm::offset::ShapeCountOffset;
 use crate::segm::segment::Segment;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use crate::segm::offset::ShapeCountOffset;
 
 trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn build(
@@ -85,7 +85,8 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         points_count: usize,
         is_closed_path: bool,
     ) -> usize {
-        self.builder.capacity(paths_count, points_count, is_closed_path)
+        self.builder
+            .capacity(paths_count, points_count, is_closed_path)
     }
 
     #[inline]
@@ -94,7 +95,8 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
     }
 }
 
-impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBuild<P, T> for Builder<J, P, T>
+impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBuild<P, T>
+    for Builder<J, P, T>
 {
     #[inline]
     fn build(
@@ -142,7 +144,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         let n = path.len();
         if n < 2 {
-            return
+            return;
         }
 
         let mut ip0 = adapter.float_to_int(&path[0]);
@@ -150,7 +152,9 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         let mut j = 1;
         while ip == ip0 {
             j += 1;
-            if j >= n { return; }
+            if j >= n {
+                return;
+            }
             ip = adapter.float_to_int(&path[j]);
         }
 
@@ -162,13 +166,14 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         ip0 = ip;
         j += 1;
-        'main_loop:
-        while j < n {
+        'main_loop: while j < n {
             let mut p = &path[j];
             ip = adapter.float_to_int(p);
             while ip == ip0 {
                 j += 1;
-                if j >= n { break 'main_loop; }
+                if j >= n {
+                    break 'main_loop;
+                }
                 p = &path[j];
                 ip = adapter.float_to_int(p);
             }
@@ -188,12 +193,16 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountOffset>>,
     ) {
-        if path.len() < 2 { return; }
+        if path.len() < 2 {
+            return;
+        }
 
         // build segments only from points which are not equal in int space
         let i0 = path.len() - 1;
         let i1 = Self::next_unique_point(i0, 0, path, adapter);
-        if i1 == usize::MAX { return }
+        if i1 == usize::MAX {
+            return;
+        }
 
         let start = Section::new(self.radius, &path[i0], &path[i1]);
         let mut s0 = start.clone();
@@ -214,7 +223,12 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
     }
 
     #[inline]
-    fn next_unique_point(start: usize, index: usize, path: &[P], adapter: &FloatPointAdapter<P, T>) -> usize {
+    fn next_unique_point(
+        start: usize,
+        index: usize,
+        path: &[P],
+        adapter: &FloatPointAdapter<P, T>,
+    ) -> usize {
         let a = adapter.float_to_int(&path[start]);
         for (j, p) in path.iter().enumerate().skip(index) {
             let b = adapter.float_to_int(p);
@@ -225,5 +239,4 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
 
         usize::MAX
     }
-
 }

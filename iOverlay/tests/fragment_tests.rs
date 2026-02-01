@@ -2,14 +2,14 @@ mod util;
 
 #[cfg(test)]
 mod tests {
+    use crate::util::overlay::JsonPrint;
     use i_float::int::point::IntPoint;
-    use i_shape::int::path::IntPath;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
+    use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntContour;
-    use crate::util::overlay::JsonPrint;
 
     #[test]
     fn test_many_squares() {
@@ -20,14 +20,29 @@ mod tests {
             let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
             let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
-            let list_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::LIST)
-                .overlay(rule, fill);
+            let list_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::LIST,
+            )
+            .overlay(rule, fill);
 
-            let tree_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::TREE)
-                .overlay(rule, fill);
+            let tree_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::TREE,
+            )
+            .overlay(rule, fill);
 
-            let frag_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::FRAG)
-                .overlay(rule, fill);
+            let frag_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::FRAG,
+            )
+            .overlay(rule, fill);
 
             assert_eq!(list_result, tree_result);
             assert_eq!(list_result, frag_result);
@@ -43,14 +58,29 @@ mod tests {
             let subj_paths = repeat_xy(square(0, 0, 2), 0, 0, 10, 10, n);
             let clip_paths = repeat_xy(romb(0, 0, 4), 5, 5, 10, 10, n - 1);
 
-            let list_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::LIST)
-                .overlay(rule, fill);
+            let list_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::LIST,
+            )
+            .overlay(rule, fill);
 
-            let tree_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::TREE)
-                .overlay(rule, fill);
+            let tree_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::TREE,
+            )
+            .overlay(rule, fill);
 
-            let frag_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::FRAG)
-                .overlay(rule, fill);
+            let frag_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::FRAG,
+            )
+            .overlay(rule, fill);
 
             assert_eq!(list_result, tree_result);
             assert_eq!(list_result, frag_result);
@@ -67,14 +97,29 @@ mod tests {
             let subj_paths = many_lines_x(20, n);
             let clip_paths = many_lines_y(20, n);
 
-            let list_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::LIST)
-                .overlay(rule, fill);
+            let list_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::LIST,
+            )
+            .overlay(rule, fill);
 
-            let tree_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::TREE)
-                .overlay(rule, fill);
+            let tree_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::TREE,
+            )
+            .overlay(rule, fill);
 
-            let frag_result = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::FRAG)
-                .overlay(rule, fill);
+            let frag_result = Overlay::with_contours_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::FRAG,
+            )
+            .overlay(rule, fill);
 
             assert_eq!(list_result, tree_result);
             assert_eq!(list_result, frag_result);
@@ -195,7 +240,6 @@ mod tests {
         println!("clip: {}", clip.json_print());
     }
 
-
     fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {
         let mut result = Vec::with_capacity(n * n);
         let mut y = start.y;
@@ -265,7 +309,6 @@ mod tests {
         // horizontal rects
         let mut r = 0;
         for _ in 0..count {
-
             // bottom
             let r0x0 = -r;
             let r0x1 = r0x0;
@@ -312,10 +355,30 @@ mod tests {
 
             r += a4;
 
-            rects.push(vec![IntPoint::new(r0x0, r0y0), IntPoint::new(r0x1, r0y1), IntPoint::new(r0x2, r0y2), IntPoint::new(r0x3, r0y3)]);
-            rects.push(vec![IntPoint::new(r1x0, r1y0), IntPoint::new(r1x1, r1y1), IntPoint::new(r1x2, r1y2), IntPoint::new(r1x3, r1y3)]);
-            rects.push(vec![IntPoint::new(r2x0, r2y0), IntPoint::new(r2x1, r2y1), IntPoint::new(r2x2, r2y2), IntPoint::new(r2x3, r2y3)]);
-            rects.push(vec![IntPoint::new(r3x0, r3y0), IntPoint::new(r3x1, r3y1), IntPoint::new(r3x2, r3y2), IntPoint::new(r3x3, r3y3)]);
+            rects.push(vec![
+                IntPoint::new(r0x0, r0y0),
+                IntPoint::new(r0x1, r0y1),
+                IntPoint::new(r0x2, r0y2),
+                IntPoint::new(r0x3, r0y3),
+            ]);
+            rects.push(vec![
+                IntPoint::new(r1x0, r1y0),
+                IntPoint::new(r1x1, r1y1),
+                IntPoint::new(r1x2, r1y2),
+                IntPoint::new(r1x3, r1y3),
+            ]);
+            rects.push(vec![
+                IntPoint::new(r2x0, r2y0),
+                IntPoint::new(r2x1, r2y1),
+                IntPoint::new(r2x2, r2y2),
+                IntPoint::new(r2x3, r2y3),
+            ]);
+            rects.push(vec![
+                IntPoint::new(r3x0, r3y0),
+                IntPoint::new(r3x1, r3y1),
+                IntPoint::new(r3x2, r3y2),
+                IntPoint::new(r3x3, r3y3),
+            ]);
 
             rects.push(romb(-r, r, a2));
             rects.push(romb(-r, -r, a2));
@@ -344,7 +407,14 @@ mod tests {
         ]
     }
 
-    fn repeat_xy(origin: IntContour, x0: i32, y0: i32, dx: i32, dy: i32, count: usize) -> Vec<IntContour> {
+    fn repeat_xy(
+        origin: IntContour,
+        x0: i32,
+        y0: i32,
+        dx: i32,
+        dy: i32,
+        count: usize,
+    ) -> Vec<IntContour> {
         let mut contours = Vec::with_capacity(8 * count);
         let mut x = x0;
         for _ in 0..count {

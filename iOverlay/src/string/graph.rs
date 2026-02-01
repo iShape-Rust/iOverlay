@@ -1,6 +1,6 @@
-use alloc::vec::Vec;
 use crate::build::builder::GraphNode;
 use crate::core::link::OverlayLink;
+use alloc::vec::Vec;
 
 pub struct StringGraph<'a> {
     pub(crate) nodes: &'a [Vec<usize>],

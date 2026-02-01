@@ -1,2 +1,2 @@
-pub(crate) mod solver;
 pub(crate) mod segment;
+pub(crate) mod solver;

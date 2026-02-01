@@ -145,7 +145,10 @@ impl StringGraph<'_> {
             }
             let (link, fill) = unsafe {
                 // SAFETY: link_index comes from the adjacency list; fills shares the same length as links.
-                (self.links.get_unchecked(link_index), *fills.get_unchecked(link_index))
+                (
+                    self.links.get_unchecked(link_index),
+                    *fills.get_unchecked(link_index),
+                )
             };
             if link.is_move_possible(fill, node_id, clockwise) {
                 if is_first {
@@ -162,7 +165,10 @@ impl StringGraph<'_> {
         if first_index == usize::MAX {
             let (link, fill) = unsafe {
                 // SAFETY: target_index is the caller's current link id, so it is within bounds for both arrays.
-                (self.links.get_unchecked(target_index), *fills.get_unchecked(target_index))
+                (
+                    self.links.get_unchecked(target_index),
+                    *fills.get_unchecked(target_index),
+                )
             };
             if link.is_move_possible(fill, node_id, clockwise) {
                 return target_index;
@@ -174,7 +180,6 @@ impl StringGraph<'_> {
         if second_index == usize::MAX {
             return first_index;
         }
-
 
         let target = unsafe {
             // SAFETY: target_index is either target_index or first_index; both were validated above.
@@ -208,7 +213,10 @@ impl StringGraph<'_> {
         for &link_index in indices.iter().skip(pos + 1) {
             let (link, fill) = unsafe {
                 // SAFETY: link_index traverses the same adjacency slice; indices and arrays are aligned.
-                (self.links.get_unchecked(link_index), *fills.get_unchecked(link_index))
+                (
+                    self.links.get_unchecked(link_index),
+                    *fills.get_unchecked(link_index),
+                )
             };
             if link.is_move_possible(fill, node_id, clockwise) {
                 let p = link.other(node_id).point;

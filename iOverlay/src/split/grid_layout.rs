@@ -242,7 +242,6 @@ impl FragmentBuffer {
         }
         true
     }
-
 }
 
 pub(super) struct GridLayout {

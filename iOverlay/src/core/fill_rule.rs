@@ -11,7 +11,7 @@ pub enum FillRule {
     #[default]
     NonZero,
     Positive,
-    Negative
+    Negative,
 }
 
 impl fmt::Display for FillRule {

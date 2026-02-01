@@ -31,7 +31,8 @@ impl OverlayGraph<'_> {
         buffer: &mut BooleanExtractionBuffer,
     ) -> Vec<VectorShape> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
-        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.links
+            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
 
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
@@ -63,7 +64,8 @@ impl OverlayGraph<'_> {
             let direction = is_hole == clockwise;
             let start_data = StartVectorPathData::new(direction, link, left_top_link);
 
-            let mut contour = self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited);
+            let mut contour =
+                self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited);
             let (is_valid, is_modified) = contour.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -186,7 +188,8 @@ trait JoinHoles {
         &mut self,
         holes: Vec<VectorPath>,
         anchors: Vec<IdSegment>,
-        clockwise: bool);
+        clockwise: bool,
+    );
     fn scan_join(&mut self, holes: Vec<VectorPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
 
@@ -213,7 +216,12 @@ impl JoinHoles for Vec<VectorShape> {
         self.scan_join(holes, anchors, clockwise);
     }
 
-    fn scan_join(&mut self, holes: Vec<VectorPath>, hole_segments: Vec<IdSegment>, clockwise: bool) {
+    fn scan_join(
+        &mut self,
+        holes: Vec<VectorPath>,
+        hole_segments: Vec<IdSegment>,
+        clockwise: bool,
+    ) {
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 

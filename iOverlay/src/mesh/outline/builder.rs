@@ -1,14 +1,16 @@
+use crate::mesh::outline::builder_join::{
+    BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
+};
+use crate::mesh::outline::section::{Section, SectionToSegment};
+use crate::mesh::style::LineJoin;
+use crate::segm::offset::ShapeCountOffset;
+use crate::segm::segment::Segment;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use crate::mesh::outline::builder_join::{JoinBuilder, BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
-use crate::mesh::outline::section::{Section, SectionToSegment};
-use crate::mesh::style::LineJoin;
-use crate::segm::offset::ShapeCountOffset;
-use crate::segm::segment::Segment;
 
 trait OutlineBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn build(
@@ -23,7 +25,7 @@ trait OutlineBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
 }
 
 pub(super) struct OutlineBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
-    builder: Box<dyn OutlineBuild<P, T>>
+    builder: Box<dyn OutlineBuild<P, T>>,
 }
 
 struct Builder<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -34,7 +36,6 @@ struct Builder<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber>
 
 impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuilder<P, T> {
     pub(super) fn new(radius: T, join: &LineJoin<T>) -> OutlineBuilder<P, T> {
-
         let builder: Box<dyn OutlineBuild<P, T>> = match join {
             LineJoin::Miter(ratio) => Box::new(Builder {
                 radius,
@@ -67,10 +68,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuil
     }
 
     #[inline]
-    pub(super) fn capacity(
-        &self,
-        points_count: usize,
-    ) -> usize {
+    pub(super) fn capacity(&self, points_count: usize) -> usize {
         self.builder.capacity(points_count)
     }
 
@@ -80,7 +78,8 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuil
     }
 }
 
-impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBuild<P, T> for Builder<J, P, T>
+impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBuild<P, T>
+    for Builder<J, P, T>
 {
     #[inline]
     fn build(
@@ -89,12 +88,16 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBu
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountOffset>>,
     ) {
-        if path.len() < 2 { return; }
+        if path.len() < 2 {
+            return;
+        }
 
         // build segments only from points which are not equal in int space
         let i0 = path.len() - 1;
         let i1 = Self::next_unique_point(i0, 0, path, adapter);
-        if i1 == usize::MAX { return }
+        if i1 == usize::MAX {
+            return;
+        }
 
         let start = Section::new(self.radius, &path[i0], &path[i1]);
         let mut s0 = start.clone();
@@ -127,7 +130,12 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBu
 
 impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J, P, T> {
     #[inline]
-    fn next_unique_point(start: usize, index: usize, path: &[P], adapter: &FloatPointAdapter<P, T>) -> usize {
+    fn next_unique_point(
+        start: usize,
+        index: usize,
+        path: &[P],
+        adapter: &FloatPointAdapter<P, T>,
+    ) -> usize {
         let a = adapter.float_to_int(&path[start]);
         for (j, p) in path.iter().enumerate().skip(index) {
             let b = adapter.float_to_int(p);

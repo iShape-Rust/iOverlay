@@ -1,5 +1,5 @@
-use i_float::int::rect::IntRect;
 use crate::geom::x_segment::XSegment;
+use i_float::int::rect::IntRect;
 
 #[derive(Debug, Clone)]
 pub(super) struct Fragment {
@@ -9,7 +9,6 @@ pub(super) struct Fragment {
 }
 
 impl Fragment {
-
     #[inline]
     pub(super) fn with_index_and_segment(index: usize, x_segment: XSegment) -> Self {
         let (min_y, max_y) = if x_segment.a.y < x_segment.b.y {

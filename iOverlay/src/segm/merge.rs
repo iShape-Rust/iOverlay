@@ -1,6 +1,6 @@
-use alloc::vec::Vec;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
+use alloc::vec::Vec;
 
 pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self) -> bool;
@@ -8,7 +8,9 @@ pub(crate) trait ShapeSegmentsMerge {
 
 impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
     fn merge_if_needed(&mut self) -> bool {
-        if self.len() < 2 { return false; }
+        if self.len() < 2 {
+            return false;
+        }
 
         let mut prev = &self[0].x_segment;
         for i in 1..self.len() {
@@ -53,16 +55,19 @@ fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
-use crate::segm::boolean::ShapeCountBoolean;
-use i_float::int::point::IntPoint;
     use super::*;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use alloc::vec;
+    use i_float::int::point::IntPoint;
 
     #[test]
     fn test_merge_if_needed_empty() {
         let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::new();
         segments.merge_if_needed();
-        assert!(segments.is_empty(), "Empty vector should remain empty after merge");
+        assert!(
+            segments.is_empty(),
+            "Empty vector should remain empty after merge"
+        );
     }
 
     #[test]
@@ -74,7 +79,10 @@ use i_float::int::point::IntPoint;
         let mut segments = vec![segment];
         segments.merge_if_needed();
         assert_eq!(segments.len(), 1, "Single segment should remain unchanged");
-        assert_eq!(segments[0], segment, "Segment should be unchanged after merge");
+        assert_eq!(
+            segments[0], segment,
+            "Segment should be unchanged after merge"
+        );
     }
 
     #[test]
@@ -92,9 +100,19 @@ use i_float::int::point::IntPoint;
         let mut segments = vec![segment1, segment2];
         segments.merge_if_needed();
 
-        assert_eq!(segments.len(), 2, "Segments with different x_segments should not be merged");
-        assert_eq!(segments[0], segment1, "First segment should remain unchanged");
-        assert_eq!(segments[1], segment2, "Second segment should remain unchanged");
+        assert_eq!(
+            segments.len(),
+            2,
+            "Segments with different x_segments should not be merged"
+        );
+        assert_eq!(
+            segments[0], segment1,
+            "First segment should remain unchanged"
+        );
+        assert_eq!(
+            segments[1], segment2,
+            "Second segment should remain unchanged"
+        );
     }
 
     #[test]
@@ -115,7 +133,10 @@ use i_float::int::point::IntPoint;
         assert_eq!(segments.len(), 1, "Segments should be merged into one");
         let merged_count = ShapeCountBoolean::new(1, 1);
         let expected_segment = Segment::create_and_validate(a1, b1, merged_count);
-        assert_eq!(segments[0], expected_segment, "Merged segment should have combined counts");
+        assert_eq!(
+            segments[0], expected_segment,
+            "Merged segment should have combined counts"
+        );
     }
 
     #[test]
@@ -137,7 +158,10 @@ use i_float::int::point::IntPoint;
         assert_eq!(segments.len(), 1, "All segments should be merged into one");
         let merged_count = ShapeCountBoolean::new(3, 3);
         let expected_segment = Segment::create_and_validate(a, b, merged_count);
-        assert_eq!(segments[0], expected_segment, "Merged segment should have combined counts");
+        assert_eq!(
+            segments[0], expected_segment,
+            "Merged segment should have combined counts"
+        );
     }
 
     #[test]
@@ -157,11 +181,19 @@ use i_float::int::point::IntPoint;
         segments.merge_if_needed();
 
         // Both segments should have the same ordered x_segment
-        assert_eq!(segments.len(), 1, "Segments with inverted points should be merged");
+        assert_eq!(
+            segments.len(),
+            1,
+            "Segments with inverted points should be merged"
+        );
 
         let merged_count = ShapeCountBoolean::new(1, 1);
-        let expected_segment = Segment::create_and_validate(IntPoint::new(1, 2), IntPoint::new(3, 4), merged_count);
-        assert_eq!(segments[0], expected_segment, "Merged segment should have combined counts and ordered points");
+        let expected_segment =
+            Segment::create_and_validate(IntPoint::new(1, 2), IntPoint::new(3, 4), merged_count);
+        assert_eq!(
+            segments[0], expected_segment,
+            "Merged segment should have combined counts and ordered points"
+        );
     }
 
     #[test]
@@ -184,9 +216,22 @@ use i_float::int::point::IntPoint;
         let mut segments = vec![segment1, segment2, segment3];
         segments.merge_if_needed();
 
-        assert_eq!(segments.len(), 3, "Segments with different x_segments should not be merged");
-        assert_eq!(segments[0], segment1, "First segment should remain unchanged");
-        assert_eq!(segments[1], segment2, "Second segment should remain unchanged");
-        assert_eq!(segments[2], segment3, "Third segment should remain unchanged");
+        assert_eq!(
+            segments.len(),
+            3,
+            "Segments with different x_segments should not be merged"
+        );
+        assert_eq!(
+            segments[0], segment1,
+            "First segment should remain unchanged"
+        );
+        assert_eq!(
+            segments[1], segment2,
+            "Second segment should remain unchanged"
+        );
+        assert_eq!(
+            segments[2], segment3,
+            "Third segment should remain unchanged"
+        );
     }
 }

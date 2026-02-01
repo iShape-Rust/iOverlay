@@ -9,20 +9,12 @@ pub(super) struct LineMark {
 }
 
 pub(super) trait SortMarkByIndexAndPoint {
-    fn sort_by_index_and_point(
-        &mut self,
-        parallel: bool,
-        reusable_buffer: &mut Vec<LineMark>,
-    );
+    fn sort_by_index_and_point(&mut self, parallel: bool, reusable_buffer: &mut Vec<LineMark>);
 }
 
 impl SortMarkByIndexAndPoint for [LineMark] {
     #[inline]
-    fn sort_by_index_and_point(
-        &mut self,
-        parallel: bool,
-        reusable_buffer: &mut Vec<LineMark>,
-    ) {
+    fn sort_by_index_and_point(&mut self, parallel: bool, reusable_buffer: &mut Vec<LineMark>) {
         self.sort_by_one_key_then_by_and_buffer(
             parallel,
             reusable_buffer,

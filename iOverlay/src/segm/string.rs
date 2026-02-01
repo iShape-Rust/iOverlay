@@ -1,6 +1,6 @@
-use core::cmp::Ordering;
 use crate::core::overlay::ShapeType;
 use crate::segm::winding::WindingCount;
+use core::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShapeCountString {
@@ -13,7 +13,9 @@ pub(crate) const STRING_BACK_CLIP: u8 = 0b1;
 
 impl WindingCount for ShapeCountString {
     #[inline(always)]
-    fn is_not_empty(&self) -> bool { self.subj != 0 || self.clip != 0 }
+    fn is_not_empty(&self) -> bool {
+        self.subj != 0 || self.clip != 0
+    }
 
     #[inline(always)]
     fn new(subj: i32, clip: i32) -> Self {
@@ -28,10 +30,11 @@ impl WindingCount for ShapeCountString {
     }
 
     #[inline(always)]
+    #[rustfmt::skip]
     fn with_shape_type(shape_type: ShapeType) -> (Self, Self) {
         match shape_type {
             ShapeType::Subject => (Self { subj: 1, clip: 0 }, Self { subj: -1, clip: 0 }),
-            ShapeType::Clip => (Self { subj: 0, clip: STRING_FORWARD_CLIP }, Self { subj: 0, clip: STRING_BACK_CLIP })
+            ShapeType::Clip => (Self { subj: 0, clip: STRING_FORWARD_CLIP }, Self {subj: 0, clip: STRING_BACK_CLIP }),
         }
     }
 
@@ -55,6 +58,9 @@ impl WindingCount for ShapeCountString {
         let b1 = self.clip & 0b10;
         let clip = (b0 << 1) | (b1 >> 1);
 
-        Self { subj: -self.subj, clip }
+        Self {
+            subj: -self.subj,
+            clip,
+        }
     }
 }

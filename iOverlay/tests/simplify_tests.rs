@@ -1,24 +1,23 @@
 #[cfg(test)]
 mod tests {
     use i_float::int::point::IntPoint;
-    use i_shape::int::shape::IntShape;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::simplify::Simplify;
     use i_overlay::core::solver::{Precision, Solver};
+    use i_shape::int::shape::IntShape;
 
     #[test]
     fn test_0() {
-        let paths =
-            [
-                [
-                    IntPoint::new(10614, 4421),
-                    IntPoint::new(10609, 4421),
-                    IntPoint::new(10609, 4415),
-                    IntPoint::new(10614, 4415)
-                ].to_vec()
-            ].to_vec();
+        let paths = [[
+            IntPoint::new(10614, 4421),
+            IntPoint::new(10609, 4421),
+            IntPoint::new(10609, 4415),
+            IntPoint::new(10614, 4415),
+        ]
+        .to_vec()]
+        .to_vec();
 
         let op = IntOverlayOptions {
             preserve_input_collinear: true,
@@ -36,17 +35,17 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let paths =
-            [
-                square(IntPoint::new(-10, -10)),
-                square(IntPoint::new(-10, 0)),
-                square(IntPoint::new(-10, 10)),
-                square(IntPoint::new(0, -10)),
-                square(IntPoint::new(0, 10)),
-                square(IntPoint::new(10, -10)),
-                square(IntPoint::new(10, 0)),
-                square(IntPoint::new(10, 10))
-            ].to_vec();
+        let paths = [
+            square(IntPoint::new(-10, -10)),
+            square(IntPoint::new(-10, 0)),
+            square(IntPoint::new(-10, 10)),
+            square(IntPoint::new(0, -10)),
+            square(IntPoint::new(0, 10)),
+            square(IntPoint::new(10, -10)),
+            square(IntPoint::new(10, 0)),
+            square(IntPoint::new(10, 10)),
+        ]
+        .to_vec();
 
         let op = IntOverlayOptions {
             preserve_input_collinear: true,
@@ -64,17 +63,17 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let shapes =
-            [
-                square_shape(IntPoint::new(-10, -10)),
-                square_shape(IntPoint::new(-10, 0)),
-                square_shape(IntPoint::new(-10, 10)),
-                square_shape(IntPoint::new(0, -10)),
-                square_shape(IntPoint::new(0, 10)),
-                square_shape(IntPoint::new(10, -10)),
-                square_shape(IntPoint::new(10, 0)),
-                square_shape(IntPoint::new(10, 10))
-            ].to_vec();
+        let shapes = [
+            square_shape(IntPoint::new(-10, -10)),
+            square_shape(IntPoint::new(-10, 0)),
+            square_shape(IntPoint::new(-10, 10)),
+            square_shape(IntPoint::new(0, -10)),
+            square_shape(IntPoint::new(0, 10)),
+            square_shape(IntPoint::new(10, -10)),
+            square_shape(IntPoint::new(10, 0)),
+            square_shape(IntPoint::new(10, 10)),
+        ]
+        .to_vec();
 
         let op = IntOverlayOptions {
             preserve_input_collinear: true,
@@ -92,13 +91,13 @@ mod tests {
 
     #[test]
     fn test_3() {
-        let path =
-            [
-                IntPoint::new(0, 0),
-                IntPoint::new(3, 1),
-                IntPoint::new(0, 3),
-                IntPoint::new(3, 0)
-            ].to_vec();
+        let path = [
+            IntPoint::new(0, 0),
+            IntPoint::new(3, 1),
+            IntPoint::new(0, 3),
+            IntPoint::new(3, 0),
+        ]
+        .to_vec();
 
         let mut buffer = Default::default();
 
@@ -116,11 +115,15 @@ mod tests {
 
         let simple_0 = overlay_0
             .build_graph_view(FillRule::NonZero)
-            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject, &mut buffer));
+            .map_or(Default::default(), |graph| {
+                graph.extract_shapes(OverlayRule::Subject, &mut buffer)
+            });
 
         let simple_1 = overlay_1
             .build_graph_view(FillRule::NonZero)
-            .map_or(Default::default(), |graph|graph.extract_shapes(OverlayRule::Subject, &mut buffer));
+            .map_or(Default::default(), |graph| {
+                graph.extract_shapes(OverlayRule::Subject, &mut buffer)
+            });
 
         assert_eq!(simple_0.len(), 1);
         assert_eq!(simple_0[0].len(), 1);
@@ -134,13 +137,13 @@ mod tests {
             vec![
                 IntPoint::new(-5, 0),
                 IntPoint::new(0, 0),
-                IntPoint::new(0, 5)
+                IntPoint::new(0, 5),
             ],
             vec![
                 IntPoint::new(-3, 2),
                 IntPoint::new(-1, 2),
-                IntPoint::new(-1, 1)
-            ]
+                IntPoint::new(-1, 1),
+            ],
         ];
 
         let op = IntOverlayOptions {
@@ -164,8 +167,9 @@ mod tests {
             IntPoint::new(-5 + pos.x, -5 + pos.y),
             IntPoint::new(-5 + pos.x, 5 + pos.y),
             IntPoint::new(5 + pos.x, 5 + pos.y),
-            IntPoint::new(5 + pos.x, -5 + pos.y)
-        ].to_vec()
+            IntPoint::new(5 + pos.x, -5 + pos.y),
+        ]
+        .to_vec()
     }
 
     fn square_shape(pos: IntPoint) -> IntShape {

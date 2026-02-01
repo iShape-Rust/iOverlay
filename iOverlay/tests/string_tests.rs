@@ -3,25 +3,48 @@ mod util;
 
 #[cfg(test)]
 mod tests {
-    use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::string::clip::{ClipRule, IntClip};
-    use i_overlay::string::slice::IntSlice;
     use crate::data::overlay::StringTest;
     use crate::util::overlay;
     use crate::util::overlay::JsonPrint;
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::string::clip::{ClipRule, IntClip};
+    use i_overlay::string::slice::IntSlice;
 
     fn execute(index: usize) {
         let test = StringTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
 
         let slice = test.body.slice_by_paths(&test.string, fill_rule);
-        assert_eq!(true, overlay::is_group_of_shapes_one_of(&slice, &test.slice));
+        assert_eq!(
+            true,
+            overlay::is_group_of_shapes_one_of(&slice, &test.slice)
+        );
 
-        let clip_direct = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert: false, boundary_included: false });
-        assert_eq!(true, overlay::is_paths_one_of(&clip_direct, &test.clip_direct));
+        let clip_direct = test.body.clip_paths(
+            &test.string,
+            fill_rule,
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
+        );
+        assert_eq!(
+            true,
+            overlay::is_paths_one_of(&clip_direct, &test.clip_direct)
+        );
 
-        let clip_invert = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert: true, boundary_included: false });
-        assert_eq!(true, overlay::is_paths_one_of(&clip_invert, &test.clip_invert));
+        let clip_invert = test.body.clip_paths(
+            &test.string,
+            fill_rule,
+            ClipRule {
+                invert: true,
+                boundary_included: false,
+            },
+        );
+        assert_eq!(
+            true,
+            overlay::is_paths_one_of(&clip_invert, &test.clip_invert)
+        );
     }
 
     fn debug_execute_slice(index: usize) {
@@ -36,7 +59,14 @@ mod tests {
         let test = StringTest::load(index);
         let fill_rule = test.fill_rule.unwrap_or(FillRule::EvenOdd);
 
-        let clip = test.body.clip_paths(&test.string, fill_rule, ClipRule { invert, boundary_included: false });
+        let clip = test.body.clip_paths(
+            &test.string,
+            fill_rule,
+            ClipRule {
+                invert,
+                boundary_included: false,
+            },
+        );
 
         println!("clip {}: {}", invert, clip.json_print());
     }

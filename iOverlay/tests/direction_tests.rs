@@ -3,9 +3,9 @@ mod tests {
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
+    use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::simplify::Simplify;
     use i_shape::int::area::Area;
-    use i_overlay::core::overlay_rule::OverlayRule;
 
     #[test]
     fn test_0() {
@@ -71,7 +71,7 @@ mod tests {
             min_output_area: 0,
             ocg: false,
         };
-        
+
         let r0 = &path.simplify(FillRule::NonZero, op0)[0];
         debug_assert!(r0[0].area_two() < 0);
         debug_assert!(r0[1].area_two() > 0);

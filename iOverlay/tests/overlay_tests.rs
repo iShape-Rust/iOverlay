@@ -30,7 +30,7 @@ mod tests {
         }
 
         let mut buffer = Default::default();
-        
+
         for solver in SOLVERS {
             let mut ovr = overlay(&test, options, solver);
             let graph = if let Some(graph) = ovr.build_graph_view(fill_rule) {
@@ -40,47 +40,30 @@ mod tests {
             };
 
             let subject_0 = graph.extract_shapes(OverlayRule::Subject, &mut buffer);
-            let subject_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::Subject,
-                fill_rule
-            );
+            let subject_1 =
+                overlay(&test, options, solver).overlay(OverlayRule::Subject, fill_rule);
 
             let clip_0 = graph.extract_shapes(OverlayRule::Clip, &mut buffer);
-            let clip_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::Clip,
-                fill_rule,
-            );
+            let clip_1 = overlay(&test, options, solver).overlay(OverlayRule::Clip, fill_rule);
 
             let difference_0 = graph.extract_shapes(OverlayRule::Difference, &mut buffer);
-            let difference_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::Difference,
-                fill_rule,
-            );
+            let difference_1 =
+                overlay(&test, options, solver).overlay(OverlayRule::Difference, fill_rule);
 
             let inverse_difference_0 =
                 graph.extract_shapes(OverlayRule::InverseDifference, &mut buffer);
-            let inverse_difference_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::InverseDifference,
-                fill_rule,
-            );
+            let inverse_difference_1 =
+                overlay(&test, options, solver).overlay(OverlayRule::InverseDifference, fill_rule);
 
             let intersect_0 = graph.extract_shapes(OverlayRule::Intersect, &mut buffer);
-            let intersect_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::Intersect,
-                fill_rule,
-            );
+            let intersect_1 =
+                overlay(&test, options, solver).overlay(OverlayRule::Intersect, fill_rule);
 
             let union_0 = graph.extract_shapes(OverlayRule::Union, &mut buffer);
-            let union_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::Union,
-                fill_rule,
-            );
+            let union_1 = overlay(&test, options, solver).overlay(OverlayRule::Union, fill_rule);
 
             let xor_0 = graph.extract_shapes(OverlayRule::Xor, &mut buffer);
-            let xor_1 = overlay(&test, options, solver).overlay(
-                OverlayRule::Xor,
-                fill_rule,
-            );
+            let xor_1 = overlay(&test, options, solver).overlay(OverlayRule::Xor, fill_rule);
 
             assert_eq!(subject_0, subject_1);
             assert_eq!(clip_0, clip_1);
@@ -121,7 +104,12 @@ mod tests {
     #[allow(dead_code)]
     fn debug_execute(index: usize, overlay_rule: OverlayRule, fill_rule: FillRule, solver: Solver) {
         let test = BooleanTest::load(index);
-        let mut overlay = Overlay::with_contours_custom(&test.subj_paths, &test.clip_paths, Default::default(), solver);
+        let mut overlay = Overlay::with_contours_custom(
+            &test.subj_paths,
+            &test.clip_paths,
+            Default::default(),
+            solver,
+        );
         let graph = overlay.build_graph_view(fill_rule).unwrap();
         let result = graph.extract_shapes(overlay_rule, &mut Default::default());
 
