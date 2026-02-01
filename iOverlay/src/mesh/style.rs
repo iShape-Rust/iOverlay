@@ -14,7 +14,7 @@ pub enum LineCap<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// A line with a squared-off end. An extended distance equal to half the line width.
     Square,
     /// Set a custom end with template points.
-    Custom(Rc<[P]>)
+    Custom(Rc<[P]>),
 }
 
 /// The join style of a line.
@@ -75,7 +75,7 @@ impl<T: FloatNumber> LineJoin<T> {
                 let a = angle.to_f64().clamp(0.01 * PI, 0.25 * PI);
                 LineJoin::Round(T::from_float(a))
             }
-            _ => self
+            _ => self,
         }
     }
 }
@@ -83,7 +83,10 @@ impl<T: FloatNumber> LineJoin<T> {
 impl<P: FloatPointCompatible<T>, T: FloatNumber> StrokeStyle<P, T> {
     /// Creates a new `StrokeStyle` with the specified width.
     pub fn new(width: T) -> Self {
-        Self { width, ..Default::default() }
+        Self {
+            width,
+            ..Default::default()
+        }
     }
 
     /// Sets the stroke width.
@@ -117,16 +120,19 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> Default for StrokeStyle<P, T> {
             width: T::from_float(1.0),
             start_cap: LineCap::Butt,
             end_cap: LineCap::Butt,
-            join: LineJoin::Bevel
+            join: LineJoin::Bevel,
         }
     }
 }
 
 impl<T: FloatNumber> OutlineStyle<T> {
-
     /// Creates a new `OutlineStyle` with the specified offset.
     pub fn new(offset: T) -> Self {
-        Self { outer_offset: offset, inner_offset: offset, ..Default::default() }
+        Self {
+            outer_offset: offset,
+            inner_offset: offset,
+            ..Default::default()
+        }
     }
 
     /// Sets the offset distance.
@@ -160,7 +166,7 @@ impl<T: FloatNumber> Default for OutlineStyle<T> {
         Self {
             outer_offset: T::from_float(1.0),
             inner_offset: T::from_float(1.0),
-            join: LineJoin::Bevel
+            join: LineJoin::Bevel,
         }
     }
 }

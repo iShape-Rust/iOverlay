@@ -2,6 +2,11 @@
 //! boolean operations (union, intersection, etc.) on polygons. It provides structures and methods to
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
+use crate::core::fill_rule::FillRule;
+use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
+use crate::core::overlay_rule::OverlayRule;
+use crate::core::solver::Solver;
+use crate::float::graph::FloatOverlayGraph;
 use crate::i_shape::source::resource::ShapeResource;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
@@ -11,11 +16,6 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::core::fill_rule::FillRule;
-use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
-use crate::core::overlay_rule::OverlayRule;
-use crate::core::solver::Solver;
-use crate::float::graph::FloatOverlayGraph;
 
 #[derive(Debug, Clone, Copy)]
 pub struct OverlayOptions<T: FloatNumber> {
@@ -69,10 +69,19 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
-    pub fn new_custom(adapter: FloatPointAdapter<P, T>, options: OverlayOptions<T>, solver: Solver, capacity: usize) -> Self {
+    pub fn new_custom(
+        adapter: FloatPointAdapter<P, T>,
+        options: OverlayOptions<T>,
+        solver: Solver,
+        capacity: usize,
+    ) -> Self {
         let clean_result = options.clean_result;
         let overlay = Overlay::new_custom(capacity, options.int_with_adapter(&adapter), solver);
-        Self { overlay, clean_result, adapter }
+        Self {
+            overlay,
+            clean_result,
+            adapter,
+        }
     }
 
     /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
@@ -86,7 +95,11 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let clean_result = options.clean_result;
         let adapter = FloatPointAdapter::new(FloatRect::zero());
         let overlay = Overlay::new_custom(capacity, options.int_default(), solver);
-        Self { overlay, clean_result, adapter }
+        Self {
+            overlay,
+            clean_result,
+            adapter,
+        }
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
@@ -98,8 +111,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
-        R0: ShapeResource<P, T> +?Sized,
-        R1: ShapeResource<P, T> +?Sized,
+        R0: ShapeResource<P, T> + ?Sized,
+        R1: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -122,10 +135,15 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn with_subj_and_clip_custom<R0, R1>(subj: &R0, clip: &R1, options: OverlayOptions<T>, solver: Solver) -> Self
+    pub fn with_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        options: OverlayOptions<T>,
+        solver: Solver,
+    ) -> Self
     where
-        R0: ShapeResource<P, T> +?Sized,
-        R1: ShapeResource<P, T> +?Sized,
+        R0: ShapeResource<P, T> + ?Sized,
+        R1: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -147,7 +165,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn with_subj<R>(subj: &R) -> Self
     where
-        R: ShapeResource<P, T> +?Sized,
+        R: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -155,8 +173,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
-        Self::with_adapter(adapter, subj_capacity)
-            .unsafe_add_source(subj, ShapeType::Subject)
+        Self::with_adapter(adapter, subj_capacity).unsafe_add_source(subj, ShapeType::Subject)
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject.
@@ -169,7 +186,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - `solver`: Type of solver to use.
     pub fn with_subj_custom<R>(subj: &R, options: OverlayOptions<T>, solver: Solver) -> Self
     where
-        R: ShapeResource<P, T> +?Sized,
+        R: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -177,8 +194,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
-        Self::new_custom(adapter, options, solver, subj_capacity)
-            .unsafe_add_source(subj, ShapeType::Subject)
+        Self::new_custom(adapter, options, solver, subj_capacity).unsafe_add_source(subj, ShapeType::Subject)
     }
 
     /// Adds a shapes to the overlay.
@@ -189,7 +205,11 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn unsafe_add_source<R: ShapeResource<P, T> +?Sized>(mut self, resource: &R, shape_type: ShapeType) -> Self {
+    pub fn unsafe_add_source<R: ShapeResource<P, T> + ?Sized>(
+        mut self,
+        resource: &R,
+        shape_type: ShapeType,
+    ) -> Self {
         self.add_source(resource, shape_type);
         self
     }
@@ -200,7 +220,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     /// - **Safety**: Marked `unsafe` because it assumes the path is fully contained within the bounding box.
     #[inline]
     pub fn unsafe_add_contour(mut self, contour: &[P], shape_type: ShapeType) -> Self {
-        self.overlay.add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
+        self.overlay
+            .add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         self
     }
 
@@ -210,9 +231,10 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 
     #[inline]
-    fn add_source<R: ShapeResource<P, T> +?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
+    fn add_source<R: ShapeResource<P, T> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
         for contour in resource.iter_paths() {
-            self.overlay.add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
+            self.overlay
+                .add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         }
     }
 
@@ -225,8 +247,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
     where
-        R0: ShapeResource<P, T> +?Sized,
-        R1: ShapeResource<P, T> +?Sized,
+        R0: ShapeResource<P, T> + ?Sized,
+        R1: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -246,7 +268,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     pub fn reinit_with_subj<R>(&mut self, subj: &R)
     where
-        R: ShapeResource<P, T> +?Sized,
+        R: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
         T: FloatNumber,
     {
@@ -262,7 +284,11 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     #[inline]
     pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatOverlayGraph<'_, P, T>> {
         let graph = self.overlay.build_graph_view(fill_rule)?;
-        Some(FloatOverlayGraph::new(graph, self.adapter.clone(), self.clean_result))
+        Some(FloatOverlayGraph::new(
+            graph,
+            self.adapter.clone(),
+            self.clean_result,
+        ))
     }
 
     /// Executes a single Boolean operation on the current geometry using the specified overlay and build rules.
@@ -336,7 +362,10 @@ impl<T: FloatNumber> Default for OverlayOptions<T> {
 }
 
 impl<T: FloatNumber> OverlayOptions<T> {
-    pub(crate) fn int_with_adapter<P: FloatPointCompatible<T>>(&self, adapter: &FloatPointAdapter<P, T>) -> IntOverlayOptions {
+    pub(crate) fn int_with_adapter<P: FloatPointCompatible<T>>(
+        &self,
+        adapter: &FloatPointAdapter<P, T>,
+    ) -> IntOverlayOptions {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
@@ -372,10 +401,10 @@ impl<T: FloatNumber> OverlayOptions<T> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
-use crate::core::fill_rule::FillRule;
+    use crate::core::fill_rule::FillRule;
     use crate::core::overlay_rule::OverlayRule;
     use crate::float::overlay::FloatOverlay;
+    use alloc::vec;
 
     #[test]
     fn test_contour_fixed() {
@@ -383,10 +412,7 @@ use crate::core::fill_rule::FillRule;
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd,
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -398,12 +424,8 @@ use crate::core::fill_rule::FillRule;
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-
         let shapes = FloatOverlay::with_subj_and_clip(&left_rect, &right_rect)
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -416,10 +438,7 @@ use crate::core::fill_rule::FillRule;
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(left_rect.as_slice(), right_rect.as_slice())
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -429,23 +448,14 @@ use crate::core::fill_rule::FillRule;
     #[test]
     fn test_contours_vec() {
         let rects = vec![
-            vec![
-                [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
-            ],
-            vec![
-                [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
-            ],
-            vec![
-                [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
-            ]
+            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            vec![[0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]],
+            vec![[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]],
         ];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&rects.as_slice(), &right_bottom_rect)
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -455,23 +465,14 @@ use crate::core::fill_rule::FillRule;
     #[test]
     fn test_contours_slice() {
         let rects = vec![
-            vec![
-                [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
-            ],
-            vec![
-                [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
-            ],
-            vec![
-                [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
-            ]
+            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            vec![[0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]],
+            vec![[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]],
         ];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(rects.as_slice(), right_bottom_rect.as_slice())
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -480,27 +481,15 @@ use crate::core::fill_rule::FillRule;
 
     #[test]
     fn test_shapes() {
-        let shapes = vec![
-            vec![
-                vec![
-                    [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
-                ],
-                vec![
-                    [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
-                ],
-                vec![
-                    [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
-                ]
-            ]
-        ];
+        let shapes = vec![vec![
+            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            vec![[0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]],
+            vec![[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]],
+        ]];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-
         let shapes = FloatOverlay::with_subj_and_clip(&shapes, &right_bottom_rect)
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -509,28 +498,16 @@ use crate::core::fill_rule::FillRule;
 
     #[test]
     fn test_different_resource() {
-        let res_0 = vec![
-            vec![
-                vec![
-                    [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
-                ],
-                vec![
-                    [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
-                ],
-                vec![
-                    [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
-                ]
-            ]
-        ];
+        let res_0 = vec![vec![
+            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            vec![[0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]],
+            vec![[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]],
+        ]];
 
         let res_1 = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-
         let shapes = FloatOverlay::with_subj_and_clip(&res_0, &res_1.as_slice())
-            .overlay(
-                OverlayRule::Union,
-                FillRule::EvenOdd
-            );
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -540,26 +517,77 @@ use crate::core::fill_rule::FillRule;
     #[test]
     fn test_grid() {
         let subj = vec![
-            vec![vec![[175.0, 475.0], [175.0, 375.0], [275.0, 375.0], [275.0, 475.0]]],
-            vec![vec![[175.0, 325.0], [175.0, 225.0], [275.0, 225.0], [275.0, 325.0]]],
+            vec![vec![
+                [175.0, 475.0],
+                [175.0, 375.0],
+                [275.0, 375.0],
+                [275.0, 475.0],
+            ]],
+            vec![vec![
+                [175.0, 325.0],
+                [175.0, 225.0],
+                [275.0, 225.0],
+                [275.0, 325.0],
+            ]],
             vec![vec![[175.0, 175.0], [175.0, 75.0], [275.0, 75.0], [275.0, 175.0]]],
-            vec![vec![[325.0, 475.0], [325.0, 375.0], [425.0, 375.0], [425.0, 475.0]]],
-            vec![vec![[325.0, 325.0], [325.0, 225.0], [425.0, 225.0], [425.0, 325.0]]],
+            vec![vec![
+                [325.0, 475.0],
+                [325.0, 375.0],
+                [425.0, 375.0],
+                [425.0, 475.0],
+            ]],
+            vec![vec![
+                [325.0, 325.0],
+                [325.0, 225.0],
+                [425.0, 225.0],
+                [425.0, 325.0],
+            ]],
             vec![vec![[325.0, 175.0], [325.0, 75.0], [425.0, 75.0], [425.0, 175.0]]],
-            vec![vec![[475.0, 475.0], [475.0, 375.0], [575.0, 375.0], [575.0, 475.0]]],
-            vec![vec![[475.0, 325.0], [475.0, 225.0], [575.0, 225.0], [575.0, 325.0]]],
-            vec![vec![[475.0, 175.0], [475.0, 75.0], [575.0, 75.0], [575.0, 175.0]]]];
+            vec![vec![
+                [475.0, 475.0],
+                [475.0, 375.0],
+                [575.0, 375.0],
+                [575.0, 475.0],
+            ]],
+            vec![vec![
+                [475.0, 325.0],
+                [475.0, 225.0],
+                [575.0, 225.0],
+                [575.0, 325.0],
+            ]],
+            vec![vec![[475.0, 175.0], [475.0, 75.0], [575.0, 75.0], [575.0, 175.0]]],
+        ];
 
         let clip = vec![
-            vec![vec![[250.0, 400.0], [250.0, 300.0], [350.0, 300.0], [350.0, 400.0]]],
-            vec![vec![[250.0, 250.0], [250.0, 150.0], [350.0, 150.0], [350.0, 250.0]]],
-            vec![vec![[400.0, 400.0], [400.0, 300.0], [500.0, 300.0], [500.0, 400.0]]],
-            vec![vec![[400.0, 250.0], [400.0, 150.0], [500.0, 150.0], [500.0, 250.0]]]
+            vec![vec![
+                [250.0, 400.0],
+                [250.0, 300.0],
+                [350.0, 300.0],
+                [350.0, 400.0],
+            ]],
+            vec![vec![
+                [250.0, 250.0],
+                [250.0, 150.0],
+                [350.0, 150.0],
+                [350.0, 250.0],
+            ]],
+            vec![vec![
+                [400.0, 400.0],
+                [400.0, 300.0],
+                [500.0, 300.0],
+                [500.0, 400.0],
+            ]],
+            vec![vec![
+                [400.0, 250.0],
+                [400.0, 150.0],
+                [500.0, 150.0],
+                [500.0, 250.0],
+            ]],
         ];
 
         let mut overlay = FloatOverlay::with_subj_and_clip(&subj, &clip);
 
-        let result = overlay.overlay(OverlayRule::Intersect, FillRule::EvenOdd );
+        let result = overlay.overlay(OverlayRule::Intersect, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 16);
     }

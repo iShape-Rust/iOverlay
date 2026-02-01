@@ -1,6 +1,6 @@
 pub mod divide;
-mod extract_ogc;
 pub mod extract;
+mod extract_ogc;
 pub mod fill_rule;
 pub mod graph;
 pub(crate) mod link;

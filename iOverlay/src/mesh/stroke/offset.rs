@@ -153,8 +153,7 @@ impl<P: 'static + FloatPointCompatible<T>, T: 'static + FloatNumber> StrokeSolve
         let builder = StrokeBuilder::new(style);
         let a = builder.additional_offset(r);
 
-        let mut rect =
-            FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
+        let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(a);
         let adapter = FloatPointAdapter::new(rect);
 
@@ -428,10 +427,7 @@ mod tests {
 
         assert!(path.stroke_fixed_scale(style.clone(), false, 0.0).is_err());
         assert!(path.stroke_fixed_scale(style.clone(), false, -1.0).is_err());
-        assert!(
-            path.stroke_fixed_scale(style.clone(), false, f64::NAN)
-                .is_err()
-        );
+        assert!(path.stroke_fixed_scale(style.clone(), false, f64::NAN).is_err());
         assert!(
             path.stroke_fixed_scale(style.clone(), false, f64::INFINITY)
                 .is_err()

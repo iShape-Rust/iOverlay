@@ -190,17 +190,17 @@
 #![no_std]
 extern crate alloc;
 
-pub mod mesh;
 pub mod build;
 pub mod core;
-pub mod vector;
 pub mod float;
-pub mod string;
+pub mod mesh;
 pub mod segm;
+pub mod string;
+pub mod vector;
 
-pub(crate) mod split;
 pub(crate) mod bind;
 pub(crate) mod geom;
+pub(crate) mod split;
 pub(crate) mod util;
 
 pub use i_float;

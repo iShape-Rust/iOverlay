@@ -36,8 +36,16 @@ fn build_segments_with_filter<F: PointFilter, I: Iterator<Item = IntPoint>, C: W
     shape_type: ShapeType,
 ) -> bool {
     // our goal add all not degenerate segments
-    let mut p0 = if let Some(p) = iter.next() { p } else { return false; };
-    let mut p1 = if let Some(p) = iter.find(|p| p0.ne(p)) { p } else { return true; };
+    let mut p0 = if let Some(p) = iter.next() {
+        p
+    } else {
+        return false;
+    };
+    let mut p1 = if let Some(p) = iter.find(|p| p0.ne(p)) {
+        p
+    } else {
+        return true;
+    };
 
     let mut filtered = false;
 
@@ -244,11 +252,7 @@ mod tests {
 
     #[test]
     fn test_roll_5() {
-        let points = [
-            IntPoint::new(0, 0),
-            IntPoint::new(1, 0),
-            IntPoint::new(2, 0),
-        ];
+        let points = [IntPoint::new(0, 0), IntPoint::new(1, 0), IntPoint::new(2, 0)];
 
         test_roll_count(&points, 0, false);
         test_roll_count(&points, 0, true);
@@ -388,11 +392,7 @@ mod tests {
 
     fn test_count(points: &[IntPoint], count: usize, keep_same_line_points: bool) {
         let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::new();
-        segments.append_path_iter(
-            points.iter().copied(),
-            ShapeType::Subject,
-            keep_same_line_points,
-        );
+        segments.append_path_iter(points.iter().copied(), ShapeType::Subject, keep_same_line_points);
         segments.merge_if_needed();
 
         assert_eq!(segments.len(), count);
@@ -403,11 +403,7 @@ mod tests {
         let n = points.len();
         let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::with_capacity(n);
         for _ in 0..n {
-            segments.append_path_iter(
-                points.iter().copied(),
-                ShapeType::Subject,
-                keep_same_line_points,
-            );
+            segments.append_path_iter(points.iter().copied(), ShapeType::Subject, keep_same_line_points);
             segments.merge_if_needed();
 
             assert_eq!(segments.len(), count);

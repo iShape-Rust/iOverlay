@@ -1,3 +1,8 @@
+use crate::mesh::rotator::Rotator;
+use crate::mesh::stroke::section::Section;
+use crate::mesh::style::LineCap;
+use crate::segm::offset::ShapeCountOffset;
+use crate::segm::segment::Segment;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::f64::consts::PI;
@@ -7,11 +12,6 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
-use crate::mesh::stroke::section::Section;
-use crate::mesh::style::LineCap;
-use crate::mesh::rotator::Rotator;
-use crate::segm::offset::ShapeCountOffset;
-use crate::segm::segment::Segment;
 
 #[derive(Debug, Clone)]
 pub(super) struct CapBuilder<P, T> {
@@ -20,16 +20,18 @@ pub(super) struct CapBuilder<P, T> {
 }
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
-
     pub(super) fn new(cap: LineCap<P, T>, radius: T) -> Self {
         let points = match cap {
             LineCap::Butt => None,
             LineCap::Round(ratio) => Some(Self::round_points(ratio, radius)),
             LineCap::Square => Some(Self::square_points(radius)),
-            LineCap::Custom(points) => Some(Self::custom_points(points.to_vec(), radius))
+            LineCap::Custom(points) => Some(Self::custom_points(points.to_vec(), radius)),
         };
 
-        Self { points, _phantom: Default::default() }
+        Self {
+            points,
+            _phantom: Default::default(),
+        }
     }
 
     pub(super) fn round_points(angle: T, r: T) -> Vec<P> {
@@ -69,7 +71,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
         scaled
     }
 
-    pub(super) fn add_to_start(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountOffset>>) {
+    pub(super) fn add_to_start(
+        &self,
+        section: &Section<P, T>,
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountOffset>>,
+    ) {
         let mut a = adapter.float_to_int(&section.a_top);
         if let Some(points) = &self.points {
             let dir = P::from_xy(-section.dir.x(), -section.dir.y());
@@ -86,7 +93,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
         segments.push(Segment::bold_subject_ab(a, last));
     }
 
-    pub(super) fn add_to_end(&self, section: &Section<P, T>, adapter: &FloatPointAdapter<P, T>, segments: &mut Vec<Segment<ShapeCountOffset>>) {
+    pub(super) fn add_to_end(
+        &self,
+        section: &Section<P, T>,
+        adapter: &FloatPointAdapter<P, T>,
+        segments: &mut Vec<Segment<ShapeCountOffset>>,
+    ) {
         let mut a = adapter.float_to_int(&section.b_bot);
         if let Some(points) = &self.points {
             let rotator = Rotator::with_vector(&section.dir);

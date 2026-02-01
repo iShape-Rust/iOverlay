@@ -225,11 +225,7 @@ impl SplitSolver {
 
     #[inline]
     fn y_range(j0: usize, j1: usize, s: XSegment, marks: &[LineMark]) -> (i32, i32) {
-        let y0 = if j0 == 0 {
-            s.a.y
-        } else {
-            marks[j0 - 1].point.y
-        };
+        let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
         let y1 = if j1 == marks.len() {
             s.b.y
         } else {

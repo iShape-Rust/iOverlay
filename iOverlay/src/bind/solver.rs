@@ -83,8 +83,7 @@ impl ShapeBinder {
                 j += 1
             }
 
-            let target_id =
-                scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
+            let target_id = scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
             let parent_index = if target_id.is_hole() {
                 // index is a hole index
                 // at this moment this hole parent is known
@@ -108,12 +107,7 @@ impl ShapeBinder {
 
 pub(crate) trait JoinHoles {
     fn join_unsorted_holes(&mut self, holes: Vec<IntContour>, clockwise: bool);
-    fn join_sorted_holes(
-        &mut self,
-        holes: Vec<IntContour>,
-        anchors: Vec<IdSegment>,
-        clockwise: bool,
-    );
+    fn join_sorted_holes(&mut self, holes: Vec<IntContour>, anchors: Vec<IdSegment>, clockwise: bool);
     fn scan_join(&mut self, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
 
@@ -146,12 +140,7 @@ impl JoinHoles for Vec<IntShape> {
     }
 
     #[inline]
-    fn join_sorted_holes(
-        &mut self,
-        holes: Vec<IntContour>,
-        anchors: Vec<IdSegment>,
-        clockwise: bool,
-    ) {
+    fn join_sorted_holes(&mut self, holes: Vec<IntContour>, anchors: Vec<IdSegment>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -175,23 +164,11 @@ impl JoinHoles for Vec<IntShape> {
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(
-                &mut segments,
-                ContourIndex::new_shape(i),
-                x_min,
-                x_max,
-                clockwise,
-            );
+            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
         }
 
         for (i, hole) in holes.iter().enumerate() {
-            hole.append_id_segments(
-                &mut segments,
-                ContourIndex::new_hole(i),
-                x_min,
-                x_max,
-                clockwise,
-            );
+            hole.append_id_segments(&mut segments, ContourIndex::new_hole(i), x_min, x_max, clockwise);
         }
 
         segments.sort_by_a_then_by_angle();
@@ -322,16 +299,8 @@ mod tests {
         ];
 
         let holes = vec![
-            vec![
-                IntPoint::new(2, 3),
-                IntPoint::new(4, 4),
-                IntPoint::new(4, 3),
-            ],
-            vec![
-                IntPoint::new(2, 3),
-                IntPoint::new(4, 2),
-                IntPoint::new(3, 1),
-            ],
+            vec![IntPoint::new(2, 3), IntPoint::new(4, 4), IntPoint::new(4, 3)],
+            vec![IntPoint::new(2, 3), IntPoint::new(4, 2), IntPoint::new(3, 1)],
         ];
 
         shapes.join_unsorted_holes(holes, false);

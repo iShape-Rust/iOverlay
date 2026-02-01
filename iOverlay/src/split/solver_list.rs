@@ -1,16 +1,16 @@
-use alloc::vec::Vec;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
+use alloc::vec::Vec;
 
 impl SplitSolver {
     pub(super) fn list_split<C: WindingCount>(
         &mut self,
         snap_radius: SnapRadius,
         segments: &mut Vec<Segment<C>>,
-        solver: &Solver
+        solver: &Solver,
     ) -> bool {
         let mut need_to_fix = true;
 

@@ -1,12 +1,11 @@
-use i_key_sort::sort::two_keys::TwoKeysSort;
 use crate::build::builder::{GraphBuilder, GraphNode};
 use crate::core::solver::Solver;
 use crate::geom::end::End;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_key_sort::sort::two_keys::TwoKeysSort;
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
-
     pub(super) fn build_nodes_and_connect_links(&mut self, solver: &Solver) {
         let n = self.links.len();
         if n == 0 {

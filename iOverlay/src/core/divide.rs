@@ -1,9 +1,9 @@
+use crate::geom::id_point::IdPoint;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntContour;
-use crate::geom::id_point::IdPoint;
 
 struct SubPath {
     last: usize,
@@ -39,7 +39,8 @@ impl ContourDecomposition for IntContour {
         if self.len() < 3 {
             return None;
         }
-        let mut id_points: Vec<_> = self.iter()
+        let mut id_points: Vec<_> = self
+            .iter()
             .enumerate()
             .map(|(i, &p)| IdPoint::new(i, p))
             .collect();
@@ -68,7 +69,6 @@ impl ContourDecomposition for IntContour {
         }
 
         anchors.sort_by(|p0, p1| p0.id.cmp(&p1.id));
-
 
         let mut contours = Vec::with_capacity((anchors.len() >> 1) + 1);
 
@@ -118,13 +118,12 @@ impl ContourDecomposition for IntContour {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::core::divide::ContourDecomposition;
     use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::shape::IntContour;
-    use crate::core::divide::ContourDecomposition;
 
     #[test]
     fn test_0() {
@@ -278,6 +277,12 @@ mod tests {
     }
 
     fn rotate(contour: &IntContour, s: usize) -> IntContour {
-        contour.iter().cycle().skip(s).take(contour.len()).cloned().collect()
+        contour
+            .iter()
+            .cycle()
+            .skip(s)
+            .take(contour.len())
+            .cloned()
+            .collect()
     }
 }

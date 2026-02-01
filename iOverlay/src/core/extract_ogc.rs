@@ -43,8 +43,7 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state =
-                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == is_main_dir_cw;
             let traversal_direction = !is_main_dir_cw;
@@ -100,12 +99,7 @@ impl OverlayGraph<'_> {
 
                 let left_top_link = unsafe {
                     // Safety: `link_index` walks 0..buffer.visited.len(), and buffer.visited.len() <= self.links.len().
-                    GraphUtil::find_left_top_link(
-                        self.links,
-                        self.nodes,
-                        link_index,
-                        &buffer.visited,
-                    )
+                    GraphUtil::find_left_top_link(self.links, self.nodes, link_index, &buffer.visited)
                 };
 
                 let link = unsafe {
@@ -181,8 +175,7 @@ impl OverlayGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id =
-                GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
+            link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
                 // Safety: `link_id` is always derived from a previous in-bounds index or

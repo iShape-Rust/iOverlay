@@ -51,7 +51,8 @@ impl OverlayGraph<'_> {
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
-        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.links
+            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ogc {
             self.extract_ogc(overlay_rule, buffer)
         } else {
@@ -114,8 +115,7 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state =
-                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
@@ -237,8 +237,7 @@ impl OverlayGraph<'_> {
                 self.links.get_unchecked(left_top_link)
             };
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state =
-                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
@@ -438,9 +437,7 @@ impl GraphUtil {
                 // SAFETY: indices holds link ids emitted by GraphBuilder, so each i < links.len().
                 links.get_unchecked(i)
             };
-            if !link.is_direct()
-                || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point)
-            {
+            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
                 continue;
             }
 
@@ -459,12 +456,7 @@ impl GraphUtil {
     fn find_left_top_link_on_bridge(links: &[OverlayLink], bridge: &[usize; 2]) -> usize {
         // SAFETY: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
         // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
-        let (l0, l1) = unsafe {
-            (
-                links.get_unchecked(bridge[0]),
-                links.get_unchecked(bridge[1]),
-            )
-        };
+        let (l0, l1) = unsafe { (links.get_unchecked(bridge[0]), links.get_unchecked(bridge[1])) };
         if Triangle::is_clockwise_point(l0.a.point, l0.b.point, l1.b.point) {
             bridge[0]
         } else {
@@ -494,9 +486,9 @@ impl GraphUtil {
                     bridge[0]
                 }
             }
-            OverlayNode::Cross(indices) => GraphUtil::find_nearest_link_to(
-                links, link_id, node_id, clockwise, indices, visited,
-            ),
+            OverlayNode::Cross(indices) => {
+                GraphUtil::find_nearest_link_to(links, link_id, node_id, clockwise, indices, visited)
+            }
         }
     }
 
@@ -548,8 +540,8 @@ impl GraphUtil {
             // SAFETY: first_index originates from indices, so it is within links.
             links.get_unchecked(first_index)
         }
-            .other(node_id)
-            .point;
+        .other(node_id)
+        .point;
         let mut vector_solver = NearestVector::new(c, a, b, first_index, clockwise);
 
         // add second vector
@@ -558,8 +550,8 @@ impl GraphUtil {
                 // SAFETY: second_index comes from indices just like first_index.
                 links.get_unchecked(second_index)
             }
-                .other(node_id)
-                .point,
+            .other(node_id)
+            .point,
             second_index,
         );
 
@@ -570,8 +562,8 @@ impl GraphUtil {
                     // SAFETY: every link_index here is sourced from indices, so it addresses links.
                     links.get_unchecked(link_index)
                 }
-                    .other(node_id)
-                    .point;
+                .other(node_id)
+                .point;
                 vector_solver.add(p, link_index);
             }
         }

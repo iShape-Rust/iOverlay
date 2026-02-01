@@ -1,8 +1,8 @@
-use alloc::vec::Vec;
 use crate::core::link::OverlayLink;
 use crate::segm::segment::{SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
+use alloc::vec::Vec;
 
 impl OverlayLink {
     #[inline]
@@ -52,9 +52,6 @@ impl StringGraph<'_> {
 
     #[inline]
     fn filter_slice(&self) -> Vec<u8> {
-        self.links
-            .iter()
-            .map(|link| link.fill & SUBJ_BOTH)
-            .collect()
+        self.links.iter().map(|link| link.fill & SUBJ_BOTH).collect()
     }
 }
