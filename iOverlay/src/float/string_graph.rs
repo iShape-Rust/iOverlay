@@ -1,3 +1,6 @@
+use crate::float::overlay::OverlayOptions;
+use crate::string::graph::StringGraph;
+use crate::string::rule::StringRule;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -5,9 +8,6 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::float::overlay::OverlayOptions;
-use crate::string::graph::StringGraph;
-use crate::string::rule::StringRule;
 
 /// The `FloatStringGraph` struct represents a graph structure with floating-point precision,
 /// providing methods to extract geometric shapes from the graph after applying string-based operations.
@@ -57,15 +57,21 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringGraph<'_, P, T> {
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     #[inline]
-    pub fn extract_shapes_custom(&self, string_rule: StringRule, options: OverlayOptions<T>) -> Shapes<P> {
-        let shapes = self.graph.extract_shapes_custom(string_rule, options.int_with_adapter(&self.adapter));
+    pub fn extract_shapes_custom(
+        &self,
+        string_rule: StringRule,
+        options: OverlayOptions<T>,
+    ) -> Shapes<P> {
+        let shapes = self
+            .graph
+            .extract_shapes_custom(string_rule, options.int_with_adapter(&self.adapter));
         let mut float = shapes.to_float(&self.adapter);
 
         if options.clean_result {
             if options.preserve_output_collinear {
-                float.despike_contour(&self.adapter);                
+                float.despike_contour(&self.adapter);
             } else {
-                float.simplify_contour(&self.adapter);    
+                float.simplify_contour(&self.adapter);
             }
         }
 

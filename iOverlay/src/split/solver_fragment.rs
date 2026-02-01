@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
@@ -8,13 +7,14 @@ use crate::split::grid_layout::{BorderVSegment, FragmentBuffer, GridLayout};
 use crate::split::line_mark::LineMark;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
+use alloc::vec::Vec;
 
 impl SplitSolver {
     pub(super) fn fragment_split<C: WindingCount>(
         &mut self,
         snap_radius: SnapRadius,
         segments: &mut Vec<Segment<C>>,
-        solver: &Solver
+        solver: &Solver,
     ) -> bool {
         let layout = if let Some(layout) =
             GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len())
@@ -181,7 +181,7 @@ impl SplitSolver {
         &mut self,
         border_x: i32,
         fragments: &[Fragment],
-        vertical_segments: &mut [BorderVSegment]
+        vertical_segments: &mut [BorderVSegment],
     ) {
         let mut points = Vec::new();
         for fragment in fragments.iter() {
@@ -217,7 +217,7 @@ impl SplitSolver {
         fi: &Fragment,
         fj: &Fragment,
         radius: i64,
-        marks: &mut Vec<LineMark>
+        marks: &mut Vec<LineMark>,
     ) -> bool {
         let cross = if let Some(cross) = CrossSolver::cross(&fi.x_segment, &fj.x_segment, radius) {
             cross

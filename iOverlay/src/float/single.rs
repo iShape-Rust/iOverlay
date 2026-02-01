@@ -1,10 +1,10 @@
+use crate::core::fill_rule::FillRule;
+use crate::core::overlay_rule::OverlayRule;
+use crate::float::overlay::FloatOverlay;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
 use i_shape::source::resource::ShapeResource;
-use crate::core::fill_rule::FillRule;
-use crate::core::overlay_rule::OverlayRule;
-use crate::float::overlay::FloatOverlay;
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and build rules.
@@ -43,19 +43,18 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay_rule::OverlayRule;
     use crate::float::overlay::FloatOverlay;
     use crate::float::single::SingleFloatOverlay;
+    use alloc::vec;
 
     #[test]
     fn test_contour() {
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let shapes = left_rect
-            .overlay(&right_rect, OverlayRule::Union, FillRule::EvenOdd);
+        let shapes = left_rect.overlay(&right_rect, OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -65,15 +64,9 @@ mod tests {
     #[test]
     fn test_contours() {
         let r3 = vec![
-            vec![
-                [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
-            ],
-            vec![
-                [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
-            ],
-            vec![
-                [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
-            ]
+            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            vec![[0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]],
+            vec![[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]],
         ];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
@@ -87,19 +80,11 @@ mod tests {
 
     #[test]
     fn test_shapes() {
-        let shapes = vec![
-            vec![
-                vec![
-                    [0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]
-                ],
-                vec![
-                    [0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]
-                ],
-                vec![
-                    [1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]
-                ]
-            ]
-        ];
+        let shapes = vec![vec![
+            vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            vec![[0.0, 1.0], [0.0, 2.0], [1.0, 2.0], [1.0, 1.0]],
+            vec![[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]],
+        ]];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
         let shapes = FloatOverlay::with_subj_and_clip(&shapes, &right_bottom_rect)

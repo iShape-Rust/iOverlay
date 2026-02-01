@@ -36,8 +36,16 @@ fn build_segments_with_filter<F: PointFilter, I: Iterator<Item = IntPoint>, C: W
     shape_type: ShapeType,
 ) -> bool {
     // our goal add all not degenerate segments
-    let mut p0 = if let Some(p) = iter.next() { p } else { return false; };
-    let mut p1 = if let Some(p) = iter.find(|p| p0.ne(p)) { p } else { return true; };
+    let mut p0 = if let Some(p) = iter.next() {
+        p
+    } else {
+        return false;
+    };
+    let mut p1 = if let Some(p) = iter.find(|p| p0.ne(p)) {
+        p
+    } else {
+        return true;
+    };
 
     let mut filtered = false;
 

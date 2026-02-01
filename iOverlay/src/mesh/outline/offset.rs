@@ -1,23 +1,23 @@
-use i_shape::source::resource::ShapeResource;
-use alloc::vec;
-use alloc::vec::Vec;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::outline::builder::OutlineBuilder;
+use crate::mesh::overlay::OffsetOverlay;
 use crate::mesh::style::OutlineStyle;
+use alloc::vec;
+use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
-use i_shape::float::int_area::IntArea;
 use i_shape::float::despike::DeSpikeContour;
+use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
-use crate::mesh::overlay::OffsetOverlay;
+use i_shape::source::resource::ShapeResource;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -175,7 +175,10 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
     }
 
     fn build<S: ShapeResource<P, T>>(self, source: &S, options: OverlayOptions<T>) -> Shapes<P> {
-        let int_min_area = self.adapter.sqr_float_to_int(options.min_output_area).max(1);
+        let int_min_area = self
+            .adapter
+            .sqr_float_to_int(options.min_output_area)
+            .max(1);
 
         let shapes = if self.paths_count <= 1 {
             // fast solution for a single path
@@ -250,7 +253,8 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                     }
                     segments.clear();
 
-                    self.inner_builder.build(&inverted, &self.adapter, &mut segments);
+                    self.inner_builder
+                        .build(&inverted, &self.adapter, &mut segments);
 
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
@@ -289,9 +293,9 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
     use crate::mesh::outline::offset::OutlineOffset;
     use crate::mesh::style::{LineJoin, OutlineStyle};
+    use alloc::vec;
     use core::f32::consts::PI;
 
     #[test]
@@ -408,10 +412,15 @@ mod tests {
     #[test]
     fn test_float_square_0() {
         let shape = vec![vec![
-            [300.0, 300.0], [500.0, 300.0], [500.0, 500.0], [300.0, 500.0]
+            [300.0, 300.0],
+            [500.0, 300.0],
+            [500.0, 500.0],
+            [300.0, 500.0],
         ]];
 
-        let style = OutlineStyle::default().outer_offset(50.0).inner_offset(50.0);
+        let style = OutlineStyle::default()
+            .outer_offset(50.0)
+            .inner_offset(50.0);
 
         let shapes = shape.outline(&style);
 
@@ -474,7 +483,7 @@ mod tests {
             [5400.0, 5891947.742386343],
             [5400.0, 5892817.151239874],
             [4804.8188261491, 5892876.799252035],
-            [4804.81882805645, 5892876.799253942]
+            [4804.81882805645, 5892876.799253942],
         ];
 
         let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);

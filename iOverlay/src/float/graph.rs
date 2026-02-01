@@ -2,6 +2,7 @@
 //! subject and clip polygons after boolean operations. The graph helps in extracting final shapes
 //! based on the overlay rule applied.
 
+use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay_rule::OverlayRule;
 use i_float::adapter::FloatPointAdapter;
@@ -11,7 +12,6 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use crate::core::extract::BooleanExtractionBuffer;
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
@@ -19,13 +19,21 @@ use crate::core::extract::BooleanExtractionBuffer;
 pub struct FloatOverlayGraph<'a, P: FloatPointCompatible<T>, T: FloatNumber> {
     pub graph: OverlayGraph<'a>,
     pub adapter: FloatPointAdapter<P, T>,
-    clean_result: bool
+    clean_result: bool,
 }
 
 impl<'a, P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<'a, P, T> {
     #[inline]
-    pub(crate) fn new(graph: OverlayGraph<'a>, adapter: FloatPointAdapter<P, T>, clean_result: bool) -> Self {
-        Self { graph, adapter, clean_result }
+    pub(crate) fn new(
+        graph: OverlayGraph<'a>,
+        adapter: FloatPointAdapter<P, T>,
+        clean_result: bool,
+    ) -> Self {
+        Self {
+            graph,
+            adapter,
+            clean_result,
+        }
     }
 
     /// Extracts shapes from the overlay graph based on the specified overlay rule.
@@ -46,10 +54,12 @@ impl<'a, P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlayGraph<'a, P, T>
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline]
-    pub fn extract_shapes(&self, overlay_rule: OverlayRule, buffer: &mut BooleanExtractionBuffer) -> Shapes<P> {
-        let shapes = self
-            .graph
-            .extract_shapes(overlay_rule, buffer);
+    pub fn extract_shapes(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer,
+    ) -> Shapes<P> {
+        let shapes = self.graph.extract_shapes(overlay_rule, buffer);
         let mut float = shapes.to_float(&self.adapter);
 
         if self.clean_result {

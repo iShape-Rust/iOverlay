@@ -8,6 +8,17 @@ on:
     branches: ["main"]
 
 jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        working-directory: iOverlay
+        run: cargo fmt --all -- --check
+
   test:
     runs-on: ubuntu-latest
     steps:

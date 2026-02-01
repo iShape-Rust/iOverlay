@@ -1,15 +1,15 @@
-use alloc::vec::Vec;
-use crate::segm::string::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
-use i_float::int::point::IntPoint;
-use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
 use crate::core::link::OverlayLink;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
+use crate::segm::string::{STRING_BACK_CLIP, STRING_FORWARD_CLIP};
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
+use alloc::vec::Vec;
+use i_float::int::point::IntPoint;
+use i_shape::int::path::IntPath;
+use i_shape::int::shape::{IntShape, IntShapes};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClipRule {
@@ -19,7 +19,6 @@ pub struct ClipRule {
     pub invert: bool,
     pub boundary_included: bool,
 }
-
 
 impl StringGraph<'_> {
     #[inline]
@@ -60,7 +59,12 @@ impl StringGraph<'_> {
     }
 
     #[inline]
-    fn find_next_point(nodes: &[Vec<usize>], links: &mut [OverlayLink], a: IdPoint, is_out_node: bool) -> Option<IdPoint> {
+    fn find_next_point(
+        nodes: &[Vec<usize>],
+        links: &mut [OverlayLink],
+        a: IdPoint,
+        is_out_node: bool,
+    ) -> Option<IdPoint> {
         let node = unsafe {
             // SAFETY: a.id comes from an existing link endpoint, so it indexes nodes.
             nodes.get_unchecked(a.id)
@@ -132,7 +136,12 @@ pub trait IntClip {
     ///
     /// # Returns
     /// A vector of `IntPath` instances containing the clipped portions of the input lines.
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath>;
+    fn clip_lines(
+        &self,
+        lines: &[IntLine],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath>;
 
     /// Clips a single path according to the specified build and clip rules.
     /// - `path`: A reference to an `IntPath`, which is a sequence of points representing the path to be clipped.
@@ -150,7 +159,12 @@ pub trait IntClip {
     ///
     /// # Returns
     /// A vector of `IntPath` instances containing the clipped portions of the input paths.
-    fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath>;
+    fn clip_paths(
+        &self,
+        paths: &[IntPath],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath>;
 }
 
 impl IntClip for IntShapes {
@@ -162,7 +176,12 @@ impl IntClip for IntShapes {
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+    fn clip_lines(
+        &self,
+        lines: &[IntLine],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_lines(lines);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -176,7 +195,12 @@ impl IntClip for IntShapes {
     }
 
     #[inline]
-    fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+    fn clip_paths(
+        &self,
+        paths: &[IntPath],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_paths(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -192,7 +216,12 @@ impl IntClip for IntShape {
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+    fn clip_lines(
+        &self,
+        lines: &[IntLine],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_lines(lines);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -206,7 +235,12 @@ impl IntClip for IntShape {
     }
 
     #[inline]
-    fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+    fn clip_paths(
+        &self,
+        paths: &[IntPath],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_paths(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -222,7 +256,12 @@ impl IntClip for [IntPoint] {
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+    fn clip_lines(
+        &self,
+        lines: &[IntLine],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_lines(lines);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -236,7 +275,12 @@ impl IntClip for [IntPoint] {
     }
 
     #[inline]
-    fn clip_paths(&self, paths: &[IntPath], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath> {
+    fn clip_paths(
+        &self,
+        paths: &[IntPath],
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+    ) -> Vec<IntPath> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_paths(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -245,11 +289,11 @@ impl IntClip for [IntPoint] {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::fill_rule::FillRule;
+    use crate::string::clip::{ClipRule, IntClip};
     use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::path::IntPath;
-    use crate::core::fill_rule::FillRule;
-    use crate::string::clip::{ClipRule, IntClip};
 
     #[test]
     fn test_empty_path() {
@@ -257,13 +301,19 @@ mod tests {
         let result_0 = path.clip_line(
             [IntPoint::new(0, 0), IntPoint::new(0, 0)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         let result_1 = path.clip_line(
             [IntPoint::new(0, 0), IntPoint::new(10, 0)],
             FillRule::NonZero,
-            ClipRule { invert: true, boundary_included: false },
+            ClipRule {
+                invert: true,
+                boundary_included: false,
+            },
         );
 
         assert!(result_0.is_empty());
@@ -282,13 +332,19 @@ mod tests {
         let result_0 = path.clip_line(
             [IntPoint::new(0, -15), IntPoint::new(0, 15)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         let result_1 = path.clip_line(
             [IntPoint::new(0, -15), IntPoint::new(0, 15)],
             FillRule::NonZero,
-            ClipRule { invert: true, boundary_included: false },
+            ClipRule {
+                invert: true,
+                boundary_included: false,
+            },
         );
 
         assert_eq!(result_0.len(), 1);
@@ -307,13 +363,19 @@ mod tests {
         let result_0 = path.clip_line(
             [IntPoint::new(-10, -15), IntPoint::new(-10, 15)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         let result_1 = path.clip_line(
             [IntPoint::new(-10, -15), IntPoint::new(-10, 15)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: true },
+            ClipRule {
+                invert: false,
+                boundary_included: true,
+            },
         );
 
         assert_eq!(result_0.len(), 0);
@@ -339,15 +401,25 @@ mod tests {
             IntPoint::new(5, -5),
             IntPoint::new(0, -10),
             IntPoint::new(-5, -5),
-            IntPoint::new(-15, -15)
+            IntPoint::new(-15, -15),
         ];
 
-        let result_0 = rect.clip_path(&path, FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+        let result_0 = rect.clip_path(
+            &path,
+            FillRule::NonZero,
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
-        let result_1 = rect.clip_path(&path, FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: true },
+        let result_1 = rect.clip_path(
+            &path,
+            FillRule::NonZero,
+            ClipRule {
+                invert: false,
+                boundary_included: true,
+            },
         );
 
         assert_eq!(result_0.len(), 3);
@@ -365,13 +437,19 @@ mod tests {
         let result_0 = path.clip_line(
             [IntPoint::new(0, -1), IntPoint::new(0, 2)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         let result_1 = path.clip_line(
             [IntPoint::new(0, -1), IntPoint::new(0, 2)],
             FillRule::NonZero,
-            ClipRule { invert: true, boundary_included: false },
+            ClipRule {
+                invert: true,
+                boundary_included: false,
+            },
         );
 
         assert_eq!(result_0.len(), 1);
@@ -390,13 +468,19 @@ mod tests {
         let result_0 = path.clip_line(
             [IntPoint::new(-1, -1), IntPoint::new(1, -1)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         let result_1 = path.clip_line(
             [IntPoint::new(-1, -1), IntPoint::new(1, -1)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: true },
+            ClipRule {
+                invert: false,
+                boundary_included: true,
+            },
         );
 
         assert_eq!(result_0.len(), 0);
@@ -419,12 +503,22 @@ mod tests {
             IntPoint::new(4, 1),
         ];
 
-        let result_0 = contour.clip_path(&path, FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+        let result_0 = contour.clip_path(
+            &path,
+            FillRule::NonZero,
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
-        let result_1 = contour.clip_path(&path, FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: true },
+        let result_1 = contour.clip_path(
+            &path,
+            FillRule::NonZero,
+            ClipRule {
+                invert: false,
+                boundary_included: true,
+            },
         );
 
         assert_eq!(result_0.len(), 0);
@@ -444,13 +538,19 @@ mod tests {
         let result_0 = path.clip_line(
             [IntPoint::new(-3, 2), IntPoint::new(3, 2)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         let result_1 = path.clip_line(
             [IntPoint::new(-3, 2), IntPoint::new(3, 2)],
             FillRule::NonZero,
-            ClipRule { invert: false, boundary_included: false },
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
         );
 
         assert_eq!(result_0.len(), 0);

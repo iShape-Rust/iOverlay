@@ -29,7 +29,8 @@ mod tests {
                             .build_graph_view(FillRule::NonZero)
                     {
                         graph.validate();
-                        let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
+                        let result =
+                            graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                         assert!(result.len() > 0);
                     }
                     a += 0.005
@@ -185,7 +186,8 @@ mod tests {
 
                     if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                         graph.validate();
-                        let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
+                        let result =
+                            graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                         assert!(result.len() > 0);
                     }
                 }
@@ -205,11 +207,13 @@ mod tests {
                 let mut a = 0.0;
                 while a < 2.0 * PI {
                     let subj = create_star(r0, r, 4, a);
-                    if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
-                        .build_graph_view(FillRule::NonZero)
+                    if let Some(graph) =
+                        Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
+                            .build_graph_view(FillRule::NonZero)
                     {
                         graph.validate();
-                        let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
+                        let result =
+                            graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                         assert!(result.len() > 0);
                     }
                     a += 0.005
@@ -247,9 +251,7 @@ mod tests {
             overlay.add_contour(&subj_path, ShapeType::Subject);
             overlay.add_contour(&clip_path, ShapeType::Clip);
 
-            if let Some(graph) =
-                overlay.build_graph_view(FillRule::NonZero)
-            {
+            if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                 assert!(result.len() > 0);
@@ -264,9 +266,7 @@ mod tests {
             let subj_path = random(10, n);
             let mut overlay = Overlay::new(2 * n);
             overlay.add_contour(&subj_path, ShapeType::Subject);
-            if let Some(graph) =
-                overlay.build_graph_view(FillRule::NonZero)
-            {
+            if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                 assert!(result.len() > 0);
@@ -281,9 +281,7 @@ mod tests {
             let r = i as f64;
             let subj_path = random_float(r, n);
             let mut overlay = FloatOverlay::with_subj(&subj_path);
-            if let Some(graph) =
-                overlay.build_graph_view(FillRule::NonZero)
-            {
+            if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
                 assert!(result.len() > 0);

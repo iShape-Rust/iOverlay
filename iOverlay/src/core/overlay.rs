@@ -267,7 +267,8 @@ impl Overlay {
 
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
 
-        let shapes = self.graph_builder
+        let shapes = self
+            .graph_builder
             .build_boolean_overlay(
                 fill_rule,
                 overlay_rule,
@@ -419,24 +420,22 @@ impl IntOverlayOptions {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::Overlay;
+    use crate::core::overlay_rule::OverlayRule;
     use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::area::Area;
     use i_shape::int::shape::IntContour;
-    use crate::core::fill_rule::FillRule;
-    use crate::core::overlay::Overlay;
-    use crate::core::overlay_rule::OverlayRule;
 
     #[test]
     fn test_0() {
-        let subj = [
-            vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(10, 0),
-                IntPoint::new(10, 10),
-                IntPoint::new(0, 10),
-            ],
-        ];
+        let subj = [vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+        ]];
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
@@ -845,5 +844,5 @@ mod tests {
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 0);
-    }    
+    }
 }

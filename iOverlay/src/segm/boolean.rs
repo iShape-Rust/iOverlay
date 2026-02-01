@@ -16,16 +16,26 @@ impl ShapeCountBoolean {
 
 impl WindingCount for ShapeCountBoolean {
     #[inline(always)]
-    fn is_not_empty(&self) -> bool { self.subj != 0 || self.clip != 0 }
+    fn is_not_empty(&self) -> bool {
+        self.subj != 0 || self.clip != 0
+    }
 
     #[inline(always)]
-    fn new(subj: i32, clip: i32) -> Self { Self { subj, clip } }
+    fn new(subj: i32, clip: i32) -> Self {
+        Self { subj, clip }
+    }
 
     #[inline(always)]
     fn with_shape_type(shape_type: ShapeType) -> (Self, Self) {
         match shape_type {
-            ShapeType::Subject => (ShapeCountBoolean::SUBJ_DIRECT, ShapeCountBoolean::SUBJ_INVERT),
-            ShapeType::Clip => (ShapeCountBoolean::CLIP_DIRECT, ShapeCountBoolean::CLIP_INVERT)
+            ShapeType::Subject => (
+                ShapeCountBoolean::SUBJ_DIRECT,
+                ShapeCountBoolean::SUBJ_INVERT,
+            ),
+            ShapeType::Clip => (
+                ShapeCountBoolean::CLIP_DIRECT,
+                ShapeCountBoolean::CLIP_INVERT,
+            ),
         }
     }
 
@@ -45,6 +55,9 @@ impl WindingCount for ShapeCountBoolean {
 
     #[inline(always)]
     fn invert(self) -> Self {
-        Self { subj: -self.subj, clip: -self.clip }
+        Self {
+            subj: -self.subj,
+            clip: -self.clip,
+        }
     }
 }

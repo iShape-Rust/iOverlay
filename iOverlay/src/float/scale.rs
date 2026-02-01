@@ -229,9 +229,10 @@ mod tests {
         ]];
         let right_bottom_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let shapes = FloatOverlay::with_subj_and_clip_fixed_scale(&shapes, &right_bottom_rect, 10.0)
-            .unwrap()
-            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+        let shapes =
+            FloatOverlay::with_subj_and_clip_fixed_scale(&shapes, &right_bottom_rect, 10.0)
+                .unwrap()
+                .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
@@ -249,7 +250,8 @@ mod tests {
 
         let scale = (1u64 << 32) as f64;
 
-        let result = FloatOverlay::with_subj_and_clip_fixed_scale(&shapes, &right_bottom_rect, scale);
+        let result =
+            FloatOverlay::with_subj_and_clip_fixed_scale(&shapes, &right_bottom_rect, scale);
 
         assert!(!result.is_ok());
     }
@@ -259,9 +261,19 @@ mod tests {
         let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, -1.0).is_err());
-        assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, 0.0).is_err());
-        assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::NAN).is_err());
-        assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::INFINITY).is_err());
+        assert!(
+            FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, -1.0).is_err()
+        );
+        assert!(
+            FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, 0.0).is_err()
+        );
+        assert!(
+            FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::NAN)
+                .is_err()
+        );
+        assert!(
+            FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::INFINITY)
+                .is_err()
+        );
     }
 }

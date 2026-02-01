@@ -85,19 +85,9 @@ mod tests {
 
     #[test]
     fn test_slice() {
-        let polygon = [
-            [1.0, 1.0],
-            [1.0, 4.0],
-            [4.0, 4.0],
-            [4.0, 1.0],
-        ];
+        let polygon = [[1.0, 1.0], [1.0, 4.0], [4.0, 4.0], [4.0, 1.0]];
 
-        let slicing_line = [
-            [3.0, 5.0],
-            [2.0, 2.0],
-            [3.0, 3.0],
-            [2.0, 0.0],
-        ];
+        let slicing_line = [[3.0, 5.0], [2.0, 2.0], [3.0, 3.0], [2.0, 0.0]];
 
         let result = polygon.slice_by(&slicing_line, FillRule::NonZero);
 
@@ -106,21 +96,14 @@ mod tests {
 
     #[test]
     fn test_clip() {
-        let polygon = [
-            [1.0, 1.0],
-            [1.0, 4.0],
-            [4.0, 4.0],
-            [4.0, 1.0],
-        ];
+        let polygon = [[1.0, 1.0], [1.0, 4.0], [4.0, 4.0], [4.0, 1.0]];
 
-        let string_line = [
-            [3.0, 5.0],
-            [2.0, 2.0],
-            [3.0, 3.0],
-            [2.0, 0.0],
-        ];
+        let string_line = [[3.0, 5.0], [2.0, 2.0], [3.0, 3.0], [2.0, 0.0]];
 
-        let clip_rule = ClipRule { invert: false, boundary_included: false };
+        let clip_rule = ClipRule {
+            invert: false,
+            boundary_included: false,
+        };
         let result = string_line.clip_by(&polygon, FillRule::NonZero, clip_rule);
 
         println!("result: {:?}", result);

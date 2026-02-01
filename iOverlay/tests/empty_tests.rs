@@ -16,7 +16,10 @@ mod tests {
     #[test]
     fn test_01() {
         let mut overlay = Overlay::new(1);
-        overlay.add_contour(&[IntPoint::new(0, 0), IntPoint::new(1, 0)], ShapeType::Subject);
+        overlay.add_contour(
+            &[IntPoint::new(0, 0), IntPoint::new(1, 0)],
+            ShapeType::Subject,
+        );
 
         let graph = overlay.build_graph_view(FillRule::NonZero);
         assert!(graph.is_none());

@@ -35,11 +35,7 @@ pub struct VectorEdge {
 
 impl VectorEdge {
     pub(crate) fn new(fill: SideFill, a: IntPoint, b: IntPoint) -> Self {
-        let fill = if a < b {
-            fill
-        } else {
-            fill.reverse()
-        };
+        let fill = if a < b { fill } else { fill.reverse() };
 
         Self { a, b, fill }
     }

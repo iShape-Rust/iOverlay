@@ -1,10 +1,8 @@
-
 pub(crate) trait Int {
     fn log2_sqrt(&self) -> usize;
 }
 
 impl Int for usize {
-
     #[inline]
     fn log2_sqrt(&self) -> usize {
         let z = self.leading_zeros();
@@ -16,9 +14,9 @@ impl Int for usize {
 
 #[cfg(test)]
 mod tests {
+    use crate::util::log::Int;
     use alloc::vec;
     use alloc::vec::Vec;
-    use crate::util::log::Int;
 
     #[test]
     fn test_0() {

@@ -1,14 +1,14 @@
-use alloc::vec::Vec;
-use i_tree::ExpiredVal;
+use crate::core::solver::Solver;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
+use alloc::vec::Vec;
+use i_tree::ExpiredVal;
 use i_tree::seg::exp::{SegExpCollection, SegRange};
 use i_tree::seg::tree::SegExpTree;
-use crate::core::solver::Solver;
 
 #[derive(Debug, Clone, Copy)]
 struct IdSegment {
@@ -28,7 +28,7 @@ impl SplitSolver {
         &mut self,
         snap_radius: SnapRadius,
         segments: &mut Vec<Segment<C>>,
-        solver: &Solver
+        solver: &Solver,
     ) -> bool {
         let range: SegRange<i32> = segments.ver_range().into();
         let mut tree: SegExpTree<i32, i32, IdSegment> = if let Some(tree) = SegExpTree::new(range) {

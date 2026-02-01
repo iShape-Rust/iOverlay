@@ -1,8 +1,8 @@
+use crate::geom::x_segment::XSegment;
 use core::cmp::Ordering;
-use i_tree::ExpiredKey;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use crate::geom::x_segment::XSegment;
+use i_tree::ExpiredKey;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct VSegment {
@@ -31,15 +31,9 @@ impl VSegment {
     #[inline(always)]
     pub(crate) fn is_under_segment(&self, other: &VSegment) -> bool {
         match self.a.cmp(&other.a) {
-            Ordering::Less => {
-                Triangle::is_clockwise_point(self.a, other.a, self.b)
-            }
-            Ordering::Equal => {
-                Triangle::is_clockwise_point(self.a, other.b, self.b)
-            }
-            Ordering::Greater => {
-                Triangle::is_clockwise_point(other.a, other.b, self.a)
-            }
+            Ordering::Less => Triangle::is_clockwise_point(self.a, other.a, self.b),
+            Ordering::Equal => Triangle::is_clockwise_point(self.a, other.b, self.b),
+            Ordering::Greater => Triangle::is_clockwise_point(other.a, other.b, self.a),
         }
     }
 
@@ -84,14 +78,17 @@ impl ExpiredKey<i32> for VSegment {
 
 #[cfg(test)]
 mod tests {
+    use crate::geom::v_segment::VSegment;
     use core::cmp::Ordering;
     use i_float::int::point::IntPoint;
-    use crate::geom::v_segment::VSegment;
 
     #[test]
     fn test_00() {
         let p = IntPoint::new(-10, 10);
-        let s = VSegment { a: IntPoint::new(-10, -10), b: IntPoint::new(10, -10) };
+        let s = VSegment {
+            a: IntPoint::new(-10, -10),
+            b: IntPoint::new(10, -10),
+        };
         let order = s.is_under_point_order(p);
         assert_eq!(order, Ordering::Less);
     }

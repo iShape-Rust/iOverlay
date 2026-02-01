@@ -1,18 +1,22 @@
-use alloc::vec;
-use alloc::vec::Vec;
-use i_shape::int::shape::{IntContour, IntShapes};
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
-use crate::core::extract::{GraphUtil, StartPathData, GraphContour, Visit, VisitState};
+use crate::core::extract::{GraphContour, GraphUtil, StartPathData, Visit, VisitState};
 use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use crate::mesh::graph::OffsetGraph;
 use crate::segm::segment::SUBJ_TOP;
+use alloc::vec;
+use alloc::vec::Vec;
+use i_shape::int::shape::{IntContour, IntShapes};
 
 impl OffsetGraph<'_> {
-    pub(crate) fn extract_offset(&self, main_direction: ContourDirection, min_area: u64) -> IntShapes {
+    pub(crate) fn extract_offset(
+        &self,
+        main_direction: ContourDirection,
+        min_area: u64,
+    ) -> IntShapes {
         let visited = self.links.filter_by_overlay(OverlayRule::Subject);
         self.extract_offset_shapes(visited, main_direction, min_area)
     }
@@ -54,8 +58,7 @@ impl OffsetGraph<'_> {
 
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            let mut contour =
-                self.get_fill_contour(&start_data, direction, &mut bold, visited);
+            let mut contour = self.get_fill_contour(&start_data, direction, &mut bold, visited);
             if !bold {
                 link_index += 1;
                 continue;
@@ -124,14 +127,8 @@ impl OffsetGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id = GraphUtil::next_link(
-                self.links,
-                self.nodes,
-                link_id,
-                node_id,
-                clockwise,
-                visited,
-            );
+            link_id =
+                GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
                 // SAFETY: `link_id` is always derived from a previous in-bounds index or

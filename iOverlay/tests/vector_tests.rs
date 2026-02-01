@@ -12,14 +12,14 @@ mod tests {
             IntPoint::new(-10240, -10240),
             IntPoint::new(-10240, 10240),
             IntPoint::new(10240, 10240),
-            IntPoint::new(10240, -10240)
+            IntPoint::new(10240, -10240),
         ];
 
         let clip = [
             IntPoint::new(-5120, -5120),
             IntPoint::new(-5120, 5120),
             IntPoint::new(5120, 5120),
-            IntPoint::new(5120, -5120)
+            IntPoint::new(5120, -5120),
         ];
 
         let mut overlay = Overlay::new(2);
@@ -34,25 +34,25 @@ mod tests {
         let vectors = &shapes[0][0];
         let template = [
             VectorEdge {
-                a: IntPoint::new(-10240,10240),
-                b: IntPoint::new(-10240,-10240),
-                fill: 1
+                a: IntPoint::new(-10240, 10240),
+                b: IntPoint::new(-10240, -10240),
+                fill: 1,
             },
             VectorEdge {
-                a: IntPoint::new(-10240,-10240),
-                b: IntPoint::new(10240,-10240),
-                fill: 1
+                a: IntPoint::new(-10240, -10240),
+                b: IntPoint::new(10240, -10240),
+                fill: 1,
             },
             VectorEdge {
-                a: IntPoint::new(10240,-10240),
-                b: IntPoint::new(10240,10240),
-                fill: 1
+                a: IntPoint::new(10240, -10240),
+                b: IntPoint::new(10240, 10240),
+                fill: 1,
             },
             VectorEdge {
-                a: IntPoint::new(10240,10240),
-                b: IntPoint::new(-10240,10240),
-                fill: 1
-            }
+                a: IntPoint::new(10240, 10240),
+                b: IntPoint::new(-10240, 10240),
+                fill: 1,
+            },
         ];
 
         assert_eq!(vectors.as_slice(), template.as_slice());
@@ -64,14 +64,14 @@ mod tests {
             IntPoint::new(-10240, -10240),
             IntPoint::new(-10240, 10240),
             IntPoint::new(10240, 10240),
-            IntPoint::new(10240, -10240)
+            IntPoint::new(10240, -10240),
         ];
 
         let clip = [
-            IntPoint::new(-5120,-5120),
-            IntPoint::new(-5120,15360),
-            IntPoint::new(15360,15360),
-            IntPoint::new(15360,-5120)
+            IntPoint::new(-5120, -5120),
+            IntPoint::new(-5120, 15360),
+            IntPoint::new(15360, 15360),
+            IntPoint::new(15360, -5120),
         ];
 
         let mut overlay = Overlay::new(2);
@@ -86,35 +86,35 @@ mod tests {
         let vectors = &shapes[0][0];
         let template = [
             VectorEdge {
-                a: IntPoint::new(-10240,10240),
-                b: IntPoint::new(-10240,-10240),
-                fill: 1
+                a: IntPoint::new(-10240, 10240),
+                b: IntPoint::new(-10240, -10240),
+                fill: 1,
             },
             VectorEdge {
-                a: IntPoint::new(-10240,-10240),
-                b: IntPoint::new(10240,-10240),
-                fill: 1
+                a: IntPoint::new(-10240, -10240),
+                b: IntPoint::new(10240, -10240),
+                fill: 1,
             },
             VectorEdge {
-                a: IntPoint::new(10240,-10240),
-                b: IntPoint::new(10240,-5120),
-                fill: 1
+                a: IntPoint::new(10240, -10240),
+                b: IntPoint::new(10240, -5120),
+                fill: 1,
             },
             VectorEdge {
-                a: IntPoint::new(10240,-5120),
-                b: IntPoint::new(-5120,-5120),
-                fill: 11
+                a: IntPoint::new(10240, -5120),
+                b: IntPoint::new(-5120, -5120),
+                fill: 11,
             },
             VectorEdge {
-                a: IntPoint::new(-5120,-5120),
-                b: IntPoint::new(-5120,10240),
-                fill: 11
+                a: IntPoint::new(-5120, -5120),
+                b: IntPoint::new(-5120, 10240),
+                fill: 11,
             },
             VectorEdge {
-                a: IntPoint::new(-5120,10240),
-                b: IntPoint::new(-10240,10240),
-                fill: 1
-            }
+                a: IntPoint::new(-5120, 10240),
+                b: IntPoint::new(-10240, 10240),
+                fill: 1,
+            },
         ];
 
         assert_eq!(vectors.as_slice(), template.as_slice());

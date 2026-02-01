@@ -1,5 +1,5 @@
-use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use crate::segm::segment::Segment;
+use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 
 pub(crate) trait ShapeSegmentsSort {
     fn sort_by_ab(&mut self, parallel: bool);
@@ -12,7 +12,7 @@ impl<C: Send + Sync + Copy> ShapeSegmentsSort for [Segment<C>] {
             parallel,
             |s| s.x_segment.a.x,
             |s| s.x_segment.a.y,
-            |s0, s1| s0.x_segment.b.cmp(&s1.x_segment.b)
+            |s0, s1| s0.x_segment.b.cmp(&s1.x_segment.b),
         )
     }
 }

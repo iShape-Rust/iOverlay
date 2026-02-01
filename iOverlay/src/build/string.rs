@@ -1,18 +1,19 @@
-use alloc::vec::Vec;
-use crate::segm::string::ShapeCountString;
 use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
-use crate::segm::segment::{Segment, SegmentFill, CLIP_BOTH, SUBJ_BOTH};
+use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH, Segment, SegmentFill};
+use crate::segm::string::ShapeCountString;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
+use alloc::vec::Vec;
 
 impl GraphBuilder<ShapeCountString, Vec<usize>> {
     #[inline]
-    pub(crate) fn build_string_all(&mut self,
-                                    fill_rule: FillRule,
-                                    solver: &Solver,
-                                    segments: &[Segment<ShapeCountString>],
+    pub(crate) fn build_string_all(
+        &mut self,
+        fill_rule: FillRule,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountString>],
     ) -> StringGraph<'_> {
         self.build_string_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
@@ -20,11 +21,12 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
     }
 
     #[inline]
-    pub(crate) fn build_string_clip(&mut self,
-                                    fill_rule: FillRule,
-                                    clip_rule: ClipRule,
-                                    solver: &Solver,
-                                    segments: &[Segment<ShapeCountString>],
+    pub(crate) fn build_string_clip(
+        &mut self,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountString>],
     ) -> StringGraph<'_> {
         self.build_string_fills(fill_rule, solver, segments);
         match clip_rule {
@@ -49,12 +51,25 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
     }
 
     #[inline]
-    fn build_string_fills(&mut self, fill_rule: FillRule, solver: &Solver, segments: &[Segment<ShapeCountString>]) {
+    fn build_string_fills(
+        &mut self,
+        fill_rule: FillRule,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountString>],
+    ) {
         match fill_rule {
-            FillRule::EvenOdd => self.build_fills_with_strategy::<EvenOddStrategy>(solver, segments),
-            FillRule::NonZero => self.build_fills_with_strategy::<NonZeroStrategy>(solver, segments),
-            FillRule::Positive => self.build_fills_with_strategy::<PositiveStrategy>(solver, segments),
-            FillRule::Negative => self.build_fills_with_strategy::<NegativeStrategy>(solver, segments),
+            FillRule::EvenOdd => {
+                self.build_fills_with_strategy::<EvenOddStrategy>(solver, segments)
+            }
+            FillRule::NonZero => {
+                self.build_fills_with_strategy::<NonZeroStrategy>(solver, segments)
+            }
+            FillRule::Positive => {
+                self.build_fills_with_strategy::<PositiveStrategy>(solver, segments)
+            }
+            FillRule::Negative => {
+                self.build_fills_with_strategy::<NegativeStrategy>(solver, segments)
+            }
         }
     }
 

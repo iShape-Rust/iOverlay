@@ -51,7 +51,8 @@ impl OverlayGraph<'_> {
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
     ) -> IntShapes {
-        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.links
+            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ocg {
             self.extract_ocg(overlay_rule, buffer)
         } else {
@@ -548,8 +549,8 @@ impl GraphUtil {
             // SAFETY: first_index originates from indices, so it is within links.
             links.get_unchecked(first_index)
         }
-            .other(node_id)
-            .point;
+        .other(node_id)
+        .point;
         let mut vector_solver = NearestVector::new(c, a, b, first_index, clockwise);
 
         // add second vector
@@ -558,8 +559,8 @@ impl GraphUtil {
                 // SAFETY: second_index comes from indices just like first_index.
                 links.get_unchecked(second_index)
             }
-                .other(node_id)
-                .point,
+            .other(node_id)
+            .point,
             second_index,
         );
 
@@ -570,8 +571,8 @@ impl GraphUtil {
                     // SAFETY: every link_index here is sourced from indices, so it addresses links.
                     links.get_unchecked(link_index)
                 }
-                    .other(node_id)
-                    .point;
+                .other(node_id)
+                .point;
                 vector_solver.add(p, link_index);
             }
         }

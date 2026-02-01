@@ -8,9 +8,10 @@ use crate::segm::segment::{Segment, SegmentFill};
 
 impl GraphBuilder<ShapeCountOffset, OverlayNode> {
     #[inline]
-    pub(crate) fn build_offset(&mut self,
-                               solver: &Solver,
-                               segments: &[Segment<ShapeCountOffset>],
+    pub(crate) fn build_offset(
+        &mut self,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountOffset>],
     ) -> OffsetGraph<'_> {
         self.build_fills_with_strategy::<SubjectOffsetStrategy>(solver, segments);
         self.build_links_all(segments);
@@ -31,9 +32,11 @@ struct SubjectOffsetStrategy;
 const BOLD_BIT: usize = 2;
 
 impl FillStrategy<ShapeCountOffset> for SubjectOffsetStrategy {
-
     #[inline(always)]
-    fn add_and_fill(this: ShapeCountOffset, bot: ShapeCountOffset) -> (ShapeCountOffset, SegmentFill) {
+    fn add_and_fill(
+        this: ShapeCountOffset,
+        bot: ShapeCountOffset,
+    ) -> (ShapeCountOffset, SegmentFill) {
         let top_subj = bot.subj + this.subj;
         let bot_subj = bot.subj;
 
@@ -43,12 +46,14 @@ impl FillStrategy<ShapeCountOffset> for SubjectOffsetStrategy {
         let bold = this.bold as SegmentFill;
 
         let fill = subj_top | (subj_bot << 1) | (bold << BOLD_BIT);
-        let top = ShapeCountOffset { subj: top_subj, bold: false }; // bold not need
+        let top = ShapeCountOffset {
+            subj: top_subj,
+            bold: false,
+        }; // bold not need
 
         (top, fill)
     }
 }
-
 
 impl OverlayLink {
     #[inline(always)]

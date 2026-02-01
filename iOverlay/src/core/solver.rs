@@ -185,5 +185,4 @@ impl Solver {
     pub(crate) fn is_parallel_sort_allowed(&self) -> bool {
         self.multithreading.is_some()
     }
-
 }

@@ -1,18 +1,18 @@
 //! This module provides methods to simplify paths and shapes by reducing complexity
 //! (e.g., removing small artifacts or shapes below a certain area threshold) based on a build rule.
 
-use i_shape::flat::buffer::FlatContoursBuffer;
-use crate::core::overlay::ContourDirection;
-use alloc::vec;
-use crate::i_float::int::point::IntPoint;
 use crate::core::fill_rule::FillRule;
+use crate::core::overlay::ContourDirection;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
+use crate::i_float::int::point::IntPoint;
+use alloc::vec;
+use i_shape::flat::buffer::FlatContoursBuffer;
 
 use crate::segm::build::BuildSegments;
-use i_shape::int::path::ContourExtension;
 use i_shape::int::count::PointsCount;
+use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
@@ -68,11 +68,10 @@ impl Simplify for [IntShape] {
 enum ContourFillDirection {
     Reverse,
     Correct,
-    Empty
+    Empty,
 }
 
 impl Overlay {
-
     /// Fast-path simplification for a single contour.
     ///
     /// Skips full overlay if the contour is already simple (no splits, no loops, no collinear issues).
@@ -92,9 +91,8 @@ impl Overlay {
         if is_perfect {
             // the path is already perfect
             // need to check fill rule direction
-            let fill_direction = Self::contour_direction(
-                self.options.output_direction, fill_rule, contour
-            );
+            let fill_direction =
+                Self::contour_direction(self.options.output_direction, fill_rule, contour);
 
             return match fill_direction {
                 ContourFillDirection::Reverse => {
@@ -103,8 +101,8 @@ impl Overlay {
                     Some(vec![vec![rev_contour]])
                 }
                 ContourFillDirection::Correct => None,
-                ContourFillDirection::Empty => Some(vec![])
-            }
+                ContourFillDirection::Empty => Some(vec![]),
+            };
         }
 
         let mut boolean_buffer = self.boolean_buffer.take().unwrap_or_default();
@@ -160,7 +158,11 @@ impl Overlay {
     }
 
     #[inline]
-    pub fn simplify_shape(&mut self, shape: &[IntContour], fill_rule: FillRule) -> Option<IntShapes> {
+    pub fn simplify_shape(
+        &mut self,
+        shape: &[IntContour],
+        fill_rule: FillRule,
+    ) -> Option<IntShapes> {
         if shape.len() == 1 {
             return self.simplify_contour(&shape[0], fill_rule);
         }
@@ -177,7 +179,11 @@ impl Overlay {
     }
 
     #[inline]
-    pub fn simplify_flat_buffer(&mut self, flat_buffer: &mut FlatContoursBuffer, fill_rule: FillRule) {
+    pub fn simplify_flat_buffer(
+        &mut self,
+        flat_buffer: &mut FlatContoursBuffer,
+        fill_rule: FillRule,
+    ) {
         self.clear();
 
         if flat_buffer.is_single_contour() {
@@ -188,22 +194,25 @@ impl Overlay {
                 // the path is already perfect
                 // need to check fill rule direction
                 let fill_direction = Self::contour_direction(
-                    self.options.output_direction, fill_rule, first_contour
+                    self.options.output_direction,
+                    fill_rule,
+                    first_contour,
                 );
 
                 match fill_direction {
                     ContourFillDirection::Reverse => {
                         flat_buffer.as_first_contour_mut().reverse();
                     }
-                    ContourFillDirection::Correct => {},
-                    ContourFillDirection::Empty => flat_buffer.clear_and_reserve(0, 0)
+                    ContourFillDirection::Correct => {}
+                    ContourFillDirection::Empty => flat_buffer.clear_and_reserve(0, 0),
                 }
 
-                return
+                return;
             }
         } else {
             self.add_flat_buffer(flat_buffer, ShapeType::Subject);
-            self.split_solver.split_segments(&mut self.segments, &self.solver);
+            self.split_solver
+                .split_segments(&mut self.segments, &self.solver);
             if self.segments.is_empty() {
                 flat_buffer.clear_and_reserve(0, 0);
                 return;
@@ -212,8 +221,7 @@ impl Overlay {
 
         let mut boolean_buffer = self.boolean_buffer.take().unwrap_or_default();
 
-        self
-            .graph_builder
+        self.graph_builder
             .build_boolean_overlay(
                 fill_rule,
                 OverlayRule::Subject,
@@ -242,7 +250,9 @@ impl Overlay {
         }
 
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
-        let has_loops = self.graph_builder.test_contour_for_loops(contour, &mut buffer.points);
+        let has_loops = self
+            .graph_builder
+            .test_contour_for_loops(contour, &mut buffer.points);
         self.boolean_buffer = Some(buffer);
 
         !has_loops
@@ -409,7 +419,7 @@ mod tests {
     #[test]
     fn test_near_collinear_paths() {
         let contour = vec![
-            IntPoint::new(-100, -100), 
+            IntPoint::new(-100, -100),
             IntPoint::new(0, 0),
             IntPoint::new(101, 100),
         ];

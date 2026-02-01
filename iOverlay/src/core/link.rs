@@ -1,8 +1,8 @@
-use alloc::vec::Vec;
 use crate::core::extract::VisitState;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
+use alloc::vec::Vec;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct OverlayLink {

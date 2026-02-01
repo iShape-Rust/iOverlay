@@ -1,17 +1,17 @@
-use alloc::vec::Vec;
+use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
 use crate::geom::end::End;
+use crate::geom::id_point::IdPoint;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::winding::WindingCount;
 use crate::util::log::Int;
+use alloc::vec::Vec;
 use i_float::triangle::Triangle;
 use i_shape::util::reserve::Reserve;
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
 use i_tree::key::tree::KeyExpTree;
-use crate::core::link::OverlayLink;
-use crate::geom::id_point::IdPoint;
 
 pub(super) trait FillStrategy<C> {
     fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
@@ -35,7 +35,6 @@ pub(crate) struct GraphBuilder<C, N> {
 }
 
 impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
-
     #[inline]
     pub(crate) fn new() -> Self {
         Self {
@@ -49,7 +48,11 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     }
 
     #[inline]
-    pub(super) fn build_fills_with_strategy<F: FillStrategy<C>>(&mut self, solver: &Solver, segments: &[Segment<C>]) {
+    pub(super) fn build_fills_with_strategy<F: FillStrategy<C>>(
+        &mut self,
+        solver: &Solver,
+        segments: &[Segment<C>],
+    ) {
         let count = segments.len();
         if solver.is_list_fill(segments) {
             let capacity = count.log2_sqrt().max(4) * 2;
@@ -65,7 +68,11 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     }
 
     #[inline]
-    fn build_fills<F: FillStrategy<C>, S: KeyExpCollection<VSegment, i32, C>>(&mut self, scan_list: &mut S, segments: &[Segment<C>]) {
+    fn build_fills<F: FillStrategy<C>, S: KeyExpCollection<VSegment, i32, C>>(
+        &mut self,
+        scan_list: &mut S,
+        segments: &[Segment<C>],
+    ) {
         let mut node = Vec::with_capacity(4);
 
         let n = segments.len();
@@ -119,7 +126,10 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     }
 
     #[inline]
-    pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(&mut self, segments: &[Segment<C>]) {
+    pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(
+        &mut self,
+        segments: &[Segment<C>],
+    ) {
         self.links.clear();
         self.links.reserve_capacity(segments.len());
 

@@ -1,8 +1,8 @@
+use crate::geom::x_segment::XSegment;
 use i_float::fix_vec::FixVec;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
 use i_float::u128::UInt128;
-use crate::geom::x_segment::XSegment;
 
 pub(super) type CollinearMask = u8;
 
@@ -21,7 +21,6 @@ const OTHER_A: u8 = 0b0100;
 const OTHER_B: u8 = 0b1000;
 
 impl EndMask for CollinearMask {
-
     #[inline(always)]
     fn is_target_a(&self) -> bool {
         self & TARGET_A == TARGET_A
@@ -69,7 +68,6 @@ pub(super) enum CrossType {
 pub(super) struct CrossSolver {}
 
 impl CrossSolver {
-
     pub(super) fn cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
         let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
         let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
@@ -136,7 +134,7 @@ impl CrossSolver {
         let ab0 = (a0 - b1).dot_product(v1).signum();
         let ba0 = (b0 - a1).dot_product(v1).signum();
         let bb0 = (b0 - b1).dot_product(v1).signum();
-        
+
         let aa1 = -aa0;
         let ab1 = -ba0;
         let ba1 = -ab0;
@@ -154,7 +152,9 @@ impl CrossSolver {
     fn middle_cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
         let p = CrossSolver::cross_point(target, other);
 
-        if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
+        if Triangle::is_line_point(target.a, p, target.b)
+            && Triangle::is_line_point(other.a, p, other.b)
+        {
             return Some(CrossResult {
                 point: p,
                 cross_type: CrossType::Pure,
@@ -309,8 +309,6 @@ trait RoundDivide {
 }
 
 impl RoundDivide for UInt128 {
-
-
     fn divide_with_rounding(&self, divisor: u64) -> u64 {
         if self.high == 0 {
             let result = self.low / divisor;
@@ -353,9 +351,9 @@ impl RoundDivide for UInt128 {
 
 #[cfg(test)]
 mod tests {
-    use i_float::int::point::IntPoint;
-    use crate::split::cross_solver::{CrossSolver, CrossType};
     use crate::geom::x_segment::XSegment;
+    use crate::split::cross_solver::{CrossSolver, CrossType};
+    use i_float::int::point::IntPoint;
 
     impl XSegment {
         fn new(a: IntPoint, b: IntPoint) -> Self {
@@ -506,8 +504,14 @@ mod tests {
 
     #[test]
     fn test_real_case_2() {
-        let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(-1024000, 0));
-        let eb = XSegment::new(IntPoint::new(-8571363, 1513719), IntPoint::new(-1023948, -10239));
+        let ea = XSegment::new(
+            IntPoint::new(-8555798, -1599355),
+            IntPoint::new(-1024000, 0),
+        );
+        let eb = XSegment::new(
+            IntPoint::new(-8571363, 1513719),
+            IntPoint::new(-1023948, -10239),
+        );
 
         let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
@@ -523,8 +527,14 @@ mod tests {
 
     #[test]
     fn test_real_case_3() {
-        let ea = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
-        let eb = XSegment::new(IntPoint::new(-8555798, -1599355), IntPoint::new(513224, -5243));
+        let ea = XSegment::new(
+            IntPoint::new(-8555798, -1599355),
+            IntPoint::new(513224, -5243),
+        );
+        let eb = XSegment::new(
+            IntPoint::new(-8555798, -1599355),
+            IntPoint::new(513224, -5243),
+        );
 
         let result = CrossSolver::cross(&ea, &eb, 2).unwrap();
 
