@@ -449,7 +449,7 @@ If you need more control, use `FloatPointAdapter::with_scale` and `FloatOverlay:
 
 ### 4. How do I enable OGC-valid output?
 
-Set the `ocg` flag in `OverlayOptions`.
+Set the `ogc` flag in `OverlayOptions`.
 
 ```rust
 use i_overlay::core::fill_rule::FillRule;
@@ -478,7 +478,7 @@ let clip = vec![
     vec![[2.0, 1.0], [2.0, 2.0], [3.0, 2.0], [3.0, 3.0], [4.0, 3.0], [4.0, 1.0]],
 ];
 
-let options = OverlayOptions::<f64>::ocg();
+let options = OverlayOptions::<f64>::ogc();
 let mut overlay = FloatOverlay::with_subj_and_clip_custom(&subj, &clip, options, Default::default());
 let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 

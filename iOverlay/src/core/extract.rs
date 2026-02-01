@@ -53,8 +53,8 @@ impl OverlayGraph<'_> {
     ) -> IntShapes {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
-        if self.options.ocg {
-            self.extract_ocg(overlay_rule, buffer)
+        if self.options.ogc {
+            self.extract_ogc(overlay_rule, buffer)
         } else {
             self.extract(overlay_rule, buffer)
         }

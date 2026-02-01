@@ -32,7 +32,7 @@ pub struct OverlayOptions<T: FloatNumber> {
     pub min_output_area: T,
 
     /// If true, extract OGC-valid shapes.
-    pub ocg: bool,
+    pub ogc: bool,
 
     /// If true, the result will be cleaned from precision-related issues
     /// such as duplicate or nearly identical points. Especially useful for `f32` coordinates.
@@ -360,7 +360,7 @@ impl<T: FloatNumber> Default for OverlayOptions<T> {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: T::from_float(0.0),
-            ocg: false,
+            ogc: false,
             clean_result,
         }
     }
@@ -376,7 +376,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
             min_output_area: adapter.sqr_float_to_int(self.min_output_area),
-            ocg: self.ocg,
+            ogc: self.ogc,
         }
     }
 
@@ -386,11 +386,11 @@ impl<T: FloatNumber> OverlayOptions<T> {
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
             min_output_area: 0,
-            ocg: self.ocg,
+            ogc: self.ogc,
         }
     }
 
-    pub fn ocg() -> Self {
+    pub fn ogc() -> Self {
         // f32 precision is not enough to cover i32
         let clean_result = T::bit_width() <= 32;
         Self {
@@ -398,7 +398,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: T::from_float(0.0),
-            ocg: true,
+            ogc: true,
             clean_result,
         }
     }

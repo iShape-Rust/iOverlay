@@ -33,7 +33,7 @@ mod tests {
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
             &clip_paths,
-            IntOverlayOptions::ocg(),
+            IntOverlayOptions::ogc(),
             Default::default(),
         );
 
@@ -74,7 +74,7 @@ mod tests {
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
             &clip_paths,
-            IntOverlayOptions::ocg(),
+            IntOverlayOptions::ogc(),
             Default::default(),
         );
 
@@ -124,7 +124,7 @@ mod tests {
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
             &clip_paths,
-            IntOverlayOptions::ocg(),
+            IntOverlayOptions::ogc(),
             Default::default(),
         );
 
@@ -204,7 +204,7 @@ mod tests {
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
             &[],
-            IntOverlayOptions::ocg(),
+            IntOverlayOptions::ogc(),
             Default::default(),
         );
 
@@ -269,7 +269,7 @@ mod tests {
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
             &[],
-            IntOverlayOptions::ocg(),
+            IntOverlayOptions::ogc(),
             Default::default(),
         );
 

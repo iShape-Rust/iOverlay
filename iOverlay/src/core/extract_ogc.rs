@@ -13,7 +13,7 @@ use i_shape::int::shape::IntShapes;
 use i_shape::util::reserve::Reserve;
 
 impl OverlayGraph<'_> {
-    pub(crate) fn extract_ocg(
+    pub(crate) fn extract_ogc(
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
