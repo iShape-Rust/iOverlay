@@ -1,14 +1,14 @@
-use alloc::vec::Vec;
-use crate::segm::segment::Segment;
-use i_float::adapter::FloatPointAdapter;
-use i_float::float::compatible::FloatPointCompatible;
-use i_float::float::number::FloatNumber;
-use core::f64::consts::PI;
-use i_float::float::vector::FloatPointMath;
 use crate::mesh::miter::{Miter, SharpMiter};
 use crate::mesh::outline::section::Section;
 use crate::mesh::rotator::Rotator;
 use crate::segm::offset::ShapeCountOffset;
+use crate::segm::segment::Segment;
+use alloc::vec::Vec;
+use core::f64::consts::PI;
+use i_float::adapter::FloatPointAdapter;
+use i_float::float::compatible::FloatPointCompatible;
+use i_float::float::number::FloatNumber;
+use i_float::float::vector::FloatPointMath;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn add_join(
@@ -48,7 +48,6 @@ impl BevelJoinBuilder {
             segments.push(Segment::weak_subject_ab(ia, ib));
         }
     }
-
 }
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for BevelJoinBuilder {
@@ -120,7 +119,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         let turn = cross_product >= T::from_float(0.0);
         if turn == self.expand {
             BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
-            return
+            return;
         }
 
         let pa = s0.b_top;
@@ -132,7 +131,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         let sq_len = ia.sqr_distance(ib);
         if sq_len < 4 {
             BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
-            return
+            return;
         }
 
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
@@ -167,7 +166,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 SharpMiter::AcB(a, c, b) => {
                     segments.push(Segment::bold_subject_ab(a, c));
                     segments.push(Segment::bold_subject_ab(c, b));
-                },
+                }
                 SharpMiter::Degenerate => {}
             }
         }
@@ -227,7 +226,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
         let turn = cross_product >= T::from_float(0.0);
         if turn == self.expand {
             BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
-            return
+            return;
         }
 
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);

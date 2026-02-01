@@ -31,7 +31,8 @@ impl OverlayGraph<'_> {
         buffer: &mut BooleanExtractionBuffer,
     ) -> Vec<VectorShape> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
-        self.links.filter_by_overlay_into(overlay_rule, &mut buffer.visited);
+        self.links
+            .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
 
         let mut holes = Vec::new();
         let mut shapes = Vec::new();
@@ -57,13 +58,13 @@ impl OverlayGraph<'_> {
             };
 
             let is_hole = overlay_rule.is_fill_top(link.fill);
-            let visited_state =
-                [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
+            let visited_state = [VisitState::HullVisited, VisitState::HoleVisited][is_hole as usize];
 
             let direction = is_hole == clockwise;
             let start_data = StartVectorPathData::new(direction, link, left_top_link);
 
-            let mut contour = self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited);
+            let mut contour =
+                self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited);
             let (is_valid, is_modified) = contour.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -130,8 +131,7 @@ impl OverlayGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id =
-                GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
+            link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
                 // SAFETY: `link_id` is always a valid link index obtained from the
@@ -182,21 +182,12 @@ impl StartVectorPathData {
 }
 
 trait JoinHoles {
-    fn join_sorted_holes(
-        &mut self,
-        holes: Vec<VectorPath>,
-        anchors: Vec<IdSegment>,
-        clockwise: bool);
+    fn join_sorted_holes(&mut self, holes: Vec<VectorPath>, anchors: Vec<IdSegment>, clockwise: bool);
     fn scan_join(&mut self, holes: Vec<VectorPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
 
 impl JoinHoles for Vec<VectorShape> {
-    fn join_sorted_holes(
-        &mut self,
-        holes: Vec<VectorPath>,
-        anchors: Vec<IdSegment>,
-        clockwise: bool,
-    ) {
+    fn join_sorted_holes(&mut self, holes: Vec<VectorPath>, anchors: Vec<IdSegment>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -220,23 +211,11 @@ impl JoinHoles for Vec<VectorShape> {
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(
-                &mut segments,
-                ContourIndex::new_shape(i),
-                x_min,
-                x_max,
-                clockwise,
-            );
+            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
         }
 
         for (i, hole) in holes.iter().enumerate() {
-            hole.append_id_segments(
-                &mut segments,
-                ContourIndex::new_hole(i),
-                x_min,
-                x_max,
-                clockwise,
-            );
+            hole.append_id_segments(&mut segments, ContourIndex::new_hole(i), x_min, x_max, clockwise);
         }
 
         segments.sort_by_a_then_by_angle();

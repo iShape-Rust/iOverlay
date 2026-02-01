@@ -117,10 +117,7 @@ impl BinStore {
         let mut offset = 0;
         for bin in self.bins.iter_mut() {
             let next_offset = offset + bin.data;
-            *bin = Bin {
-                offset,
-                data: offset,
-            };
+            *bin = Bin { offset, data: offset };
             offset = next_offset;
         }
     }
@@ -281,12 +278,7 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert_eq!(
             result[0],
-            [
-                IntPoint::new(3, 1),
-                IntPoint::new(3, -1),
-                IntPoint::new(2, 0),
-            ]
-            .to_vec()
+            [IntPoint::new(3, 1), IntPoint::new(3, -1), IntPoint::new(2, 0),].to_vec()
         );
         assert_eq!(
             result[1],
@@ -358,12 +350,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         assert_eq!(
             result[0],
-            [
-                IntPoint::new(1, 1),
-                IntPoint::new(2, 0),
-                IntPoint::new(0, 0),
-            ]
-            .to_vec()
+            [IntPoint::new(1, 1), IntPoint::new(2, 0), IntPoint::new(0, 0),].to_vec()
         );
     }
 
@@ -390,39 +377,19 @@ mod tests {
         assert_eq!(result.len(), 4);
         assert_eq!(
             result[0],
-            [
-                IntPoint::new(-1, 2),
-                IntPoint::new(1, 2),
-                IntPoint::new(0, 0),
-            ]
-            .to_vec()
+            [IntPoint::new(-1, 2), IntPoint::new(1, 2), IntPoint::new(0, 0),].to_vec()
         );
         assert_eq!(
             result[1],
-            [
-                IntPoint::new(2, 1),
-                IntPoint::new(2, -1),
-                IntPoint::new(0, 0),
-            ]
-            .to_vec()
+            [IntPoint::new(2, 1), IntPoint::new(2, -1), IntPoint::new(0, 0),].to_vec()
         );
         assert_eq!(
             result[2],
-            [
-                IntPoint::new(1, -2),
-                IntPoint::new(-1, -2),
-                IntPoint::new(0, 0),
-            ]
-            .to_vec()
+            [IntPoint::new(1, -2), IntPoint::new(-1, -2), IntPoint::new(0, 0),].to_vec()
         );
         assert_eq!(
             result[3],
-            [
-                IntPoint::new(-2, -1),
-                IntPoint::new(-2, 1),
-                IntPoint::new(0, 0),
-            ]
-            .to_vec()
+            [IntPoint::new(-2, -1), IntPoint::new(-2, 1), IntPoint::new(0, 0),].to_vec()
         );
     }
 }

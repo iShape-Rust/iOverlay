@@ -2,11 +2,11 @@
 pub mod overlay {
     // extern crate std;
 
-    use std::path::PathBuf;
+    use i_overlay::core::fill_rule::FillRule;
     use i_shape::int::path::IntPaths;
     use i_shape::int::shape::{IntContour, IntShapes};
     use serde::{Deserialize, Deserializer};
-    use i_overlay::core::fill_rule::FillRule;
+    use std::path::PathBuf;
 
     fn deserialize_fill_rule<'de, D>(deserializer: D) -> Result<Option<FillRule>, D::Error>
     where
@@ -49,9 +49,7 @@ pub mod overlay {
             path_buf.push(file_name);
 
             let data = match std::fs::read_to_string(path_buf.as_path()) {
-                Ok(data) => {
-                    data
-                }
+                Ok(data) => data,
                 Err(e) => {
                     panic!("{:?}", e);
                 }
@@ -89,9 +87,7 @@ pub mod overlay {
             path_buf.push(file_name);
 
             let data = match std::fs::read_to_string(path_buf.as_path()) {
-                Ok(data) => {
-                    data
-                }
+                Ok(data) => data,
                 Err(e) => {
                     panic!("{:?}", e);
                 }

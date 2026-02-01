@@ -1,5 +1,5 @@
-use alloc::vec;
 use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
+use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 
@@ -20,7 +20,6 @@ pub(super) trait VectorSimpleShape {
     fn is_simple(&self) -> bool;
     fn simplified(&self) -> Option<VectorShape>;
 }
-
 
 impl VectorSimplify for VectorPath {
     #[inline]
@@ -121,13 +120,24 @@ impl VectorSimpleContour for [VectorEdge] {
         }
 
         let mut n = self.len();
-        let mut nodes: Vec<Node> = vec![Node { next: 0, index: 0, prev: 0 }; n];
+        let mut nodes: Vec<Node> = vec![
+            Node {
+                next: 0,
+                index: 0,
+                prev: 0
+            };
+            n
+        ];
         let mut validated: Vec<bool> = vec![false; n];
 
         let mut i0 = n - 2;
         let mut i1 = n - 1;
         for i2 in 0..n {
-            nodes[i1] = Node { next: i2, index: i1, prev: i0 };
+            nodes[i1] = Node {
+                next: i2,
+                index: i1,
+                prev: i0,
+            };
             i0 = i1;
             i1 = i2;
         }
@@ -236,10 +246,10 @@ fn direction(edge: &VectorEdge) -> IntPoint {
 
 #[cfg(test)]
 mod tests {
+    use crate::vector::edge::VectorEdge;
     use crate::vector::simplify::{IntPoint, VectorSimplify};
     use alloc::vec;
     use i_float::int_pnt;
-    use crate::vector::edge::VectorEdge;
 
     #[test]
     fn test_0() {

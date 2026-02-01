@@ -2,12 +2,12 @@ use i_float::fix_vec::FixVec;
 use i_float::int::point::IntPoint;
 
 pub(crate) struct NearestVector {
-    c: IntPoint,            // center
-    va: FixVec,             // our target vector
-    vb: FixVec,             // nearest vector to Va by specified rotation
-    ab_more_180: bool,      // is angle between Va and Vb more than 180 degrees
+    c: IntPoint,       // center
+    va: FixVec,        // our target vector
+    vb: FixVec,        // nearest vector to Va by specified rotation
+    ab_more_180: bool, // is angle between Va and Vb more than 180 degrees
     pub(crate) best_id: usize,
-    rotation_factor: i64,   // +1 for clockwise, -1 for counterclockwise
+    rotation_factor: i64, // +1 for clockwise, -1 for counterclockwise
 }
 
 impl NearestVector {
@@ -20,7 +20,14 @@ impl NearestVector {
         } else {
             (va.cross_product(vb) <= 0, -1)
         };
-        Self { c, va, vb, ab_more_180, best_id, rotation_factor }
+        Self {
+            c,
+            va,
+            vb,
+            ab_more_180,
+            best_id,
+            rotation_factor,
+        }
     }
 
     #[inline]
@@ -43,9 +50,9 @@ impl NearestVector {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::nearest_vector::NearestVector;
     use i_float::fix_vec::FixVec;
     use i_float::int::point::IntPoint;
-    use crate::core::nearest_vector::NearestVector;
 
     #[test]
     fn test_nearest_ccw_vector_creation() {
@@ -104,7 +111,7 @@ mod tests {
     #[test]
     fn test_ccw_0() {
         let c = IntPoint::new(-1, -1);
-        let a = IntPoint::new( 0, -1);
+        let a = IntPoint::new(0, -1);
         let b = IntPoint::new(-2, -1);
 
         let mut nearest_ccw = NearestVector::new(c, a, b, 1, false);

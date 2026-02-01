@@ -1,26 +1,30 @@
-use alloc::vec::Vec;
-use i_shape::util::reserve::Reserve;
-use crate::segm::boolean::ShapeCountBoolean;
-use crate::core::link::OverlayLinkFilter;
-use crate::core::graph::OverlayNode;
-use crate::core::fill_rule::FillRule;
-use crate::core::solver::Solver;
 use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
 use crate::core::extract::VisitState;
+use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
+use crate::core::graph::OverlayNode;
 use crate::core::link::OverlayLink;
+use crate::core::link::OverlayLinkFilter;
 use crate::core::overlay::IntOverlayOptions;
 use crate::core::overlay_rule::OverlayRule;
-use crate::segm::segment::{Segment, SegmentFill, ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
+use crate::core::solver::Solver;
+use crate::segm::boolean::ShapeCountBoolean;
+use crate::segm::segment::{
+    ALL, BOTH_BOTTOM, BOTH_TOP, CLIP_BOTH, CLIP_BOTTOM, CLIP_TOP, SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP, Segment,
+    SegmentFill,
+};
 use crate::segm::winding::WindingCount;
+use alloc::vec::Vec;
+use i_shape::util::reserve::Reserve;
 
 impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     #[inline]
-    pub(crate) fn build_boolean_all(&mut self,
-                                    fill_rule: FillRule,
-                                    options: IntOverlayOptions,
-                                    solver: &Solver,
-                                    segments: &[Segment<ShapeCountBoolean>],
+    pub(crate) fn build_boolean_all(
+        &mut self,
+        fill_rule: FillRule,
+        options: IntOverlayOptions,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountBoolean>],
     ) -> OverlayGraph<'_> {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
@@ -28,12 +32,13 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     }
 
     #[inline]
-    pub(crate) fn build_boolean_overlay(&mut self,
-                                        fill_rule: FillRule,
-                                        overlay_rule: OverlayRule,
-                                        options: IntOverlayOptions,
-                                        solver: &Solver,
-                                        segments: &[Segment<ShapeCountBoolean>],
+    pub(crate) fn build_boolean_overlay(
+        &mut self,
+        fill_rule: FillRule,
+        overlay_rule: OverlayRule,
+        options: IntOverlayOptions,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountBoolean>],
     ) -> OverlayGraph<'_> {
         self.build_boolean_fills(fill_rule, solver, segments);
         match overlay_rule {
@@ -49,7 +54,12 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     }
 
     #[inline]
-    fn build_boolean_fills(&mut self, fill_rule: FillRule, solver: &Solver, segments: &[Segment<ShapeCountBoolean>]) {
+    fn build_boolean_fills(
+        &mut self,
+        fill_rule: FillRule,
+        solver: &Solver,
+        segments: &[Segment<ShapeCountBoolean>],
+    ) {
         match fill_rule {
             FillRule::EvenOdd => self.build_fills_with_strategy::<EvenOddStrategy>(solver, segments),
             FillRule::NonZero => self.build_fills_with_strategy::<NonZeroStrategy>(solver, segments),
@@ -64,7 +74,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
         OverlayGraph {
             nodes: &self.nodes,
             links: &self.links,
-            options
+            options,
         }
     }
 }
@@ -76,10 +86,7 @@ struct NegativeStrategy;
 
 impl FillStrategy<ShapeCountBoolean> for EvenOddStrategy {
     #[inline(always)]
-    fn add_and_fill(
-        this: ShapeCountBoolean,
-        bot: ShapeCountBoolean,
-    ) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = 1 & top.subj as SegmentFill;
         let subj_bot = 1 & bot.subj as SegmentFill;
@@ -94,10 +101,7 @@ impl FillStrategy<ShapeCountBoolean> for EvenOddStrategy {
 
 impl FillStrategy<ShapeCountBoolean> for NonZeroStrategy {
     #[inline(always)]
-    fn add_and_fill(
-        this: ShapeCountBoolean,
-        bot: ShapeCountBoolean,
-    ) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = (top.subj != 0) as SegmentFill;
         let subj_bot = (bot.subj != 0) as SegmentFill;
@@ -112,10 +116,7 @@ impl FillStrategy<ShapeCountBoolean> for NonZeroStrategy {
 
 impl FillStrategy<ShapeCountBoolean> for PositiveStrategy {
     #[inline(always)]
-    fn add_and_fill(
-        this: ShapeCountBoolean,
-        bot: ShapeCountBoolean,
-    ) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = (top.subj > 0) as SegmentFill;
         let subj_bot = (bot.subj > 0) as SegmentFill;
@@ -130,10 +131,7 @@ impl FillStrategy<ShapeCountBoolean> for PositiveStrategy {
 
 impl FillStrategy<ShapeCountBoolean> for NegativeStrategy {
     #[inline(always)]
-    fn add_and_fill(
-        this: ShapeCountBoolean,
-        bot: ShapeCountBoolean,
-    ) -> (ShapeCountBoolean, SegmentFill) {
+    fn add_and_fill(this: ShapeCountBoolean, bot: ShapeCountBoolean) -> (ShapeCountBoolean, SegmentFill) {
         let top = bot.add(this);
         let subj_top = (top.subj < 0) as SegmentFill;
         let subj_bot = (bot.subj < 0) as SegmentFill;
@@ -307,37 +305,58 @@ impl OverlayLinkFilter for [OverlayLink] {
 
 #[inline]
 fn filter_subject(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_subject())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_subject()))
+        .collect()
 }
 
 #[inline]
 fn filter_clip(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_clip())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_clip()))
+        .collect()
 }
 
 #[inline]
 fn filter_intersect(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_intersect())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_intersect()))
+        .collect()
 }
 
 #[inline]
 fn filter_union(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_union())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_union()))
+        .collect()
 }
 
 #[inline]
 fn filter_difference(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_difference())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_difference()))
+        .collect()
 }
 
 #[inline]
 fn filter_inverse_difference(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_inverse_difference())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_inverse_difference()))
+        .collect()
 }
 
 #[inline]
 fn filter_xor(links: &[OverlayLink]) -> Vec<VisitState> {
-    links.iter().map(|link| VisitState::new(!link.fill.is_xor())).collect()
+    links
+        .iter()
+        .map(|link| VisitState::new(!link.fill.is_xor()))
+        .collect()
 }
 
 #[inline]

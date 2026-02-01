@@ -1,11 +1,3 @@
-use alloc::vec::Vec;
-use crate::segm::string::STRING_FORWARD_CLIP;
-use crate::segm::string::STRING_BACK_CLIP;
-use crate::segm::string::ShapeCountString;
-use i_float::int::point::IntPoint;
-use i_shape::int::count::PointsCount;
-use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntContour, IntShape};
 use crate::build::builder::GraphBuilder;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{IntOverlayOptions, ShapeType};
@@ -13,16 +5,25 @@ use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
+use crate::segm::string::STRING_BACK_CLIP;
+use crate::segm::string::STRING_FORWARD_CLIP;
+use crate::segm::string::ShapeCountString;
 use crate::split::solver::SplitSolver;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
+use alloc::vec::Vec;
+use core::cmp::Ordering;
+use i_float::int::point::IntPoint;
+use i_shape::int::count::PointsCount;
+use i_shape::int::path::IntPath;
+use i_shape::int::shape::{IntContour, IntShape};
 
 pub struct StringOverlay {
     pub options: IntOverlayOptions,
     pub(super) segments: Vec<Segment<ShapeCountString>>,
     pub(crate) split_solver: SplitSolver,
-    pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>>
+    pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>>,
 }
 
 impl StringOverlay {
@@ -35,7 +36,7 @@ impl StringOverlay {
             options: Default::default(),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>>::new()
+            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>>::new(),
         }
     }
 
@@ -48,7 +49,7 @@ impl StringOverlay {
             options,
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>>::new()
+            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>>::new(),
         }
     }
 
@@ -93,7 +94,7 @@ impl StringOverlay {
     /// when paths are not directly stored in a collection.
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     #[inline]
-    pub fn add_shape_contour_iter<I: Iterator<Item=IntPoint>>(&mut self, iter: I) {
+    pub fn add_shape_contour_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I) {
         self.segments.append_path_iter(iter, ShapeType::Subject, false);
     }
 
@@ -128,9 +129,21 @@ impl StringOverlay {
         let a = line[0];
         let b = line[1];
         let segment = match a.cmp(&b) {
-            core::cmp::Ordering::Less => Segment { x_segment: XSegment { a, b }, count: ShapeCountString { subj: 0, clip: STRING_BACK_CLIP } },
-            core::cmp::Ordering::Greater => Segment { x_segment: XSegment { a: b, b: a }, count: ShapeCountString { subj: 0, clip: STRING_FORWARD_CLIP } },
-            core::cmp::Ordering::Equal => return,
+            Ordering::Less => Segment {
+                x_segment: XSegment { a, b },
+                count: ShapeCountString {
+                    subj: 0,
+                    clip: STRING_BACK_CLIP,
+                },
+            },
+            Ordering::Greater => Segment {
+                x_segment: XSegment { a: b, b: a },
+                count: ShapeCountString {
+                    subj: 0,
+                    clip: STRING_FORWARD_CLIP,
+                },
+            },
+            Ordering::Equal => return,
         };
 
         self.segments.push(segment);
@@ -152,7 +165,11 @@ impl StringOverlay {
         if path.len() < 2 {
             return;
         }
-        let mut a = if let Some(&p) = path.first() { p } else { return; };
+        let mut a = if let Some(&p) = path.first() {
+            p
+        } else {
+            return;
+        };
         for &b in path.iter().skip(1) {
             self.add_string_line([a, b]);
             a = b;
@@ -166,7 +183,11 @@ impl StringOverlay {
         if contour.len() < 2 {
             return;
         }
-        let mut a = if let Some(&p) = contour.last() { p } else { return; };
+        let mut a = if let Some(&p) = contour.last() {
+            p
+        } else {
+            return;
+        };
         for &b in contour.iter() {
             self.add_string_line([a, b]);
             a = b;
@@ -209,7 +230,12 @@ impl StringOverlay {
     /// # Returns
     /// A vector of `IntPath` instances representing the clipped sections of the input lines.
     #[inline]
-    pub fn clip_string_lines_with_solver(mut self, fill_rule: FillRule, clip_rule: ClipRule, solver: Solver) -> Vec<IntPath> {
+    pub fn clip_string_lines_with_solver(
+        mut self,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: Solver,
+    ) -> Vec<IntPath> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -232,11 +258,18 @@ impl StringOverlay {
     /// - `fill_rule`: The rule that defines how to build shapes (e.g., non-zero, even-odd).
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, fill_rule: FillRule, solver: Solver) -> Option<StringGraph<'_>> {
+    pub fn build_graph_view_with_solver(
+        &mut self,
+        fill_rule: FillRule,
+        solver: Solver,
+    ) -> Option<StringGraph<'_>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return None;
         }
-        Some(self.graph_builder.build_string_all(fill_rule, &solver, &self.segments))
+        Some(
+            self.graph_builder
+                .build_string_all(fill_rule, &solver, &self.segments),
+        )
     }
 }

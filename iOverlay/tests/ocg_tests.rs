@@ -201,12 +201,8 @@ mod tests {
             subj_paths.push(hz_line);
         }
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &[],
-            IntOverlayOptions::ogc(),
-            Default::default(),
-        );
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
 
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 
@@ -266,12 +262,8 @@ mod tests {
             y += 1;
         }
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &[],
-            IntOverlayOptions::ogc(),
-            Default::default(),
-        );
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
 
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 

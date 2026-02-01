@@ -1,18 +1,18 @@
 //! This module provides methods to simplify paths and shapes by reducing complexity
 //! (e.g., removing small artifacts or shapes below a certain area threshold) based on a build rule.
 
-use i_shape::flat::buffer::FlatContoursBuffer;
-use crate::core::overlay::ContourDirection;
-use alloc::vec;
-use crate::i_float::int::point::IntPoint;
 use crate::core::fill_rule::FillRule;
+use crate::core::overlay::ContourDirection;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
+use crate::i_float::int::point::IntPoint;
+use alloc::vec;
+use i_shape::flat::buffer::FlatContoursBuffer;
 
 use crate::segm::build::BuildSegments;
-use i_shape::int::path::ContourExtension;
 use i_shape::int::count::PointsCount;
+use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
@@ -36,9 +36,7 @@ pub trait Simplify {
 impl Simplify for [IntPoint] {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        match Overlay::new_custom(self.len(), options, Default::default())
-            .simplify_contour(self, fill_rule)
-        {
+        match Overlay::new_custom(self.len(), options, Default::default()).simplify_contour(self, fill_rule) {
             Some(shapes) => shapes,
             None => vec![vec![self.to_vec()]],
         }
@@ -48,9 +46,7 @@ impl Simplify for [IntPoint] {
 impl Simplify for [IntContour] {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        match Overlay::new_custom(self.len(), options, Default::default())
-            .simplify_shape(self, fill_rule)
-        {
+        match Overlay::new_custom(self.len(), options, Default::default()).simplify_shape(self, fill_rule) {
             Some(shapes) => shapes,
             None => vec![self.to_vec()],
         }
@@ -60,19 +56,17 @@ impl Simplify for [IntContour] {
 impl Simplify for [IntShape] {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
-        Overlay::new_custom(self.points_count(), options, Default::default())
-            .simplify_shapes(self, fill_rule)
+        Overlay::new_custom(self.points_count(), options, Default::default()).simplify_shapes(self, fill_rule)
     }
 }
 
 enum ContourFillDirection {
     Reverse,
     Correct,
-    Empty
+    Empty,
 }
 
 impl Overlay {
-
     /// Fast-path simplification for a single contour.
     ///
     /// Skips full overlay if the contour is already simple (no splits, no loops, no collinear issues).
@@ -80,11 +74,7 @@ impl Overlay {
     ///
     /// Returns `None` if the contour is valid and needs no changes, or `Some(IntShapes)` with the simplified result.
     #[inline]
-    pub fn simplify_contour(
-        &mut self,
-        contour: &[IntPoint],
-        fill_rule: FillRule,
-    ) -> Option<IntShapes> {
+    pub fn simplify_contour(&mut self, contour: &[IntPoint], fill_rule: FillRule) -> Option<IntShapes> {
         self.clear();
 
         let is_perfect = self.find_intersections(contour);
@@ -92,9 +82,7 @@ impl Overlay {
         if is_perfect {
             // the path is already perfect
             // need to check fill rule direction
-            let fill_direction = Self::contour_direction(
-                self.options.output_direction, fill_rule, contour
-            );
+            let fill_direction = Self::contour_direction(self.options.output_direction, fill_rule, contour);
 
             return match fill_direction {
                 ContourFillDirection::Reverse => {
@@ -103,8 +91,8 @@ impl Overlay {
                     Some(vec![vec![rev_contour]])
                 }
                 ContourFillDirection::Correct => None,
-                ContourFillDirection::Empty => Some(vec![])
-            }
+                ContourFillDirection::Empty => Some(vec![]),
+            };
         }
 
         let mut boolean_buffer = self.boolean_buffer.take().unwrap_or_default();
@@ -187,19 +175,18 @@ impl Overlay {
             if is_perfect {
                 // the path is already perfect
                 // need to check fill rule direction
-                let fill_direction = Self::contour_direction(
-                    self.options.output_direction, fill_rule, first_contour
-                );
+                let fill_direction =
+                    Self::contour_direction(self.options.output_direction, fill_rule, first_contour);
 
                 match fill_direction {
                     ContourFillDirection::Reverse => {
                         flat_buffer.as_first_contour_mut().reverse();
                     }
-                    ContourFillDirection::Correct => {},
-                    ContourFillDirection::Empty => flat_buffer.clear_and_reserve(0, 0)
+                    ContourFillDirection::Correct => {}
+                    ContourFillDirection::Empty => flat_buffer.clear_and_reserve(0, 0),
                 }
 
-                return
+                return;
             }
         } else {
             self.add_flat_buffer(flat_buffer, ShapeType::Subject);
@@ -212,8 +199,7 @@ impl Overlay {
 
         let mut boolean_buffer = self.boolean_buffer.take().unwrap_or_default();
 
-        self
-            .graph_builder
+        self.graph_builder
             .build_boolean_overlay(
                 fill_rule,
                 OverlayRule::Subject,
@@ -233,16 +219,16 @@ impl Overlay {
             self.options.preserve_input_collinear,
         );
 
-        let split_modified = self
-            .split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        let split_modified = self.split_solver.split_segments(&mut self.segments, &self.solver);
 
         if split_modified || append_modified || self.segments.is_empty() {
             return false;
         }
 
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
-        let has_loops = self.graph_builder.test_contour_for_loops(contour, &mut buffer.points);
+        let has_loops = self
+            .graph_builder
+            .test_contour_for_loops(contour, &mut buffer.points);
         self.boolean_buffer = Some(buffer);
 
         !has_loops
@@ -409,7 +395,7 @@ mod tests {
     #[test]
     fn test_near_collinear_paths() {
         let contour = vec![
-            IntPoint::new(-100, -100), 
+            IntPoint::new(-100, -100),
             IntPoint::new(0, 0),
             IntPoint::new(101, 100),
         ];

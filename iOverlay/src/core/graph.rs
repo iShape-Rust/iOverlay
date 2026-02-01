@@ -41,10 +41,7 @@ impl OverlayGraph<'_> {
         for node in self.nodes.iter() {
             if let OverlayNode::Cross(indices) = node {
                 debug_assert!(indices.len() > 1, "indices: {}", indices.len());
-                debug_assert!(
-                    self.nodes.len() <= self.links.len(),
-                    "nodes is more then links"
-                );
+                debug_assert!(self.nodes.len() <= self.links.len(), "nodes is more then links");
             }
         }
     }

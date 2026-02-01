@@ -81,10 +81,8 @@ where
         fill_rule: FillRule,
         scale: T,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        Ok(
-            FloatOverlay::with_subj_and_clip_fixed_scale(self, source, scale)?
-                .overlay(overlay_rule, fill_rule),
-        )
+        Ok(FloatOverlay::with_subj_and_clip_fixed_scale(self, source, scale)?
+            .overlay(overlay_rule, fill_rule))
     }
 }
 
@@ -262,6 +260,8 @@ mod tests {
         assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, -1.0).is_err());
         assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, 0.0).is_err());
         assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::NAN).is_err());
-        assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::INFINITY).is_err());
+        assert!(
+            FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::INFINITY).is_err()
+        );
     }
 }

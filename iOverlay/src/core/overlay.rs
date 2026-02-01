@@ -149,8 +149,7 @@ impl Overlay {
         options: IntOverlayOptions,
         solver: Solver,
     ) -> Self {
-        let mut overlay =
-            Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
+        let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
         overlay.add_contours(subj, ShapeType::Subject);
         overlay.add_contours(clip, ShapeType::Clip);
         overlay
@@ -177,8 +176,7 @@ impl Overlay {
         options: IntOverlayOptions,
         solver: Solver,
     ) -> Self {
-        let mut overlay =
-            Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
+        let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
         overlay.add_shapes(subj, ShapeType::Subject);
         overlay.add_shapes(clip, ShapeType::Clip);
         overlay
@@ -259,15 +257,15 @@ impl Overlay {
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
     ) -> Vec<VectorShape> {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
 
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
 
-        let shapes = self.graph_builder
+        let shapes = self
+            .graph_builder
             .build_boolean_overlay(
                 fill_rule,
                 overlay_rule,
@@ -285,8 +283,7 @@ impl Overlay {
     /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
     pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<VectorEdge> {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
@@ -299,17 +296,13 @@ impl Overlay {
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
     pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph<'_>> {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return None;
         }
-        let graph = self.graph_builder.build_boolean_all(
-            fill_rule,
-            self.options,
-            &self.solver,
-            &self.segments,
-        );
+        let graph =
+            self.graph_builder
+                .build_boolean_all(fill_rule, self.options, &self.solver, &self.segments);
 
         Some(graph)
     }
@@ -354,8 +347,7 @@ impl Overlay {
     /// particularly for complex or resource-intensive geometries.
     #[inline]
     pub fn overlay(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
-        self.split_solver
-            .split_segments(&mut self.segments, &self.solver);
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
         }
@@ -419,24 +411,22 @@ impl IntOverlayOptions {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::Overlay;
+    use crate::core::overlay_rule::OverlayRule;
     use alloc::vec;
     use i_float::int::point::IntPoint;
     use i_shape::int::area::Area;
     use i_shape::int::shape::IntContour;
-    use crate::core::fill_rule::FillRule;
-    use crate::core::overlay::Overlay;
-    use crate::core::overlay_rule::OverlayRule;
 
     #[test]
     fn test_0() {
-        let subj = [
-            vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(10, 0),
-                IntPoint::new(10, 10),
-                IntPoint::new(0, 10),
-            ],
-        ];
+        let subj = [vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+        ]];
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
@@ -807,26 +797,10 @@ mod tests {
     #[test]
     fn test_14() {
         let subj = [
-            vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(0, 2),
-                IntPoint::new(2, 0),
-            ],
-            vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(2, 0),
-                IntPoint::new(0, -2),
-            ],
-            vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(0, -2),
-                IntPoint::new(-2, 0),
-            ],
-            vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(-2, 0),
-                IntPoint::new(0, 2),
-            ],
+            vec![IntPoint::new(0, 0), IntPoint::new(0, 2), IntPoint::new(2, 0)],
+            vec![IntPoint::new(0, 0), IntPoint::new(2, 0), IntPoint::new(0, -2)],
+            vec![IntPoint::new(0, 0), IntPoint::new(0, -2), IntPoint::new(-2, 0)],
+            vec![IntPoint::new(0, 0), IntPoint::new(-2, 0), IntPoint::new(0, 2)],
         ];
 
         let mut overlay = Overlay::with_contours(&subj, &[]);
@@ -845,5 +819,5 @@ mod tests {
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 0);
-    }    
+    }
 }

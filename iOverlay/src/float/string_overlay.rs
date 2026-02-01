@@ -99,11 +99,9 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
 
-        Ok(
-            Self::with_adapter(adapter, shape_capacity + string_capacity)
-                .unsafe_add_shapes(shape)
-                .unsafe_add_string_lines(string),
-        )
+        Ok(Self::with_adapter(adapter, shape_capacity + string_capacity)
+            .unsafe_add_shapes(shape)
+            .unsafe_add_string_lines(string))
     }
 
     /// Adds a shapes to the overlay.
@@ -179,9 +177,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatStringOverlay<P, T> {
         fill_rule: FillRule,
         solver: Solver,
     ) -> Option<FloatStringGraph<'_, P, T>> {
-        let graph = self
-            .overlay
-            .build_graph_view_with_solver(fill_rule, solver)?;
+        let graph = self.overlay.build_graph_view_with_solver(fill_rule, solver)?;
         Some(FloatStringGraph {
             graph,
             adapter: self.adapter.clone(),
@@ -229,19 +225,11 @@ mod tests {
         let shape = vec![vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]];
         let string = vec![[0.0, 0.5], [2.0, 0.5]];
 
+        assert!(FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, 0.0).is_err());
+        assert!(FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, -1.0).is_err());
+        assert!(FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, f64::NAN).is_err());
         assert!(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, 0.0).is_err()
-        );
-        assert!(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, -1.0).is_err()
-        );
-        assert!(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, f64::NAN)
-                .is_err()
-        );
-        assert!(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, f64::INFINITY)
-                .is_err()
+            FloatStringOverlay::with_shape_and_string_fixed_scale(&shape, &string, f64::INFINITY).is_err()
         );
     }
 }

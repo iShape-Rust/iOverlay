@@ -1,11 +1,11 @@
-use i_float::float::compatible::FloatPointCompatible;
-use i_float::float::number::FloatNumber;
-use i_shape::base::data::Shapes;
-use i_shape::source::resource::ShapeResource;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::overlay::{FloatOverlay, OverlayOptions};
+use i_float::float::compatible::FloatPointCompatible;
+use i_float::float::number::FloatNumber;
+use i_shape::base::data::Shapes;
+use i_shape::source::resource::ShapeResource;
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
 /// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
@@ -24,7 +24,12 @@ pub trait SimplifyShape<P, T: FloatNumber> {
     /// - Returns: A collection of Shapes<P> that represents the simplified geometry.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn simplify_shape_custom(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P>;
+    fn simplify_shape_custom(
+        &self,
+        fill_rule: FillRule,
+        options: OverlayOptions<T>,
+        solver: Solver,
+    ) -> Shapes<P>;
 }
 
 impl<S, P, T> SimplifyShape<P, T> for S
@@ -40,17 +45,21 @@ where
     }
 
     #[inline]
-    fn simplify_shape_custom(&self, fill_rule: FillRule, options: OverlayOptions<T>, solver: Solver) -> Shapes<P> {
-        FloatOverlay::with_subj_custom(self, options, solver)
-            .overlay(OverlayRule::Subject, fill_rule)
+    fn simplify_shape_custom(
+        &self,
+        fill_rule: FillRule,
+        options: OverlayOptions<T>,
+        solver: Solver,
+    ) -> Shapes<P> {
+        FloatOverlay::with_subj_custom(self, options, solver).overlay(OverlayRule::Subject, fill_rule)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
     use crate::core::fill_rule::FillRule;
     use crate::float::simplify::SimplifyShape;
+    use alloc::vec;
 
     #[test]
     fn test_contour_slice() {

@@ -178,13 +178,7 @@ where
         clip_rule: ClipRule,
         scale: T,
     ) -> Result<Paths<P>, FixedScaleOverlayError> {
-        self.clip_by_fixed_scale_with_solver(
-            resource,
-            fill_rule,
-            clip_rule,
-            Default::default(),
-            scale,
-        )
+        self.clip_by_fixed_scale_with_solver(resource, fill_rule, clip_rule, Default::default(), scale)
     }
 
     #[inline]

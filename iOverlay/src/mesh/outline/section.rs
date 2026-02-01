@@ -1,12 +1,12 @@
+use crate::mesh::math::Math;
+use crate::segm::offset::ShapeCountOffset;
+use crate::segm::segment::Segment;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
-use crate::mesh::math::Math;
-use crate::segm::offset::ShapeCountOffset;
-use crate::segm::segment::Segment;
 
 #[derive(Debug, Clone)]
 pub(super) struct Section<P: FloatPointCompatible<T>, T: FloatNumber> {

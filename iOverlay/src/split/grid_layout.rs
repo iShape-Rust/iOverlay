@@ -242,7 +242,6 @@ impl FragmentBuffer {
         }
         true
     }
-
 }
 
 pub(super) struct GridLayout {
@@ -289,11 +288,7 @@ impl GridLayout {
         let log = dx.ilog2();
         let power = if log > max_power { log - max_power } else { 1 };
 
-        Some(Self {
-            min_x,
-            max_x,
-            power,
-        })
+        Some(Self { min_x, max_x, power })
     }
 }
 
@@ -1263,14 +1258,8 @@ mod tests {
         let mut buffer = FragmentBuffer::new(layout);
 
         let segment = XSegment {
-            a: IntPoint {
-                x: -83143,
-                y: 65289,
-            },
-            b: IntPoint {
-                x: 45253,
-                y: -76778,
-            },
+            a: IntPoint { x: -83143, y: 65289 },
+            b: IntPoint { x: 45253, y: -76778 },
         };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());
@@ -1293,14 +1282,8 @@ mod tests {
         let mut buffer = FragmentBuffer::new(layout);
 
         let segment = XSegment {
-            a: IntPoint {
-                x: -78454,
-                y: -40819,
-            },
-            b: IntPoint {
-                x: 47599,
-                y: -57780,
-            },
+            a: IntPoint { x: -78454, y: -40819 },
+            b: IntPoint { x: 47599, y: -57780 },
         };
         let segments = vec![segment];
         buffer.init_fragment_buffer(segments.iter().copied());

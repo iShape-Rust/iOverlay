@@ -1,10 +1,10 @@
-use i_float::int::point::IntPoint;
-use i_shape::int::path::IntPath;
-use i_shape::int::shape::{IntShape, IntShapes};
 use crate::core::fill_rule::FillRule;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
 use crate::string::rule::StringRule;
+use i_float::int::point::IntPoint;
+use i_shape::int::path::IntPath;
+use i_shape::int::shape::{IntShape, IntShapes};
 
 pub trait IntSlice {
     fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes;
@@ -141,10 +141,10 @@ impl IntSlice for [IntPoint] {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
-    use i_float::int::point::IntPoint;
     use crate::core::fill_rule::FillRule;
     use crate::string::slice::IntSlice;
+    use alloc::vec;
+    use i_float::int::point::IntPoint;
 
     #[test]
     fn test_empty_input() {
@@ -166,10 +166,7 @@ mod tests {
             IntPoint::new(10, 10),
         ]];
 
-        let result = paths.slice_by_line(
-            [IntPoint::new(-20, 0), IntPoint::new(20, 0)],
-            FillRule::NonZero,
-        );
+        let result = paths.slice_by_line([IntPoint::new(-20, 0), IntPoint::new(20, 0)], FillRule::NonZero);
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
@@ -195,10 +192,7 @@ mod tests {
             ],
         ];
 
-        let result = paths.slice_by_line(
-            [IntPoint::new(-20, 0), IntPoint::new(20, 0)],
-            FillRule::NonZero,
-        );
+        let result = paths.slice_by_line([IntPoint::new(-20, 0), IntPoint::new(20, 0)], FillRule::NonZero);
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
@@ -230,10 +224,7 @@ mod tests {
             ],
         ];
 
-        let result = paths.slice_by_line(
-            [IntPoint::new(15, 10), IntPoint::new(20, 10)],
-            FillRule::NonZero,
-        );
+        let result = paths.slice_by_line([IntPoint::new(15, 10), IntPoint::new(20, 10)], FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 3);
@@ -341,7 +332,7 @@ mod tests {
 
         assert_eq!(shapes.len(), 2);
         assert_eq!(shapes[0][0].len(), 3);
-        assert_eq!(shapes[1][0].len(), 3);        
+        assert_eq!(shapes[1][0].len(), 3);
     }
 
     #[test]

@@ -1,6 +1,6 @@
-pub(crate) mod builder;
 pub(crate) mod boolean;
-pub(crate) mod string;
+pub(crate) mod builder;
 mod graph;
 mod offset;
+pub(crate) mod string;
 mod util;

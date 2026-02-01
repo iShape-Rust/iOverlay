@@ -9,7 +9,6 @@ pub(crate) struct Rotator<T: FloatNumber> {
 }
 
 impl<T: FloatNumber> Rotator<T> {
-
     #[inline]
     pub(crate) fn new(cs: T, sn: T) -> Self {
         let a_x = cs;
@@ -17,12 +16,7 @@ impl<T: FloatNumber> Rotator<T> {
         let b_x = -a_y;
         let b_y = a_x;
 
-        Self {
-            a_x,
-            a_y,
-            b_x,
-            b_y,
-        }
+        Self { a_x, a_y, b_x, b_y }
     }
 
     #[inline]
@@ -48,9 +42,8 @@ impl<T: FloatNumber> Rotator<T> {
 
 #[cfg(test)]
 mod tests {
-    use core::f64::consts::PI;
     use crate::mesh::rotator::Rotator;
-
+    use core::f64::consts::PI;
 
     #[test]
     fn test_ccw_rotate() {

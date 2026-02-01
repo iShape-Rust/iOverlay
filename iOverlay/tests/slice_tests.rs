@@ -54,10 +54,7 @@ mod tests {
             IntPoint::new(-10, -10),
         ];
 
-        let result = path.slice_by_line(
-            [IntPoint::new(0, -5), IntPoint::new(0, 5)],
-            FillRule::NonZero,
-        );
+        let result = path.slice_by_line([IntPoint::new(0, -5), IntPoint::new(0, 5)], FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 1);
@@ -73,10 +70,7 @@ mod tests {
             IntPoint::new(10, -10),
         ];
 
-        let result = path.slice_by_line(
-            [IntPoint::new(0, -20), IntPoint::new(0, 20)],
-            FillRule::NonZero,
-        );
+        let result = path.slice_by_line([IntPoint::new(0, -20), IntPoint::new(0, 20)], FillRule::NonZero);
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
@@ -305,11 +299,7 @@ mod tests {
 
     #[test]
     fn test_0() {
-        let path = [
-            IntPoint::new(2, -2),
-            IntPoint::new(0, -1),
-            IntPoint::new(1, 2),
-        ];
+        let path = [IntPoint::new(2, -2), IntPoint::new(0, -1), IntPoint::new(1, 2)];
 
         let line = [IntPoint::new(2, 1), IntPoint::new(-1, -2)];
         let result = path.slice_by_line(line, FillRule::NonZero);
@@ -321,12 +311,7 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let path = [
-            IntPoint::new(0, 2),
-            IntPoint::new(0, -1),
-            IntPoint::new(-1, -2),
-        ]
-        .to_vec();
+        let path = [IntPoint::new(0, 2), IntPoint::new(0, -1), IntPoint::new(-1, -2)].to_vec();
 
         let lines = [
             [IntPoint::new(-1, -2), IntPoint::new(-1, -1)],
@@ -343,11 +328,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let path = [
-            IntPoint::new(1, 4),
-            IntPoint::new(-4, 4),
-            IntPoint::new(-2, -4),
-        ];
+        let path = [IntPoint::new(1, 4), IntPoint::new(-4, 4), IntPoint::new(-2, -4)];
 
         let lines = [
             [IntPoint::new(1, 4), IntPoint::new(-2, 2)],
@@ -366,11 +347,7 @@ mod tests {
 
     #[test]
     fn test_3() {
-        let path = [
-            IntPoint::new(-4, -2),
-            IntPoint::new(2, 2),
-            IntPoint::new(3, -3),
-        ];
+        let path = [IntPoint::new(-4, -2), IntPoint::new(2, 2), IntPoint::new(3, -3)];
 
         let lines = [
             [IntPoint::new(-1, -2), IntPoint::new(1, 0)],
@@ -413,11 +390,7 @@ mod tests {
 
     #[test]
     fn test_5() {
-        let path = [
-            IntPoint::new(1, -1),
-            IntPoint::new(-1, -1),
-            IntPoint::new(-2, -1),
-        ];
+        let path = [IntPoint::new(1, -1), IntPoint::new(-1, -1), IntPoint::new(-2, -1)];
 
         let lines = vec![
             [IntPoint::new(1, 1), IntPoint::new(0, 0)],

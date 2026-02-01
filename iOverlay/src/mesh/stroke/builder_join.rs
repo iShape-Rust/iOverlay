@@ -1,14 +1,14 @@
-use alloc::vec::Vec;
+use crate::mesh::miter::{Miter, SharpMiter};
+use crate::mesh::rotator::Rotator;
 use crate::mesh::stroke::section::Section;
+use crate::segm::offset::ShapeCountOffset;
 use crate::segm::segment::Segment;
+use alloc::vec::Vec;
+use core::f64::consts::PI;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use core::f64::consts::PI;
 use i_float::float::vector::FloatPointMath;
-use crate::mesh::miter::{Miter, SharpMiter};
-use crate::mesh::rotator::Rotator;
-use crate::segm::offset::ShapeCountOffset;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn add_join(
@@ -58,7 +58,6 @@ impl BevelJoinBuilder {
             segments.push(Segment::bold_subject_ab(ib, ia));
         }
     }
-
 }
 
 impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for BevelJoinBuilder {
@@ -113,7 +112,7 @@ impl<T: FloatNumber> MiterJoinBuilder<T> {
         Self {
             limit_dot_product,
             max_offset,
-            max_length
+            max_length,
         }
     }
 }
@@ -200,7 +199,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 SharpMiter::AcB(a, c, b) => {
                     segments.push(Segment::bold_subject_ab(c, a));
                     segments.push(Segment::bold_subject_ab(b, c));
-                },
+                }
                 SharpMiter::Degenerate => {}
             }
         }

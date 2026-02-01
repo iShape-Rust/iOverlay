@@ -1,6 +1,6 @@
+use crate::geom::line_range::LineRange;
 use core::cmp::Ordering;
 use i_float::int::point::IntPoint;
-use crate::geom::line_range::LineRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct XSegment {
@@ -12,9 +12,15 @@ impl XSegment {
     #[inline(always)]
     pub(crate) fn y_range(&self) -> LineRange {
         if self.a.y < self.b.y {
-            LineRange { min: self.a.y, max: self.b.y }
+            LineRange {
+                min: self.a.y,
+                max: self.b.y,
+            }
         } else {
-            LineRange { min: self.b.y, max: self.a.y }
+            LineRange {
+                min: self.b.y,
+                max: self.a.y,
+            }
         }
     }
 
@@ -22,7 +28,6 @@ impl XSegment {
     pub(crate) fn is_not_vertical(&self) -> bool {
         self.a.x != self.b.x
     }
-
 
     #[inline(always)]
     pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
