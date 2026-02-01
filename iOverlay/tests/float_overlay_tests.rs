@@ -682,7 +682,7 @@ mod tests {
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
             min_output_area: 0.0,
-            ocg: false,
+            ogc: false,
             clean_result: false,
         };
         

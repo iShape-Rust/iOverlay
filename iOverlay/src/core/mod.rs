@@ -1,11 +1,11 @@
-pub mod overlay;
-pub mod solver;
-pub mod graph;
-pub mod overlay_rule;
+pub mod divide;
+mod extract_ogc;
 pub mod extract;
 pub mod fill_rule;
-pub mod simplify;
+pub mod graph;
 pub(crate) mod link;
 pub(crate) mod nearest_vector;
-pub mod divide;
-mod exract_ocg;
+pub mod overlay;
+pub mod overlay_rule;
+pub mod simplify;
+pub mod solver;
