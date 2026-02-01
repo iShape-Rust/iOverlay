@@ -1,24 +1,40 @@
+use crate::build::sweep::{FillHandler, FillStrategy, SweepRunner};
 use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
 use crate::geom::end::End;
 use crate::geom::id_point::IdPoint;
-use crate::geom::v_segment::VSegment;
 use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::winding::WindingCount;
-use crate::util::log::Int;
 use alloc::vec::Vec;
-use i_float::triangle::Triangle;
+use core::ops::ControlFlow;
 use i_shape::util::reserve::Reserve;
-use i_tree::key::exp::KeyExpCollection;
-use i_tree::key::list::KeyExpList;
-use i_tree::key::tree::KeyExpTree;
-
-pub(super) trait FillStrategy<C> {
-    fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
-}
 
 pub(super) trait InclusionFilterStrategy {
     fn is_included(fill: SegmentFill) -> bool;
+}
+
+pub(crate) struct StoreFillsHandler<'a> {
+    fills: &'a mut Vec<SegmentFill>,
+}
+
+impl<'a> StoreFillsHandler<'a> {
+    #[inline]
+    pub(crate) fn new(fills: &'a mut Vec<SegmentFill>) -> Self {
+        Self { fills }
+    }
+}
+
+impl FillHandler for StoreFillsHandler<'_> {
+    type Output = ();
+
+    #[inline(always)]
+    fn handle(&mut self, index: usize, fill: SegmentFill) -> ControlFlow<()> {
+        self.fills[index] = fill;
+        ControlFlow::Continue(())
+    }
+
+    #[inline(always)]
+    fn finalize(self) {}
 }
 
 pub(crate) trait GraphNode {
@@ -26,8 +42,7 @@ pub(crate) trait GraphNode {
 }
 
 pub(crate) struct GraphBuilder<C, N> {
-    list: Option<KeyExpList<VSegment, i32, C>>,
-    tree: Option<KeyExpTree<VSegment, i32, C>>,
+    sweep_runner: SweepRunner<C>,
     pub(super) links: Vec<OverlayLink>,
     pub(super) nodes: Vec<N>,
     pub(super) fills: Vec<SegmentFill>,
@@ -38,8 +53,7 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     #[inline]
     pub(crate) fn new() -> Self {
         Self {
-            list: None,
-            tree: None,
+            sweep_runner: SweepRunner::new(),
             links: Vec::new(),
             nodes: Vec::new(),
             fills: Vec::new(),
@@ -53,76 +67,9 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
         solver: &Solver,
         segments: &[Segment<C>],
     ) {
-        let count = segments.len();
-        if solver.is_list_fill(segments) {
-            let capacity = count.log2_sqrt().max(4) * 2;
-            let mut list = self.take_scan_list(capacity);
-            self.build_fills::<F, KeyExpList<VSegment, i32, C>>(&mut list, segments);
-            self.list = Some(list);
-        } else {
-            let capacity = count.log2_sqrt().max(8);
-            let mut tree = self.take_scan_tree(capacity);
-            self.build_fills::<F, KeyExpTree<VSegment, i32, C>>(&mut tree, segments);
-            self.tree = Some(tree);
-        }
-    }
-
-    #[inline]
-    fn build_fills<F: FillStrategy<C>, S: KeyExpCollection<VSegment, i32, C>>(
-        &mut self,
-        scan_list: &mut S,
-        segments: &[Segment<C>],
-    ) {
-        let mut node = Vec::with_capacity(4);
-
-        let n = segments.len();
-
-        self.fills.resize(n, NONE);
-
-        let mut i = 0;
-
-        while i < n {
-            let p = segments[i].x_segment.a;
-
-            node.push(End {
-                index: i,
-                point: segments[i].x_segment.b,
-            });
-            i += 1;
-
-            while i < n && segments[i].x_segment.a == p {
-                node.push(End {
-                    index: i,
-                    point: segments[i].x_segment.b,
-                });
-                i += 1;
-            }
-
-            if node.len() > 1 {
-                node.sort_by(|s0, s1| Triangle::clock_order_point(p, s1.point, s0.point));
-            }
-
-            let mut sum_count =
-                scan_list.first_less_or_equal_by(p.x, C::new(0, 0), |s| s.is_under_point_order(p));
-            let mut fill: SegmentFill;
-
-            for se in node.iter() {
-                let sid = unsafe {
-                    // SAFETY: `se.index` was produced from `i` while iterating i ∈ [0, n) over `segments`
-                    segments.get_unchecked(se.index)
-                };
-                (sum_count, fill) = F::add_and_fill(sid.count, sum_count);
-                unsafe {
-                    // SAFETY: `se.index` was produced from `i` while iterating i ∈ [0, n) over `segments` and segments.len == self.fills.len
-                    *self.fills.get_unchecked_mut(se.index) = fill
-                }
-                if sid.x_segment.is_not_vertical() {
-                    scan_list.insert(sid.x_segment.into(), sum_count, p.x);
-                }
-            }
-
-            node.clear();
-        }
+        self.fills.resize(segments.len(), NONE);
+        self.sweep_runner
+            .run::<F, _>(solver, segments, StoreFillsHandler::new(&mut self.fills));
     }
 
     #[inline]
@@ -153,28 +100,6 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
                 IdPoint::new(0, segment.x_segment.b),
                 fill,
             ));
-        }
-    }
-
-    #[inline]
-    fn take_scan_list(&mut self, capacity: usize) -> KeyExpList<VSegment, i32, C> {
-        if let Some(mut list) = self.list.take() {
-            list.clear();
-            list.reserve_capacity(capacity);
-            list
-        } else {
-            KeyExpList::new(capacity)
-        }
-    }
-
-    #[inline]
-    fn take_scan_tree(&mut self, capacity: usize) -> KeyExpTree<VSegment, i32, C> {
-        if let Some(mut tree) = self.tree.take() {
-            tree.clear();
-            tree.reserve_capacity(capacity);
-            tree
-        } else {
-            KeyExpTree::new(capacity)
         }
     }
 }

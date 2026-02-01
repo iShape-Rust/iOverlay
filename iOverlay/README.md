@@ -23,6 +23,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - [Boolean Operations](#boolean-operations)
   - [Simple Example](#simple-example)
   - [Overlay Rules](#overlay-rules)
+- [Spatial Predicates](#spatial-predicates)
 - [Custom Point Type Support](#custom-point-type-support)
 - [Slicing & Clipping](#slicing--clipping)
   - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
@@ -49,6 +50,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 ## Features
 
 - **Boolean Operations**: union, intersection, difference, and exclusion.
+- **Spatial Predicates**: `intersects`, `disjoint`, `interiors_intersect`, `touches`, `within`, `covers` with early-exit optimization.
 - **Polyline Operations**: clip and slice.
 - **Polygons**: with holes, self-intersections, and multiple contours.
 - **Simplification**: removes degenerate vertices and merges collinear edges.
@@ -182,6 +184,78 @@ The `overlay` function returns a `Vec<Shapes>`:
 | A,B | A ∪ B | A ∩ B | A - B | B - A | A ⊕ B |
 |---------|---------------|----------------------|----------------|--------------------|----------------|
 | <img src="readme/ab.svg" alt="AB" style="width:100px;"> | <img src="readme/union.svg" alt="Union" style="width:100px;"> | <img src="readme/intersection.svg" alt="Intersection" style="width:100px;"> | <img src="readme/difference_ab.svg" alt="Difference" style="width:100px;"> | <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:100px;"> | <img src="readme/exclusion.svg" alt="Exclusion" style="width:100px;"> |
+
+&nbsp;
+## Spatial Predicates
+
+When you only need to know *whether* two shapes have a spatial relationship—not compute their intersection geometry—use spatial predicates for better performance:
+
+```rust
+use i_overlay::float::relate::FloatRelate;
+
+let outer = vec![[0.0, 0.0], [0.0, 20.0], [20.0, 20.0], [20.0, 0.0]];
+let inner = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+let adjacent = vec![[20.0, 0.0], [20.0, 10.0], [30.0, 10.0], [30.0, 0.0]];
+let distant = vec![[100.0, 100.0], [100.0, 110.0], [110.0, 110.0], [110.0, 100.0]];
+
+// intersects: shapes share any point (interior or boundary)
+assert!(outer.intersects(&inner));
+assert!(outer.intersects(&adjacent));  // edge contact counts
+
+// disjoint: shapes share no points (negation of intersects)
+assert!(outer.disjoint(&distant));
+
+// interiors_intersect: interiors overlap (stricter than intersects)
+assert!(outer.interiors_intersect(&inner));
+assert!(!outer.interiors_intersect(&adjacent));  // edge-only contact
+
+// touches: boundaries intersect but interiors don't
+assert!(outer.touches(&adjacent));
+assert!(!outer.touches(&inner));  // interiors overlap
+
+// within: first shape completely inside second
+assert!(inner.within(&outer));
+assert!(!outer.within(&inner));
+
+// covers: first shape completely contains second
+assert!(outer.covers(&inner));
+assert!(!inner.covers(&outer));
+```
+
+These methods use early-exit optimization, returning as soon as the predicate can be determined without processing remaining segments.
+
+### Fixed-Scale Predicates
+
+For consistent precision across operations, use `FixedScaleFloatRelate`:
+
+```rust
+use i_overlay::float::scale::FixedScaleFloatRelate;
+
+let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+let scale = 1000.0;  // or 1.0 / grid_size
+
+let result = square.intersects_with_fixed_scale(&other, scale);
+assert!(result.unwrap());
+```
+
+For more control, use `FloatPredicateOverlay` directly with a custom adapter:
+
+```rust
+use i_overlay::float::relate::FloatPredicateOverlay;
+use i_float::adapter::FloatPointAdapter;
+
+let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+let clip = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+// Use fixed-scale constructor
+let mut overlay = FloatPredicateOverlay::with_subj_and_clip_fixed_scale(
+    &square, &clip, 1000.0
+).unwrap();
+
+assert!(overlay.intersects());
+```
 
 &nbsp;
 ## Custom Point Type Support

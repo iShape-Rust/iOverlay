@@ -3,6 +3,7 @@ use crate::core::overlay::ShapeType;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::overlay::{FloatOverlay, OverlayOptions};
+use crate::float::relate::FloatPredicateOverlay;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -178,12 +179,184 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
     }
 }
 
+impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatPredicateOverlay<P, T> {
+    /// Creates a new predicate overlay with subject and clip shapes using fixed-scale precision.
+    ///
+    /// This variant uses a fixed float-to-integer scale instead of auto-scaling.
+    /// It validates that the requested scale fits the input bounds and returns an error if not.
+    ///
+    /// `scale = 1.0 / grid_size` if you want a grid-size style parameter.
+    ///
+    /// # Arguments
+    /// * `subj` - A `ShapeResource` defining the subject geometry.
+    /// * `clip` - A `ShapeResource` defining the clip geometry.
+    /// * `scale` - Fixed float-to-integer scale factor.
+    pub fn with_subj_and_clip_fixed_scale<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        scale: T,
+    ) -> Result<Self, FixedScaleOverlayError>
+    where
+        R0: ShapeResource<P, T> + ?Sized,
+        R1: ShapeResource<P, T> + ?Sized,
+    {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+
+        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let mut adapter = FloatPointAdapter::with_iter(iter);
+        if adapter.dir_scale < scale {
+            return Err(FixedScaleOverlayError::ScaleTooLarge);
+        }
+
+        adapter.dir_scale = scale;
+        adapter.inv_scale = T::from_float(1.0 / s);
+
+        let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
+        let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
+
+        let mut result = Self::with_adapter(adapter, subj_capacity + clip_capacity);
+        result.add_source(subj, ShapeType::Subject);
+        result.add_source(clip, ShapeType::Clip);
+        Ok(result)
+    }
+
+    /// Creates a new predicate overlay with subject and clip shapes using fixed-scale precision
+    /// and custom fill rule and solver.
+    ///
+    /// # Arguments
+    /// * `subj` - A `ShapeResource` defining the subject geometry.
+    /// * `clip` - A `ShapeResource` defining the clip geometry.
+    /// * `fill_rule` - Fill rule to determine filled areas.
+    /// * `solver` - Type of solver to use.
+    /// * `scale` - Fixed float-to-integer scale factor.
+    pub fn with_subj_and_clip_fixed_scale_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        fill_rule: FillRule,
+        solver: Solver,
+        scale: T,
+    ) -> Result<Self, FixedScaleOverlayError>
+    where
+        R0: ShapeResource<P, T> + ?Sized,
+        R1: ShapeResource<P, T> + ?Sized,
+    {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+
+        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let mut adapter = FloatPointAdapter::with_iter(iter);
+        if adapter.dir_scale < scale {
+            return Err(FixedScaleOverlayError::ScaleTooLarge);
+        }
+
+        adapter.dir_scale = scale;
+        adapter.inv_scale = T::from_float(1.0 / s);
+
+        let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
+        let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
+
+        let mut result = Self::with_adapter_custom(adapter, fill_rule, solver, subj_capacity + clip_capacity);
+        result.add_source(subj, ShapeType::Subject);
+        result.add_source(clip, ShapeType::Clip);
+        Ok(result)
+    }
+}
+
+/// Trait for spatial predicate operations with fixed-scale precision.
+///
+/// This trait provides methods for testing spatial relationships using a fixed
+/// float-to-integer scale, which is useful when you need consistent precision
+/// across multiple operations or when working with known coordinate bounds.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::float::scale::FixedScaleFloatRelate;
+///
+/// let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+/// let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+///
+/// // Use fixed scale of 1000.0 for consistent precision
+/// let result = square.intersects_with_fixed_scale(&other, 1000.0);
+/// assert!(result.unwrap());
+/// ```
+pub trait FixedScaleFloatRelate<R1, P, T>
+where
+    R1: ShapeResource<P, T> + ?Sized,
+    P: FloatPointCompatible<T>,
+    T: FloatNumber,
+{
+    /// Returns `true` if shapes intersect, using fixed-scale precision.
+    fn intersects_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Returns `true` if interiors of shapes overlap, using fixed-scale precision.
+    fn interiors_intersect_with_fixed_scale(
+        &self,
+        other: &R1,
+        scale: T,
+    ) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Returns `true` if shapes touch (boundaries intersect but interiors don't), using fixed-scale precision.
+    fn touches_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Returns `true` if this shape is completely within another, using fixed-scale precision.
+    fn within_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Returns `true` if shapes do not intersect, using fixed-scale precision.
+    fn disjoint_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Returns `true` if this shape completely covers another, using fixed-scale precision.
+    fn covers_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError>;
+}
+
+impl<R0, R1, P, T> FixedScaleFloatRelate<R1, P, T> for R0
+where
+    R0: ShapeResource<P, T> + ?Sized,
+    R1: ShapeResource<P, T> + ?Sized,
+    P: FloatPointCompatible<T>,
+    T: FloatNumber,
+{
+    #[inline]
+    fn intersects_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError> {
+        Ok(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(self, other, scale)?.intersects())
+    }
+
+    #[inline]
+    fn interiors_intersect_with_fixed_scale(
+        &self,
+        other: &R1,
+        scale: T,
+    ) -> Result<bool, FixedScaleOverlayError> {
+        Ok(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(self, other, scale)?.interiors_intersect())
+    }
+
+    #[inline]
+    fn touches_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError> {
+        Ok(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(self, other, scale)?.touches())
+    }
+
+    #[inline]
+    fn within_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError> {
+        Ok(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(self, other, scale)?.within())
+    }
+
+    #[inline]
+    fn disjoint_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError> {
+        Ok(!FloatPredicateOverlay::with_subj_and_clip_fixed_scale(self, other, scale)?.intersects())
+    }
+
+    #[inline]
+    fn covers_with_fixed_scale(&self, other: &R1, scale: T) -> Result<bool, FixedScaleOverlayError> {
+        Ok(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(other, self, scale)?.within())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay_rule::OverlayRule;
     use crate::float::overlay::FloatOverlay;
-    use crate::float::scale::FixedScaleFloatOverlay;
+    use crate::float::relate::FloatPredicateOverlay;
+    use crate::float::scale::{FixedScaleFloatOverlay, FixedScaleFloatRelate};
     use alloc::vec;
 
     #[test]
@@ -262,6 +435,74 @@ mod tests {
         assert!(FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::NAN).is_err());
         assert!(
             FloatOverlay::with_subj_and_clip_fixed_scale(&left_rect, &right_rect, f64::INFINITY).is_err()
+        );
+    }
+
+    #[test]
+    fn test_intersects_with_fixed_scale() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let result = square.intersects_with_fixed_scale(&other, 1000.0);
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn test_intersects_with_fixed_scale_disjoint() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[20.0, 20.0], [20.0, 30.0], [30.0, 30.0], [30.0, 20.0]];
+
+        let result = square.intersects_with_fixed_scale(&other, 1000.0);
+        assert!(!result.unwrap());
+    }
+
+    #[test]
+    fn test_interiors_intersect_with_fixed_scale() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let result = square.interiors_intersect_with_fixed_scale(&other, 1000.0);
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn test_touches_with_fixed_scale() {
+        let left = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let right = vec![[10.0, 0.0], [10.0, 10.0], [20.0, 10.0], [20.0, 0.0]];
+
+        let result = left.touches_with_fixed_scale(&right, 1000.0);
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn test_within_with_fixed_scale() {
+        let outer = vec![[0.0, 0.0], [0.0, 20.0], [20.0, 20.0], [20.0, 0.0]];
+        let inner = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let result = inner.within_with_fixed_scale(&outer, 1000.0);
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn test_predicate_overlay_with_fixed_scale() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let mut overlay =
+            FloatPredicateOverlay::with_subj_and_clip_fixed_scale(&square, &other, 1000.0).unwrap();
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_predicate_fixed_scale_invalid() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        assert!(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(&square, &other, -1.0).is_err());
+        assert!(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(&square, &other, 0.0).is_err());
+        assert!(FloatPredicateOverlay::with_subj_and_clip_fixed_scale(&square, &other, f64::NAN).is_err());
+        assert!(
+            FloatPredicateOverlay::with_subj_and_clip_fixed_scale(&square, &other, f64::INFINITY).is_err()
         );
     }
 }

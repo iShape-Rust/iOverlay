@@ -1,4 +1,7 @@
-use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
+use crate::build::builder::{GraphBuilder, InclusionFilterStrategy};
+use crate::build::sweep::{
+    EvenOddStrategy, FillStrategy, NegativeStrategy, NonZeroStrategy, PositiveStrategy,
+};
 use crate::core::extract::VisitState;
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
@@ -78,11 +81,6 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
         }
     }
 }
-
-struct EvenOddStrategy;
-struct NonZeroStrategy;
-struct PositiveStrategy;
-struct NegativeStrategy;
 
 impl FillStrategy<ShapeCountBoolean> for EvenOddStrategy {
     #[inline(always)]
