@@ -520,4 +520,102 @@ mod tests {
         assert!(!left.within(&right));
         assert!(!left.covers(&right));
     }
+
+    #[test]
+    fn test_predicate_overlay_with_adapter() {
+        use crate::core::overlay::ShapeType;
+        use i_float::adapter::FloatPointAdapter;
+
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let iter = square.iter().chain(other.iter());
+        let adapter = FloatPointAdapter::with_iter(iter);
+
+        let mut overlay = FloatPredicateOverlay::with_adapter(adapter, 16);
+        overlay.add_source(&square, ShapeType::Subject);
+        overlay.add_source(&other, ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_predicate_overlay_with_adapter_custom() {
+        use crate::core::fill_rule::FillRule;
+        use crate::core::overlay::ShapeType;
+        use crate::core::solver::Solver;
+        use i_float::adapter::FloatPointAdapter;
+
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let iter = square.iter().chain(other.iter());
+        let adapter = FloatPointAdapter::with_iter(iter);
+
+        let mut overlay =
+            FloatPredicateOverlay::with_adapter_custom(adapter, FillRule::NonZero, Solver::default(), 16);
+        overlay.add_source(&square, ShapeType::Subject);
+        overlay.add_source(&other, ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_predicate_overlay_with_subj_and_clip_custom() {
+        use crate::core::fill_rule::FillRule;
+        use crate::core::solver::Solver;
+
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let mut overlay = FloatPredicateOverlay::with_subj_and_clip_custom(
+            &square,
+            &other,
+            FillRule::NonZero,
+            Solver::default(),
+        );
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_predicate_overlay_clear() {
+        use crate::core::overlay::ShapeType;
+
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let mut overlay = FloatPredicateOverlay::with_subj_and_clip(&square, &other);
+        assert!(overlay.intersects());
+
+        overlay.clear();
+
+        // Use coordinates within the original adapter bounds
+        let touching = vec![[10.0, 0.0], [10.0, 10.0], [15.0, 10.0], [15.0, 0.0]];
+        overlay.add_source(&square, ShapeType::Subject);
+        overlay.add_source(&touching, ShapeType::Clip);
+        // After clear and re-add, shapes touch but don't overlap interiors
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_predicate_overlay_all_predicates() {
+        let outer = vec![[0.0, 0.0], [0.0, 20.0], [20.0, 20.0], [20.0, 0.0]];
+        let inner = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let mut overlay = FloatPredicateOverlay::with_subj_and_clip(&inner, &outer);
+        assert!(overlay.intersects());
+
+        overlay.clear();
+        overlay.add_source(&inner, crate::core::overlay::ShapeType::Subject);
+        overlay.add_source(&outer, crate::core::overlay::ShapeType::Clip);
+        assert!(overlay.interiors_intersect());
+
+        overlay.clear();
+        overlay.add_source(&inner, crate::core::overlay::ShapeType::Subject);
+        overlay.add_source(&outer, crate::core::overlay::ShapeType::Clip);
+        assert!(!overlay.touches());
+
+        overlay.clear();
+        overlay.add_source(&inner, crate::core::overlay::ShapeType::Subject);
+        overlay.add_source(&outer, crate::core::overlay::ShapeType::Clip);
+        assert!(overlay.within());
+    }
 }

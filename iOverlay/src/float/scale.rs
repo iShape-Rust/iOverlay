@@ -505,4 +505,144 @@ mod tests {
             FloatPredicateOverlay::with_subj_and_clip_fixed_scale(&square, &other, f64::INFINITY).is_err()
         );
     }
+
+    #[test]
+    fn test_disjoint_with_fixed_scale() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[20.0, 20.0], [20.0, 30.0], [30.0, 30.0], [30.0, 20.0]];
+
+        let result = square.disjoint_with_fixed_scale(&other, 1000.0);
+        assert!(result.unwrap());
+
+        let overlapping = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+        let result = square.disjoint_with_fixed_scale(&overlapping, 1000.0);
+        assert!(!result.unwrap());
+    }
+
+    #[test]
+    fn test_covers_with_fixed_scale() {
+        let outer = vec![[0.0, 0.0], [0.0, 20.0], [20.0, 20.0], [20.0, 0.0]];
+        let inner = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let result = outer.covers_with_fixed_scale(&inner, 1000.0);
+        assert!(result.unwrap());
+
+        let result = inner.covers_with_fixed_scale(&outer, 1000.0);
+        assert!(!result.unwrap());
+    }
+
+    #[test]
+    fn test_fixed_scale_custom_overlay() {
+        use crate::core::solver::Solver;
+
+        let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+        let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+
+        let shapes = FloatOverlay::with_subj_and_clip_fixed_scale_custom(
+            &left_rect,
+            &right_rect,
+            Default::default(),
+            Solver::default(),
+            10.0,
+        )
+        .unwrap()
+        .overlay(OverlayRule::Union, FillRule::EvenOdd);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_fixed_scale_custom_overlay_invalid() {
+        use crate::core::solver::Solver;
+
+        let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+        let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+
+        let result = FloatOverlay::with_subj_and_clip_fixed_scale_custom(
+            &left_rect,
+            &right_rect,
+            Default::default(),
+            Solver::default(),
+            -1.0,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_fixed_scale_custom_overlay_scale_too_large() {
+        use crate::core::solver::Solver;
+
+        let left_rect = vec![[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+        let right_rect = vec![[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+
+        let scale = (1u64 << 32) as f64;
+        let result = FloatOverlay::with_subj_and_clip_fixed_scale_custom(
+            &left_rect,
+            &right_rect,
+            Default::default(),
+            Solver::default(),
+            scale,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_predicate_overlay_with_fixed_scale_custom() {
+        use crate::core::solver::Solver;
+
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let mut overlay = FloatPredicateOverlay::with_subj_and_clip_fixed_scale_custom(
+            &square,
+            &other,
+            FillRule::NonZero,
+            Solver::default(),
+            1000.0,
+        )
+        .unwrap();
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_predicate_overlay_with_fixed_scale_custom_invalid() {
+        use crate::core::solver::Solver;
+
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        let result = FloatPredicateOverlay::with_subj_and_clip_fixed_scale_custom(
+            &square,
+            &other,
+            FillRule::NonZero,
+            Solver::default(),
+            -1.0,
+        );
+        assert!(result.is_err());
+
+        let scale = (1u64 << 32) as f64;
+        let result = FloatPredicateOverlay::with_subj_and_clip_fixed_scale_custom(
+            &square,
+            &other,
+            FillRule::NonZero,
+            Solver::default(),
+            scale,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_fixed_scale_relate_invalid_scale() {
+        let square = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+
+        assert!(square.intersects_with_fixed_scale(&other, -1.0).is_err());
+        assert!(square.interiors_intersect_with_fixed_scale(&other, -1.0).is_err());
+        assert!(square.touches_with_fixed_scale(&other, -1.0).is_err());
+        assert!(square.within_with_fixed_scale(&other, -1.0).is_err());
+        assert!(square.disjoint_with_fixed_scale(&other, -1.0).is_err());
+        assert!(square.covers_with_fixed_scale(&other, -1.0).is_err());
+    }
 }
