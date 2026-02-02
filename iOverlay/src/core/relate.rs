@@ -1,11 +1,15 @@
 use crate::build::sweep::{FillHandler, SweepRunner};
 use crate::core::fill_rule::FillRule;
+use crate::core::overlay::ShapeType;
 use crate::core::predicate::{InteriorsIntersectHandler, IntersectsHandler, TouchesHandler, WithinHandler};
 use crate::core::solver::Solver;
 use crate::segm::boolean::ShapeCountBoolean;
+use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use i_float::int::point::IntPoint;
+use i_shape::int::shape::{IntContour, IntShape};
 
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
@@ -95,8 +99,143 @@ impl PredicateOverlay {
         self.evaluate(WithinHandler::new())
     }
 
+    /// Adds a path to the overlay using an iterator, allowing for more flexible path input.
+    /// This function is particularly useful when working with dynamically generated paths or
+    /// when paths are not directly stored in a collection.
+    /// - `iter`: An iterator over references to `IntPoint` that defines the path.
+    /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+        self.segments.append_path_iter(iter, shape_type, false);
+    }
+
+    /// Adds a single path to the overlay as either subject or clip paths.
+    /// - `contour`: An array of points that form a closed path.
+    /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_contour(&mut self, contour: &[IntPoint], shape_type: ShapeType) {
+        self.segments
+            .append_path_iter(contour.iter().copied(), shape_type, false);
+    }
+
+    /// Adds multiple paths to the overlay as either subject or clip paths.
+    /// - `contours`: An array of `IntContour` instances to be added to the overlay.
+    /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_contours(&mut self, contours: &[IntContour], shape_type: ShapeType) {
+        for contour in contours.iter() {
+            self.add_contour(contour, shape_type);
+        }
+    }
+
+    /// Adds a single shape to the overlay as either a subject or clip shape.
+    /// - `shape`: A reference to a `IntShape` instance to be added.
+    /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
+        self.add_contours(shape, shape_type);
+    }
+
+    /// Adds multiple shapes to the overlay as either subject or clip shapes.
+    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
+    /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
+    #[inline]
+    pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
+        for shape in shapes.iter() {
+            self.add_contours(shape, shape_type);
+        }
+    }
+
     #[inline]
     pub fn clear(&mut self) {
         self.segments.clear();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec;
+
+    fn square(x: i32, y: i32, size: i32) -> Vec<IntPoint> {
+        vec![
+            IntPoint::new(x, y),
+            IntPoint::new(x, y + size),
+            IntPoint::new(x + size, y + size),
+            IntPoint::new(x + size, y),
+        ]
+    }
+
+    #[test]
+    fn test_add_contour_intersects() {
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(5, 5, 10), ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_add_contour_disjoint() {
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(20, 20, 10), ShapeType::Clip);
+        assert!(!overlay.intersects());
+    }
+
+    #[test]
+    fn test_add_contour_touches() {
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(10, 0, 10), ShapeType::Clip);
+        assert!(overlay.touches());
+
+        overlay.clear();
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(10, 0, 10), ShapeType::Clip);
+        assert!(!overlay.interiors_intersect());
+    }
+
+    #[test]
+    fn test_add_contour_within() {
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(5, 5, 10), ShapeType::Subject);
+        overlay.add_contour(&square(0, 0, 20), ShapeType::Clip);
+        assert!(overlay.within());
+    }
+
+    #[test]
+    fn test_add_contours() {
+        let mut overlay = PredicateOverlay::new(16);
+        let contours = vec![square(0, 0, 5), square(10, 10, 5)];
+        overlay.add_contours(&contours, ShapeType::Subject);
+        overlay.add_contour(&square(2, 2, 3), ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_add_shape() {
+        let mut overlay = PredicateOverlay::new(16);
+        let shape = vec![square(0, 0, 10)];
+        overlay.add_shape(&shape, ShapeType::Subject);
+        overlay.add_contour(&square(5, 5, 10), ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_add_shapes() {
+        let mut overlay = PredicateOverlay::new(16);
+        let shapes = vec![vec![square(0, 0, 5)], vec![square(20, 20, 5)]];
+        overlay.add_shapes(&shapes, ShapeType::Subject);
+        overlay.add_contour(&square(2, 2, 3), ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_add_path_iter() {
+        let mut overlay = PredicateOverlay::new(16);
+        let points = square(0, 0, 10);
+        overlay.add_path_iter(points.into_iter(), ShapeType::Subject);
+        overlay.add_contour(&square(5, 5, 10), ShapeType::Clip);
+        assert!(overlay.intersects());
     }
 }

@@ -2,7 +2,6 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
 use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
-use crate::segm::build::BuildSegments;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -124,11 +123,8 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatPredicateOverlay<P, T> {
     /// * `shape_type` - Whether to add as `Subject` or `Clip`.
     pub fn add_source<R: ShapeResource<P, T> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
         for contour in resource.iter_paths() {
-            self.overlay.segments.append_path_iter(
-                contour.iter().map(|p| self.adapter.float_to_int(p)),
-                shape_type,
-                false,
-            );
+            self.overlay
+                .add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         }
     }
 
