@@ -65,39 +65,39 @@ impl FillHandler for InteriorsIntersectHandler {
 
 /// Handler that checks if subject and clip shapes touch (boundaries intersect but interiors don't).
 ///
-/// Returns `true` if the shapes share boundary points but their interiors don't overlap.
-/// Early-exits `false` on first interior overlap.
+/// Returns `(boundary_contact, interior_overlap)`. Early-exits with `(_, true)` on first
+/// interior overlap since that definitively means the shapes don't just touch.
 pub(crate) struct TouchesHandler {
-    has_intersection: bool,
+    has_boundary_contact: bool,
 }
 
 impl TouchesHandler {
     pub(crate) fn new() -> Self {
         Self {
-            has_intersection: false,
+            has_boundary_contact: false,
         }
     }
 }
 
 impl FillHandler for TouchesHandler {
-    type Output = bool;
+    type Output = (bool, bool); // (boundary_contact, interior_overlap)
 
     #[inline(always)]
-    fn handle(&mut self, _index: usize, fill: SegmentFill) -> ControlFlow<bool> {
-        // Check interior overlap - if found, they don't just touch
+    fn handle(&mut self, _index: usize, fill: SegmentFill) -> ControlFlow<(bool, bool)> {
+        // Check interior overlap - early exit since this means they don't just touch
         if (fill & BOTH_TOP) == BOTH_TOP || (fill & BOTH_BOTTOM) == BOTH_BOTTOM {
-            return ControlFlow::Break(false);
+            return ControlFlow::Break((self.has_boundary_contact, true));
         }
-        // Check boundary contact (both shapes contribute but on opposite sides)
+        // Check boundary contact (both shapes contribute)
         if (fill & SUBJ_BOTH) != 0 && (fill & CLIP_BOTH) != 0 {
-            self.has_intersection = true;
+            self.has_boundary_contact = true;
         }
         ControlFlow::Continue(())
     }
 
     #[inline(always)]
-    fn finalize(self) -> bool {
-        self.has_intersection
+    fn finalize(self) -> (bool, bool) {
+        (self.has_boundary_contact, false)
     }
 }
 
@@ -225,7 +225,7 @@ mod tests {
         let fill = SUBJ_TOP | CLIP_BOTTOM;
         let result = handler.handle(0, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
-        assert!(handler.finalize());
+        assert_eq!(handler.finalize(), (true, false)); // boundary contact, no interior overlap
     }
 
     #[test]
@@ -233,7 +233,7 @@ mod tests {
         let mut handler = TouchesHandler::new();
         let fill = SUBJ_TOP | CLIP_TOP;
         let result = handler.handle(0, fill);
-        assert!(matches!(result, ControlFlow::Break(false)));
+        assert!(matches!(result, ControlFlow::Break((_, true)))); // early exit on interior overlap
     }
 
     #[test]
@@ -242,7 +242,7 @@ mod tests {
         let fill = SUBJ_TOP;
         let result = handler.handle(0, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
-        assert!(!handler.finalize());
+        assert_eq!(handler.finalize(), (false, false)); // no boundary contact, no interior overlap
     }
 
     #[test]

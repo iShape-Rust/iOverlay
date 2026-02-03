@@ -29,7 +29,9 @@ impl FillHandler for StoreFillsHandler<'_> {
 
     #[inline(always)]
     fn handle(&mut self, index: usize, fill: SegmentFill) -> ControlFlow<()> {
-        self.fills[index] = fill;
+        // fills is pre-allocated to segments.len() and index is guaranteed
+        // to be in range by the sweep algorithm
+        unsafe { *self.fills.get_unchecked_mut(index) = fill };
         ControlFlow::Continue(())
     }
 
