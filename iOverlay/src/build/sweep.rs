@@ -16,9 +16,9 @@ pub(crate) trait FillStrategy<C> {
     fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
 }
 
-pub(crate) trait FillHandler {
+pub(crate) trait FillHandler<C> {
     type Output;
-    fn handle(&mut self, index: usize, fill: SegmentFill) -> ControlFlow<Self::Output>;
+    fn handle(&mut self, index: usize, segment: &Segment<C>, fill: SegmentFill) -> ControlFlow<Self::Output>;
     fn finalize(self) -> Self::Output;
 }
 
@@ -28,7 +28,7 @@ where
     C: WindingCount,
     F: FillStrategy<C>,
     S: KeyExpCollection<VSegment, i32, C>,
-    H: FillHandler,
+    H: FillHandler<C>,
 {
     let mut node = Vec::with_capacity(4);
     let n = segments.len();
@@ -62,7 +62,7 @@ where
             let (new_sum, fill) = F::add_and_fill(sid.count, sum_count);
             sum_count = new_sum;
 
-            if let ControlFlow::Break(result) = handler.handle(se.index, fill) {
+            if let ControlFlow::Break(result) = handler.handle(se.index, sid, fill) {
                 return result;
             }
 
@@ -95,7 +95,7 @@ impl<C: WindingCount> SweepRunner<C> {
     pub(crate) fn run<F, H>(&mut self, solver: &Solver, segments: &[Segment<C>], handler: H) -> H::Output
     where
         F: FillStrategy<C>,
-        H: FillHandler,
+        H: FillHandler<C>,
     {
         let count = segments.len();
         if solver.is_list_fill(segments) {
@@ -122,7 +122,7 @@ impl<C: WindingCount> SweepRunner<C> {
         handler: H,
     ) -> H::Output
     where
-        H: FillHandler,
+        H: FillHandler<C>,
         EvenOddStrategy: FillStrategy<C>,
         NonZeroStrategy: FillStrategy<C>,
         PositiveStrategy: FillStrategy<C>,

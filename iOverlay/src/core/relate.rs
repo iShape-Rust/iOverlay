@@ -11,45 +11,6 @@ use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntContour, IntShape};
 
-/// Checks if any vertex from a subject segment coincides with any vertex from a clip segment.
-///
-/// Collects all endpoints, sorts by (x, y), then scans for adjacent points from different shapes.
-fn has_point_coincidence(segments: &[Segment<ShapeCountBoolean>]) -> bool {
-    // Collect all endpoints with a flag indicating if they're from subj (true) or clip (false)
-    let mut points: Vec<(i32, i32, bool, bool)> = Vec::with_capacity(segments.len() * 2);
-
-    for seg in segments {
-        let is_subj = seg.count.subj != 0;
-        let is_clip = seg.count.clip != 0;
-        points.push((seg.x_segment.a.x, seg.x_segment.a.y, is_subj, is_clip));
-        points.push((seg.x_segment.b.x, seg.x_segment.b.y, is_subj, is_clip));
-    }
-
-    // Sort by (x, y)
-    points.sort_unstable_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
-
-    // Scan for adjacent points at the same location from different shapes
-    let mut i = 0;
-    while i < points.len() {
-        let (x, y, _, _) = points[i];
-        let mut has_subj = false;
-        let mut has_clip = false;
-
-        // Collect all points at this location
-        while i < points.len() && points[i].0 == x && points[i].1 == y {
-            has_subj |= points[i].2;
-            has_clip |= points[i].3;
-            i += 1;
-        }
-
-        if has_subj && has_clip {
-            return true;
-        }
-    }
-
-    false
-}
-
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
 /// `PredicateOverlay` provides efficient spatial relationship testing between
@@ -93,7 +54,7 @@ impl PredicateOverlay {
         }
     }
 
-    fn evaluate<T: Default, H: FillHandler<Output = T>>(&mut self, handler: H) -> T {
+    fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, Output = T>>(&mut self, handler: H) -> T {
         if self.segments.is_empty() {
             return T::default();
         }
@@ -110,8 +71,8 @@ impl PredicateOverlay {
     /// This includes both interior overlap and boundary contact (including single-point touches).
     #[inline]
     pub fn intersects(&mut self) -> bool {
-        // Check sweep first (handles most cases), then fall back to point coincidence
-        self.evaluate(IntersectsHandler) || has_point_coincidence(&self.segments)
+        let capacity = self.segments.len();
+        self.evaluate(IntersectsHandler::new(capacity))
     }
 
     /// Returns `true` if the interiors of subject and clip shapes overlap.
@@ -129,14 +90,8 @@ impl PredicateOverlay {
     /// but their interiors don't overlap. This includes single-point vertex touches.
     #[inline]
     pub fn touches(&mut self) -> bool {
-        let (boundary_contact, interior_overlap) = self.evaluate(TouchesHandler::new());
-        if interior_overlap {
-            return false;
-        }
-        if boundary_contact {
-            return true;
-        }
-        has_point_coincidence(&self.segments)
+        let capacity = self.segments.len();
+        self.evaluate(TouchesHandler::new(capacity))
     }
 
     /// Returns `true` if subject is completely within clip.
@@ -346,6 +301,151 @@ mod tests {
         assert!(
             !overlay.interiors_intersect(),
             "segment b touching segment a should not have interior intersection"
+        );
+    }
+
+    /// Creates a square with a hole (doughnut shape).
+    /// Outer: counter-clockwise, Inner hole: clockwise
+    fn doughnut(
+        outer_x: i32,
+        outer_y: i32,
+        outer_size: i32,
+        hole_x: i32,
+        hole_y: i32,
+        hole_size: i32,
+    ) -> Vec<Vec<IntPoint>> {
+        vec![
+            // Outer boundary (counter-clockwise)
+            vec![
+                IntPoint::new(outer_x, outer_y),
+                IntPoint::new(outer_x, outer_y + outer_size),
+                IntPoint::new(outer_x + outer_size, outer_y + outer_size),
+                IntPoint::new(outer_x + outer_size, outer_y),
+            ],
+            // Inner hole (clockwise)
+            vec![
+                IntPoint::new(hole_x, hole_y),
+                IntPoint::new(hole_x + hole_size, hole_y),
+                IntPoint::new(hole_x + hole_size, hole_y + hole_size),
+                IntPoint::new(hole_x, hole_y + hole_size),
+            ],
+        ]
+    }
+
+    /// Creates a diamond (rotated square) with corners at midpoints of a bounding box.
+    fn diamond(cx: i32, cy: i32, radius: i32) -> Vec<IntPoint> {
+        vec![
+            IntPoint::new(cx, cy - radius), // top
+            IntPoint::new(cx + radius, cy), // right
+            IntPoint::new(cx, cy + radius), // bottom
+            IntPoint::new(cx - radius, cy), // left
+        ]
+    }
+
+    #[test]
+    fn test_doughnut_with_diamond_touching_hole_intersects() {
+        // Subject: square doughnut with outer (0,0)-(30,30) and hole (10,10)-(20,20)
+        // Clip: diamond inside the hole with corners touching the hole boundary
+        //       Diamond centered at (15,15) with corners at (15,10), (20,15), (15,20), (10,15)
+        //
+        // This tests that inner segments of the hole (which have SUBJ_BOTH fill)
+        // are still correctly tracked for point coincidence detection.
+        let mut overlay = PredicateOverlay::new(32);
+        let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
+        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
+        assert!(
+            overlay.intersects(),
+            "diamond touching hole boundary should intersect"
+        );
+    }
+
+    #[test]
+    fn test_doughnut_with_diamond_touching_hole_touches() {
+        // Same setup: diamond corners touch the hole boundary but don't overlap
+        let mut overlay = PredicateOverlay::new(32);
+        let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
+        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
+        assert!(overlay.touches(), "diamond touching hole boundary should touch");
+    }
+
+    #[test]
+    fn test_doughnut_with_diamond_touching_hole_no_interior_intersect() {
+        // Same setup: diamond only touches at boundary points, interiors don't overlap
+        let mut overlay = PredicateOverlay::new(32);
+        let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
+        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
+        assert!(
+            !overlay.interiors_intersect(),
+            "diamond touching hole boundary should not have interior intersection"
+        );
+    }
+
+    #[test]
+    fn test_doughnut_with_diamond_inside_hole_disjoint() {
+        // Diamond fully inside the hole, not touching any boundary
+        // Diamond centered at (15,15) with radius 2 (corners at 13,15,17,15 etc)
+        let mut overlay = PredicateOverlay::new(32);
+        let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
+        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_contour(&diamond(15, 15, 2), ShapeType::Clip);
+        assert!(!overlay.intersects(), "diamond inside hole should not intersect");
+        assert!(!overlay.touches(), "diamond inside hole should not touch");
+    }
+
+    #[test]
+    fn test_doughnut_with_diamond_touching_single_corner() {
+        // Diamond inside the hole, touching only one corner: (10, 10)
+        // The hole is at (10,10)-(20,20), so a diamond inside it touching the
+        // bottom-left corner (10,10) needs all other points inside the hole.
+        // Diamond: (10,10), (12,10), (12,12), (10,12) - this is a small square
+        // in the corner of the hole, with one corner touching the hole corner.
+        let diamond_touching_corner = vec![
+            IntPoint::new(10, 10), // touches hole corner (also doughnut boundary)
+            IntPoint::new(12, 10), // on hole bottom edge
+            IntPoint::new(12, 12), // inside hole
+            IntPoint::new(10, 12), // on hole left edge
+        ];
+
+        let mut overlay = PredicateOverlay::new(32);
+        overlay.add_shape(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
+        overlay.add_contour(&diamond_touching_corner, ShapeType::Clip);
+
+        assert!(
+            overlay.intersects(),
+            "diamond touching hole corner should intersect"
+        );
+        assert!(overlay.touches(), "diamond touching hole corner should touch");
+        assert!(
+            !overlay.interiors_intersect(),
+            "diamond touching hole corner should not have interior intersection"
+        );
+    }
+
+    #[test]
+    fn test_outer_diamond_touching_doughnut_corner() {
+        // Diamond outside the doughnut, touching the outer corner at (0, 0)
+        // This tests point coincidence for outer boundary segments.
+        let diamond_outside = vec![
+            IntPoint::new(0, 0),   // touches doughnut outer corner
+            IntPoint::new(-5, 3),  // outside
+            IntPoint::new(-5, -3), // outside
+        ];
+
+        let mut overlay = PredicateOverlay::new(32);
+        overlay.add_shape(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
+        overlay.add_contour(&diamond_outside, ShapeType::Clip);
+
+        assert!(
+            overlay.intersects(),
+            "triangle touching outer corner should intersect"
+        );
+        assert!(overlay.touches(), "triangle touching outer corner should touch");
+        assert!(
+            !overlay.interiors_intersect(),
+            "triangle touching outer corner should not have interior intersection"
         );
     }
 }

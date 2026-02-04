@@ -24,11 +24,11 @@ impl<'a> StoreFillsHandler<'a> {
     }
 }
 
-impl FillHandler for StoreFillsHandler<'_> {
+impl<C> FillHandler<C> for StoreFillsHandler<'_> {
     type Output = ();
 
     #[inline(always)]
-    fn handle(&mut self, index: usize, fill: SegmentFill) -> ControlFlow<()> {
+    fn handle(&mut self, index: usize, _segment: &Segment<C>, fill: SegmentFill) -> ControlFlow<()> {
         // fills is pre-allocated to segments.len() and index is guaranteed
         // to be in range by the sweep algorithm
         unsafe { *self.fills.get_unchecked_mut(index) = fill };
