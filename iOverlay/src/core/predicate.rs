@@ -224,6 +224,52 @@ impl FillHandler<ShapeCountBoolean> for TouchesHandler {
     }
 }
 
+/// Handler that checks if subject and clip shapes intersect by point coincidence only.
+///
+/// Returns `true` if shapes share boundary vertices but NOT edges.
+/// - Returns `false` if there's interior overlap (early exit)
+/// - Returns `false` if there's edge/boundary contact (shared segments, early exit)
+/// - Returns `true` ONLY if shapes touch by point coincidence without any edge overlap
+pub(crate) struct PointIntersectsHandler {
+    point_checker: PointCoincidenceChecker,
+}
+
+impl PointIntersectsHandler {
+    pub(crate) fn new(capacity: usize) -> Self {
+        Self {
+            point_checker: PointCoincidenceChecker::new(capacity),
+        }
+    }
+}
+
+impl FillHandler<ShapeCountBoolean> for PointIntersectsHandler {
+    type Output = bool;
+
+    #[inline(always)]
+    fn handle(
+        &mut self,
+        _index: usize,
+        segment: &Segment<ShapeCountBoolean>,
+        fill: SegmentFill,
+    ) -> ControlFlow<bool> {
+        // Interior overlap = not a point-only intersection (early exit false)
+        if (fill & BOTH_TOP) == BOTH_TOP || (fill & BOTH_BOTTOM) == BOTH_BOTTOM {
+            return ControlFlow::Break(false);
+        }
+        // Boundary contact (edge sharing) = not point-only (early exit false)
+        if (fill & SUBJ_BOTH) != 0 && (fill & CLIP_BOTH) != 0 {
+            return ControlFlow::Break(false);
+        }
+        self.point_checker.add_segment(segment, fill);
+        ControlFlow::Continue(())
+    }
+
+    #[inline(always)]
+    fn finalize(self) -> bool {
+        self.point_checker.has_coincidence()
+    }
+}
+
 /// Handler that checks if subject is completely within clip.
 ///
 /// Returns `true` if everywhere the subject has fill, the clip also has fill
@@ -497,6 +543,53 @@ mod tests {
         let fill = CLIP_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
+        assert!(!handler.finalize());
+    }
+
+    #[test]
+    fn test_point_intersects_handler_point_only() {
+        let mut handler = PointIntersectsHandler::new(10);
+        // Subject segment ending at (10, 10)
+        let seg1 = make_segment(0, 0, 10, 10, 1, 0);
+        // Clip segment starting at (10, 10)
+        let seg2 = make_segment(10, 10, 20, 20, 0, 1);
+        let _ = handler.handle(0, &seg1, SUBJ_TOP);
+        let _ = handler.handle(1, &seg2, CLIP_TOP);
+        // Point coincidence without edge contact → true
+        assert!(handler.finalize());
+    }
+
+    #[test]
+    fn test_point_intersects_handler_edge_contact() {
+        // Segment belongs to both subject and clip (shared edge)
+        let seg = make_segment(0, 0, 10, 0, 1, 1);
+        let mut handler = PointIntersectsHandler::new(10);
+        // Both shapes have fill on opposite sides (boundary contact)
+        let fill = SUBJ_TOP | CLIP_BOTTOM;
+        let result = handler.handle(0, &seg, fill);
+        // Early exit false on boundary contact (edge sharing)
+        assert!(matches!(result, ControlFlow::Break(false)));
+    }
+
+    #[test]
+    fn test_point_intersects_handler_interior_overlap() {
+        let seg = make_segment(0, 0, 10, 0, 1, 1);
+        let mut handler = PointIntersectsHandler::new(10);
+        // Interior overlap (both shapes fill the same side)
+        let fill = SUBJ_TOP | CLIP_TOP;
+        let result = handler.handle(0, &seg, fill);
+        // Early exit false on interior overlap
+        assert!(matches!(result, ControlFlow::Break(false)));
+    }
+
+    #[test]
+    fn test_point_intersects_handler_no_contact() {
+        let seg1 = make_segment(0, 0, 5, 5, 1, 0);
+        let seg2 = make_segment(10, 10, 20, 20, 0, 1);
+        let mut handler = PointIntersectsHandler::new(10);
+        let _ = handler.handle(0, &seg1, SUBJ_TOP);
+        let _ = handler.handle(1, &seg2, CLIP_TOP);
+        // No contact at all → false
         assert!(!handler.finalize());
     }
 }

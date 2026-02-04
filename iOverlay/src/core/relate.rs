@@ -1,7 +1,9 @@
 use crate::build::sweep::{FillHandler, SweepRunner};
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
-use crate::core::predicate::{InteriorsIntersectHandler, IntersectsHandler, TouchesHandler, WithinHandler};
+use crate::core::predicate::{
+    InteriorsIntersectHandler, IntersectsHandler, PointIntersectsHandler, TouchesHandler, WithinHandler,
+};
 use crate::core::solver::Solver;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::build::BuildSegments;
@@ -92,6 +94,16 @@ impl PredicateOverlay {
     pub fn touches(&mut self) -> bool {
         let capacity = self.segments.len();
         self.evaluate(TouchesHandler::new(capacity))
+    }
+
+    /// Returns `true` if subject and clip shapes intersect by point coincidence only.
+    ///
+    /// This returns `true` when shapes share boundary vertices but NOT edges.
+    /// Unlike `touches()`, this returns `false` for shapes that share edges.
+    #[inline]
+    pub fn point_intersects(&mut self) -> bool {
+        let capacity = self.segments.len();
+        self.evaluate(PointIntersectsHandler::new(capacity))
     }
 
     /// Returns `true` if subject is completely within clip.
@@ -485,6 +497,76 @@ mod tests {
         assert!(
             !overlay.interiors_intersect(),
             "triangle touching outer corner should not have interior intersection"
+        );
+    }
+
+    #[test]
+    fn test_point_intersects_corner_to_corner() {
+        // Two squares touching at a single corner point (10, 10)
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(10, 10, 10), ShapeType::Clip);
+        assert!(
+            overlay.point_intersects(),
+            "corner-to-corner should be point-only intersection"
+        );
+    }
+
+    #[test]
+    fn test_point_intersects_edge_sharing() {
+        // Two squares sharing an edge (not point-only)
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(10, 0, 10), ShapeType::Clip);
+        // touches() is true for edge sharing
+        assert!(overlay.touches());
+
+        overlay.clear();
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(10, 0, 10), ShapeType::Clip);
+        // point_intersects() is false for edge sharing
+        assert!(
+            !overlay.point_intersects(),
+            "edge sharing is not point-only intersection"
+        );
+    }
+
+    #[test]
+    fn test_point_intersects_overlapping() {
+        // Overlapping squares (not point-only)
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(5, 5, 10), ShapeType::Clip);
+        assert!(
+            !overlay.point_intersects(),
+            "overlapping shapes are not point-only intersection"
+        );
+    }
+
+    #[test]
+    fn test_point_intersects_disjoint() {
+        // Disjoint squares (no contact at all)
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
+        overlay.add_contour(&square(20, 20, 10), ShapeType::Clip);
+        assert!(
+            !overlay.point_intersects(),
+            "disjoint shapes have no point intersection"
+        );
+    }
+
+    #[test]
+    fn test_point_intersects_triangle_vertex() {
+        // Two triangles touching at a single vertex
+        let tri1 = vec![IntPoint::new(0, 0), IntPoint::new(10, 0), IntPoint::new(5, 10)];
+        let tri2 = vec![IntPoint::new(10, 0), IntPoint::new(20, 0), IntPoint::new(15, 10)];
+
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&tri1, ShapeType::Subject);
+        overlay.add_contour(&tri2, ShapeType::Clip);
+        assert!(
+            overlay.point_intersects(),
+            "triangles touching at vertex should be point-only intersection"
         );
     }
 }

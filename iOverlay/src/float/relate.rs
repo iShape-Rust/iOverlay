@@ -155,6 +155,12 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatPredicateOverlay<P, T> {
         self.overlay.touches()
     }
 
+    /// Returns `true` if subject and clip shapes intersect by point coincidence only.
+    #[inline]
+    pub fn point_intersects(&mut self) -> bool {
+        self.overlay.point_intersects()
+    }
+
     /// Returns `true` if subject is completely within clip.
     #[inline]
     pub fn within(&mut self) -> bool {
@@ -221,6 +227,9 @@ where
     /// Returns `true` when shapes share boundary points but their interiors don't overlap.
     fn touches(&self, other: &R1) -> bool;
 
+    /// Returns `true` if this shape intersects another by point coincidence only.
+    fn point_intersects(&self, other: &R1) -> bool;
+
     /// Returns `true` if this shape is completely within another.
     ///
     /// Subject is within clip if everywhere the subject has fill, the clip
@@ -258,6 +267,11 @@ where
     #[inline]
     fn touches(&self, other: &R1) -> bool {
         FloatPredicateOverlay::with_subj_and_clip(self, other).touches()
+    }
+
+    #[inline]
+    fn point_intersects(&self, other: &R1) -> bool {
+        FloatPredicateOverlay::with_subj_and_clip(self, other).point_intersects()
     }
 
     #[inline]
@@ -613,5 +627,39 @@ mod tests {
         overlay.add_source(&inner, crate::core::overlay::ShapeType::Subject);
         overlay.add_source(&outer, crate::core::overlay::ShapeType::Clip);
         assert!(overlay.within());
+    }
+
+    #[test]
+    fn test_point_intersects_trait() {
+        // Two squares touching at a single corner point (10, 10)
+        let square1 = vec![[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [10.0, 0.0]];
+        let square2 = vec![[10.0, 10.0], [10.0, 20.0], [20.0, 20.0], [20.0, 10.0]];
+
+        // Point-only intersection → true
+        assert!(square1.point_intersects(&square2));
+        assert!(square2.point_intersects(&square1));
+
+        // Edge-sharing squares (not point-only)
+        let square3 = vec![[10.0, 0.0], [10.0, 10.0], [20.0, 10.0], [20.0, 0.0]];
+        assert!(
+            !square1.point_intersects(&square3),
+            "edge sharing is not point-only"
+        );
+        // But they do touch
+        assert!(square1.touches(&square3));
+
+        // Overlapping squares (not point-only)
+        let square4 = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
+        assert!(
+            !square1.point_intersects(&square4),
+            "overlapping is not point-only"
+        );
+
+        // Disjoint squares (no intersection)
+        let square5 = vec![[100.0, 100.0], [100.0, 110.0], [110.0, 110.0], [110.0, 100.0]];
+        assert!(
+            !square1.point_intersects(&square5),
+            "disjoint has no point intersection"
+        );
     }
 }
