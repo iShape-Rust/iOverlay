@@ -273,6 +273,45 @@ mod tests {
         );
     }
 
+    /// Test that intersects() detects when an edge passes through another polygon's interior.
+    ///
+    /// Shape A is a quadrilateral: (0,1), (0,0), (3,0), (3,8)
+    /// Shape B is a box: (0,3) to (1,4)
+    ///
+    /// The edge from (0,1) to (3,8) passes through (1, 10/3 ≈ 3.33), which is inside B.
+    /// Therefore intersects() should return true.
+    #[test]
+    fn test_intersects_edge_through_interior() {
+        // Shape A: quadrilateral with edge passing through B's interior
+        let shape_a = vec![
+            IntPoint::new(0, 1),
+            IntPoint::new(0, 0),
+            IntPoint::new(3, 0),
+            IntPoint::new(3, 8),
+        ];
+
+        // Shape B: box from (0,3) to (1,4)
+        let shape_b = vec![
+            IntPoint::new(0, 3),
+            IntPoint::new(1, 3),
+            IntPoint::new(1, 4),
+            IntPoint::new(0, 4),
+        ];
+
+        let mut overlay = PredicateOverlay::new(16);
+        overlay.add_contour(&shape_a, ShapeType::Subject);
+        overlay.add_contour(&shape_b, ShapeType::Clip);
+
+        // The edge from (0,1) to (3,8) has parametric form:
+        // P(t) = (0,1) + t*(3,7) = (3t, 1+7t) for t in [0,1]
+        // At x=1: t=1/3, y = 1 + 7/3 = 10/3 ≈ 3.333
+        // Point (1, 3.333) is strictly inside B (x in [0,1], y in [3,4])
+        assert!(
+            overlay.intersects(),
+            "Edge (0,1)->(3,8) passes through box interior at (1, 3.33); should intersect"
+        );
+    }
+
     #[test]
     fn test_segment_end_to_start_touch() {
         // Triangle where subject's segment endpoint touches clip's segment startpoint
