@@ -38,9 +38,6 @@ impl PointCoincidenceChecker {
     /// - Similarly for clip-only interior segments
     #[inline]
     pub(crate) fn add_segment(&mut self, segment: &Segment<ShapeCountBoolean>, fill: SegmentFill) {
-        let is_subj = segment.count.subj != 0;
-        let is_clip = segment.count.clip != 0;
-
         // Skip inner segments optimization:
         // If segment is entirely inside one shape's interior (filled on both sides)
         // and has no contribution from the other shape, it's not on a boundary
@@ -48,18 +45,21 @@ impl PointCoincidenceChecker {
         let subj_interior = (fill & SUBJ_BOTH) == SUBJ_BOTH;
         let clip_interior = (fill & CLIP_BOTH) == CLIP_BOTH;
 
-        // Add to subj_points if:
-        // - Segment belongs to subject AND
-        // - Either it's not purely inside subject interior, OR clip is also present
-        if is_subj && (!subj_interior || is_clip) {
-            self.subj_points.push(segment.x_segment.a);
-            self.subj_points.push(segment.x_segment.b);
+        if subj_interior || clip_interior || fill == 0 {
+            return;
         }
 
-        // Add to clip_points if:
-        // - Segment belongs to clip AND
-        // - Either it's not purely inside clip interior, OR subject is also present
-        if is_clip && (!clip_interior || is_subj) {
+        let is_subj = fill & SUBJ_BOTH != 0;
+        let is_clip = fill & CLIP_BOTH != 0;
+        if is_subj && is_clip {
+            // Segment belongs to both shapes (boundary contact) - this is a shared edge, not a point coincidence.
+            return;
+        }
+        if is_subj {
+            self.subj_points.push(segment.x_segment.a);
+            self.subj_points.push(segment.x_segment.b);
+        } else {
+            debug_assert!(is_clip);
             self.clip_points.push(segment.x_segment.a);
             self.clip_points.push(segment.x_segment.b);
         }
@@ -68,28 +68,29 @@ impl PointCoincidenceChecker {
     /// Check if any subject point coincides with any clip point.
     ///
     /// Consumes self and returns true if coincidence found.
+    ///
+    /// Optimization: Only sort/dedup the shorter array, then iterate the longer
+    /// array doing binary searches into the shorter. This minimizes total work:
+    /// O(n log n) sort + O(m log n) searches, where n ≤ m.
     #[inline]
     pub(crate) fn has_coincidence(mut self) -> bool {
         if self.subj_points.is_empty() || self.clip_points.is_empty() {
             return false;
         }
 
-        // Sort using sort_by_two_keys (radix sort for integer keys)
-        self.subj_points.sort_by_two_keys(false, |p| p.x, |p| p.y);
-        self.clip_points.sort_by_two_keys(false, |p| p.x, |p| p.y);
-
-        // Dedup (segment endpoints appear twice from adjacent segments)
-        self.subj_points.dedup();
-        self.clip_points.dedup();
-
-        // Binary search from shorter into longer array
+        // Determine shorter/longer by pre-dedup size (good estimate of post-dedup)
         let (shorter, longer) = if self.subj_points.len() <= self.clip_points.len() {
-            (&self.subj_points, &self.clip_points)
+            (&mut self.subj_points, &self.clip_points)
         } else {
-            (&self.clip_points, &self.subj_points)
+            (&mut self.clip_points, &self.subj_points)
         };
 
-        shorter.iter().any(|p| longer.binary_search(p).is_ok())
+        // Sort and dedup only the shorter array (binary search target)
+        shorter.sort_by_two_keys(false, |p| p.x, |p| p.y);
+        shorter.dedup();
+
+        // Iterate longer (unsorted) and binary search into shorter
+        longer.iter().any(|p| shorter.binary_search(p).is_ok())
     }
 }
 
@@ -365,11 +366,12 @@ mod tests {
     }
 
     #[test]
-    fn test_point_coincidence_shared_segment() {
+    fn test_point_coincidence_shared_segment_is_line_not_point() {
         let mut checker = PointCoincidenceChecker::new(10);
-        // Segment belonging to both shapes
+        // Segment with both SUBJ and CLIP fill is a shared edge (line intersection),
+        // not a point coincidence. Only one array gets populated, so no coincidence.
         checker.add_segment(&make_segment(0, 0, 10, 10, 1, 1), SUBJ_TOP | CLIP_BOTTOM);
-        assert!(checker.has_coincidence());
+        assert!(!checker.has_coincidence());
     }
 
     #[test]
