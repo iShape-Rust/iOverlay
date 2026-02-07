@@ -7,5 +7,7 @@ pub(crate) mod link;
 pub(crate) mod nearest_vector;
 pub mod overlay;
 pub mod overlay_rule;
+pub mod predicate;
+pub mod relate;
 pub mod simplify;
 pub mod solver;

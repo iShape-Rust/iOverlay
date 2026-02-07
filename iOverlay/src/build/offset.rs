@@ -1,4 +1,5 @@
-use crate::build::builder::{FillStrategy, GraphBuilder};
+use crate::build::builder::GraphBuilder;
+use crate::build::sweep::FillStrategy;
 use crate::core::graph::OverlayNode;
 use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;

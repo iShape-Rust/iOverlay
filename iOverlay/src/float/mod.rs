@@ -1,6 +1,7 @@
 pub mod clip;
 pub mod graph;
 pub mod overlay;
+pub mod relate;
 pub mod scale;
 pub mod simplify;
 pub mod single;

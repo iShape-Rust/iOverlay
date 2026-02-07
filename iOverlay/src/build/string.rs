@@ -1,4 +1,5 @@
-use crate::build::builder::{FillStrategy, GraphBuilder, InclusionFilterStrategy};
+use crate::build::builder::{GraphBuilder, InclusionFilterStrategy};
+use crate::build::sweep::FillStrategy;
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
 use crate::segm::segment::{CLIP_BOTH, SUBJ_BOTH, Segment, SegmentFill};
