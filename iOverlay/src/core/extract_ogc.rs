@@ -9,6 +9,9 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::point::IntPoint;
+use i_key_sort::sort::two_keys::TwoKeysSort;
+use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::IntShapes;
 use i_shape::util::reserve::Reserve;
 
@@ -24,6 +27,8 @@ impl OverlayGraph<'_> {
 
         buffer.points.reserve_capacity(buffer.visited.len());
         let mut avg_holes_count = 0;
+        let mut pending_holes: Vec<Vec<IntPoint>> = Vec::new();
+        let mut point_buf = Vec::new();
 
         let mut link_index = 0;
         while link_index < buffer.visited.len() {
@@ -74,7 +79,19 @@ impl OverlayGraph<'_> {
             }
 
             let contour = buffer.points.as_slice().to_vec();
-            shapes.push(vec![contour]);
+            if find_pinch_point(&contour, &mut point_buf).is_some() {
+                for part in split_all_pinch_points(contour, &mut point_buf) {
+                    let area = part.unsafe_area();
+                    let is_hole = if is_main_dir_cw { area < 0 } else { area > 0 };
+                    if is_hole {
+                        pending_holes.push(part);
+                    } else {
+                        shapes.push(vec![part]);
+                    }
+                }
+            } else {
+                shapes.push(vec![contour]);
+            }
         }
 
         if avg_holes_count > 0 {
@@ -157,6 +174,10 @@ impl OverlayGraph<'_> {
             shapes.join_sorted_holes(holes, anchors, is_main_dir_cw);
         }
 
+        if !pending_holes.is_empty() {
+            shapes.join_unsorted_holes(pending_holes, is_main_dir_cw);
+        }
+
         shapes
     }
 
@@ -191,5 +212,45 @@ impl OverlayGraph<'_> {
 
             visited.visit_edge(link_id, visited_state);
         }
+    }
+}
+
+fn find_pinch_point(contour: &[IntPoint], point_buf: &mut Vec<IntPoint>) -> Option<(usize, usize)> {
+    let n = contour.len();
+    if n < 2 {
+        return None;
+    }
+    point_buf.clear();
+    point_buf.extend_from_slice(contour);
+    point_buf.sort_by_two_keys(false, |p| p.x, |p| p.y);
+    for w in point_buf.windows(2) {
+        if w[0] == w[1] {
+            let target = w[0];
+            let i = contour.iter().position(|p| *p == target).unwrap();
+            let j = contour[i + 1..].iter().position(|p| *p == target).unwrap() + i + 1;
+            return Some((i, j));
+        }
+    }
+    None
+}
+
+fn split_all_pinch_points(contour: Vec<IntPoint>, point_buf: &mut Vec<IntPoint>) -> Vec<Vec<IntPoint>> {
+    if let Some((i, j)) = find_pinch_point(&contour, point_buf) {
+        let inner: Vec<IntPoint> = contour[i..j].to_vec();
+        let mut outer: Vec<IntPoint> = contour[..=i].to_vec();
+        outer.extend_from_slice(&contour[j + 1..]);
+
+        let mut result = Vec::new();
+        if inner.len() >= 3 {
+            result.extend(split_all_pinch_points(inner, point_buf));
+        }
+        if outer.len() >= 3 {
+            result.extend(split_all_pinch_points(outer, point_buf));
+        }
+        result
+    } else if contour.len() >= 3 {
+        vec![contour]
+    } else {
+        Vec::new()
     }
 }
