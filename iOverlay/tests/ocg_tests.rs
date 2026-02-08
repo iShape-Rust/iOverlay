@@ -75,12 +75,7 @@ mod tests {
         let mut opts = IntOverlayOptions::ogc();
         opts.output_direction = ContourDirection::Clockwise;
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &clip_paths,
-            opts,
-            Default::default(),
-        );
+        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, opts, Default::default());
 
         let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
@@ -196,12 +191,8 @@ mod tests {
 
         let subj_paths = int_shape![[[0, 3], [0, 0], [3, 0], [3, 2], [1, 2], [1, 1], [2, 1], [2, 3]]];
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &[],
-            IntOverlayOptions::ogc(),
-            Default::default(),
-        );
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
 
         let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
 
@@ -224,14 +215,9 @@ mod tests {
         //     │               │
         //   0 └───────────────┘
 
-        let subj_paths = int_shape![
-            [[0, 4], [0, 0], [4, 0], [4, 3], [3, 3], [3, 4]]
-        ];
+        let subj_paths = int_shape![[[0, 4], [0, 0], [4, 0], [4, 3], [3, 3], [3, 4]]];
 
-        let clip_paths = int_shape![
-            [[1, 2], [1, 1], [2, 1], [2, 2]],
-            [[2, 3], [2, 2], [3, 2], [3, 3]],
-        ];
+        let clip_paths = int_shape![[[1, 2], [1, 1], [2, 1], [2, 2]], [[2, 3], [2, 2], [3, 2], [3, 3]],];
 
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
@@ -262,14 +248,9 @@ mod tests {
         //     │               │
         //   0 └───────────────┘
 
-        let subj_paths = int_shape![
-            [[0, 4], [0, 0], [4, 0], [4, 4]]
-        ];
+        let subj_paths = int_shape![[[0, 4], [0, 0], [4, 0], [4, 4]]];
 
-        let clip_paths = int_shape![
-            [[1, 2], [1, 1], [2, 1], [2, 2]],
-            [[2, 3], [2, 2], [3, 2], [3, 3]],
-        ];
+        let clip_paths = int_shape![[[1, 2], [1, 1], [2, 1], [2, 2]], [[2, 3], [2, 2], [3, 2], [3, 3]],];
 
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
@@ -300,24 +281,14 @@ mod tests {
         //     │               │
         //   0 └───────────────┘
 
-        let subj_paths = int_shape![
-            [[0, 4], [0, 0], [4, 0], [4, 4]]
-        ];
+        let subj_paths = int_shape![[[0, 4], [0, 0], [4, 0], [4, 4]]];
 
-        let clip_paths = int_shape![
-            [[1, 2], [1, 1], [2, 1], [2, 2]],
-            [[2, 3], [2, 2], [3, 2], [3, 3]],
-        ];
+        let clip_paths = int_shape![[[1, 2], [1, 1], [2, 1], [2, 2]], [[2, 3], [2, 2], [3, 2], [3, 3]],];
 
         let mut opts = IntOverlayOptions::ogc();
         opts.output_direction = ContourDirection::Clockwise;
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &clip_paths,
-            opts,
-            Default::default(),
-        );
+        let mut overlay = Overlay::with_contours_custom(&subj_paths, &clip_paths, opts, Default::default());
 
         let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
@@ -346,12 +317,8 @@ mod tests {
             [[1, 3], [1, 2], [2, 2], [2, 3]],
         ];
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &[],
-            IntOverlayOptions::ogc(),
-            Default::default(),
-        );
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
 
         let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
 
@@ -373,12 +340,8 @@ mod tests {
             [[-1, -2], [-2, -1], [0, 0], [1, 2], [2, 1], [0, 0]],
         ];
 
-        let mut overlay = Overlay::with_contours_custom(
-            &subj_paths,
-            &[],
-            IntOverlayOptions::ogc(),
-            Default::default(),
-        );
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
 
         let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
 

@@ -121,7 +121,13 @@ impl OverlayGraph<'_> {
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, direction, visited_state, &mut buffer.visited, &mut buffer.points);
+            self.find_contour(
+                &start_data,
+                direction,
+                visited_state,
+                &mut buffer.visited,
+                &mut buffer.points,
+            );
             let (is_valid, is_modified) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -190,14 +196,7 @@ impl OverlayGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id = GraphUtil::next_link(
-                self.links,
-                self.nodes,
-                link_id,
-                node_id,
-                clockwise,
-                &visited,
-            );
+            link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, &visited);
 
             let link = unsafe {
                 // Safety: `link_id` is always derived from a previous in-bounds index or
@@ -244,7 +243,13 @@ impl OverlayGraph<'_> {
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, direction, visited_state, &mut buffer.visited, &mut buffer.points);
+            self.find_contour(
+                &start_data,
+                direction,
+                visited_state,
+                &mut buffer.visited,
+                &mut buffer.points,
+            );
             let (is_valid, _) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
