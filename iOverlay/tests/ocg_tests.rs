@@ -23,7 +23,7 @@ mod tests {
         // OGC Simple Feature Specification (ISO 19125-1) states:
         // "The interior of every Surface is a connected point set."
 
-        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5],]];
+        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5]]];
 
         let clip_paths = int_shape![
             [[1, 2], [1, 4], [3, 4], [3, 3], [2, 3], [2, 2]],
@@ -62,7 +62,7 @@ mod tests {
         //     │                   │
         //   0 └───────────────────┘
 
-        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5],]];
+        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5]]];
 
         let clip_paths = int_shape![
             [[1, 2], [1, 3], [2, 3], [2, 2]],
@@ -107,7 +107,7 @@ mod tests {
         //     │                           │
         //   0 └───────────────────────────┘
 
-        let subj_paths = int_shape![[[0, 0], [7, 0], [7, 7], [0, 7],]];
+        let subj_paths = int_shape![[[0, 0], [7, 0], [7, 7], [0, 7]]];
 
         let clip_paths = int_shape![
             [[1, 3], [1, 4], [2, 4], [2, 3]],
@@ -136,6 +136,100 @@ mod tests {
         assert_eq!(result[2].len(), 1);
         assert_eq!(result[3].len(), 1);
         assert_eq!(result[4].len(), 1);
+    }
+
+    #[test]
+    fn test_3() {
+        //     0   1   2   3
+        //   3 ┌───────┐
+        //     │       │
+        //   2 │   ┌───●───┐
+        //     │   │ ░ │   │
+        //   1 │   └───┘   │
+        //     │           │
+        //   0 └───────────┘
+        let subj_paths = int_shape![[[0, 3], [0, 0], [3, 0], [3, 2], [1, 2], [1, 1], [2, 1], [2, 3]]];
+
+        let clip_paths = int_shape![];
+
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            IntOverlayOptions::ogc(),
+            Default::default(),
+        );
+
+        let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 6);
+        assert_eq!(result[0][1].len(), 4);
+    }
+
+    #[test]
+    fn test_4() {
+        //     0   1   2   3
+        //   3     ┌───┐
+        //         │   │
+        //   2 ┌───●───●───┐
+        //     │   │ ░ │   │
+        //   1 └───●───●───┘
+        //         │   │
+        //   0     └───┘
+
+        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5]]];
+
+        let clip_paths = int_shape![
+            [[1, 2], [1, 3], [2, 3], [2, 2]],
+            [[2, 1], [2, 2], [3, 2], [3, 1]],
+            [[2, 3], [2, 4], [3, 4], [3, 3]],
+            [[3, 2], [3, 3], [4, 3], [4, 2]],
+        ];
+
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            IntOverlayOptions::ogc(),
+            Default::default(),
+        );
+
+        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 12);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
+    }
+
+    #[test]
+    fn test_5() {
+        let subj_paths = int_shape![
+            [[-3, 0], [-3, -3], [0, -3], [0, 0], [3, 0], [3, 3], [0, 3], [0, 0]],
+            [[-1, -2], [-2, -1], [0, 0], [1, 2], [2, 1], [0, 0]],
+        ];
+
+        let clip_paths = int_shape![];
+
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            IntOverlayOptions::ogc(),
+            Default::default(),
+        );
+
+        let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 3);
+
+        assert_eq!(result[1].len(), 2);
+        assert_eq!(result[1][0].len(), 4);
+        assert_eq!(result[1][1].len(), 3);
     }
 
     #[test]
