@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::{IntOverlayOptions, Overlay};
+    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_shape::{int_path, int_shape};
 
@@ -34,6 +34,51 @@ mod tests {
             &subj_paths,
             &clip_paths,
             IntOverlayOptions::ogc(),
+            Default::default(),
+        );
+
+        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 2);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 8);
+        assert_eq!(result[1].len(), 1);
+        assert_eq!(result[1][0].len(), 4);
+    }
+
+    #[test]
+    fn test_0_invert() {
+        //     0   1   2   3   4   5
+        //   5 ┌───────────────────┐
+        //     │                   │
+        //   4 │   ┌───────┐       │
+        //     │   │ ░   ░ │       │   Two L-shaped holes share vertices at (2,2) and (3,3)
+        //   3 │   │   ┌───●───┐   │
+        //     │   │ ░ │   │ ░ │   │   ░ = holes
+        //   2 │   └───●───┘   │   │
+        //     │       │ ░   ░ │   │   The shared edge disconnects the interior
+        //   1 │       └───────┘   │
+        //     │                   │
+        //   0 └───────────────────┘
+        //
+        // OGC Simple Feature Specification (ISO 19125-1) states:
+        // "The interior of every Surface is a connected point set."
+
+        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5]]];
+
+        let clip_paths = int_shape![
+            [[1, 2], [1, 4], [3, 4], [3, 3], [2, 3], [2, 2]],
+            [[2, 1], [2, 2], [3, 2], [3, 3], [4, 3], [4, 1]],
+        ];
+
+        let mut opts = IntOverlayOptions::ogc();
+        opts.output_direction = ContourDirection::Clockwise;
+
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            opts,
             Default::default(),
         );
 
@@ -151,11 +196,9 @@ mod tests {
 
         let subj_paths = int_shape![[[0, 3], [0, 0], [3, 0], [3, 2], [1, 2], [1, 1], [2, 1], [2, 3]]];
 
-        let clip_paths = int_shape![];
-
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
-            &clip_paths,
+            &[],
             IntOverlayOptions::ogc(),
             Default::default(),
         );
@@ -245,6 +288,47 @@ mod tests {
     }
 
     #[test]
+    fn test_5_invert() {
+        //     0   1   2   3   4
+        //   4 ┌───────────────┐
+        //     │               │
+        //   3 │       ┌───┐   │
+        //     │       │ ░ │   │
+        //   2 │   ┌───●───┘   │
+        //     │   │ ░ │       │
+        //   1 │   └───┘       │
+        //     │               │
+        //   0 └───────────────┘
+
+        let subj_paths = int_shape![
+            [[0, 4], [0, 0], [4, 0], [4, 4]]
+        ];
+
+        let clip_paths = int_shape![
+            [[1, 2], [1, 1], [2, 1], [2, 2]],
+            [[2, 3], [2, 2], [3, 2], [3, 3]],
+        ];
+
+        let mut opts = IntOverlayOptions::ogc();
+        opts.output_direction = ContourDirection::Clockwise;
+
+        let mut overlay = Overlay::with_contours_custom(
+            &subj_paths,
+            &clip_paths,
+            opts,
+            Default::default(),
+        );
+
+        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].len(), 3);
+        assert_eq!(result[0][0].len(), 4);
+        assert_eq!(result[0][1].len(), 4);
+        assert_eq!(result[0][2].len(), 4);
+    }
+
+    #[test]
     fn test_6() {
         //     0   1   2   3
         //   3     ┌───┐
@@ -262,11 +346,9 @@ mod tests {
             [[1, 3], [1, 2], [2, 2], [2, 3]],
         ];
 
-        let clip_paths = int_shape![];
-
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
-            &clip_paths,
+            &[],
             IntOverlayOptions::ogc(),
             Default::default(),
         );
@@ -291,11 +373,9 @@ mod tests {
             [[-1, -2], [-2, -1], [0, 0], [1, 2], [2, 1], [0, 0]],
         ];
 
-        let clip_paths = int_shape![];
-
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
-            &clip_paths,
+            &[],
             IntOverlayOptions::ogc(),
             Default::default(),
         );
