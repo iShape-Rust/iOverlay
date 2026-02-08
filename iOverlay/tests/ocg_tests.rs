@@ -194,7 +194,7 @@ mod tests {
             Default::default(),
         );
 
-        let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+        let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 4);
         assert_eq!(result[0].len(), 1);
