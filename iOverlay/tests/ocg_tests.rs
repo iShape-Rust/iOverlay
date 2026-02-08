@@ -178,14 +178,14 @@ mod tests {
         //         │   │
         //   0     └───┘
 
-        let subj_paths = int_shape![[[0, 0], [5, 0], [5, 5], [0, 5]]];
-
-        let clip_paths = int_shape![
-            [[1, 2], [1, 3], [2, 3], [2, 2]],
-            [[2, 1], [2, 2], [3, 2], [3, 1]],
-            [[2, 3], [2, 4], [3, 4], [3, 3]],
-            [[3, 2], [3, 3], [4, 3], [4, 2]],
+        let subj_paths = int_shape![
+            [[0, 2], [0, 1], [1, 1], [1, 2]],
+            [[2, 2], [2, 1], [3, 1], [3, 2]],
+            [[1, 1], [1, 0], [2, 0], [2, 1]],
+            [[1, 3], [1, 2], [2, 2], [2, 3]],
         ];
+
+        let clip_paths = int_shape![];
 
         let mut overlay = Overlay::with_contours_custom(
             &subj_paths,
@@ -196,12 +196,15 @@ mod tests {
 
         let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].len(), 2);
+        assert_eq!(result.len(), 4);
+        assert_eq!(result[0].len(), 1);
         assert_eq!(result[0][0].len(), 4);
-        assert_eq!(result[0][1].len(), 12);
         assert_eq!(result[1].len(), 1);
         assert_eq!(result[1][0].len(), 4);
+        assert_eq!(result[2].len(), 1);
+        assert_eq!(result[2][0].len(), 4);
+        assert_eq!(result[3].len(), 1);
+        assert_eq!(result[3][0].len(), 4);
     }
 
     #[test]
