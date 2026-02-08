@@ -35,7 +35,7 @@ impl OverlayGraph<'_> {
         let mut shapes = Vec::new();
 
         buffer.points.reserve_capacity(buffer.visited.len());
-        let mut min_holes_count = 0;
+        let mut hole_count_hint = 0;
 
         let mut link_index = 0;
         while link_index < buffer.visited.len() {
@@ -70,7 +70,7 @@ impl OverlayGraph<'_> {
                     visited_state,
                     &mut buffer.visited,
                 );
-                min_holes_count += 1;
+                hole_count_hint += 1;
                 continue;
             }
 
@@ -87,7 +87,7 @@ impl OverlayGraph<'_> {
             };
         }
 
-        if min_holes_count > 0 {
+        if hole_count_hint > 0 {
             // Keep only hole edges; skip everything else for the second pass.
             for state in buffer.visited.iter_mut() {
                 *state = match *state {
@@ -96,8 +96,8 @@ impl OverlayGraph<'_> {
                 };
             }
 
-            let mut holes = Vec::with_capacity(min_holes_count);
-            let mut anchors = Vec::with_capacity(min_holes_count);
+            let mut holes = Vec::with_capacity(hole_count_hint);
+            let mut anchors = Vec::with_capacity(hole_count_hint);
             let mut anchors_already_sorted = true;
             link_index = 0;
 
@@ -224,14 +224,14 @@ impl OverlayGraph<'_> {
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        // first find all edges belong to contour
+        // First, mark all edges that belong to the contour.
 
         let mut end_link_id = start_data.link_id;
 
         global_visited.visit_edge(link_id, VisitState::HullVisited);
         contour_visited.visit_edge(link_id, VisitState::Unvisited);
 
-        let mut count = 1;
+        let mut original_contour_len = 1;
 
         // Find a closed tour
         while node_id != last_node_id {
@@ -258,13 +258,13 @@ impl OverlayGraph<'_> {
             end_link_id = end_link_id.max(link_id);
             contour_visited.visit_edge(link_id, VisitState::Unvisited);
             global_visited.visit_edge(link_id, VisitState::HullVisited);
-            count += 1;
+            original_contour_len += 1;
         }
 
-        // revisit all links in reverse direction
-        // all links escape current contour are unvisited in contour_visited
+        // Revisit the contour in reverse;
+        // all links escape current contour are skipped in `contour_visited`.
 
-        points.reserve_capacity(count);
+        points.reserve_capacity(original_contour_len);
         self.find_contour(
             &start_data,
             !clockwise,
@@ -278,7 +278,7 @@ impl OverlayGraph<'_> {
             self.options.preserve_output_collinear,
         );
 
-        let contour_count = points.len();
+        let contour_len = points.len();
 
         let mut shape = if is_valid {
             let mut shape = vec![];
@@ -289,7 +289,7 @@ impl OverlayGraph<'_> {
             None
         };
 
-        if contour_count < count {
+        if contour_len < original_contour_len {
             // contour has self touches
             let mut link_index = start_data.link_id;
             while link_index <= end_link_id {
@@ -309,7 +309,7 @@ impl OverlayGraph<'_> {
                     self.links.get_unchecked(left_top_link)
                 };
 
-                // only holes are possible!
+                // Self-touch splits can only produce holes inside this contour.
 
                 let hole_start_data = StartPathData::new(clockwise, link, left_top_link);
                 self.find_contour(
@@ -320,7 +320,7 @@ impl OverlayGraph<'_> {
                     points,
                 );
 
-                // hole belong exact to this shape
+                // Hole have to belong to this shape.
                 if let Some(shape) = shape.as_mut() {
                     let (is_valid, _) = points.validate(
                         self.options.min_output_area,
