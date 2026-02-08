@@ -31,6 +31,7 @@ pub(crate) enum VisitState {
 pub struct BooleanExtractionBuffer {
     pub(crate) points: Vec<IntPoint>,
     pub(crate) visited: Vec<VisitState>,
+    pub(crate) contour_visited: Option<Vec<VisitState>>,
 }
 
 impl OverlayGraph<'_> {
@@ -120,7 +121,7 @@ impl OverlayGraph<'_> {
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, direction, visited_state, buffer);
+            self.find_contour(&start_data, direction, visited_state, &mut buffer.visited, &mut buffer.points);
             let (is_valid, is_modified) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -176,15 +177,16 @@ impl OverlayGraph<'_> {
         start_data: &StartPathData,
         clockwise: bool,
         visited_state: VisitState,
-        buffer: &mut BooleanExtractionBuffer,
+        visited: &mut Vec<VisitState>,
+        points: &mut Vec<IntPoint>,
     ) {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
-        buffer.visited.visit_edge(link_id, visited_state);
-        buffer.points.clear();
-        buffer.points.push(start_data.begin);
+        visited.visit_edge(link_id, visited_state);
+        points.clear();
+        points.push(start_data.begin);
 
         // Find a closed tour
         while node_id != last_node_id {
@@ -194,7 +196,7 @@ impl OverlayGraph<'_> {
                 link_id,
                 node_id,
                 clockwise,
-                &buffer.visited,
+                &visited,
             );
 
             let link = unsafe {
@@ -202,9 +204,9 @@ impl OverlayGraph<'_> {
                 // from `find_left_top_link`, so it remains in `0..self.links.len()`.
                 self.links.get_unchecked(link_id)
             };
-            node_id = buffer.points.push_node_and_get_other(link, node_id);
+            node_id = points.push_node_and_get_other(link, node_id);
 
-            buffer.visited.visit_edge(link_id, visited_state);
+            visited.visit_edge(link_id, visited_state);
         }
     }
 
@@ -242,7 +244,7 @@ impl OverlayGraph<'_> {
             let direction = is_hole == clockwise;
             let start_data = StartPathData::new(direction, link, left_top_link);
 
-            self.find_contour(&start_data, direction, visited_state, buffer);
+            self.find_contour(&start_data, direction, visited_state, &mut buffer.visited, &mut buffer.points);
             let (is_valid, _) = buffer.points.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
