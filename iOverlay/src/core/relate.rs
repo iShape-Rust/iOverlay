@@ -22,10 +22,9 @@ use i_shape::int::shape::{IntContour, IntShape};
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use i_overlay::core::relate::PredicateOverlay;
 /// use i_overlay::core::overlay::ShapeType;
-/// use i_overlay::segm::build::BuildSegments;
 ///
 /// let mut overlay = PredicateOverlay::new(16);
 /// // Add subject and clip segments...
