@@ -13,6 +13,7 @@ use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 pub(crate) struct StrokeState {
     pub(crate) test: usize,
@@ -307,7 +308,7 @@ impl StrokeState {
                     [ 3.0,  0.0],
                     [-1.0,  2.0],
                 ];
-                style = style.start_cap(LineCap::Custom(points))
+                style = style.start_cap(LineCap::Custom(Rc::from(points)))
             }
         }
 
@@ -326,7 +327,7 @@ impl StrokeState {
                     [ 3.0,  0.0],
                     [-1.0,  2.0],
                 ];
-                style = style.end_cap(LineCap::Custom(points))
+                style = style.end_cap(LineCap::Custom(Rc::from(points)))
             }
         }
 
