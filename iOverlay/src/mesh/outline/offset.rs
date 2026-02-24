@@ -369,10 +369,34 @@ mod tests {
     }
 
     #[test]
-    fn test_square_offset() {
+    fn test_square_round_offset() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let angle = PI / 3.0f32;
+        let style = OutlineStyle::new(10.0).line_join(LineJoin::Round(angle));
+
+        let shapes = path.outline(&style);
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_square_negative_offset() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(-20.0);
+        let shapes = path.outline(&style);
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_square_negative_round_offset() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let angle = PI / 3.0f32;
+        let style = OutlineStyle::new(-20.0).line_join(LineJoin::Round(angle));
+
         let shapes = path.outline(&style);
 
         assert_eq!(shapes.len(), 0);
@@ -667,9 +691,9 @@ mod tests {
     #[test]
     fn test_real_case_0_simplified() {
         let main = vec![
-            [410_000.0, 5840_000.0],
-            [420_000.0, 5840_000.0],
-            [420_000.0, 5850_000.0],
+            [410_000.0, 5847_000.0],
+            [413_000.0, 5847_000.0],
+            [413_000.0, 5850_000.0],
             [410_000.0, 5850_000.0],
         ];
 
@@ -686,7 +710,6 @@ mod tests {
             [411_314.5590022234, 5848_009.708010634],
             [411_309.3459895281, 5848_009.447024306],
             [411_305.3719905047, 5848_010.244997939],
-            [411_294.2500422625, 5848_072.3189725485],
         ];
 
         let shape= vec![main, hole];
