@@ -1,4 +1,5 @@
 use crate::build::builder::GraphBuilder;
+use crate::build::sweep::FillStrategy;
 use crate::core::graph::OverlayNode;
 use crate::core::solver::Solver;
 use crate::mesh::graph::OffsetGraph;
@@ -43,12 +44,15 @@ impl OffsetOverlay {
     }
 
     #[inline]
-    pub fn build_graph_view_with_solver(&mut self, solver: Solver) -> Option<OffsetGraph<'_>> {
+    pub fn build_graph_view_with_solver<F: FillStrategy<ShapeCountOffset>>(
+        &mut self,
+        solver: Solver,
+    ) -> Option<OffsetGraph<'_>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return None;
         }
-        let graph = self.graph_builder.build_offset(&solver, &self.segments);
+        let graph = self.graph_builder.build_offset::<F>(&solver, &self.segments);
 
         Some(graph)
     }

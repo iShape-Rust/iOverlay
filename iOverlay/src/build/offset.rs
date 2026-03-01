@@ -9,12 +9,12 @@ use crate::segm::segment::{Segment, SegmentFill};
 
 impl GraphBuilder<ShapeCountOffset, OverlayNode> {
     #[inline]
-    pub(crate) fn build_offset(
+    pub(crate) fn build_offset<F: FillStrategy<ShapeCountOffset>>(
         &mut self,
         solver: &Solver,
         segments: &[Segment<ShapeCountOffset>],
     ) -> OffsetGraph<'_> {
-        self.build_fills_with_strategy::<SubjectOffsetStrategy>(solver, segments);
+        self.build_fills_with_strategy::<F>(solver, segments);
         self.build_links_all(segments);
         self.offset_graph(solver)
     }
@@ -29,10 +29,11 @@ impl GraphBuilder<ShapeCountOffset, OverlayNode> {
     }
 }
 
-struct SubjectOffsetStrategy;
+pub(crate) struct PositiveSubjectOffsetStrategy;
+pub(crate) struct NegativeSubjectOffsetStrategy;
 const BOLD_BIT: usize = 2;
 
-impl FillStrategy<ShapeCountOffset> for SubjectOffsetStrategy {
+impl FillStrategy<ShapeCountOffset> for PositiveSubjectOffsetStrategy {
     #[inline(always)]
     fn add_and_fill(this: ShapeCountOffset, bot: ShapeCountOffset) -> (ShapeCountOffset, SegmentFill) {
         let top_subj = bot.subj + this.subj;
@@ -40,6 +41,27 @@ impl FillStrategy<ShapeCountOffset> for SubjectOffsetStrategy {
 
         let subj_top = (top_subj > 0) as SegmentFill;
         let subj_bot = (bot_subj > 0) as SegmentFill;
+
+        let bold = this.bold as SegmentFill;
+
+        let fill = subj_top | (subj_bot << 1) | (bold << BOLD_BIT);
+        let top = ShapeCountOffset {
+            subj: top_subj,
+            bold: false,
+        }; // bold not need
+
+        (top, fill)
+    }
+}
+
+impl FillStrategy<ShapeCountOffset> for NegativeSubjectOffsetStrategy {
+    #[inline(always)]
+    fn add_and_fill(this: ShapeCountOffset, bot: ShapeCountOffset) -> (ShapeCountOffset, SegmentFill) {
+        let top_subj = bot.subj + this.subj;
+        let bot_subj = bot.subj;
+
+        let subj_top = (top_subj < 0) as SegmentFill;
+        let subj_bot = (bot_subj < 0) as SegmentFill;
 
         let bold = this.bold as SegmentFill;
 

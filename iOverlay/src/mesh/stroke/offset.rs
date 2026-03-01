@@ -1,3 +1,4 @@
+use crate::build::offset::PositiveSubjectOffsetStrategy;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::i_shape::source::resource::ShapeResource;
@@ -202,8 +203,8 @@ impl<P: 'static + FloatPointCompatible<T>, T: 'static + FloatNumber> StrokeSolve
 
         let min_area = self.adapter.sqr_float_to_int(options.min_output_area);
         let shapes = OffsetOverlay::with_segments(segments)
-            .build_graph_view_with_solver(Default::default())
-            .map(|graph| graph.extract_offset(options.output_direction, min_area))
+            .build_graph_view_with_solver::<PositiveSubjectOffsetStrategy>(Default::default())
+            .map(|graph| graph.extract_offset(options.output_direction, min_area, &mut Default::default()))
             .unwrap_or_default();
 
         let mut float = shapes.to_float(&self.adapter);

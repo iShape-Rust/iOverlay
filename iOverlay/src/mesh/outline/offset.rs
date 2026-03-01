@@ -1,3 +1,5 @@
+use crate::build::offset::{NegativeSubjectOffsetStrategy, PositiveSubjectOffsetStrategy};
+use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
 use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
@@ -13,6 +15,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
+use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
@@ -195,20 +198,24 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
             self.outer_builder.build(path, &self.adapter, &mut segments);
 
             OffsetOverlay::with_segments(segments)
-                .build_graph_view_with_solver(Default::default())
-                .map(|graph| graph.extract_offset(options.output_direction, int_min_area))
+                .build_graph_view_with_solver::<PositiveSubjectOffsetStrategy>(Default::default())
+                .map(|graph| {
+                    graph.extract_offset(options.output_direction, int_min_area, &mut Default::default())
+                })
                 .unwrap_or_default()
         } else {
             let total_capacity = self.outer_builder.capacity(self.points_count);
-
             let mut overlay = Overlay::new_custom(
                 total_capacity,
                 options.int_with_adapter(&self.adapter),
                 Default::default(),
             );
+
             let mut offset_overlay = OffsetOverlay::new(128);
 
             let mut segments = Vec::new();
+            let mut extraction_buffer = BooleanExtractionBuffer::default();
+            let mut flat_buffer = FlatContoursBuffer::default();
 
             for path in source.iter_paths() {
                 let area = path.unsafe_int_area(&self.adapter);
@@ -217,7 +224,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                     continue;
                 }
 
-                if area < 0 {
+                let (offset_graph, direction) = if area < 0 {
                     let capacity = self.outer_builder.capacity(path.len());
                     let additional = capacity.saturating_sub(segments.capacity());
                     if additional > 0 {
@@ -230,42 +237,30 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
 
-                    let shapes = offset_overlay
-                        .build_graph_view_with_solver(Default::default())
-                        .map(|graph| graph.extract_offset(ContourDirection::CounterClockwise, 0))
-                        .unwrap_or_default();
-
-                    overlay.add_shapes(&shapes, ShapeType::Subject);
+                    let graph = offset_overlay
+                        .build_graph_view_with_solver::<PositiveSubjectOffsetStrategy>(Default::default());
+                    (graph, ContourDirection::CounterClockwise)
                 } else {
-                    let mut inverted = Vec::with_capacity(path.len());
-                    for p in path.iter().rev() {
-                        inverted.push(*p);
-                    }
-
-                    let capacity = self.inner_builder.capacity(inverted.len());
+                    let capacity = self.inner_builder.capacity(path.len());
                     let additional = capacity.saturating_sub(segments.capacity());
                     if additional > 0 {
                         segments.reserve(additional);
                     }
                     segments.clear();
 
-                    self.inner_builder.build(&inverted, &self.adapter, &mut segments);
+                    self.inner_builder.build(path, &self.adapter, &mut segments);
 
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
 
-                    let mut shapes = offset_overlay
-                        .build_graph_view_with_solver(Default::default())
-                        .map(|graph| graph.extract_offset(ContourDirection::CounterClockwise, 0))
-                        .unwrap_or_default();
+                    let graph = offset_overlay
+                        .build_graph_view_with_solver::<NegativeSubjectOffsetStrategy>(Default::default());
+                    (graph, ContourDirection::Clockwise)
+                };
 
-                    for shape in shapes.iter_mut() {
-                        for path in shape.iter_mut() {
-                            path.reverse();
-                        }
-                    }
-
-                    overlay.add_shapes(&shapes, ShapeType::Subject);
+                if let Some(graph) = offset_graph {
+                    graph.extract_contours_into(direction, 0, &mut extraction_buffer, &mut flat_buffer);
+                    overlay.add_flat_buffer(&flat_buffer, ShapeType::Subject);
                 }
             }
 
@@ -377,7 +372,7 @@ mod tests {
 
         let shapes = path.outline(&style);
 
-        assert_eq!(shapes.len(), 0);
+        assert_eq!(shapes.len(), 1);
     }
 
     #[test]
@@ -421,7 +416,7 @@ mod tests {
         ];
 
         let style = OutlineStyle::new(1.0).line_join(LineJoin::Bevel);
-        let shapes = window.outline(&style);
+        let shapes = window.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 2);
@@ -678,7 +673,7 @@ mod tests {
             [411294.2500422625, 5848072.3189725485],
         ];
 
-        let shape= vec![main, hole];
+        let shape = vec![main, hole];
 
         let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);
         let style = OutlineStyle::new(600.0).line_join(LineJoin::Round(angle));
@@ -712,7 +707,7 @@ mod tests {
             [411_305.3719905047, 5848_010.244997939],
         ];
 
-        let shape= vec![main, hole];
+        let shape = vec![main, hole];
 
         let angle = 10.0f64 / (core::f64::consts::PI / 2.0f64);
         let style = OutlineStyle::new(600.0).line_join(LineJoin::Round(angle));

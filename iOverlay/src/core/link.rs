@@ -29,6 +29,5 @@ impl OverlayLink {
 }
 
 pub(crate) trait OverlayLinkFilter {
-    fn filter_by_overlay(&self, fill_rule: OverlayRule) -> Vec<VisitState>;
     fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<VisitState>);
 }
