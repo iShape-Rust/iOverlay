@@ -300,7 +300,7 @@ mod tests {
     use i_float::int::point::IntPoint;
     use i_float::int::rect::IntRect;
     use i_float::triangle::Triangle;
-    use rand::Rng;
+    use rand::RngExt;
 
     #[test]
     fn test_0() {

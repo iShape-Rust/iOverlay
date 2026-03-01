@@ -9,7 +9,7 @@ mod tests {
     use i_shape::base::data::Path;
     use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntShape;
-    use rand::Rng;
+    use rand::RngExt;
     use std::f64::consts::PI;
 
     const SOLVERS: [Solver; 3] = [Solver::LIST, Solver::TREE, Solver::AUTO];

@@ -216,8 +216,8 @@ impl OverlayGraph<'_> {
         &self,
         start_data: &StartPathData,
         clockwise: bool,
-        global_visited: &mut Vec<VisitState>,
-        contour_visited: &mut Vec<VisitState>,
+        global_visited: &mut [VisitState],
+        contour_visited: &mut [VisitState],
         points: &mut Vec<IntPoint>,
     ) -> Option<IntShape> {
         let mut link_id = start_data.link_id;
@@ -266,7 +266,7 @@ impl OverlayGraph<'_> {
 
         points.reserve_capacity(original_contour_len);
         self.find_contour(
-            &start_data,
+            start_data,
             !clockwise,
             VisitState::HullVisited,
             contour_visited,

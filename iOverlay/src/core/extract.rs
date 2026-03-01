@@ -183,7 +183,7 @@ impl OverlayGraph<'_> {
         start_data: &StartPathData,
         clockwise: bool,
         visited_state: VisitState,
-        visited: &mut Vec<VisitState>,
+        visited: &mut [VisitState],
         points: &mut Vec<IntPoint>,
     ) {
         let mut link_id = start_data.link_id;
@@ -196,7 +196,7 @@ impl OverlayGraph<'_> {
 
         // Find a closed tour
         while node_id != last_node_id {
-            link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, &visited);
+            link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
                 // Safety: `link_id` is always derived from a previous in-bounds index or

@@ -18,21 +18,18 @@ impl Segment<ShapeCountOffset> {
             }
         }
     }
-
+    
     #[inline]
-    pub(crate) fn weak_subject_ab(p0: IntPoint, p1: IntPoint) -> Self {
+    pub(crate) fn subject_ab(p0: IntPoint, p1: IntPoint, bold: bool) -> Self {
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },
-                count: ShapeCountOffset { subj: 1, bold: false },
+                count: ShapeCountOffset { subj: 1, bold },
             }
         } else {
             Self {
                 x_segment: XSegment { a: p1, b: p0 },
-                count: ShapeCountOffset {
-                    subj: -1,
-                    bold: false,
-                },
+                count: ShapeCountOffset { subj: -1, bold },
             }
         }
     }

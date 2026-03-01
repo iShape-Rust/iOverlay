@@ -39,7 +39,7 @@ pub(crate) enum BooleanMessage {
 }
 
 impl EditorApp {
-    fn boolean_sidebar(&self) -> Column<AppMessage> {
+    fn boolean_sidebar(&self) -> Column<'_, AppMessage> {
         let count = self.app_resource.boolean.count;
         let mut column = Column::new().push(
             Space::new()

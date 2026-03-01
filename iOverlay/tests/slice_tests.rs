@@ -5,7 +5,7 @@ mod tests {
     use i_overlay::string::line::IntLine;
     use i_overlay::string::slice::IntSlice;
     use i_shape::int::path::IntPath;
-    use rand::Rng;
+    use rand::RngExt;
 
     #[test]
     fn test_miss_slice() {

@@ -71,7 +71,7 @@ impl ShapeWidget {
         let validation = Validation::with_fill_rule(fill_rule.unwrap_or_default());
         let triangulation =
             IntTriangulator::new(shapes.points_count(), validation, Default::default())
-                .triangulate_shapes(shapes, false);
+                .triangulate_shapes(shapes);
 
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
@@ -91,7 +91,7 @@ impl ShapeWidget {
         let validation = Validation::with_fill_rule(fill_rule.unwrap_or_default());
         let triangulation =
             IntTriangulator::new(paths.points_count(), validation, Default::default())
-                .triangulate_shape(paths, false);
+                .triangulate_shape(paths);
 
         // let triangulation = paths.triangulate().into_triangulation();
 

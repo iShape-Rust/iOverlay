@@ -6,7 +6,6 @@ use crate::app::string::content::StringMessage;
 use crate::app::string::content::StringState;
 use crate::app::stroke::content::StrokeMessage;
 use crate::app::stroke::content::StrokeState;
-use iced::event::Event as MainEvent;
 use iced::keyboard::key::Named;
 use iced::keyboard::Key;
 use iced::widget::{rule, Space};
@@ -64,7 +63,6 @@ pub(crate) enum AppMessage {
     String(StringMessage),
     Stroke(StrokeMessage),
     Outline(OutlineMessage),
-    EventOccurred(MainEvent),
     NextTest,
     PrevTest,
 }
@@ -111,7 +109,6 @@ impl EditorApp {
                 MainAction::Stroke => self.stroke_prev_test(),
                 MainAction::Outline => self.outline_prev_test(),
             }
-            _ => {}
         }
 
         Task::none()

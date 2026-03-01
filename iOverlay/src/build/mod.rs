@@ -1,7 +1,7 @@
 pub(crate) mod boolean;
 pub(crate) mod builder;
 mod graph;
-mod offset;
+pub(crate) mod offset;
 pub(crate) mod string;
 pub(crate) mod sweep;
 mod util;

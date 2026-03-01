@@ -275,19 +275,6 @@ impl BooleanFillFilter for SegmentFill {
 
 impl OverlayLinkFilter for [OverlayLink] {
     #[inline]
-    fn filter_by_overlay(&self, overlay_rule: OverlayRule) -> Vec<VisitState> {
-        match overlay_rule {
-            OverlayRule::Subject => filter_subject(self),
-            OverlayRule::Clip => filter_clip(self),
-            OverlayRule::Intersect => filter_intersect(self),
-            OverlayRule::Union => filter_union(self),
-            OverlayRule::Difference => filter_difference(self),
-            OverlayRule::Xor => filter_xor(self),
-            OverlayRule::InverseDifference => filter_inverse_difference(self),
-        }
-    }
-
-    #[inline]
     fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<VisitState>) {
         match overlay_rule {
             OverlayRule::Subject => filter_subject_into(self, buffer),
@@ -299,62 +286,6 @@ impl OverlayLinkFilter for [OverlayLink] {
             OverlayRule::InverseDifference => filter_inverse_difference_into(self, buffer),
         }
     }
-}
-
-#[inline]
-fn filter_subject(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_subject()))
-        .collect()
-}
-
-#[inline]
-fn filter_clip(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_clip()))
-        .collect()
-}
-
-#[inline]
-fn filter_intersect(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_intersect()))
-        .collect()
-}
-
-#[inline]
-fn filter_union(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_union()))
-        .collect()
-}
-
-#[inline]
-fn filter_difference(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_difference()))
-        .collect()
-}
-
-#[inline]
-fn filter_inverse_difference(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_inverse_difference()))
-        .collect()
-}
-
-#[inline]
-fn filter_xor(links: &[OverlayLink]) -> Vec<VisitState> {
-    links
-        .iter()
-        .map(|link| VisitState::new(!link.fill.is_xor()))
-        .collect()
 }
 
 #[inline]
