@@ -32,21 +32,23 @@ impl BevelJoinBuilder {
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountOffset>>,
     ) {
-        Self::add_weak_segment(&s0.b_top, &s1.a_top, adapter, segments);
-    }
-
-    #[inline]
-    fn add_weak_segment<T: FloatNumber, P: FloatPointCompatible<T>>(
-        a: &P,
-        b: &P,
-        adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
-    ) {
-        let ia = adapter.float_to_int(a);
-        let ib = adapter.float_to_int(b);
-        if ia != ib {
-            segments.push(Segment::weak_subject_ab(ia, ib));
+        let b0 = adapter.float_to_int(&s0.b_top);
+        let a1 = adapter.float_to_int(&s1.a_top);
+        if b0 == a1 {
+            return;
         }
+        let a0 = adapter.float_to_int(&s0.a_top);
+        let b1 = adapter.float_to_int(&s1.b_top);
+
+        let a0b0 = b0 - a0;
+        let a1b1 = b1 - a1;
+        let b0a1 = a1 - b0;
+
+        let a0b0_x_a1b1 = a0b0.cross_product(a1b1);
+        let a0b0_x_b0a1 = a0b0.cross_product(b0a1);
+        let bold = (a0b0_x_a1b1 >= 0) == (a0b0_x_b0a1 >= 0);
+
+        segments.push(Segment::subject_ab(b0, a1, bold));
     }
 }
 
