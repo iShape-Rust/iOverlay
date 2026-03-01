@@ -9,7 +9,7 @@ mod tests {
     use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_overlay::float::slice::FloatSlice;
     use i_overlay::string::clip::ClipRule;
-    use rand::Rng;
+    use rand::RngExt;
 
     #[derive(Clone, Copy)]
     struct FPoint {

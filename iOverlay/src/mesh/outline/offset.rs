@@ -352,7 +352,7 @@ mod tests {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(10.0);
-        let shapes = path.outline(&style);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 1);
 

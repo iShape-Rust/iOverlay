@@ -26,7 +26,7 @@ pub(super) struct BevelJoinBuilder;
 
 impl BevelJoinBuilder {
     #[inline]
-    fn join_weak<T: FloatNumber, P: FloatPointCompatible<T>>(
+    fn join<T: FloatNumber, P: FloatPointCompatible<T>>(
         s0: &Section<P, T>,
         s1: &Section<P, T>,
         adapter: &FloatPointAdapter<P, T>,
@@ -59,7 +59,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for BevelJoin
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountOffset>>,
     ) {
-        Self::join_weak(s0, s1, adapter, segments);
+        Self::join(s0, s1, adapter, segments);
     }
 
     #[inline]
@@ -118,7 +118,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
         let turn = cross_product >= T::from_float(0.0);
         if turn == self.expand {
-            BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
+            BevelJoinBuilder::join(s0, s1, adapter, segments);
             return;
         }
 
@@ -130,7 +130,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
 
         let sq_len = ia.sqr_distance(ib);
         if sq_len < 4 {
-            BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
+            BevelJoinBuilder::join(s0, s1, adapter, segments);
             return;
         }
 
@@ -225,13 +225,13 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
         let turn = cross_product >= T::from_float(0.0);
         if turn == self.expand {
-            BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
+            BevelJoinBuilder::join(s0, s1, adapter, segments);
             return;
         }
 
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         if self.limit_dot_product < dot_product {
-            BevelJoinBuilder::join_weak(s0, s1, adapter, segments);
+            BevelJoinBuilder::join(s0, s1, adapter, segments);
             return;
         }
 
