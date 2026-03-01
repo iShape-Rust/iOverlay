@@ -140,7 +140,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
 
         let join = style.join.clone().normalize();
         let outer_builder = OutlineBuilder::new(-style.outer_offset, &join);
-        let inner_builder = OutlineBuilder::new(style.inner_offset, &join);
+        let inner_builder = OutlineBuilder::new(-style.inner_offset, &join);
 
         let outer_radius = style.outer_offset;
         let inner_radius = style.inner_offset;
@@ -420,6 +420,8 @@ mod tests {
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 2);
+        assert_eq!(shapes[0][0].len(), 8);
+        assert_eq!(shapes[0][1].len(), 4);
     }
 
     // [[[[300.0, 300.0], [500.0, 300.0], [500.0, 500.0], [300.0, 500.0]]]]
