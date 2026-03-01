@@ -18,7 +18,7 @@ impl Segment<ShapeCountOffset> {
             }
         }
     }
-    
+
     #[inline]
     pub(crate) fn subject_ab(p0: IntPoint, p1: IntPoint, bold: bool) -> Self {
         if p0 < p1 {
