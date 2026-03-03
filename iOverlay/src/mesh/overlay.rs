@@ -1,59 +1,26 @@
 use crate::build::builder::GraphBuilder;
-use crate::build::sweep::FillStrategy;
 use crate::core::graph::OverlayNode;
-use crate::core::solver::Solver;
-use crate::mesh::graph::OffsetGraph;
-use crate::segm::offset::ShapeCountOffset;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use crate::core::overlay::Overlay;
+use crate::segm::boolean::ShapeCountBoolean;
 
-pub struct OffsetOverlay {
-    pub(super) segments: Vec<Segment<ShapeCountOffset>>,
-    pub(crate) split_solver: SplitSolver,
-    pub(crate) graph_builder: GraphBuilder<ShapeCountOffset, OverlayNode>,
-}
-
-impl OffsetOverlay {
+impl Overlay {
     #[inline]
-    pub fn new(capacity: usize) -> Self {
-        Self {
-            segments: Vec::with_capacity(capacity),
-            split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountOffset, OverlayNode>::new(),
-        }
-    }
-
-    #[inline]
-    pub fn clear(&mut self) {
-        self.segments.clear();
-    }
-
-    #[inline]
-    pub fn add_segments(&mut self, segments: &[Segment<ShapeCountOffset>]) {
+    pub(crate) fn add_segments(&mut self, segments: &[Segment<ShapeCountBoolean>]) {
         self.segments.extend_from_slice(segments);
     }
 
     #[inline]
-    pub fn with_segments(segments: Vec<Segment<ShapeCountOffset>>) -> Self {
+    pub(crate) fn with_segments(segments: Vec<Segment<ShapeCountBoolean>>) -> Self {
         Self {
+            solver: Default::default(),
+            options: Default::default(),
+            boolean_buffer: None,
             segments,
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountOffset, OverlayNode>::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
         }
-    }
-
-    #[inline]
-    pub fn build_graph_view_with_solver<F: FillStrategy<ShapeCountOffset>>(
-        &mut self,
-        solver: Solver,
-    ) -> Option<OffsetGraph<'_>> {
-        self.split_solver.split_segments(&mut self.segments, &solver);
-        if self.segments.is_empty() {
-            return None;
-        }
-        let graph = self.graph_builder.build_offset::<F>(&solver, &self.segments);
-
-        Some(graph)
     }
 }

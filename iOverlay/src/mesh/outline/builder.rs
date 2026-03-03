@@ -1,7 +1,6 @@
 use crate::mesh::outline::builder_join::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
 use crate::mesh::outline::section::{Section, SectionToSegment};
 use crate::mesh::style::LineJoin;
-use crate::segm::offset::ShapeCountOffset;
 use crate::segm::segment::Segment;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -9,13 +8,14 @@ use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use crate::segm::boolean::ShapeCountBoolean;
 
 trait OutlineBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn build(
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
 
     fn capacity(&self, points_count: usize) -> usize;
@@ -60,7 +60,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuil
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         self.builder.build(path, adapter, segments);
     }
@@ -84,7 +84,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBu
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         if path.len() < 2 {
             return;

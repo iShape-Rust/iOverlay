@@ -1,12 +1,10 @@
-use crate::build::offset::{NegativeSubjectOffsetStrategy, PositiveSubjectOffsetStrategy};
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::{ContourDirection, Overlay, ShapeType};
+use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::outline::builder::OutlineBuilder;
-use crate::mesh::overlay::OffsetOverlay;
 use crate::mesh::style::OutlineStyle;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -177,7 +175,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
     }
 
     fn build<S: ShapeResource<P, T>>(self, source: &S, options: OverlayOptions<T>) -> Shapes<P> {
-        let int_min_area = self.adapter.sqr_float_to_int(options.min_output_area).max(1);
+        let int_options = options.int_with_adapter(&self.adapter);
 
         let shapes = if self.paths_count <= 1 {
             // fast solution for a single path
@@ -196,13 +194,10 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
             let capacity = self.outer_builder.capacity(path.len());
             let mut segments = Vec::with_capacity(capacity);
             self.outer_builder.build(path, &self.adapter, &mut segments);
+            let mut overlay = Overlay::with_segments(segments);
+            overlay.options = int_options;
 
-            OffsetOverlay::with_segments(segments)
-                .build_graph_view_with_solver::<PositiveSubjectOffsetStrategy>(Default::default())
-                .map(|graph| {
-                    graph.extract_offset(options.output_direction, int_min_area, &mut Default::default())
-                })
-                .unwrap_or_default()
+            overlay.overlay(OverlayRule::Subject, FillRule::Positive)
         } else {
             let total_capacity = self.outer_builder.capacity(self.points_count);
             let mut overlay = Overlay::new_custom(
@@ -211,7 +206,9 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                 Default::default(),
             );
 
-            let mut offset_overlay = OffsetOverlay::new(128);
+            let mut offset_overlay = Overlay::new(16);
+            overlay.options = int_options;
+
 
             let mut segments = Vec::new();
             let mut extraction_buffer = BooleanExtractionBuffer::default();
@@ -224,7 +221,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                     continue;
                 }
 
-                let (offset_graph, direction) = if area < 0 {
+                if area < 0 {
                     let capacity = self.outer_builder.capacity(path.len());
                     let additional = capacity.saturating_sub(segments.capacity());
                     if additional > 0 {
@@ -237,9 +234,9 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
 
-                    let graph = offset_overlay
-                        .build_graph_view_with_solver::<PositiveSubjectOffsetStrategy>(Default::default());
-                    (graph, ContourDirection::CounterClockwise)
+                    if let Some(graph) = offset_overlay.build_graph_view(FillRule::Positive) {
+                        graph.extract_contours_into(OverlayRule::Subject, &mut extraction_buffer, &mut flat_buffer);
+                    }
                 } else {
                     let capacity = self.inner_builder.capacity(path.len());
                     let additional = capacity.saturating_sub(segments.capacity());
@@ -253,14 +250,9 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                     offset_overlay.clear();
                     offset_overlay.add_segments(&segments);
 
-                    let graph = offset_overlay
-                        .build_graph_view_with_solver::<NegativeSubjectOffsetStrategy>(Default::default());
-                    (graph, ContourDirection::Clockwise)
-                };
-
-                if let Some(graph) = offset_graph {
-                    graph.extract_contours_into(direction, 0, &mut extraction_buffer, &mut flat_buffer);
-                    overlay.add_flat_buffer(&flat_buffer, ShapeType::Subject);
+                    if let Some(graph) = offset_overlay.build_graph_view(FillRule::Negative) {
+                        graph.extract_contours_into(OverlayRule::Subject, &mut extraction_buffer, &mut flat_buffer);
+                    }
                 }
             }
 

@@ -1,8 +1,6 @@
-use crate::build::offset::PositiveSubjectOffsetStrategy;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::i_shape::source::resource::ShapeResource;
-use crate::mesh::overlay::OffsetOverlay;
 use crate::mesh::stroke::builder::StrokeBuilder;
 use crate::mesh::stroke::offset::vec::Vec;
 use crate::mesh::style::StrokeStyle;
@@ -15,6 +13,9 @@ use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use crate::core::fill_rule::FillRule;
+use crate::core::overlay::Overlay;
+use crate::core::overlay_rule::OverlayRule;
 
 pub trait StrokeOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates a stroke shapes for paths, contours, or shapes.
@@ -201,11 +202,10 @@ impl<P: 'static + FloatPointCompatible<T>, T: 'static + FloatNumber> StrokeSolve
                 .build(path, is_closed_path, &self.adapter, &mut segments);
         }
 
-        let min_area = self.adapter.sqr_float_to_int(options.min_output_area);
-        let shapes = OffsetOverlay::with_segments(segments)
-            .build_graph_view_with_solver::<PositiveSubjectOffsetStrategy>(Default::default())
-            .map(|graph| graph.extract_offset(options.output_direction, min_area, &mut Default::default()))
-            .unwrap_or_default();
+        let mut overlay = Overlay::with_segments(segments);
+        overlay.options = options.int_with_adapter(&self.adapter);
+
+        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
 
         let mut float = shapes.to_float(&self.adapter);
 

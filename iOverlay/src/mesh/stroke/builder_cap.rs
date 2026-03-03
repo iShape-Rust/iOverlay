@@ -1,7 +1,6 @@
 use crate::mesh::rotator::Rotator;
 use crate::mesh::stroke::section::Section;
 use crate::mesh::style::LineCap;
-use crate::segm::offset::ShapeCountOffset;
 use crate::segm::segment::Segment;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -12,6 +11,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
+use crate::segm::boolean::ShapeCountBoolean;
 
 #[derive(Debug, Clone)]
 pub(super) struct CapBuilder<P, T> {
@@ -75,7 +75,7 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
         &self,
         section: &Section<P, T>,
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let mut a = adapter.float_to_int(&section.a_top);
         if let Some(points) = &self.points {
@@ -85,19 +85,19 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.a);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::bold_subject_ab(a, b));
+                segments.push(Segment::subject_ab(a, b));
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.a_bot);
-        segments.push(Segment::bold_subject_ab(a, last));
+        segments.push(Segment::subject_ab(a, last));
     }
 
     pub(super) fn add_to_end(
         &self,
         section: &Section<P, T>,
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let mut a = adapter.float_to_int(&section.b_bot);
         if let Some(points) = &self.points {
@@ -106,12 +106,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.b);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::bold_subject_ab(a, b));
+                segments.push(Segment::subject_ab(a, b));
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.b_top);
-        segments.push(Segment::bold_subject_ab(a, last));
+        segments.push(Segment::subject_ab(a, last));
     }
 
     #[inline]
