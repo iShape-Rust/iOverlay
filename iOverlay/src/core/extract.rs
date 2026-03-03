@@ -346,7 +346,6 @@ impl VisitState {
 pub(crate) trait Visit {
     fn is_visited(&self, index: usize) -> bool;
     fn is_not_visited(&self, index: usize) -> bool;
-    fn visit(&mut self, index: usize);
     fn visit_edge(&mut self, index: usize, state: VisitState);
 }
 
@@ -369,15 +368,6 @@ impl Visit for [VisitState] {
             *self.get_unchecked(index) == VisitState::Unvisited
         }
     }
-
-    #[inline(always)]
-    fn visit(&mut self, index: usize) {
-        unsafe {
-            // SAFETY: callers only pass indices derived from the visited slice itself, so index < len.
-            *self.get_unchecked_mut(index) = VisitState::Skipped;
-        }
-    }
-
     #[inline(always)]
     fn visit_edge(&mut self, index: usize, state: VisitState) {
         unsafe {
