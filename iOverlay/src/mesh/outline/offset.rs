@@ -1,6 +1,7 @@
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::Overlay;
+use crate::core::overlay::ShapeType::{Clip, Subject};
+use crate::core::overlay::{ContourDirection, Overlay};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
@@ -19,6 +20,7 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::resource::ShapeResource;
+use crate::segm::winding::WindingCount;
 
 pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Generates an outline shapes for contours, or shapes.
@@ -117,7 +119,6 @@ struct OutlineSolver<P: FloatPointCompatible<T>, T: FloatNumber> {
     inner_builder: OutlineBuilder<P, T>,
     adapter: FloatPointAdapter<P, T>,
     points_count: usize,
-    paths_count: usize,
 }
 
 impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolver<P, T> {
@@ -158,7 +159,6 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
             inner_builder,
             adapter,
             points_count,
-            paths_count,
         })
     }
 
@@ -175,89 +175,92 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
     }
 
     fn build<S: ShapeResource<P, T>>(self, source: &S, options: OverlayOptions<T>) -> Shapes<P> {
-        let int_options = options.int_with_adapter(&self.adapter);
+        let total_capacity = self.outer_builder.capacity(self.points_count);
+        let mut overlay = Overlay::new_custom(
+            total_capacity,
+            options.int_with_adapter(&self.adapter),
+            Default::default(),
+        );
 
-        let shapes = if self.paths_count <= 1 {
-            // fast solution for a single path
-            let path = if let Some(first) = source.iter_paths().next() {
-                first
-            } else {
-                return vec![];
-            };
+        let mut offset_overlay = Overlay::new(16);
+        offset_overlay.options = overlay.options;
 
+        let mut segments = Vec::new();
+        let mut bool_buffer = BooleanExtractionBuffer::default();
+        let mut flat_buffer = FlatContoursBuffer::default();
+
+        for path in source.iter_paths() {
             let area = path.unsafe_int_area(&self.adapter);
-            if area >= -1 {
-                // single path must be clock-wised
-                return vec![];
+            if area.abs() <= 1 {
+                // ignore degenerate paths
+                continue;
             }
 
-            let capacity = self.outer_builder.capacity(path.len());
-            let mut segments = Vec::with_capacity(capacity);
-            self.outer_builder.build(path, &self.adapter, &mut segments);
-            let mut overlay = Overlay::with_segments(segments);
-            overlay.options = int_options;
+            offset_overlay.clear();
+            segments.clear();
 
-            overlay.overlay(OverlayRule::Subject, FillRule::Positive)
-        } else {
-            let total_capacity = self.outer_builder.capacity(self.points_count);
-            let mut overlay = Overlay::new_custom(
-                total_capacity,
-                options.int_with_adapter(&self.adapter),
-                Default::default(),
-            );
+            if area < 0 {
+                offset_overlay.options.output_direction = ContourDirection::CounterClockwise;
+                segments.reserve(self.outer_builder.capacity(path.len()));
+                self.outer_builder.build(path, &self.adapter, &mut segments);
 
-            let mut offset_overlay = Overlay::new(16);
-            overlay.options = int_options;
+                offset_overlay.add_segments(&segments);
 
-
-            let mut segments = Vec::new();
-            let mut extraction_buffer = BooleanExtractionBuffer::default();
-            let mut flat_buffer = FlatContoursBuffer::default();
-
-            for path in source.iter_paths() {
-                let area = path.unsafe_int_area(&self.adapter);
-                if area.abs() <= 1 {
-                    // ignore degenerate paths
-                    continue;
+                if let Some(graph) = offset_overlay.build_graph_view(FillRule::Positive) {
+                    graph.extract_contours_into(
+                        OverlayRule::Subject,
+                        &mut bool_buffer,
+                        &mut flat_buffer,
+                    );
                 }
 
-                if area < 0 {
-                    let capacity = self.outer_builder.capacity(path.len());
-                    let additional = capacity.saturating_sub(segments.capacity());
-                    if additional > 0 {
-                        segments.reserve(additional);
-                    }
-                    segments.clear();
-
-                    self.outer_builder.build(path, &self.adapter, &mut segments);
-
+                if self.outer_builder.is_shrink() {
                     offset_overlay.clear();
-                    offset_overlay.add_segments(&segments);
+                    offset_overlay.add_path_iter(path.iter().map(|p| self.adapter.float_to_int(p)), Subject);
+                    offset_overlay.add_flat_buffer(&flat_buffer, Clip);
 
                     if let Some(graph) = offset_overlay.build_graph_view(FillRule::Positive) {
-                        graph.extract_contours_into(OverlayRule::Subject, &mut extraction_buffer, &mut flat_buffer);
+                        graph.extract_contours_into(
+                            OverlayRule::Difference,
+                            &mut bool_buffer,
+                            &mut flat_buffer,
+                        );
                     }
-                } else {
-                    let capacity = self.inner_builder.capacity(path.len());
-                    let additional = capacity.saturating_sub(segments.capacity());
-                    if additional > 0 {
-                        segments.reserve(additional);
-                    }
-                    segments.clear();
+                }
+            } else {
+                offset_overlay.options.output_direction = ContourDirection::Clockwise;
+                segments.reserve(self.inner_builder.capacity(path.len()));
+                self.inner_builder.build(path, &self.adapter, &mut segments);
 
-                    self.inner_builder.build(path, &self.adapter, &mut segments);
+                offset_overlay.add_segments(&segments);
 
+                if let Some(graph) = offset_overlay.build_graph_view(FillRule::Negative) {
+                    graph.extract_contours_into(
+                        OverlayRule::Subject,
+                        &mut bool_buffer,
+                        &mut flat_buffer,
+                    );
+                }
+
+                if !self.inner_builder.is_shrink() {
                     offset_overlay.clear();
-                    offset_overlay.add_segments(&segments);
+                    offset_overlay.add_path_iter(path.iter().map(|p| self.adapter.float_to_int(p)), Subject);
+                    offset_overlay.add_flat_buffer(&flat_buffer, Clip);
 
                     if let Some(graph) = offset_overlay.build_graph_view(FillRule::Negative) {
-                        graph.extract_contours_into(OverlayRule::Subject, &mut extraction_buffer, &mut flat_buffer);
+                        graph.extract_contours_into(
+                            OverlayRule::Intersect,
+                            &mut bool_buffer,
+                            &mut flat_buffer,
+                        );
                     }
                 }
             }
 
-            overlay.overlay(OverlayRule::Subject, FillRule::Positive)
-        };
+            overlay.add_flat_buffer(&flat_buffer, Subject);
+        }
+
+        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
 
         if options.clean_result {
             let mut float = shapes.to_float(&self.adapter);
@@ -362,7 +365,7 @@ mod tests {
         let angle = PI / 3.0f32;
         let style = OutlineStyle::new(10.0).line_join(LineJoin::Round(angle));
 
-        let shapes = path.outline(&style);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 1);
     }
@@ -372,7 +375,7 @@ mod tests {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(-20.0);
-        let shapes = path.outline(&style);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 0);
     }
@@ -384,7 +387,7 @@ mod tests {
         let angle = PI / 3.0f32;
         let style = OutlineStyle::new(-20.0).line_join(LineJoin::Round(angle));
 
-        let shapes = path.outline(&style);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 0);
     }
@@ -394,7 +397,7 @@ mod tests {
         let path = [[-10.0, 0.0], [0.0, -10.0], [10.0, 0.0], [0.0, 10.0]];
 
         let style = OutlineStyle::new(5.0).line_join(LineJoin::Miter(0.01));
-        let shapes = path.outline(&style);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes.first().unwrap().len(), 1);
@@ -428,7 +431,7 @@ mod tests {
 
         let style = OutlineStyle::default().outer_offset(50.0).inner_offset(50.0);
 
-        let shapes = shape.outline(&style);
+        let shapes = shape.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 1);
 

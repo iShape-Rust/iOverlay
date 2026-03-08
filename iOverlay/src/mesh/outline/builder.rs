@@ -20,6 +20,8 @@ trait OutlineBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
 
     fn capacity(&self, points_count: usize) -> usize;
     fn additional_offset(&self, radius: T) -> T;
+
+    fn radius(&self) -> T;
 }
 
 pub(super) struct OutlineBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
@@ -74,6 +76,11 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineBuil
     pub(super) fn additional_offset(&self, radius: T) -> T {
         self.builder.additional_offset(radius)
     }
+
+    #[inline]
+    pub(super) fn is_shrink(&self) -> bool {
+        self.builder.radius() > T::from_float(0.0)
+    }
 }
 
 impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBuild<P, T>
@@ -123,6 +130,10 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> OutlineBu
     #[inline]
     fn additional_offset(&self, radius: T) -> T {
         self.join_builder.additional_offset(radius)
+    }
+
+    fn radius(&self) -> T {
+        self.radius
     }
 }
 
