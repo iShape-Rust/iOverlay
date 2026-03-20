@@ -55,7 +55,7 @@ impl BevelJoinBuilder {
         let ia = adapter.float_to_int(a);
         let ib = adapter.float_to_int(b);
         if ia != ib {
-            segments.push(Segment::subject_ab(ib, ia));
+            segments.push(Segment::subject(ib, ia));
         }
     }
 }
@@ -178,13 +178,13 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
             let ibc = adapter.float_to_int(&bc);
 
             if ia != iac {
-                segments.push(Segment::subject_ab(iac, ia));
+                segments.push(Segment::subject(iac, ia));
             }
             if iac != ibc {
-                segments.push(Segment::subject_ab(ibc, iac));
+                segments.push(Segment::subject(ibc, iac));
             }
             if ibc != ib {
-                segments.push(Segment::subject_ab(ib, ibc));
+                segments.push(Segment::subject(ib, ibc));
             }
         } else {
             let (pa, pb, va, vb) = if turn {
@@ -195,10 +195,10 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
                 (s0.b_top, s1.a_top, s0.dir, s1.dir)
             };
             match Miter::sharp(pa, pb, va, vb, adapter) {
-                SharpMiter::AB(a, b) => segments.push(Segment::subject_ab(b, a)),
+                SharpMiter::AB(a, b) => segments.push(Segment::subject(b, a)),
                 SharpMiter::AcB(a, c, b) => {
-                    segments.push(Segment::subject_ab(c, a));
-                    segments.push(Segment::subject_ab(b, c));
+                    segments.push(Segment::subject(c, a));
+                    segments.push(Segment::subject(b, c));
                 }
                 SharpMiter::Degenerate => {}
             }
@@ -277,14 +277,14 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
 
             let b = adapter.float_to_int(&p);
             if a != b {
-                segments.push(Segment::subject_ab(b, a));
+                segments.push(Segment::subject(b, a));
                 a = b;
             }
         }
 
         let b = adapter.float_to_int(&end);
         if a != b {
-            segments.push(Segment::subject_ab(b, a));
+            segments.push(Segment::subject(b, a));
         }
     }
 

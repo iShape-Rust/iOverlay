@@ -212,20 +212,6 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                         &mut flat_buffer,
                     );
                 }
-
-                if self.outer_builder.is_shrink() {
-                    offset_overlay.clear();
-                    offset_overlay.add_path_iter(path.iter().map(|p| self.adapter.float_to_int(p)), Subject);
-                    offset_overlay.add_flat_buffer(&flat_buffer, Clip);
-
-                    if let Some(graph) = offset_overlay.build_graph_view(FillRule::Positive) {
-                        graph.extract_contours_into(
-                            OverlayRule::Difference,
-                            &mut bool_buffer,
-                            &mut flat_buffer,
-                        );
-                    }
-                }
             } else {
                 offset_overlay.options.output_direction = ContourDirection::Clockwise;
                 segments.reserve(self.inner_builder.capacity(path.len()));
@@ -239,20 +225,6 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                         &mut bool_buffer,
                         &mut flat_buffer,
                     );
-                }
-
-                if !self.inner_builder.is_shrink() {
-                    offset_overlay.clear();
-                    offset_overlay.add_path_iter(path.iter().map(|p| self.adapter.float_to_int(p)), Subject);
-                    offset_overlay.add_flat_buffer(&flat_buffer, Clip);
-
-                    if let Some(graph) = offset_overlay.build_graph_view(FillRule::Negative) {
-                        graph.extract_contours_into(
-                            OverlayRule::Intersect,
-                            &mut bool_buffer,
-                            &mut flat_buffer,
-                        );
-                    }
                 }
             }
 
@@ -342,7 +314,39 @@ mod tests {
     }
 
     #[test]
-    fn test_square() {
+    fn test_square_zero_offset() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let style = OutlineStyle::new(0.0);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 4);
+    }
+
+    #[test]
+    fn test_square_positive_offset_0() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let style = OutlineStyle::new(1.0);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 8);
+    }
+
+    #[test]
+    fn test_square_positive_offset_1() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
         let style = OutlineStyle::new(10.0);
@@ -357,6 +361,7 @@ mod tests {
         assert_eq!(path.len(), 8);
     }
 
+
     #[test]
     fn test_square_round_offset() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
@@ -370,10 +375,46 @@ mod tests {
     }
 
     #[test]
-    fn test_square_negative_offset() {
+    fn test_square_negative_offset_0() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
 
-        let style = OutlineStyle::new(-20.0);
+        let style = OutlineStyle::new(-1.0);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 4);
+    }
+
+    #[test]
+    fn test_square_negative_offset_1() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let style = OutlineStyle::new(-6.0);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_square_negative_offset_2() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let style = OutlineStyle::new(-10.0);
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
+    fn test_square_negative_offset_3() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+
+        let style = OutlineStyle::new(-11.0);
         let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 0);

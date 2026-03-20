@@ -5,7 +5,7 @@ use crate::segm::boolean::ShapeCountBoolean;
 
 impl Segment<ShapeCountBoolean> {
     #[inline]
-    pub(crate) fn subject_ab(p0: IntPoint, p1: IntPoint) -> Self {
+    pub(crate) fn subject(p0: IntPoint, p1: IntPoint) -> Self {
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },

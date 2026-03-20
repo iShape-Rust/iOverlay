@@ -85,12 +85,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.a);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::subject_ab(a, b));
+                segments.push(Segment::subject(a, b));
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.a_bot);
-        segments.push(Segment::subject_ab(a, last));
+        segments.push(Segment::subject(a, last));
     }
 
     pub(super) fn add_to_end(
@@ -106,12 +106,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> CapBuilder<P, T> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.b);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::subject_ab(a, b));
+                segments.push(Segment::subject(a, b));
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.b_top);
-        segments.push(Segment::subject_ab(a, last));
+        segments.push(Segment::subject(a, last));
     }
 
     #[inline]
