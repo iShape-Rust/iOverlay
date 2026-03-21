@@ -1,6 +1,6 @@
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
-use crate::core::overlay::ShapeType::{Clip, Subject};
+use crate::core::overlay::ShapeType::Subject;
 use crate::core::overlay::{ContourDirection, Overlay};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
@@ -253,6 +253,7 @@ mod tests {
     use crate::mesh::style::{LineJoin, OutlineStyle};
     use alloc::vec;
     use core::f32::consts::PI;
+    use i_shape::float::area::Area;
 
     #[test]
     fn test_doc() {
@@ -332,6 +333,7 @@ mod tests {
     #[test]
     fn test_square_positive_offset_0() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(1.0);
         let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
@@ -343,11 +345,15 @@ mod tests {
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 8);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
     }
 
     #[test]
     fn test_square_positive_offset_1() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(10.0);
         let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
@@ -359,12 +365,16 @@ mod tests {
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 8);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
     }
 
 
     #[test]
     fn test_square_round_offset() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let original_sign = path.area().signum();
 
         let angle = PI / 3.0f32;
         let style = OutlineStyle::new(10.0).line_join(LineJoin::Round(angle));
@@ -372,11 +382,15 @@ mod tests {
         let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
 
         assert_eq!(shapes.len(), 1);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
     }
 
     #[test]
     fn test_square_negative_offset_0() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(-1.0);
         let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
@@ -388,6 +402,9 @@ mod tests {
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 4);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
     }
 
     #[test]

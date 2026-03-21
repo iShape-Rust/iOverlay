@@ -88,7 +88,7 @@ pub(super) struct OffsetSection<P: FloatPointCompatible<T>, T: FloatNumber> {
 
 impl<P: FloatPointCompatible<T>, T: FloatNumber> OffsetSection<P, T> {
     #[inline]
-    pub(super) fn main_segment(&self) -> Option<Segment<ShapeCountBoolean>> {
+    pub(super) fn top_segment(&self) -> Option<Segment<ShapeCountBoolean>> {
         if self.a_top != self.b_top {
             Some(Segment::subject(self.a_top, self.b_top))
         } else {

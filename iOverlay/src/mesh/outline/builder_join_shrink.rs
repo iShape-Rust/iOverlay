@@ -201,12 +201,12 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
-        let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
-        let turn = cross_product >= T::from_float(0.0);
-        if turn == self.expand {
-            BevelJoinBuilder::join(s0, s1, adapter, segments);
-            return;
-        }
+        // let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
+        // let turn = cross_product >= T::from_float(0.0);
+        // if turn == self.expand {
+        //     BevelJoinBuilder::join(s0, s1, adapter, segments);
+        //     return;
+        // }
 
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         if self.limit_dot_product < dot_product {
@@ -225,9 +225,9 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
 
         let rotator = Rotator::<T>::with_angle(self.rot_dir * delta_angle);
 
-        let center = s0.b;
+        let center = adapter.int_to_float(&s0.b);
         let mut v = dir;
-        let mut a = adapter.float_to_int(&start);
+        let mut a = start;
         for _ in 1..n {
             v = rotator.rotate(&v);
             let p = FloatPointMath::add(&center, &FloatPointMath::scale(&v, self.radius));
@@ -239,9 +239,8 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for RoundJoin
             }
         }
 
-        let b = adapter.float_to_int(&end);
-        if a != b {
-            segments.push(Segment::subject(a, b));
+        if a != end {
+            segments.push(Segment::subject(a, end));
         }
     }
 
