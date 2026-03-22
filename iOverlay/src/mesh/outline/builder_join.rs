@@ -1,6 +1,7 @@
 use crate::mesh::miter::Miter;
 use crate::mesh::outline::section::OffsetSection;
 use crate::mesh::rotator::Rotator;
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec::Vec;
 use core::f64::consts::PI;
@@ -8,7 +9,6 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
-use crate::segm::boolean::ShapeCountBoolean;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn add_join(
@@ -32,10 +32,7 @@ impl BevelJoinBuilder {
         _adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
-        if s0.b_top == s1.a_top {
-            return;
-        }
-
+        debug_assert_ne!(s0.b_top, s1.a_top, "must be validated before");
         segments.push(Segment::subject(s0.b_top, s1.a_top));
     }
 }
@@ -102,7 +99,6 @@ impl<T: FloatNumber, P: FloatPointCompatible<T>> JoinBuilder<P, T> for MiterJoin
         adapter: &FloatPointAdapter<P, T>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
-
         let ia = s0.b_top;
         let ib = s1.a_top;
 

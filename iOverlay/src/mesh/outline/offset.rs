@@ -534,6 +534,38 @@ mod tests {
     }
 
     #[test]
+    fn test_inner_corner_negative_offset_0() {
+        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(-1.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 7);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
+    }
+
+    #[test]
+    fn test_inner_corner_negative_offset_1() {
+        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+
+        let style = OutlineStyle::new(-5.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 0);
+    }
+
+    #[test]
     fn test_rhombus_miter() {
         let path = [[-10.0, 0.0], [0.0, -10.0], [10.0, 0.0], [0.0, 10.0]];
 
@@ -601,6 +633,56 @@ mod tests {
         assert!(path.outline_fixed_scale(&style, -1.0).is_err());
         assert!(path.outline_fixed_scale(&style, f64::NAN).is_err());
         assert!(path.outline_fixed_scale(&style, f64::INFINITY).is_err());
+    }
+
+    #[test]
+    fn test_degenerate_0() {
+        let path = [
+            [-10.0, 10.0],
+            [-10.0, -10.0],
+            [10.0, -10.0],
+            [10.0, 10.0f32]
+        ];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(0.1);
+        let shapes = path.outline_fixed_scale(&style, 1.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 4);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
+    }
+
+    #[test]
+    fn test_degenerate_1() {
+        let path = [
+            [-10.0, 10.0],
+            [-10.0, -10.0],
+            [10.0, -10.0],
+            [10.0, 10.0f32]
+        ];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(1.0).line_join(LineJoin::Miter(0.01));
+        let shapes = path.outline_fixed_scale(&style, 1.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 8);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
     }
 
     #[test]
