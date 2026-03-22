@@ -448,8 +448,6 @@ println!("shapes: {:?}", &shapes);
   If polygon validity cannot be guaranteed, it is recommended to apply the [simplify_shape](https://github.com/iShape-Rust/iOverlay/blob/main/iOverlay/src/float/simplify.rs) operation before offsetting.  
   [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) on contour orientation.
 
-- Using `LineJoin::Bevel` with a large offset may produce visual artifacts.
-
 &nbsp;
 ### LineCap
 | Butt | Square | Round | Custom |
