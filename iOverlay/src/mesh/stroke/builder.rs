@@ -2,7 +2,7 @@ use crate::mesh::stroke::builder_cap::CapBuilder;
 use crate::mesh::stroke::builder_join::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
 use crate::mesh::stroke::section::{Section, SectionToSegment};
 use crate::mesh::style::{LineJoin, StrokeStyle};
-use crate::segm::offset::ShapeCountOffset;
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -16,7 +16,7 @@ trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
         path: &[P],
         is_closed_path: bool,
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
 
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize;
@@ -71,7 +71,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> StrokeBuild
         path: &[P],
         is_closed_path: bool,
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         self.builder.build(path, is_closed_path, adapter, segments);
     }
@@ -96,7 +96,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> StrokeBui
         path: &[P],
         is_closed_path: bool,
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         if is_closed_path {
             self.closed_segments(path, adapter, segments);
@@ -129,7 +129,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         // build segments only from points which are not equal in int space
 
@@ -182,7 +182,7 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, T>,
-        segments: &mut Vec<Segment<ShapeCountOffset>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         if path.len() < 2 {
             return;

@@ -365,6 +365,39 @@ impl Overlay {
         self.boolean_buffer = Some(buffer);
         shapes
     }
+
+    /// Executes a single Boolean operation and writes the result into a flat contour buffer.
+    ///
+    /// This is a lower-allocation alternative to [`Self::overlay`] when you want flat contour
+    /// output (`points` + `ranges`) instead of nested `IntShapes`.
+    ///
+    /// - `overlay_rule`: The Boolean operation to apply.
+    /// - `fill_rule`: Fill rule used to determine interior regions.
+    /// - `output`: Destination [`FlatContoursBuffer`] that receives resulting contours.
+    ///   Existing buffer contents are replaced.
+    #[inline]
+    pub fn overlay_into(
+        &mut self,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+        output: &mut FlatContoursBuffer,
+    ) {
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        if self.segments.is_empty() {
+            return;
+        }
+        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+        self.graph_builder
+            .build_boolean_overlay(
+                fill_rule,
+                overlay_rule,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
+            .extract_contours_into(overlay_rule, &mut buffer, output);
+        self.boolean_buffer = Some(buffer);
+    }
 }
 
 impl Default for IntOverlayOptions {

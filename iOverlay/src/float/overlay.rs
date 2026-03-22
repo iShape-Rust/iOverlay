@@ -13,6 +13,8 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
+use i_shape::flat::buffer::FlatContoursBuffer;
+use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
@@ -343,6 +345,38 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatOverlay<P, T> {
         }
 
         float
+    }
+
+    /// Executes a single Boolean operation and writes the result into a flat contour buffer.
+    ///
+    /// This is a lower-allocation alternative to [`Self::overlay`] when you want flat contour
+    /// output (`points` + `ranges`) instead of nested `Shapes<P>`.
+    ///
+    /// - `overlay_rule`: The Boolean operation to apply.
+    /// - `fill_rule`: Fill rule used to determine interior regions.
+    /// - `output`: Destination [`FloatFlatContoursBuffer`] that receives resulting contours.
+    ///   Existing buffer contents are replaced.
+    #[inline]
+    pub fn overlay_into(
+        &mut self,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) {
+        let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
+        let mut int_output = FlatContoursBuffer::default();
+        self.overlay
+            .overlay_into(overlay_rule, fill_rule, &mut int_output);
+        let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
+        output.set_with_iter(iter, &int_output.ranges);
+
+        if self.clean_result {
+            if preserve_output_collinear {
+                output.despike_contour(&self.adapter);
+            } else {
+                output.simplify_contour(&self.adapter);
+            }
+        }
     }
 }
 
