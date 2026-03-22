@@ -39,12 +39,7 @@ impl Miter {
     }
 
     #[inline]
-    pub(super) fn peak<T: FloatNumber, P: FloatPointCompatible<T>>(
-        pa: P,
-        pb: P,
-        va: P,
-        vb: P,
-    ) -> P {
+    pub(super) fn peak<T: FloatNumber, P: FloatPointCompatible<T>>(pa: P, pb: P, va: P, vb: P) -> P {
         let pax = pa.x();
         let pay = pa.y();
         let pbx = pb.x();

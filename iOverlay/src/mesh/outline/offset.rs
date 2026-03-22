@@ -15,6 +15,7 @@ use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
+use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
@@ -31,6 +32,12 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     fn outline(&self, style: &OutlineStyle<T>) -> Shapes<P>;
 
+    /// Generates outline contours directly into a flat buffer.
+    ///
+    /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `output`: Destination buffer that receives resulting contours. Existing contents are replaced.
+    fn outline_into(&self, style: &OutlineStyle<T>, output: &mut FloatFlatContoursBuffer<P>);
+
     /// Generates an outline shapes for contours, or shapes with optional filtering.
     ///
     /// - `style`: Defines the outline properties, including offset, and joins.
@@ -40,6 +47,18 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
     /// A collection of `Shapes<P>` representing the outline geometry.
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     fn outline_custom(&self, style: &OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P>;
+
+    /// Generates outline contours directly into a flat buffer with optional filtering.
+    ///
+    /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `options`: Adjust custom behavior.
+    /// - `output`: Destination buffer that receives resulting contours. Existing contents are replaced.
+    fn outline_custom_into(
+        &self,
+        style: &OutlineStyle<T>,
+        options: OverlayOptions<T>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    );
 
     /// Generates an outline shapes for contours, or shapes with a fixed float-to-integer scale.
     ///
@@ -54,6 +73,18 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
         style: &OutlineStyle<T>,
         scale: T,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Generates outline contours directly into a flat buffer with fixed float-to-integer scale.
+    ///
+    /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `scale`: Fixed float-to-integer scale. Use `scale = 1.0 / grid_size` if you prefer grid size semantics.
+    /// - `output`: Destination buffer that receives resulting contours. Existing contents are replaced on success.
+    fn outline_fixed_scale_into(
+        &self,
+        style: &OutlineStyle<T>,
+        scale: T,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>;
 
     /// Generates an outline shapes for contours, or shapes with optional filtering and fixed scaling.
     ///
@@ -70,6 +101,20 @@ pub trait OutlineOffset<P: FloatPointCompatible<T>, T: FloatNumber> {
         options: OverlayOptions<T>,
         scale: T,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Generates outline contours directly into a flat buffer with optional filtering and fixed scaling.
+    ///
+    /// - `style`: Defines the outline properties, including offset, and joins.
+    /// - `options`: Adjust custom behavior.
+    /// - `scale`: Fixed float-to-integer scale. Use `scale = 1.0 / grid_size` if you prefer grid size semantics.
+    /// - `output`: Destination buffer that receives resulting contours. Existing contents are replaced on success.
+    fn outline_custom_fixed_scale_into(
+        &self,
+        style: &OutlineStyle<T>,
+        options: OverlayOptions<T>,
+        scale: T,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>;
 }
 
 impl<S, P, T> OutlineOffset<P, T> for S
@@ -82,10 +127,26 @@ where
         self.outline_custom(style, Default::default())
     }
 
+    fn outline_into(&self, style: &OutlineStyle<T>, output: &mut FloatFlatContoursBuffer<P>) {
+        self.outline_custom_into(style, Default::default(), output)
+    }
+
     fn outline_custom(&self, style: &OutlineStyle<T>, options: OverlayOptions<T>) -> Shapes<P> {
         match OutlineSolver::prepare(self, style) {
             Some(solver) => solver.build(self, options),
             None => vec![],
+        }
+    }
+
+    fn outline_custom_into(
+        &self,
+        style: &OutlineStyle<T>,
+        options: OverlayOptions<T>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) {
+        match OutlineSolver::prepare(self, style) {
+            Some(solver) => solver.build_into(self, options, output),
+            None => output.clear_and_reserve(0, 0),
         }
     }
 
@@ -95,6 +156,15 @@ where
         scale: T,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         self.outline_custom_fixed_scale(style, Default::default(), scale)
+    }
+
+    fn outline_fixed_scale_into(
+        &self,
+        style: &OutlineStyle<T>,
+        scale: T,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError> {
+        self.outline_custom_fixed_scale_into(style, Default::default(), scale, output)
     }
 
     fn outline_custom_fixed_scale(
@@ -110,6 +180,26 @@ where
         };
         solver.apply_scale(s)?;
         Ok(solver.build(self, options))
+    }
+
+    fn outline_custom_fixed_scale_into(
+        &self,
+        style: &OutlineStyle<T>,
+        options: OverlayOptions<T>,
+        scale: T,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError> {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match OutlineSolver::prepare(self, style) {
+            Some(solver) => solver,
+            None => {
+                output.clear_and_reserve(0, 0);
+                return Ok(());
+            }
+        };
+        solver.apply_scale(s)?;
+        solver.build_into(self, options, output);
+        Ok(())
     }
 }
 
@@ -173,7 +263,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
         Ok(())
     }
 
-    fn build<S: ShapeResource<P, T>>(self, source: &S, options: OverlayOptions<T>) -> Shapes<P> {
+    fn build_overlay<S: ShapeResource<P, T>>(&self, source: &S, options: OverlayOptions<T>) -> Overlay {
         let total_capacity = self.outer_builder.capacity(self.points_count);
         let mut overlay = Overlay::new_custom(
             total_capacity,
@@ -206,11 +296,7 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                 offset_overlay.add_segments(&segments);
 
                 if let Some(graph) = offset_overlay.build_graph_view(FillRule::Positive) {
-                    graph.extract_contours_into(
-                        OverlayRule::Subject,
-                        &mut bool_buffer,
-                        &mut flat_buffer,
-                    );
+                    graph.extract_contours_into(OverlayRule::Subject, &mut bool_buffer, &mut flat_buffer);
                 }
             } else {
                 offset_overlay.options.output_direction = ContourDirection::Clockwise;
@@ -220,22 +306,25 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
                 offset_overlay.add_segments(&segments);
 
                 if let Some(graph) = offset_overlay.build_graph_view(FillRule::Negative) {
-                    graph.extract_contours_into(
-                        OverlayRule::Subject,
-                        &mut bool_buffer,
-                        &mut flat_buffer,
-                    );
+                    graph.extract_contours_into(OverlayRule::Subject, &mut bool_buffer, &mut flat_buffer);
                 }
             }
 
             overlay.add_flat_buffer(&flat_buffer, Subject);
         }
 
+        overlay
+    }
+
+    fn build<S: ShapeResource<P, T>>(self, source: &S, options: OverlayOptions<T>) -> Shapes<P> {
+        let preserve_output_collinear = options.preserve_output_collinear;
+        let clean_result = options.clean_result;
+        let mut overlay = self.build_overlay(source, options);
         let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
 
-        if options.clean_result {
+        if clean_result {
             let mut float = shapes.to_float(&self.adapter);
-            if options.preserve_output_collinear {
+            if preserve_output_collinear {
                 float.despike_contour(&self.adapter);
             } else {
                 float.simplify_contour(&self.adapter);
@@ -243,6 +332,30 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
             float
         } else {
             shapes.to_float(&self.adapter)
+        }
+    }
+
+    fn build_into<S: ShapeResource<P, T>>(
+        self,
+        source: &S,
+        options: OverlayOptions<T>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) {
+        let preserve_output_collinear = options.preserve_output_collinear;
+        let clean_result = options.clean_result;
+        let mut overlay = self.build_overlay(source, options);
+
+        let mut int_output = FlatContoursBuffer::default();
+        overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
+        let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
+        output.set_with_iter(iter, &int_output.ranges);
+
+        if clean_result {
+            if preserve_output_collinear {
+                output.despike_contour(&self.adapter);
+            } else {
+                output.simplify_contour(&self.adapter);
+            }
         }
     }
 }
@@ -253,6 +366,7 @@ mod tests {
     use crate::mesh::style::{LineJoin, OutlineStyle};
     use alloc::vec;
     use core::f32::consts::PI;
+    use i_shape::flat::float::FloatFlatContoursBuffer;
     use i_shape::float::area::Area;
 
     #[test]
@@ -331,6 +445,30 @@ mod tests {
     }
 
     #[test]
+    fn test_outline_into_ok() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let style = OutlineStyle::new(1.0);
+        let mut output = FloatFlatContoursBuffer::default();
+
+        path.outline_into(&style, &mut output);
+
+        assert!(!output.is_empty());
+        assert!(!output.ranges.is_empty());
+    }
+
+    #[test]
+    fn test_outline_fixed_scale_into_ok() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let style = OutlineStyle::new(1.0);
+        let mut output = FloatFlatContoursBuffer::default();
+
+        path.outline_fixed_scale_into(&style, 10.0, &mut output).unwrap();
+
+        assert!(!output.is_empty());
+        assert!(!output.ranges.is_empty());
+    }
+
+    #[test]
     fn test_square_positive_offset_0() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
         let original_sign = path.area().signum();
@@ -369,7 +507,6 @@ mod tests {
         let result_sign = path.area().signum();
         assert_eq!(original_sign, result_sign);
     }
-
 
     #[test]
     fn test_square_round_offset() {
@@ -465,14 +602,21 @@ mod tests {
 
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 4);
-        
+
         let result_sign = path.area().signum();
         assert_eq!(original_sign, result_sign);
     }
 
     #[test]
     fn test_inner_corner_positive_offset_0() {
-        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let path = [
+            [-5.0, 5.0],
+            [-5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 5.0f32],
+        ];
         let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(1.0);
@@ -493,7 +637,14 @@ mod tests {
 
     #[test]
     fn test_inner_corner_positive_offset_1() {
-        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let path = [
+            [-5.0, 5.0],
+            [-5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 5.0f32],
+        ];
         let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(5.0);
@@ -514,7 +665,14 @@ mod tests {
 
     #[test]
     fn test_inner_corner_positive_offset_2() {
-        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let path = [
+            [-5.0, 5.0],
+            [-5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 5.0f32],
+        ];
         let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(20.0);
@@ -535,7 +693,14 @@ mod tests {
 
     #[test]
     fn test_inner_corner_negative_offset_0() {
-        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let path = [
+            [-5.0, 5.0],
+            [-5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 5.0f32],
+        ];
         let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(-1.0);
@@ -556,7 +721,14 @@ mod tests {
 
     #[test]
     fn test_inner_corner_negative_offset_1() {
-        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let path = [
+            [-5.0, 5.0],
+            [-5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 5.0f32],
+        ];
 
         let style = OutlineStyle::new(-5.0);
 
@@ -637,12 +809,7 @@ mod tests {
 
     #[test]
     fn test_degenerate_0() {
-        let path = [
-            [-10.0, 10.0],
-            [-10.0, -10.0],
-            [10.0, -10.0],
-            [10.0, 10.0f32]
-        ];
+        let path = [[-10.0, 10.0], [-10.0, -10.0], [10.0, -10.0], [10.0, 10.0f32]];
         let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(0.1);
@@ -662,12 +829,7 @@ mod tests {
 
     #[test]
     fn test_degenerate_1() {
-        let path = [
-            [-10.0, 10.0],
-            [-10.0, -10.0],
-            [10.0, -10.0],
-            [10.0, 10.0f32]
-        ];
+        let path = [[-10.0, 10.0], [-10.0, -10.0], [10.0, -10.0], [10.0, 10.0f32]];
         let original_sign = path.area().signum();
 
         let style = OutlineStyle::new(1.0).line_join(LineJoin::Miter(0.01));

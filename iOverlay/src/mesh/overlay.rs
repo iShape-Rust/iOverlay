@@ -1,10 +1,10 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::graph::OverlayNode;
+use crate::core::overlay::Overlay;
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
-use crate::core::overlay::Overlay;
-use crate::segm::boolean::ShapeCountBoolean;
 
 impl Overlay {
     #[inline]

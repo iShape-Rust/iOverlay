@@ -12,7 +12,7 @@ categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 
 [dependencies]
 i_float = { version = "~1.16.0" }
-i_shape = { version = "~1.16.0" }
+i_shape = { version = "~1.18.0" }
 i_tree = { version = "^0.18.0" }
 i_key_sort = { version = "^0.10.1" }
 
@@ -38,4 +38,4 @@ rand = { version = "~0.10", features = ["alloc"] }
 #i_float = { path = "../../iFloat", features = ["serde"] }
 #i_shape = { path = "../../iShape", features = ["serde"] }
 i_float = { version = "~1.16.0", features = ["serde"] }
-i_shape = { version = "~1.16.0", features = ["serde"] }
+i_shape = { version = "~1.18.0", features = ["serde"] }

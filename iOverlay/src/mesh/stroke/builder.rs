@@ -2,13 +2,13 @@ use crate::mesh::stroke::builder_cap::CapBuilder;
 use crate::mesh::stroke::builder_join::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
 use crate::mesh::stroke::section::{Section, SectionToSegment};
 use crate::mesh::style::{LineJoin, StrokeStyle};
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use crate::segm::boolean::ShapeCountBoolean;
 
 trait StrokeBuild<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn build(

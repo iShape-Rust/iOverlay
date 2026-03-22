@@ -173,13 +173,8 @@ mod tests {
         assert!(!path.is_empty(), "path must not be empty");
 
         for shift in 0..path.len() {
-            let uniq_iter = UniqueSegmentsIter::new(
-                path[shift..]
-                    .iter()
-                    .chain(path[..shift].iter())
-                    .copied(),
-            )
-            .unwrap();
+            let uniq_iter =
+                UniqueSegmentsIter::new(path[shift..].iter().chain(path[..shift].iter()).copied()).unwrap();
 
             let segments: Vec<_> = uniq_iter.collect();
 
@@ -213,11 +208,7 @@ mod tests {
     }
 
     fn validate_pair(s0: &UniqueSegment, s1: &UniqueSegment, i: usize, j: usize) {
-        assert_eq!(
-            s0.b, s1.a,
-            "segment {} end does not match segment {} start",
-            i, j
-        );
+        assert_eq!(s0.b, s1.a, "segment {} end does not match segment {} start", i, j);
 
         let v0 = s0.a - s0.b;
         let v1 = s1.a - s1.b;
@@ -225,7 +216,12 @@ mod tests {
         let cross = v0.cross_product(v1);
         if cross == 0 {
             let dot = v0.dot_product(v1);
-            assert!(dot < 0, "segments {} and {} are collinear and same direction", i, j);
+            assert!(
+                dot < 0,
+                "segments {} and {} are collinear and same direction",
+                i,
+                j
+            );
         }
     }
 }

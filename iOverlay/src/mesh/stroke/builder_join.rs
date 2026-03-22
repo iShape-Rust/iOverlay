@@ -1,6 +1,7 @@
 use crate::mesh::miter::{Miter, SharpMiter};
 use crate::mesh::rotator::Rotator;
 use crate::mesh::stroke::section::Section;
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec::Vec;
 use core::f64::consts::PI;
@@ -8,7 +9,6 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
-use crate::segm::boolean::ShapeCountBoolean;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn add_join(

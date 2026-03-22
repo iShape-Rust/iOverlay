@@ -126,14 +126,12 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         let mut uniq_segments = if let Some(iter) = UniqueSegmentsIter::new(iter) {
             iter
         } else {
-            // TODO impl single point
             return;
         };
 
         let us0 = if let Some(us) = uniq_segments.next() {
             us
         } else {
-            // TODO impl single point
             return;
         };
 

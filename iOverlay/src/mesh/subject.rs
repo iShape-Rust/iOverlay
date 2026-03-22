@@ -1,7 +1,7 @@
 use crate::geom::x_segment::XSegment;
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use i_float::int::point::IntPoint;
-use crate::segm::boolean::ShapeCountBoolean;
 
 impl Segment<ShapeCountBoolean> {
     #[inline]
