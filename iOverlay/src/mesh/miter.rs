@@ -27,6 +27,24 @@ impl Miter {
             return SharpMiter::Degenerate;
         }
 
+        let c = Self::peak(pa, pb, va, vb);
+
+        let ic = adapter.float_to_int(&c);
+
+        if ia == ic || ib == ic {
+            SharpMiter::AB(ia, ib)
+        } else {
+            SharpMiter::AcB(ia, ic, ib)
+        }
+    }
+
+    #[inline]
+    pub(super) fn peak<T: FloatNumber, P: FloatPointCompatible<T>>(
+        pa: P,
+        pb: P,
+        va: P,
+        vb: P,
+    ) -> P {
         let pax = pa.x();
         let pay = pa.y();
         let pbx = pb.x();
@@ -47,14 +65,7 @@ impl Miter {
 
         let x = pax + k * vax;
         let y = pay + k * vay;
-        let c = P::from_xy(x, y);
 
-        let ic = adapter.float_to_int(&c);
-
-        if ia == ic || ib == ic {
-            SharpMiter::AB(ia, ib)
-        } else {
-            SharpMiter::AcB(ia, ic, ib)
-        }
+        P::from_xy(x, y)
     }
 }

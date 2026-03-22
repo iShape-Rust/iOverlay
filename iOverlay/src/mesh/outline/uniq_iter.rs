@@ -23,16 +23,8 @@ where
     pub(super) fn new(iter: I) -> Option<Self> {
         let mut iter = iter;
 
-        let mut p0 = if let Some(p) = iter.next() {
-            p
-        } else {
-            return None;
-        };
-        let mut p1 = if let Some(p) = iter.find(|p| p0.ne(p)) {
-            p
-        } else {
-            return None;
-        };
+        let mut p0 = iter.next()?;
+        let mut p1 = iter.find(|p| p0.ne(p))?;
 
         let q0 = p0;
 

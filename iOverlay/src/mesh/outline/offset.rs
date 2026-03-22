@@ -450,6 +450,27 @@ mod tests {
     }
 
     #[test]
+    fn test_square_positive_mitter_offset() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(1.0).line_join(LineJoin::Miter(0.01));
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 4);
+        
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
+    }
+
+    #[test]
     fn test_rhombus_miter() {
         let path = [[-10.0, 0.0], [0.0, -10.0], [10.0, 0.0], [0.0, 10.0]];
 

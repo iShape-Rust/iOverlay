@@ -1,6 +1,6 @@
 use crate::mesh::math::Math;
 use crate::mesh::outline::builder_join::JoinBuilder;
-use crate::mesh::outline::builder_join_shrink::{BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
+use crate::mesh::outline::builder_join::{BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
 use crate::mesh::outline::section::OffsetSection;
 use crate::mesh::outline::uniq_iter::{UniqueSegment, UniqueSegmentsIter};
 use crate::mesh::style::LineJoin;
@@ -166,7 +166,9 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
         debug_assert!(cross != 0, "not possible! UniqueSegmentsIter guarantee it");
         let outer_corner = (cross > 0) == self.extend;
         if outer_corner {
-            self.join_builder.add_join(&s0, &s1, adapter, segments);
+            if s0.b_top != s1.a_top {
+                self.join_builder.add_join(s0, s1, adapter, segments);
+            }
         } else {
             // no join
             segments.push_some(s0.a_segment());
