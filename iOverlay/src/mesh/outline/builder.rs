@@ -171,8 +171,8 @@ impl<J: JoinBuilder<P, T>, P: FloatPointCompatible<T>, T: FloatNumber> Builder<J
             }
         } else {
             // no join
-            segments.push_some(s0.a_segment());
-            segments.push_some(s1.b_segment());
+            segments.push_some(s0.b_segment());
+            segments.push_some(s1.a_segment());
         }
     }
 }

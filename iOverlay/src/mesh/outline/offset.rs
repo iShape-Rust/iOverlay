@@ -450,7 +450,7 @@ mod tests {
     }
 
     #[test]
-    fn test_square_positive_mitter_offset() {
+    fn test_square_positive_miter_offset() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
         let original_sign = path.area().signum();
 
@@ -466,6 +466,69 @@ mod tests {
         let path = shape.first().unwrap();
         assert_eq!(path.len(), 4);
         
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
+    }
+
+    #[test]
+    fn test_inner_corner_positive_offset_0() {
+        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(1.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 11);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
+    }
+
+    #[test]
+    fn test_inner_corner_positive_offset_1() {
+        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(5.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 8);
+
+        let result_sign = path.area().signum();
+        assert_eq!(original_sign, result_sign);
+    }
+
+    #[test]
+    fn test_inner_corner_positive_offset_2() {
+        let path = [[-5.0, 5.0], [-5.0, -5.0], [5.0, -5.0], [5.0, 0.0], [0.0, 0.0], [0.0, 5.0f32]];
+        let original_sign = path.area().signum();
+
+        let style = OutlineStyle::new(20.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes.len(), 1);
+
+        let shape = shapes.first().unwrap();
+        assert_eq!(shape.len(), 1);
+
+        let path = shape.first().unwrap();
+        assert_eq!(path.len(), 8);
+
         let result_sign = path.area().signum();
         assert_eq!(original_sign, result_sign);
     }
@@ -497,7 +560,6 @@ mod tests {
         assert_eq!(shapes[0][1].len(), 4);
     }
 
-    // [[[[300.0, 300.0], [500.0, 300.0], [500.0, 500.0], [300.0, 500.0]]]]
     #[test]
     fn test_float_square_0() {
         let shape = vec![vec![
