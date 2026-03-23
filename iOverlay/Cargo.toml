@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "4.5.0"
+version = "4.5.1"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."
@@ -29,7 +29,7 @@ default = []
 
 glam = ["i_float/glam"]
 serde = ["i_float/serde", "i_shape/serde"]
-allow_multithreading = ["dep:rayon"]
+allow_multithreading = ["dep:rayon", "i_key_sort/allow_multithreading"]
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
