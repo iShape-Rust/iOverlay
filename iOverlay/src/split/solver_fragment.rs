@@ -108,7 +108,8 @@ impl SplitSolver {
             marks: Vec<LineMark>,
         }
 
-        let marks_capacity = self.marks.len() / buffer.groups.len();
+        debug_assert!(!buffer.groups.is_empty(), "groups.len() >= 1");
+        let marks_capacity = self.marks.capacity() / buffer.groups.len();
 
         let results: Vec<TaskResult> = buffer
             .groups

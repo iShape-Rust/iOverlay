@@ -24,20 +24,20 @@ impl SplitSolver {
 
             let radius: i64 = snap_radius.radius();
 
-            for i in 0..segments.len() - 1 {
-                let ei = &segments[i].x_segment;
-                let ri = ei.y_range();
-                for (j, s) in segments.iter().enumerate().skip(i + 1) {
-                    let ej = &s.x_segment;
-                    if ei.b.x < ej.a.x {
+            for (i, si) in segments.iter().enumerate() {
+                let xsi = &si.x_segment;
+                let ri = xsi.y_range();
+                for (j, sj) in segments.iter().enumerate().skip(i + 1) {
+                    let xsj = &sj.x_segment;
+                    if xsi.b.x < xsj.a.x {
                         break;
                     }
 
-                    if ej.is_not_intersect_y_range(&ri) {
+                    if xsj.is_not_intersect_y_range(&ri) {
                         continue;
                     }
 
-                    let is_round = SplitSolver::cross(i, j, ei, ej, &mut self.marks, radius);
+                    let is_round = SplitSolver::cross(i, j, xsi, xsj, &mut self.marks, radius);
                     need_to_fix = need_to_fix || is_round
                 }
             }

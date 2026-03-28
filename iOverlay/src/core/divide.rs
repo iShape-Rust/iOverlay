@@ -45,7 +45,7 @@ impl ContourDecomposition for IntContour {
             .map(|(i, &p)| IdPoint::new(i, p))
             .collect();
 
-        id_points.sort_by(|p0, p1| p0.point.cmp(&p1.point).then_with(|| p0.id.cmp(&p1.id)));
+        id_points.sort_unstable_by(|p0, p1| p0.point.cmp(&p1.point).then_with(|| p0.id.cmp(&p1.id)));
 
         let mut p0 = id_points.first().unwrap().point;
         let mut anchors = Vec::new();
