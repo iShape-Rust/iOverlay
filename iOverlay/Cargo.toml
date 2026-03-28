@@ -3,6 +3,7 @@ name = "i_overlay"
 version = "4.5.1"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
+rust-version = "1.88"
 description = "Boolean Operations for 2D Polygons: Supports intersection, union, difference, xor, and self-intersections for all polygon varieties."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/iShape-Rust/iOverlay"
