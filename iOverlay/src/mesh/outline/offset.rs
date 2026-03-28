@@ -288,26 +288,23 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
             offset_overlay.clear();
             segments.clear();
 
-            if area < 0 {
+            let contour_fill_rule = if area < 0 {
                 offset_overlay.options.output_direction = ContourDirection::CounterClockwise;
                 segments.reserve(self.outer_builder.capacity(path.len()));
                 self.outer_builder.build(path, &self.adapter, &mut segments);
-
-                offset_overlay.add_segments(&segments);
-
-                if let Some(graph) = offset_overlay.build_graph_view(FillRule::Positive) {
-                    graph.extract_contours_into(OverlayRule::Subject, &mut bool_buffer, &mut flat_buffer);
-                }
+                FillRule::Positive
             } else {
                 offset_overlay.options.output_direction = ContourDirection::Clockwise;
                 segments.reserve(self.inner_builder.capacity(path.len()));
                 self.inner_builder.build(path, &self.adapter, &mut segments);
 
-                offset_overlay.add_segments(&segments);
+                FillRule::Negative
+            };
 
-                if let Some(graph) = offset_overlay.build_graph_view(FillRule::Negative) {
-                    graph.extract_contours_into(OverlayRule::Subject, &mut bool_buffer, &mut flat_buffer);
-                }
+            offset_overlay.add_segments(&segments);
+
+            if let Some(graph) = offset_overlay.build_graph_view(contour_fill_rule) {
+                graph.extract_contours_into(OverlayRule::Subject, &mut bool_buffer, &mut flat_buffer);
             }
 
             overlay.add_flat_buffer(&flat_buffer, Subject);
@@ -362,12 +359,17 @@ impl<P: FloatPointCompatible<T> + 'static, T: FloatNumber + 'static> OutlineSolv
 
 #[cfg(test)]
 mod tests {
+    use crate::core::fill_rule::FillRule;
+    use crate::float::simplify::SimplifyShape;
     use crate::mesh::outline::offset::OutlineOffset;
     use crate::mesh::style::{LineJoin, OutlineStyle};
     use alloc::vec;
+    use alloc::vec::Vec;
     use core::f32::consts::PI;
+    use i_shape::base::data::{Path, Shape};
     use i_shape::flat::float::FloatFlatContoursBuffer;
     use i_shape::float::area::Area;
+    use rand::RngExt;
 
     #[test]
     fn test_doc() {
@@ -888,6 +890,119 @@ mod tests {
     }
 
     #[test]
+    fn test_star_bevel_0() {
+        let r0 = 5.0;
+        let r1 = 20.0;
+        let pi = core::f64::consts::PI;
+        for count in 8..24 {
+            let mut angle = 0.0;
+            while angle < pi {
+                let shape = create_star(r0, r1, count, angle);
+                let mut offset = 0.0;
+                let mut prev_area = 0.0;
+                while offset < 10.0 {
+                    let min_area = pi * (r0 + offset).powi(2);
+                    let max_area = pi * (r1 + offset).powi(2);
+
+                    let style = OutlineStyle::new(offset);
+                    let outline_shapes = shape.outline(&style);
+                    let area = outline_shapes.area();
+
+                    assert!(area >= min_area);
+                    assert!(area <= max_area);
+                    assert!(prev_area < area);
+
+                    offset += 0.5;
+                    prev_area = area;
+                }
+                angle += 1.0;
+            }
+        }
+    }
+
+    #[test]
+    fn test_star_round_0() {
+        let r0 = 5.0;
+        let r1 = 20.0;
+        let pi = core::f64::consts::PI;
+        let join_angle = pi / 3.0;
+        for count in 8..24 {
+            let mut angle = 0.0;
+            while angle < pi {
+                let shape = create_star(r0, r1, count, angle);
+                let mut offset = 0.0;
+                let mut prev_area = 0.0;
+                while offset < 10.0 {
+                    let min_area = pi * (r0 + offset).powi(2);
+                    let max_area = pi * (r1 + offset).powi(2);
+                    let style = OutlineStyle::new(offset).line_join(LineJoin::Round(join_angle));
+
+                    let outline_shapes = shape.outline(&style);
+                    let area = outline_shapes.area();
+
+                    assert!(area >= min_area);
+                    assert!(area <= max_area);
+                    assert!(prev_area < area);
+
+                    offset += 0.5;
+                    prev_area = area;
+                }
+                angle += 1.0;
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_0() {
+        let style = OutlineStyle::new(10.0);
+        for _ in 0..100 {
+            let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
+            let base_area = shapes.area();
+            let outline_shapes = shapes.outline(&style);
+            let area = outline_shapes.area();
+            assert!(base_area < area);
+        }
+    }
+
+    #[test]
+    fn test_random_1() {
+        let join_angle = core::f64::consts::PI / 3.0;
+        let style = OutlineStyle::new(10.0).line_join(LineJoin::Round(join_angle));
+        for _ in 0..100 {
+            let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
+            let base_area = shapes.area();
+            let outline_shapes = shapes.outline(&style);
+            let area = outline_shapes.area();
+            assert!(base_area < area);
+        }
+    }
+
+    #[test]
+    fn test_random_2() {
+        let style = OutlineStyle::new(-10.0);
+        for _ in 0..100 {
+            let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
+            let base_area = shapes.area();
+            let outline_shapes = shapes.outline(&style);
+            let area = outline_shapes.area();
+            assert!(base_area >= area);
+        }
+    }
+
+    #[test]
+    fn test_random_3() {
+        let join_angle = core::f64::consts::PI / 3.0;
+        let style = OutlineStyle::new(-10.0).line_join(LineJoin::Round(join_angle));
+        for _ in 0..100 {
+            let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
+            let base_area = shapes.area();
+            let outline_shapes = shapes.outline(&style);
+            let area = outline_shapes.area();
+            assert!(base_area >= area);
+        }
+    }
+
+    #[test]
     fn test_real_case_0() {
         let main = vec![
             [411162.0470393328, 5848155.806033095],
@@ -1096,5 +1211,46 @@ mod tests {
         if let Some(shape) = shape.outline(&style).first() {
             assert!(shape[0].len() < 1_000);
         };
+    }
+
+    fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> Shape<[f64; 2]> {
+        let da = core::f64::consts::PI / count as f64;
+        let mut a = angle;
+
+        let mut points = Vec::new();
+
+        for _ in 0..count {
+            let (sn, cs) = a.sin_cos();
+
+            let xr0 = r0 * cs;
+            let yr0 = r0 * sn;
+
+            a += da;
+
+            let (sn, cs) = a.sin_cos();
+            let xr1 = r1 * cs;
+            let yr1 = r1 * sn;
+
+            a += da;
+
+            points.push([xr0, yr0]);
+            points.push([xr1, yr1]);
+        }
+
+        [points].to_vec()
+    }
+
+    fn random_float(radius: f64, n: usize) -> Path<[f64; 2]> {
+        let a = 0.5 * radius;
+        let range = -a..=a;
+        let mut points = Vec::with_capacity(n);
+        let mut rng = rand::rng();
+        for _ in 0..n {
+            let x = rng.random_range(range.clone());
+            let y = rng.random_range(range.clone());
+            points.push([x, y])
+        }
+
+        points
     }
 }
