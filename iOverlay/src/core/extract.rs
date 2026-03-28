@@ -170,7 +170,7 @@ impl OverlayGraph<'_> {
         }
 
         if !anchors_already_sorted {
-            anchors.sort_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
+            anchors.sort_unstable_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         }
 
         shapes.join_sorted_holes(holes, anchors, clockwise);
