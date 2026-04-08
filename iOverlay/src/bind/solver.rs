@@ -83,16 +83,39 @@ impl ShapeBinder {
                 j += 1
             }
 
-            let target_id = scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
+            let child_index = anchor.contour_index.index();
+            let is_self_ref = |id: ContourIndex| id.is_hole() && id.index() == child_index;
+
+            let mut target_id =
+                scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
+
+            // When the hole is collinear with the enclosing exterior
+            // (Equal in VSegment::Ord), first_less may return the hole's
+            // own segment instead of the exterior. Fall back to
+            // first_less_or_equal to find the exterior directly.
+            if target_id.is_empty() || is_self_ref(target_id) {
+                target_id = scan_list.first_less_or_equal(
+                    anchor.v_segment.a.x,
+                    ContourIndex::EMPTY,
+                    anchor.v_segment,
+                );
+                if target_id.is_empty() || is_self_ref(target_id) {
+                    continue;
+                }
+            }
+
             let parent_index = if target_id.is_hole() {
-                // index is a hole index
-                // at this moment this hole parent is known
-                parent_for_child[target_id.index()]
+                let parent = parent_for_child[target_id.index()];
+                if parent >= shape_count {
+                    // The referenced hole's parent is unresolved (it was
+                    // also skipped due to collinear geometry). Drop this
+                    // hole rather than propagating the bad index.
+                    continue;
+                }
+                parent
             } else {
                 target_id.index()
             };
-
-            let child_index = anchor.contour_index.index();
 
             parent_for_child[child_index] = parent_index;
             children_count_for_parent[parent_index] += 1;
@@ -181,7 +204,9 @@ impl JoinHoles for Vec<IntShape> {
 
         for (hole_index, hole) in holes.into_iter().enumerate() {
             let shape_index = solution.parent_for_child[hole_index];
-            self[shape_index].push(hole);
+            if shape_index < self.len() {
+                self[shape_index].push(hole);
+            }
         }
     }
 }
@@ -307,6 +332,62 @@ mod tests {
 
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[1].len(), 3);
+    }
+
+    /// A hole whose bottom edge is flush with the enclosing exterior's
+    /// bottom edge. Both the hole's own segment and the exterior's
+    /// segment are collinear (Equal in `VSegment::Ord`), so `first_less`
+    /// returns the hole's own segment (a self-reference) instead of the
+    /// enclosing exterior. Without the fallback to `first_less_or_equal`,
+    /// this would panic on the unresolved parent lookup.
+    ///
+    /// ```text
+    ///     +-exterior---------+   +--shape 1--+
+    ///     |                  |   |            |
+    ///     |  +-hole-+        |   |            |
+    ///     |  |      |        |   |            |
+    ///  ===+==+=hole=+========+===+============+===  y = 0
+    ///     ^  ^
+    ///     |  hole's anchor is collinear with exterior's bottom edge
+    ///     exterior's bottom edge
+    /// ```
+    #[test]
+    fn test_hole_flush_with_exterior_bottom() {
+        // Two shapes so we bypass the single-shape fast-path in
+        // join_unsorted_holes and exercise ShapeBinder::bind.
+        let mut shapes = vec![
+            // Shape 0: square (0,0)→(10,0)→(10,10)→(0,10)
+            vec![vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(10, 0),
+                IntPoint::new(10, 10),
+                IntPoint::new(0, 10),
+            ]],
+            // Shape 1: disjoint square to the right
+            vec![vec![
+                IntPoint::new(20, 0),
+                IntPoint::new(30, 0),
+                IntPoint::new(30, 10),
+                IntPoint::new(20, 10),
+            ]],
+        ];
+
+        // Hole whose bottom edge sits exactly on y = 0 — the same y as
+        // both shapes' bottom edges. Its left-bottom vertex is (3,0) and
+        // its anchor segment is the vertical edge (3,0)→(3,5), which is
+        // collinear with the exterior's bottom segment (0,0)→(10,0).
+        let holes = vec![vec![
+            IntPoint::new(3, 0),
+            IntPoint::new(7, 0),
+            IntPoint::new(7, 5),
+            IntPoint::new(3, 5),
+        ]];
+
+        // Must not panic. The hole is correctly assigned to shape 0.
+        shapes.join_unsorted_holes(holes, false);
+
+        assert_eq!(shapes[0].len(), 2); // exterior + hole
+        assert_eq!(shapes[1].len(), 1);
     }
 
     #[test]

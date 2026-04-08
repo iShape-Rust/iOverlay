@@ -13,6 +13,11 @@ impl ContourIndex {
     pub(crate) const EMPTY: ContourIndex = ContourIndex { data: usize::MAX };
 
     #[inline]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.data == usize::MAX
+    }
+
+    #[inline]
     pub(crate) fn is_hole(&self) -> bool {
         self.data & 1 == 1
     }
