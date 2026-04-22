@@ -34,7 +34,6 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
 - [FAQ](#faq)
-- [Versioning Policy](#versioning-policy)
 - [License](#license)
 
 &nbsp;
@@ -558,16 +557,6 @@ assert_eq!(result.len(), 2);
 ```
 
 ---
-
-## Versioning Policy
-
-This crate follows a pragmatic versioning approach:
-
-    PATCH updates (e.g., 1.8.1 → 1.8.2): Guaranteed to be backward-compatible, containing only bug fixes or small improvements.
-    MINOR updates (e.g., 1.8.0 → 1.9.0): Typically backward-compatible but may include changes to experimental or less commonly used APIs.
-    MAJOR updates (e.g., 1.x.x → 2.x.x): Reserved for significant breaking changes or major redesigns.
-
-To minimize disruption, consider pinning dependencies when relying on specific versions.
 
 ## License
 

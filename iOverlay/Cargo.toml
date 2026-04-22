@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "4.5.1"
+version = "5.0.0"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 rust-version = "1.88"
