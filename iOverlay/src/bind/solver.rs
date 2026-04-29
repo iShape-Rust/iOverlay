@@ -53,6 +53,17 @@ impl ShapeBinder {
         segments: Vec<IdSegment>,
     ) -> BindSolution {
         let children_count = anchors.len();
+
+        // With no parent shapes there is nothing to bind children to. Return
+        // a trivially empty solution rather than indexing `children_count_for_parent`
+        // below (which would be zero-length and OOB on every child).
+        if shape_count == 0 {
+            return BindSolution {
+                parent_for_child: vec![0; children_count],
+                children_count_for_parent: Vec::new(),
+            };
+        }
+
         let mut parent_for_child = {
             #[cfg(debug_assertions)]
             {
@@ -84,6 +95,24 @@ impl ShapeBinder {
             }
 
             let target_id = scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
+            let child_index = anchor.contour_index.index();
+
+            // `first_less` returns `ContourIndex::EMPTY` (data == usize::MAX) when
+            // nothing lies to the left of the anchor. Its low bit is 1, so
+            // `is_hole()` would return true and `index()` would return
+            // usize::MAX >> 1 — both meaningless. Without this guard the
+            // `is_hole` branch below would index `parent_for_child[usize::MAX >> 1]`,
+            // which panics on large, topologically-tangled inputs. When the
+            // anchor has no enclosing parent (malformed / ambiguous input),
+            // fall back to attaching it to shape 0 rather than crashing.
+            // `shape_count > 0` is guaranteed by the early return at function
+            // entry, so `children_count_for_parent[0]` is in-bounds.
+            if target_id.is_empty() {
+                parent_for_child[child_index] = 0;
+                children_count_for_parent[0] += 1;
+                continue;
+            }
+
             let parent_index = if target_id.is_hole() {
                 // index is a hole index
                 // at this moment this hole parent is known
@@ -91,8 +120,6 @@ impl ShapeBinder {
             } else {
                 target_id.index()
             };
-
-            let child_index = anchor.contour_index.index();
 
             parent_for_child[child_index] = parent_index;
             children_count_for_parent[parent_index] += 1;

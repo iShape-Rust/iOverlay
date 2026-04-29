@@ -12,6 +12,15 @@ pub(crate) struct ContourIndex {
 impl ContourIndex {
     pub(crate) const EMPTY: ContourIndex = ContourIndex { data: usize::MAX };
 
+    /// True when this is the sentinel returned by `ScanHoleStore::first_less`
+    /// when no segment to the left of the query was found. Must be checked
+    /// before calling `is_hole()` / `index()`, whose outputs are bogus for
+    /// the sentinel.
+    #[inline]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.data == usize::MAX
+    }
+
     #[inline]
     pub(crate) fn is_hole(&self) -> bool {
         self.data & 1 == 1
