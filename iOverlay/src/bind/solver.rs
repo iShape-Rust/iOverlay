@@ -295,11 +295,70 @@ impl SortByAngle for [IdSegment] {
 
 #[cfg(test)]
 mod tests {
-    use crate::bind::solver::JoinHoles;
+    use crate::bind::segment::{ContourIndex, IdSegment};
+    use crate::bind::solver::{JoinHoles, ShapeBinder};
     use crate::geom::v_segment::VSegment;
     use alloc::vec;
     use core::cmp::Ordering;
     use i_float::int::point::IntPoint;
+
+    #[test]
+    fn test_bind_zero_shapes_no_children() {
+        // shape_count == 0, no anchors: early-return path must produce an empty solution.
+        let solution = ShapeBinder::bind(0, vec![], vec![]);
+        assert!(solution.children_count_for_parent.is_empty());
+        assert!(solution.parent_for_child.is_empty());
+    }
+
+    #[test]
+    fn test_bind_zero_shapes_with_children() {
+        // shape_count == 0 with one hole anchor: previously panicked with an OOB index
+        // into the zero-length children_count_for_parent vec.
+        let anchor = IdSegment {
+            contour_index: ContourIndex::new_hole(0),
+            v_segment: VSegment {
+                a: IntPoint::new(0, 0),
+                b: IntPoint::new(5, 0),
+            },
+        };
+        let solution = ShapeBinder::bind(0, vec![anchor], vec![]);
+        assert!(solution.children_count_for_parent.is_empty());
+        assert_eq!(solution.parent_for_child, vec![0]);
+    }
+
+    #[test]
+    fn test_hole_left_of_all_parents_does_not_panic() {
+        // Both parent shapes start at x >= 10, so when the sweep processes
+        // the hole anchor at x == 1 the scan list is empty and first_less
+        // returns ContourIndex::EMPTY.  Before the fix, the is_hole() branch
+        // would index parent_for_child[usize::MAX >> 1] and panic.
+        let mut shapes = vec![
+            vec![vec![
+                IntPoint::new(10, 0),
+                IntPoint::new(20, 0),
+                IntPoint::new(20, 10),
+                IntPoint::new(10, 10),
+            ]],
+            vec![vec![
+                IntPoint::new(30, 0),
+                IntPoint::new(40, 0),
+                IntPoint::new(40, 10),
+                IntPoint::new(30, 10),
+            ]],
+        ];
+        let holes = vec![vec![
+            IntPoint::new(1, 2),
+            IntPoint::new(5, 2),
+            IntPoint::new(5, 8),
+            IntPoint::new(1, 8),
+        ]];
+
+        // Must not panic — the stray hole falls back to shape 0.
+        shapes.join_unsorted_holes(holes, false);
+
+        assert_eq!(shapes[0].len(), 2); // outer contour + fallback hole
+        assert_eq!(shapes[1].len(), 1);
+    }
 
     #[test]
     fn test_0() {
