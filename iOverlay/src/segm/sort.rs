@@ -5,7 +5,7 @@ pub(crate) trait ShapeSegmentsSort {
     fn sort_by_ab(&mut self, parallel: bool);
 }
 
-impl<C: Send + Sync + Copy> ShapeSegmentsSort for [Segment<C>] {
+impl<C: Send + Sync + Copy, D: Send + Sync + Copy> ShapeSegmentsSort for [Segment<C, D>] {
     #[inline]
     fn sort_by_ab(&mut self, parallel: bool) {
         self.sort_by_two_keys_then_by(

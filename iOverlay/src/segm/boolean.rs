@@ -42,12 +42,6 @@ impl WindingCount for ShapeCountBoolean {
     }
 
     #[inline(always)]
-    fn apply(&mut self, count: Self) {
-        self.subj += count.subj;
-        self.clip += count.clip;
-    }
-
-    #[inline(always)]
     fn invert(self) -> Self {
         Self {
             subj: -self.subj,

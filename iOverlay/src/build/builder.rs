@@ -1,4 +1,5 @@
 use crate::build::sweep::{FillHandler, FillStrategy, SweepRunner};
+use crate::core::edge_data::OverlayEdgeData;
 use crate::core::link::OverlayLink;
 use crate::core::solver::Solver;
 use crate::geom::end::End;
@@ -24,11 +25,11 @@ impl<'a> StoreFillsHandler<'a> {
     }
 }
 
-impl<C> FillHandler<C> for StoreFillsHandler<'_> {
+impl<C, D> FillHandler<C, D> for StoreFillsHandler<'_> {
     type Output = ();
 
     #[inline(always)]
-    fn handle(&mut self, index: usize, _segment: &Segment<C>, fill: SegmentFill) -> ControlFlow<()> {
+    fn handle(&mut self, index: usize, _segment: &Segment<C, D>, fill: SegmentFill) -> ControlFlow<()> {
         // fills is pre-allocated to segments.len() and index is guaranteed
         // to be in range by the sweep algorithm
         unsafe { *self.fills.get_unchecked_mut(index) = fill };
@@ -43,15 +44,15 @@ pub(crate) trait GraphNode {
     fn with_indices(indices: &[usize]) -> Self;
 }
 
-pub(crate) struct GraphBuilder<C, N> {
+pub(crate) struct GraphBuilder<C, N, D = ()> {
     sweep_runner: SweepRunner<C>,
-    pub(super) links: Vec<OverlayLink>,
+    pub(super) links: Vec<OverlayLink<D>>,
     pub(super) nodes: Vec<N>,
     pub(super) fills: Vec<SegmentFill>,
     pub(super) ends: Vec<End>,
 }
 
-impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
+impl<C: WindingCount, N: GraphNode, D: OverlayEdgeData<C>> GraphBuilder<C, N, D> {
     #[inline]
     pub(crate) fn new() -> Self {
         Self {
@@ -67,15 +68,15 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
     pub(super) fn build_fills_with_strategy<F: FillStrategy<C>>(
         &mut self,
         solver: &Solver,
-        segments: &[Segment<C>],
+        segments: &[Segment<C, D>],
     ) {
         self.fills.resize(segments.len(), NONE);
         self.sweep_runner
-            .run::<F, _>(solver, segments, StoreFillsHandler::new(&mut self.fills));
+            .run::<D, F, _>(solver, segments, StoreFillsHandler::new(&mut self.fills));
     }
 
     #[inline]
-    pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(&mut self, segments: &[Segment<C>]) {
+    pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(&mut self, segments: &[Segment<C, D>]) {
         self.links.clear();
         self.links.reserve_capacity(segments.len());
 
@@ -83,24 +84,26 @@ impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
             if !F::is_included(fill) {
                 continue;
             }
-            self.links.push(OverlayLink::new(
+            self.links.push(OverlayLink::new_with_data(
                 IdPoint::new(0, segment.x_segment.a),
                 IdPoint::new(0, segment.x_segment.b),
                 fill,
+                segment.data,
             ));
         }
     }
 
     #[inline]
-    pub(super) fn build_links_all(&mut self, segments: &[Segment<C>]) {
+    pub(super) fn build_links_all(&mut self, segments: &[Segment<C, D>]) {
         self.links.clear();
         self.links.reserve_capacity(segments.len());
 
         for (segment, &fill) in segments.iter().zip(&self.fills) {
-            self.links.push(OverlayLink::new(
+            self.links.push(OverlayLink::new_with_data(
                 IdPoint::new(0, segment.x_segment.a),
                 IdPoint::new(0, segment.x_segment.b),
                 fill,
+                segment.data,
             ));
         }
     }

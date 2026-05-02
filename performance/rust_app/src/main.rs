@@ -181,7 +181,7 @@ fn run_test_4(geom: bool, solver: Solver) {
 
 fn run_test_5(geom: bool, solver: Solver) {
     println!("run NestedSquares test");
-    for i in 1..19 {
+    for i in 1..18 {
         let n = 1 << i;
         CrossTest::run(n, OverlayRule::Xor, solver, 500.0, geom);
     }

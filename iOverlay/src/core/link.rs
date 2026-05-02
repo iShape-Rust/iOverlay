@@ -5,16 +5,17 @@ use crate::segm::segment::SegmentFill;
 use alloc::vec::Vec;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct OverlayLink {
+pub(crate) struct OverlayLink<D = ()> {
     pub(crate) a: IdPoint,
     pub(crate) b: IdPoint,
     pub(crate) fill: SegmentFill,
+    pub(crate) data: D,
 }
 
-impl OverlayLink {
+impl<D> OverlayLink<D> {
     #[inline(always)]
-    pub(crate) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
-        OverlayLink { a, b, fill }
+    pub(crate) fn new_with_data(a: IdPoint, b: IdPoint, fill: SegmentFill, data: D) -> OverlayLink<D> {
+        OverlayLink { a, b, fill, data }
     }
 
     #[inline(always)]

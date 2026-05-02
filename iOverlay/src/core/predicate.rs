@@ -331,6 +331,7 @@ mod tests {
                 b: IntPoint::new(bx, by),
             },
             count: ShapeCountBoolean { subj, clip },
+            data: (),
         }
     }
 

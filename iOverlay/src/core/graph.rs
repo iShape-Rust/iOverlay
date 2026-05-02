@@ -13,10 +13,10 @@ use alloc::vec::Vec;
 ///
 /// Use `OverlayGraph` to perform boolean operations on the geometric shapes you've added to an `Overlay`, after it has processed the shapes according to the specified build and overlay rules.
 /// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
-pub struct OverlayGraph<'a> {
+pub struct OverlayGraph<'a, D = ()> {
     pub(crate) options: IntOverlayOptions,
     pub(crate) nodes: &'a [OverlayNode],
-    pub(crate) links: &'a [OverlayLink],
+    pub(crate) links: &'a [OverlayLink<D>],
 }
 
 #[derive(Debug)]

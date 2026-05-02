@@ -1,3 +1,4 @@
+use crate::core::edge_data::OverlayEdgeData;
 use crate::core::solver::Solver;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
@@ -24,10 +25,10 @@ impl ExpiredVal<i32> for IdSegment {
 }
 
 impl SplitSolver {
-    pub(super) fn tree_split<C: WindingCount>(
+    pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C>>,
+        segments: &mut Vec<Segment<C, D>>,
         solver: &Solver,
     ) -> bool {
         let range: SegRange<i32> = segments.ver_range().into();
@@ -99,7 +100,7 @@ trait VerticalRange {
     fn ver_range(&self) -> LineRange;
 }
 
-impl<C: Send> VerticalRange for Vec<Segment<C>> {
+impl<C: Send, D: Send> VerticalRange for Vec<Segment<C, D>> {
     fn ver_range(&self) -> LineRange {
         let mut min_y = self[0].x_segment.a.y;
         let mut max_y = min_y;
@@ -118,7 +119,7 @@ impl<C: Send> VerticalRange for Vec<Segment<C>> {
     }
 }
 
-impl<C: Send> Segment<C> {
+impl<C: Send, D: Send> Segment<C, D> {
     #[inline]
     fn id_segment(&self, id: usize) -> IdSegment {
         IdSegment {

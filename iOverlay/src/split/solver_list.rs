@@ -1,3 +1,4 @@
+use crate::core::edge_data::OverlayEdgeData;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
@@ -6,10 +7,10 @@ use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
 
 impl SplitSolver {
-    pub(super) fn list_split<C: WindingCount>(
+    pub(super) fn list_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C>>,
+        segments: &mut Vec<Segment<C, D>>,
         solver: &Solver,
     ) -> bool {
         let mut need_to_fix = true;

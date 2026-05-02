@@ -1,3 +1,4 @@
+use crate::core::edge_data::OverlayEdgeData;
 use crate::geom::x_segment::XSegment;
 use crate::segm::winding::WindingCount;
 use core::cmp::Ordering;
@@ -20,45 +21,56 @@ pub const BOTH_BOTTOM: SegmentFill = SUBJ_BOTTOM | CLIP_BOTTOM;
 pub const ALL: SegmentFill = SUBJ_BOTH | CLIP_BOTH;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Segment<C> {
+pub(crate) struct Segment<C, D = ()> {
     pub(crate) x_segment: XSegment,
     pub(crate) count: C,
+    pub(crate) data: D,
 }
 
 impl<C: WindingCount> Segment<C> {
     #[inline(always)]
+    #[allow(dead_code)]
     pub(crate) fn create_and_validate(a: IntPoint, b: IntPoint, count: C) -> Self {
+        Self::create_and_validate_with_data(a, b, count, ())
+    }
+}
+
+impl<C: WindingCount, D: OverlayEdgeData<C>> Segment<C, D> {
+    #[inline(always)]
+    pub(crate) fn create_and_validate_with_data(a: IntPoint, b: IntPoint, count: C, data: D) -> Self {
         if a < b {
             Self {
                 x_segment: XSegment { a, b },
                 count,
+                data,
             }
         } else {
             Self {
                 x_segment: XSegment { a: b, b: a },
                 count: count.invert(),
+                data: data.reversed(),
             }
         }
     }
 }
 
-impl<C> PartialEq<Self> for Segment<C> {
+impl<C, D> PartialEq<Self> for Segment<C, D> {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
     }
 }
 
-impl<C> Eq for Segment<C> {}
+impl<C, D> Eq for Segment<C, D> {}
 
-impl<C> PartialOrd for Segment<C> {
+impl<C, D> PartialOrd for Segment<C, D> {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<C> Ord for Segment<C> {
+impl<C, D> Ord for Segment<C, D> {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.x_segment.cmp(&other.x_segment)

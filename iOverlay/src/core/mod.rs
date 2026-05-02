@@ -1,4 +1,6 @@
 pub mod divide;
+pub mod edge_data;
+pub mod edge_overlay;
 pub mod extract;
 mod extract_ogc;
 pub mod fill_rule;

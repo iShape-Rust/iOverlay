@@ -1,5 +1,6 @@
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::{ShapeBinder, SortByAngle};
+use crate::core::edge_data::OverlayEdgeData;
 use crate::core::extract::{BooleanExtractionBuffer, GraphContour, GraphUtil, Visit, VisitState};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::{OverlayLink, OverlayLinkFilter};
@@ -7,7 +8,7 @@ use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
-use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
+use crate::vector::edge::{DataVectorEdge, VectorEdge, VectorPath, VectorShape};
 use crate::vector::simplify::VectorSimplify;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -144,6 +145,15 @@ impl OverlayGraph<'_> {
         }
 
         contour
+    }
+}
+
+impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
+    pub fn extract_separate_data_vectors(&self) -> Vec<DataVectorEdge<D>> {
+        self.links
+            .iter()
+            .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, link.data))
+            .collect()
     }
 }
 

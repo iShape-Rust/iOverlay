@@ -23,6 +23,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - [Boolean Operations](#boolean-operations)
   - [Simple Example](#simple-example)
   - [Overlay Rules](#overlay-rules)
+  - [Edge Attributes and Provenance](#edge-attributes-and-provenance)
 - [Spatial Predicates](#spatial-predicates)
 - [Custom Point Type Support](#custom-point-type-support)
 - [Slicing & Clipping](#slicing--clipping)
@@ -183,6 +184,76 @@ The `overlay` function returns a `Vec<Shapes>`:
 | A,B | A ∪ B | A ∩ B | A - B | B - A | A ⊕ B |
 |---------|---------------|----------------------|----------------|--------------------|----------------|
 | <img src="readme/ab.svg" alt="AB" style="width:100px;"> | <img src="readme/union.svg" alt="Union" style="width:100px;"> | <img src="readme/intersection.svg" alt="Intersection" style="width:100px;"> | <img src="readme/difference_ab.svg" alt="Difference" style="width:100px;"> | <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:100px;"> | <img src="readme/exclusion.svg" alt="Exclusion" style="width:100px;"> |
+
+&nbsp;
+### Edge Attributes and Provenance
+
+Use `EdgeOverlay` when the result boundary needs to keep data from the original input edges: source ids, layer ids, material ids, constraints, styles, or any other edge provenance. The regular `Overlay` API remains optimized for plain geometry; this API is opt-in and works with user-defined payloads.
+
+When an input edge is split by intersections, its data is copied by default. When coincident edges are merged, your `OverlayEdgeData` implementation decides what the resulting data means. A common policy is to keep identical values and mark conflicts as `Undefined`.
+
+```rust
+use i_overlay::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
+use i_overlay::core::edge_overlay::{EdgeOverlay, InputEdge};
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay::ShapeType;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::segm::boolean::ShapeCountBoolean;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum EdgeKind {
+    Red,
+    Green,
+    Undefined,
+}
+
+impl OverlayEdgeData for EdgeKind {
+    fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>) -> Self {
+        match (ctx.lhs_data, ctx.rhs_data) {
+            (EdgeKind::Red, EdgeKind::Red) => EdgeKind::Red,
+            (EdgeKind::Green, EdgeKind::Green) => EdgeKind::Green,
+            _ => EdgeKind::Undefined,
+        }
+    }
+}
+
+let mut overlay = EdgeOverlay::new(8);
+
+let red_square = [
+    [0, 0], [4, 0], [4, 4], [0, 4],
+];
+let green_square = [
+    [2, 0], [6, 0], [6, 4], [2, 4],
+];
+
+for edge in red_square.windows(2).map(|w| (w[0], w[1]))
+    .chain([(red_square[3], red_square[0])])
+{
+    overlay.add_edge(InputEdge {
+        a: IntPoint::new(edge.0[0], edge.0[1]),
+        b: IntPoint::new(edge.1[0], edge.1[1]),
+        data: EdgeKind::Red,
+    }, ShapeType::Subject);
+}
+
+for edge in green_square.windows(2).map(|w| (w[0], w[1]))
+    .chain([(green_square[3], green_square[0])])
+{
+    overlay.add_edge(InputEdge {
+        a: IntPoint::new(edge.0[0], edge.0[1]),
+        b: IntPoint::new(edge.1[0], edge.1[1]),
+        data: EdgeKind::Green,
+    }, ShapeType::Clip);
+}
+
+let edges = overlay.build_separate_vectors(OverlayRule::Union, FillRule::NonZero);
+
+// Each output edge contains geometry, fill, and the propagated user data.
+assert!(edges.iter().any(|edge| edge.data == EdgeKind::Undefined));
+```
+
+This API currently targets integer boolean operations and exports the result as edges. It intentionally preserves edge runs so downstream crates can decide how to simplify or resolve conflicting attributes.
 
 &nbsp;
 ## Spatial Predicates

@@ -1,3 +1,4 @@
+use crate::core::edge_data::OverlayEdgeData;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
@@ -5,6 +6,8 @@ use i_shape::int::path::IntPath;
 pub type SideFill = u8;
 pub type VectorPath = Vec<VectorEdge>;
 pub type VectorShape = Vec<VectorPath>;
+pub type DataVectorPath<D> = Vec<DataVectorEdge<D>>;
+pub type DataVectorShape<D> = Vec<DataVectorPath<D>>;
 
 pub const SUBJ_LEFT: u8 = 0b0001;
 pub const SUBJ_RIGHT: u8 = 0b0010;
@@ -33,11 +36,31 @@ pub struct VectorEdge {
     pub fill: SideFill,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DataVectorEdge<D> {
+    pub a: IntPoint,
+    pub b: IntPoint,
+    pub fill: SideFill,
+    pub data: D,
+}
+
 impl VectorEdge {
     pub(crate) fn new(fill: SideFill, a: IntPoint, b: IntPoint) -> Self {
         let fill = if a < b { fill } else { fill.reverse() };
 
         Self { a, b, fill }
+    }
+}
+
+impl<D: OverlayEdgeData> DataVectorEdge<D> {
+    pub(crate) fn new(fill: SideFill, a: IntPoint, b: IntPoint, data: D) -> Self {
+        let (fill, data) = if a < b {
+            (fill, data)
+        } else {
+            (fill.reverse(), data.reversed())
+        };
+
+        Self { a, b, fill, data }
     }
 }
 

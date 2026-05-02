@@ -16,19 +16,24 @@ pub(crate) trait FillStrategy<C> {
     fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
 }
 
-pub(crate) trait FillHandler<C> {
+pub(crate) trait FillHandler<C, D = ()> {
     type Output;
-    fn handle(&mut self, index: usize, segment: &Segment<C>, fill: SegmentFill) -> ControlFlow<Self::Output>;
+    fn handle(
+        &mut self,
+        index: usize,
+        segment: &Segment<C, D>,
+        fill: SegmentFill,
+    ) -> ControlFlow<Self::Output>;
     fn finalize(self) -> Self::Output;
 }
 
 #[inline]
-fn sweep_with_handler<C, F, S, H>(scan: &mut S, segments: &[Segment<C>], mut handler: H) -> H::Output
+fn sweep_with_handler<C, D, F, S, H>(scan: &mut S, segments: &[Segment<C, D>], mut handler: H) -> H::Output
 where
     C: WindingCount,
     F: FillStrategy<C>,
     S: KeyExpCollection<VSegment, i32, C>,
-    H: FillHandler<C>,
+    H: FillHandler<C, D>,
 {
     let mut node = Vec::with_capacity(4);
     let n = segments.len();
@@ -92,47 +97,54 @@ impl<C: WindingCount> SweepRunner<C> {
     }
 
     #[inline]
-    pub(crate) fn run<F, H>(&mut self, solver: &Solver, segments: &[Segment<C>], handler: H) -> H::Output
+    pub(crate) fn run<D, F, H>(
+        &mut self,
+        solver: &Solver,
+        segments: &[Segment<C, D>],
+        handler: H,
+    ) -> H::Output
     where
         F: FillStrategy<C>,
-        H: FillHandler<C>,
+        H: FillHandler<C, D>,
+        D: Send,
     {
         let count = segments.len();
         if solver.is_list_fill(segments) {
             let capacity = count.log2_sqrt().max(4) * 2;
             let mut list = self.take_scan_list(capacity);
-            let result = sweep_with_handler::<C, F, _, _>(&mut list, segments, handler);
+            let result = sweep_with_handler::<C, D, F, _, _>(&mut list, segments, handler);
             self.list = Some(list);
             result
         } else {
             let capacity = count.log2_sqrt().max(8);
             let mut tree = self.take_scan_tree(capacity);
-            let result = sweep_with_handler::<C, F, _, _>(&mut tree, segments, handler);
+            let result = sweep_with_handler::<C, D, F, _, _>(&mut tree, segments, handler);
             self.tree = Some(tree);
             result
         }
     }
 
     #[inline]
-    pub(crate) fn run_with_fill_rule<H>(
+    pub(crate) fn run_with_fill_rule<D, H>(
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<C>],
+        segments: &[Segment<C, D>],
         handler: H,
     ) -> H::Output
     where
-        H: FillHandler<C>,
+        H: FillHandler<C, D>,
+        D: Send,
         EvenOddStrategy: FillStrategy<C>,
         NonZeroStrategy: FillStrategy<C>,
         PositiveStrategy: FillStrategy<C>,
         NegativeStrategy: FillStrategy<C>,
     {
         match fill_rule {
-            FillRule::EvenOdd => self.run::<EvenOddStrategy, H>(solver, segments, handler),
-            FillRule::NonZero => self.run::<NonZeroStrategy, H>(solver, segments, handler),
-            FillRule::Positive => self.run::<PositiveStrategy, H>(solver, segments, handler),
-            FillRule::Negative => self.run::<NegativeStrategy, H>(solver, segments, handler),
+            FillRule::EvenOdd => self.run::<D, EvenOddStrategy, H>(solver, segments, handler),
+            FillRule::NonZero => self.run::<D, NonZeroStrategy, H>(solver, segments, handler),
+            FillRule::Positive => self.run::<D, PositiveStrategy, H>(solver, segments, handler),
+            FillRule::Negative => self.run::<D, NegativeStrategy, H>(solver, segments, handler),
         }
     }
 

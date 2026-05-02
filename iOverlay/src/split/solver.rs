@@ -1,3 +1,4 @@
+use crate::core::edge_data::{EdgeDataSplit, OverlayEdgeData};
 use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
@@ -20,9 +21,9 @@ impl SplitSolver {
     }
 
     #[inline]
-    pub(crate) fn split_segments<C: WindingCount>(
+    pub(crate) fn split_segments<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C>>,
+        segments: &mut Vec<Segment<C, D>>,
         solver: &Solver,
     ) -> bool {
         if segments.is_empty() {
@@ -37,7 +38,11 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn split<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, solver: &Solver) -> bool {
+    fn split<C: WindingCount, D: OverlayEdgeData<C>>(
+        &mut self,
+        segments: &mut Vec<Segment<C, D>>,
+        solver: &Solver,
+    ) -> bool {
         let is_list = solver.is_list_split(segments);
         let snap_radius = solver.snap_radius();
         if is_list {
@@ -129,9 +134,9 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply<C: WindingCount>(
+    pub(super) fn apply<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C>>,
+        segments: &mut Vec<Segment<C, D>>,
         reusable_buffer: &mut Vec<LineMark>,
         solver: &Solver,
     ) {
@@ -161,12 +166,18 @@ impl SplitSolver {
             };
 
             let count = s0.count;
+            let data = s0.data;
             let x_seg = s0.x_segment;
 
             if start + 1 == i {
                 // single split
-                *s0 = Segment::create_and_validate(x_seg.a, m0.point, count);
-                let s1 = Segment::create_and_validate(m0.point, x_seg.b, count);
+                let (d0, d1) = data.split(EdgeDataSplit {
+                    a: x_seg.a,
+                    p: m0.point,
+                    b: x_seg.b,
+                });
+                *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0);
+                let s1 = Segment::create_and_validate_with_data(m0.point, x_seg.b, count, d1);
                 segments.push(s1);
 
                 continue;
@@ -177,16 +188,29 @@ impl SplitSolver {
             Self::sort_sub_marks(sub_marks, x_seg);
 
             let m0 = sub_marks[0];
-            *s0 = Segment::create_and_validate(x_seg.a, m0.point, count);
+            let (d0, mut rest_data) = data.split(EdgeDataSplit {
+                a: x_seg.a,
+                p: m0.point,
+                b: x_seg.b,
+            });
+            *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0);
 
             let mut p0 = m0.point;
 
             for mi in sub_marks.iter().skip(1) {
-                segments.push(Segment::create_and_validate(p0, mi.point, count));
+                let (di, next_data) = rest_data.split(EdgeDataSplit {
+                    a: p0,
+                    p: mi.point,
+                    b: x_seg.b,
+                });
+                segments.push(Segment::create_and_validate_with_data(p0, mi.point, count, di));
+                rest_data = next_data;
                 p0 = mi.point;
             }
 
-            segments.push(Segment::create_and_validate(p0, x_seg.b, count));
+            segments.push(Segment::create_and_validate_with_data(
+                p0, x_seg.b, count, rest_data,
+            ));
         }
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());

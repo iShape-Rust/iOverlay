@@ -8,6 +8,5 @@ where
     fn new(subj: i32, clip: i32) -> Self;
     fn with_shape_type(shape_type: ShapeType) -> (Self, Self);
     fn add(self, count: Self) -> Self;
-    fn apply(&mut self, count: Self);
     fn invert(self) -> Self;
 }

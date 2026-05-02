@@ -1,3 +1,4 @@
+use crate::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
@@ -6,7 +7,7 @@ pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self) -> bool;
 }
 
-impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
+impl<C: WindingCount, D: OverlayEdgeData<C>> ShapeSegmentsMerge for Vec<Segment<C, D>> {
     fn merge_if_needed(&mut self) -> bool {
         if self.len() < 2 {
             return false;
@@ -27,14 +28,24 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
     }
 }
 
-fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {
+fn merge<C: WindingCount, D: OverlayEdgeData<C>>(segments: &mut [Segment<C, D>], after: usize) -> usize {
     let mut i = after;
     let mut j = i - 1;
     let mut prev = segments[j];
 
     while i < segments.len() {
         if prev.x_segment.eq(&segments[i].x_segment) {
-            prev.count.apply(segments[i].count);
+            let lhs_count = prev.count;
+            let rhs_count = segments[i].count;
+            let out_count = lhs_count.add(rhs_count);
+            prev.data = D::merge(EdgeDataMerge {
+                lhs_data: prev.data,
+                lhs_count,
+                rhs_data: segments[i].data,
+                rhs_count,
+                out_count,
+            });
+            prev.count = out_count;
         } else {
             if prev.count.is_not_empty() {
                 segments[j] = prev;
