@@ -1,5 +1,5 @@
 use crate::geom::v_segment::VSegment;
-use crate::vector::edge::{VectorEdge, VectorPath};
+use crate::vector::edge::{DataVectorEdge, DataVectorPath};
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
@@ -109,7 +109,7 @@ impl IdSegments for IntPath {
     }
 }
 
-impl IdSegments for VectorPath {
+impl<D> IdSegments for DataVectorPath<D> {
     #[inline]
     fn append_id_segments(
         &self,
@@ -119,7 +119,7 @@ impl IdSegments for VectorPath {
         x_max: i32,
         clockwise: bool,
     ) {
-        fn inner<I: Iterator<Item = VectorEdge>>(
+        fn inner<'a, D: 'a, I: Iterator<Item = &'a DataVectorEdge<D>>>(
             iter: I,
             buffer: &mut Vec<IdSegment>,
             id_data: ContourIndex,
@@ -134,9 +134,9 @@ impl IdSegments for VectorPath {
         }
 
         if clockwise {
-            inner(self.iter().copied(), buffer, id_data, x_min, x_max);
+            inner(self.iter(), buffer, id_data, x_min, x_max);
         } else {
-            inner(self.iter().rev().copied(), buffer, id_data, x_min, x_max);
+            inner(self.iter().rev(), buffer, id_data, x_min, x_max);
         }
     }
 }

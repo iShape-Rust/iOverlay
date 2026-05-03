@@ -12,7 +12,7 @@ use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
-use crate::vector::edge::{VectorEdge, VectorShape};
+use crate::vector::edge::{DataVectorEdge, VectorShape};
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::count::PointsCount;
@@ -273,7 +273,7 @@ impl Overlay {
                 &self.solver,
                 &self.segments,
             )
-            .extract_shape_vectors(overlay_rule, &mut buffer);
+            .extract_vector_shapes(overlay_rule, &mut buffer);
 
         self.boolean_buffer = Some(buffer);
 
@@ -282,7 +282,7 @@ impl Overlay {
 
     /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
-    pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<VectorEdge> {
+    pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<DataVectorEdge> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();

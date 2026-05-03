@@ -4,7 +4,7 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::vector::edge::VectorEdge;
+    use i_overlay::vector::edge::DataVectorEdge;
 
     #[test]
     fn test_0() {
@@ -33,25 +33,29 @@ mod tests {
 
         let vectors = &shapes[0][0];
         let template = [
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(-10240, 10240),
                 b: IntPoint::new(-10240, -10240),
                 fill: 1,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(-10240, -10240),
                 b: IntPoint::new(10240, -10240),
                 fill: 1,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(10240, -10240),
                 b: IntPoint::new(10240, 10240),
                 fill: 1,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(10240, 10240),
                 b: IntPoint::new(-10240, 10240),
                 fill: 1,
+                data: (),
             },
         ];
 
@@ -85,35 +89,41 @@ mod tests {
 
         let vectors = &shapes[0][0];
         let template = [
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(-10240, 10240),
                 b: IntPoint::new(-10240, -10240),
                 fill: 1,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(-10240, -10240),
                 b: IntPoint::new(10240, -10240),
                 fill: 1,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(10240, -10240),
                 b: IntPoint::new(10240, -5120),
                 fill: 1,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(10240, -5120),
                 b: IntPoint::new(-5120, -5120),
                 fill: 11,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(-5120, -5120),
                 b: IntPoint::new(-5120, 10240),
                 fill: 11,
+                data: (),
             },
-            VectorEdge {
+            DataVectorEdge {
                 a: IntPoint::new(-5120, 10240),
                 b: IntPoint::new(-10240, 10240),
                 fill: 1,
+                data: (),
             },
         ];
 

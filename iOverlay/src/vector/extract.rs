@@ -1,36 +1,32 @@
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
 use crate::bind::solver::{ShapeBinder, SortByAngle};
 use crate::core::edge_data::OverlayEdgeData;
-use crate::core::extract::{BooleanExtractionBuffer, GraphContour, GraphUtil, Visit, VisitState};
+use crate::core::extract::{BooleanExtractionBuffer, GraphUtil, Visit, VisitState};
 use crate::core::graph::OverlayGraph;
 use crate::core::link::{OverlayLink, OverlayLinkFilter};
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use crate::segm::segment::SegmentFill;
-use crate::vector::edge::{DataVectorEdge, VectorEdge, VectorPath, VectorShape};
+use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
 use crate::vector::simplify::VectorSimplify;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 
-impl OverlayGraph<'_> {
-    pub fn extract_separate_vectors(&self) -> Vec<VectorEdge> {
+impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
+    pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge> {
         self.links
             .iter()
-            .map(|link| VectorEdge {
-                a: link.a.point,
-                b: link.b.point,
-                fill: link.fill,
-            })
+            .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, ()))
             .collect()
     }
 
-    pub fn extract_shape_vectors(
+    pub fn extract_vector_shapes(
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-    ) -> Vec<VectorShape> {
+    ) -> Vec<DataVectorShape<D>> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -116,19 +112,24 @@ impl OverlayGraph<'_> {
 
     fn find_vector_contour(
         &self,
-        start_data: StartVectorPathData,
+        start_data: StartVectorPathData<D>,
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
-    ) -> VectorPath {
+    ) -> DataVectorPath<D> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
 
         visited.visit_edge(link_id, visited_state);
 
-        let mut contour = VectorPath::new();
-        contour.push(VectorEdge::new(start_data.fill, start_data.a, start_data.b));
+        let mut contour = DataVectorPath::new();
+        contour.push(DataVectorEdge::new(
+            start_data.fill,
+            start_data.a,
+            start_data.b,
+            start_data.data,
+        ));
 
         // Find a closed tour
         while node_id != last_node_id {
@@ -149,7 +150,7 @@ impl OverlayGraph<'_> {
 }
 
 impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
-    pub fn extract_separate_data_vectors(&self) -> Vec<DataVectorEdge<D>> {
+    pub fn extract_vectors(&self) -> Vec<DataVectorEdge<D>> {
         self.links
             .iter()
             .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, link.data))
@@ -157,18 +158,19 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
     }
 }
 
-struct StartVectorPathData {
+struct StartVectorPathData<D> {
     a: IntPoint,
     b: IntPoint,
     node_id: usize,
     link_id: usize,
     last_node_id: usize,
     fill: SegmentFill,
+    data: D,
 }
 
-impl StartVectorPathData {
+impl<D: OverlayEdgeData> StartVectorPathData<D> {
     #[inline(always)]
-    fn new(direction: bool, link: &OverlayLink, link_id: usize) -> Self {
+    fn new(direction: bool, link: &OverlayLink<D>, link_id: usize) -> Self {
         if direction {
             Self {
                 a: link.b.point,
@@ -177,6 +179,7 @@ impl StartVectorPathData {
                 link_id,
                 last_node_id: link.b.id,
                 fill: link.fill,
+                data: link.data,
             }
         } else {
             Self {
@@ -186,18 +189,19 @@ impl StartVectorPathData {
                 link_id,
                 last_node_id: link.a.id,
                 fill: link.fill,
+                data: link.data,
             }
         }
     }
 }
 
-trait JoinHoles {
-    fn join_sorted_holes(&mut self, holes: Vec<VectorPath>, anchors: Vec<IdSegment>, clockwise: bool);
-    fn scan_join(&mut self, holes: Vec<VectorPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
+trait JoinHoles<D: OverlayEdgeData> {
+    fn join_sorted_holes(&mut self, holes: Vec<DataVectorPath<D>>, anchors: Vec<IdSegment>, clockwise: bool);
+    fn scan_join(&mut self, holes: Vec<DataVectorPath<D>>, hole_segments: Vec<IdSegment>, clockwise: bool);
 }
 
-impl JoinHoles for Vec<VectorShape> {
-    fn join_sorted_holes(&mut self, holes: Vec<VectorPath>, anchors: Vec<IdSegment>, clockwise: bool) {
+impl<D: OverlayEdgeData> JoinHoles<D> for Vec<DataVectorShape<D>> {
+    fn join_sorted_holes(&mut self, holes: Vec<DataVectorPath<D>>, anchors: Vec<IdSegment>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -214,7 +218,7 @@ impl JoinHoles for Vec<VectorShape> {
         self.scan_join(holes, anchors, clockwise);
     }
 
-    fn scan_join(&mut self, holes: Vec<VectorPath>, hole_segments: Vec<IdSegment>, clockwise: bool) {
+    fn scan_join(&mut self, holes: Vec<DataVectorPath<D>>, hole_segments: Vec<IdSegment>, clockwise: bool) {
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 
@@ -244,10 +248,10 @@ impl JoinHoles for Vec<VectorShape> {
 }
 
 #[inline]
-fn most_left_bottom(path: &VectorPath) -> VSegment {
+fn most_left_bottom<D>(path: &DataVectorPath<D>) -> VSegment {
     let mut index = 0;
     let mut a = path[0].a;
-    for (i, &e) in path.iter().enumerate().skip(1) {
+    for (i, e) in path.iter().enumerate().skip(1) {
         if e.a < a {
             a = e.a;
             index = i;
@@ -270,7 +274,12 @@ fn is_sorted(segments: &[IdSegment]) -> bool {
         .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
 }
 
-impl GraphContour for VectorPath {
+trait DataGraphContour<D: OverlayEdgeData> {
+    fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
+    fn push_node_and_get_other(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize;
+}
+
+impl<D: OverlayEdgeData> DataGraphContour<D> for DataVectorPath<D> {
     #[inline]
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
@@ -291,18 +300,26 @@ impl GraphContour for VectorPath {
             .iter()
             .fold(0i64, |acc, edge| acc + edge.a.cross_product(edge.b));
 
-        let is_valid = (double_area.unsigned_abs() >> 1) >= min_output_area;
-
-        (is_valid, is_modified)
+        ((double_area.unsigned_abs() >> 1) >= min_output_area, is_modified)
     }
 
     #[inline]
-    fn push_node_and_get_other(&mut self, link: &OverlayLink, node_id: usize) -> usize {
+    fn push_node_and_get_other(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize {
         if link.a.id == node_id {
-            self.push(VectorEdge::new(link.fill, link.a.point, link.b.point));
+            self.push(DataVectorEdge::new(
+                link.fill,
+                link.a.point,
+                link.b.point,
+                link.data,
+            ));
             link.b.id
         } else {
-            self.push(VectorEdge::new(link.fill, link.b.point, link.a.point));
+            self.push(DataVectorEdge::new(
+                link.fill,
+                link.b.point,
+                link.a.point,
+                link.data,
+            ));
             link.a.id
         }
     }
@@ -329,7 +346,7 @@ mod tests {
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes[0][0].len() == 6);
 
@@ -338,7 +355,7 @@ mod tests {
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes[0][0].len() == 4);
     }
@@ -356,7 +373,7 @@ mod tests {
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes[0][0].len() == 4);
     }
@@ -375,7 +392,7 @@ mod tests {
         let shapes_0 = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes_0.len() == 1);
 
@@ -384,7 +401,7 @@ mod tests {
         let shapes_1 = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes_1.len() == 1);
     }
@@ -402,7 +419,7 @@ mod tests {
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes.len() == 1);
         debug_assert!(shapes[0][0].len() == 4);
@@ -420,7 +437,7 @@ mod tests {
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes.len() == 2);
     }
@@ -443,7 +460,7 @@ mod tests {
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
             .unwrap()
-            .extract_shape_vectors(OverlayRule::Subject, &mut buffer);
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes.len() == 2);
     }

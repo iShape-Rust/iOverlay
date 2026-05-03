@@ -1,7 +1,7 @@
 use crate::segm::boolean::ShapeCountBoolean;
 use i_float::int::point::IntPoint;
 
-pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + Send + Sync {
+pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + PartialEq + Send + Sync {
     #[inline(always)]
     fn reversed(self) -> Self {
         self

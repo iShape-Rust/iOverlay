@@ -1,5 +1,6 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::edge_data::OverlayEdgeData;
+use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayNode;
 use crate::core::overlay::{IntOverlayOptions, ShapeType};
@@ -9,7 +10,7 @@ use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use crate::split::solver::SplitSolver;
-use crate::vector::edge::DataVectorEdge;
+use crate::vector::edge::{DataVectorEdge, DataVectorShape};
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 
@@ -23,6 +24,7 @@ pub struct InputEdge<D> {
 pub struct EdgeOverlay<D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions,
+    pub boolean_buffer: Option<BooleanExtractionBuffer>,
     segments: Vec<Segment<ShapeCountBoolean, D>>,
     split_solver: SplitSolver,
     graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, D>,
@@ -33,6 +35,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         Self {
             solver: Default::default(),
             options: IntOverlayOptions::keep_output_points(),
+            boolean_buffer: None,
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, D>::new(),
@@ -59,7 +62,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         }
     }
 
-    pub fn build_separate_vectors(
+    pub fn build_vectors(
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
@@ -77,6 +80,34 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
                 &self.solver,
                 &self.segments,
             )
-            .extract_separate_data_vectors()
+            .extract_vectors()
+    }
+
+    pub fn build_vector_shapes(
+        &mut self,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+    ) -> Vec<DataVectorShape<D>> {
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        if self.segments.is_empty() {
+            return Vec::new();
+        }
+
+        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+
+        let shapes = self
+            .graph_builder
+            .build_boolean_overlay(
+                fill_rule,
+                overlay_rule,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
+            .extract_vector_shapes(overlay_rule, &mut buffer);
+
+        self.boolean_buffer = Some(buffer);
+
+        shapes
     }
 }

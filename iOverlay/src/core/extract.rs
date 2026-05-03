@@ -295,7 +295,7 @@ impl StartPathData {
 
 pub(crate) trait GraphContour {
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
-    fn push_node_and_get_other(&mut self, link: &OverlayLink, node_id: usize) -> usize;
+    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize;
 }
 
 impl GraphContour for IntContour {
@@ -322,7 +322,7 @@ impl GraphContour for IntContour {
     }
 
     #[inline]
-    fn push_node_and_get_other(&mut self, link: &OverlayLink, node_id: usize) -> usize {
+    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize {
         if link.a.id == node_id {
             self.push(link.a.point);
             link.b.id
@@ -386,8 +386,8 @@ impl GraphUtil {
     /// * For bridge nodes, both `bridge[k] < links.len()`
     /// * `visited` is at least `links.len()` long (or whatever invariant applies)
     #[inline]
-    pub(crate) unsafe fn find_left_top_link(
-        links: &[OverlayLink],
+    pub(crate) unsafe fn find_left_top_link<D>(
+        links: &[OverlayLink<D>],
         nodes: &[OverlayNode],
         link_index: usize,
         visited: &[VisitState],
@@ -414,9 +414,9 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_indices(
-        links: &[OverlayLink],
-        link: &OverlayLink,
+    fn find_left_top_link_on_indices<D>(
+        links: &[OverlayLink<D>],
+        link: &OverlayLink<D>,
         link_index: usize,
         indices: &[usize],
         visited: &[VisitState],
@@ -450,7 +450,7 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_bridge(links: &[OverlayLink], bridge: &[usize; 2]) -> usize {
+    fn find_left_top_link_on_bridge<D>(links: &[OverlayLink<D>], bridge: &[usize; 2]) -> usize {
         // SAFETY: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
         // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
         let (l0, l1) = unsafe { (links.get_unchecked(bridge[0]), links.get_unchecked(bridge[1])) };
@@ -462,8 +462,8 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    pub(crate) fn next_link(
-        links: &[OverlayLink],
+    pub(crate) fn next_link<D>(
+        links: &[OverlayLink<D>],
         nodes: &[OverlayNode],
         link_id: usize,
         node_id: usize,
@@ -493,8 +493,8 @@ impl GraphUtil {
     // so every element is a valid index into `links`, and at least one of them is
     // still unvisited when we enter. The unchecked accesses rely on that invariant.
     #[inline]
-    fn find_nearest_link_to(
-        links: &[OverlayLink],
+    fn find_nearest_link_to<D>(
+        links: &[OverlayLink<D>],
         target_index: usize,
         node_id: usize,
         clockwise: bool,

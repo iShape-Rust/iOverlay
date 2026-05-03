@@ -247,13 +247,15 @@ for edge in green_square.windows(2).map(|w| (w[0], w[1]))
     }, ShapeType::Clip);
 }
 
-let edges = overlay.build_separate_vectors(OverlayRule::Union, FillRule::NonZero);
+let shapes = overlay.build_vector_shapes(OverlayRule::Union, FillRule::NonZero);
 
+// The result is grouped as shapes -> contours -> edges.
 // Each output edge contains geometry, fill, and the propagated user data.
-assert!(edges.iter().any(|edge| edge.data == EdgeKind::Undefined));
+assert_eq!(shapes.len(), 1);
+assert!(shapes[0][0].iter().any(|edge| edge.data == EdgeKind::Undefined));
 ```
 
-This API currently targets integer boolean operations and exports the result as edges. It intentionally preserves edge runs so downstream crates can decide how to simplify or resolve conflicting attributes.
+This API currently targets integer boolean operations and exports the result as vector shapes. It keeps the same contour structure as the regular polygon API, but each contour item is an edge with propagated data. Collinear edges are simplified only when their data is equal, so attribute boundaries are preserved.
 
 &nbsp;
 ## Spatial Predicates

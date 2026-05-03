@@ -1,89 +1,244 @@
-use i_float::int::point::IntPoint;
-use i_overlay::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
-use i_overlay::core::edge_overlay::{EdgeOverlay, InputEdge};
-use i_overlay::core::fill_rule::FillRule;
-use i_overlay::core::overlay::ShapeType;
-use i_overlay::core::overlay_rule::OverlayRule;
-use i_overlay::segm::boolean::ShapeCountBoolean;
-use i_overlay::vector::edge::DataVectorEdge;
+#[cfg(test)]
+mod tests {
+    use i_float::int::point::IntPoint;
+    use i_float::int_pnt;
+    use i_overlay::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
+    use i_overlay::core::edge_overlay::{EdgeOverlay, InputEdge};
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::ShapeType;
+    use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::segm::boolean::ShapeCountBoolean;
+    use i_overlay::vector::edge::DataVectorEdge;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Color {
-    Red,
-    Green,
-    Undefined,
-}
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum Color {
+        Red,
+        Green,
+        None,
+        Undefined,
+    }
 
-impl OverlayEdgeData for Color {
-    fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>) -> Self {
-        match (ctx.lhs_data, ctx.rhs_data) {
-            (Color::Red, Color::Red) => Color::Red,
-            (Color::Green, Color::Green) => Color::Green,
-            _ => Color::Undefined,
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    struct EdgeColor {
+        subj: Color,
+        clip: Color,
+    }
+
+    impl OverlayEdgeData for EdgeColor {
+        fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>) -> Self {
+            let subj = if ctx.lhs_data.subj == ctx.rhs_data.subj {
+                ctx.lhs_data.subj
+            } else if ctx.rhs_count.subj == 0 || ctx.lhs_count.subj == 0 {
+                if ctx.rhs_count.subj == ctx.lhs_count.subj {
+                    Color::None
+                } else if ctx.rhs_count.subj == 0 {
+                    ctx.lhs_data.subj
+                } else {
+                    ctx.rhs_data.subj
+                }
+            } else {
+                Color::Undefined
+            };
+
+            let clip = if ctx.lhs_data.clip == ctx.rhs_data.clip {
+                ctx.lhs_data.clip
+            } else if ctx.rhs_count.clip == 0 || ctx.lhs_count.clip == 0 {
+                if ctx.rhs_count.clip == ctx.lhs_count.clip {
+                    Color::None
+                } else if ctx.rhs_count.clip == 0 {
+                    ctx.lhs_data.clip
+                } else {
+                    ctx.rhs_data.clip
+                }
+            } else {
+                Color::Undefined
+            };
+            Self { subj, clip }
         }
     }
-}
 
-#[test]
-fn union_keeps_source_edge_data_and_marks_shared_runs_undefined() {
-    let edges = overlay_edges(OverlayRule::Union);
-    assert_eq!(edges.len(), 8);
-    assert_counts(&edges, 3, 3, 2);
-}
+    #[test]
+    fn union_squares() {
+        let subj = square(
+            0,
+            0,
+            4,
+            4,
+            EdgeColor {
+                subj: Color::Red,
+                clip: Color::None,
+            },
+        );
+        let clip = square(
+            4,
+            0,
+            8,
+            4,
+            EdgeColor {
+                subj: Color::None,
+                clip: Color::Green,
+            },
+        );
 
-#[test]
-fn intersect_uses_cut_edges_and_marks_shared_runs_undefined() {
-    let edges = overlay_edges(OverlayRule::Intersect);
-    assert_eq!(edges.len(), 4);
-    assert_counts(&edges, 1, 1, 2);
-}
+        let mut overlay = EdgeOverlay::new(subj.len() + clip.len());
+        overlay.add_edges(subj, ShapeType::Subject);
+        overlay.add_edges(clip, ShapeType::Clip);
 
-#[test]
-fn difference_keeps_subject_edges_and_uses_clip_cut_edge() {
-    let edges = overlay_edges(OverlayRule::Difference);
-    assert_eq!(edges.len(), 4);
-    assert_counts(&edges, 3, 1, 0);
-}
+        let shapes = overlay.build_vector_shapes(OverlayRule::Union, FillRule::NonZero);
 
-#[test]
-fn inverse_difference_keeps_clip_edges_and_uses_subject_cut_edge() {
-    let edges = overlay_edges(OverlayRule::InverseDifference);
-    assert_eq!(edges.len(), 4);
-    assert_counts(&edges, 1, 3, 0);
-}
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        let rect = &shapes[0][0];
+        assert_eq!(rect.len(), 6);
 
-fn overlay_edges(rule: OverlayRule) -> Vec<DataVectorEdge<Color>> {
-    let subj = square(0, 0, 4, 4, Color::Red);
-    let clip = square(2, 0, 6, 4, Color::Green);
+        let template = vec![
+            DataVectorEdge {
+                a: int_pnt!(0, 4),
+                b: int_pnt!(0, 0),
+                fill: 1,
+                data: EdgeColor {
+                    subj: Color::Red,
+                    clip: Color::None,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(0, 0),
+                b: int_pnt!(4, 0),
+                fill: 1,
+                data: EdgeColor {
+                    subj: Color::Red,
+                    clip: Color::None,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(4, 0),
+                b: int_pnt!(8, 0),
+                fill: 4,
+                data: EdgeColor {
+                    subj: Color::None,
+                    clip: Color::Green,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(8, 0),
+                b: int_pnt!(8, 4),
+                fill: 4,
+                data: EdgeColor {
+                    subj: Color::None,
+                    clip: Color::Green,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(8, 4),
+                b: int_pnt!(4, 4),
+                fill: 4,
+                data: EdgeColor {
+                    subj: Color::None,
+                    clip: Color::Green,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(4, 4),
+                b: int_pnt!(0, 4),
+                fill: 1,
+                data: EdgeColor {
+                    subj: Color::Red,
+                    clip: Color::None,
+                },
+            },
+        ];
+        assert_eq!(rect, &template);
+    }
 
-    let mut overlay = EdgeOverlay::new(subj.len() + clip.len());
-    overlay.add_edges(subj, ShapeType::Subject);
-    overlay.add_edges(clip, ShapeType::Clip);
-    overlay.build_separate_vectors(rule, FillRule::NonZero)
-}
+    #[test]
+    fn intersect_squares() {
+        let subj = square(
+            0,
+            0,
+            4,
+            4,
+            EdgeColor {
+                subj: Color::Red,
+                clip: Color::None,
+            },
+        );
+        let clip = square(
+            2,
+            0,
+            6,
+            4,
+            EdgeColor {
+                subj: Color::None,
+                clip: Color::Green,
+            },
+        );
 
-fn square(x0: i32, y0: i32, x1: i32, y1: i32, data: Color) -> Vec<InputEdge<Color>> {
-    let points = [
-        IntPoint::new(x0, y0),
-        IntPoint::new(x1, y0),
-        IntPoint::new(x1, y1),
-        IntPoint::new(x0, y1),
-    ];
+        let mut overlay = EdgeOverlay::new(subj.len() + clip.len());
+        overlay.add_edges(subj, ShapeType::Subject);
+        overlay.add_edges(clip, ShapeType::Clip);
 
-    points
-        .iter()
-        .copied()
-        .zip(points.iter().copied().cycle().skip(1))
-        .take(points.len())
-        .map(|(a, b)| InputEdge { a, b, data })
-        .collect()
-}
+        let shapes = overlay.build_vector_shapes(OverlayRule::Intersect, FillRule::NonZero);
 
-fn assert_counts(edges: &[DataVectorEdge<Color>], red: usize, green: usize, undefined: usize) {
-    assert_eq!(edges.iter().filter(|e| e.data == Color::Red).count(), red);
-    assert_eq!(edges.iter().filter(|e| e.data == Color::Green).count(), green);
-    assert_eq!(
-        edges.iter().filter(|e| e.data == Color::Undefined).count(),
-        undefined
-    );
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        let rect = &shapes[0][0];
+        assert_eq!(rect.len(), 4);
+
+        let template = vec![
+            DataVectorEdge {
+                a: int_pnt!(2, 4),
+                b: int_pnt!(2, 0),
+                fill: 7,
+                data: EdgeColor {
+                    subj: Color::None,
+                    clip: Color::Green,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(2, 0),
+                b: int_pnt!(4, 0),
+                fill: 5,
+                data: EdgeColor {
+                    subj: Color::Red,
+                    clip: Color::Green,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(4, 0),
+                b: int_pnt!(4, 4),
+                fill: 13,
+                data: EdgeColor {
+                    subj: Color::Red,
+                    clip: Color::None,
+                },
+            },
+            DataVectorEdge {
+                a: int_pnt!(4, 4),
+                b: int_pnt!(2, 4),
+                fill: 5,
+                data: EdgeColor {
+                    subj: Color::Red,
+                    clip: Color::Green,
+                },
+            },
+        ];
+        assert_eq!(rect, &template);
+    }
+
+    fn square(x0: i32, y0: i32, x1: i32, y1: i32, data: EdgeColor) -> Vec<InputEdge<EdgeColor>> {
+        let points = [
+            IntPoint::new(x0, y0),
+            IntPoint::new(x1, y0),
+            IntPoint::new(x1, y1),
+            IntPoint::new(x0, y1),
+        ];
+
+        points
+            .iter()
+            .copied()
+            .zip(points.iter().copied().cycle().skip(1))
+            .take(points.len())
+            .map(|(a, b)| InputEdge { a, b, data })
+            .collect()
+    }
 }
