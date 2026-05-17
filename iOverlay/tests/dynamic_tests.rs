@@ -30,7 +30,7 @@ mod tests {
                     {
                         graph.validate();
                         let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
-                        assert!(result.len() > 0);
+                        assert!(!result.is_empty());
                     }
                     a += 0.005
                 }
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn test_5() {
         let clip = create_star(202.5, 33.75, 24, 0.0);
-        let a = -9.9999999999999995E-7;
+        let a = -1E-6;
         let subj = create_star(202.5, 33.75, 24, a);
 
         // println!("subj {:?}", subj);
@@ -127,7 +127,7 @@ mod tests {
             {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
-                assert!(result.len() > 0);
+                assert!(!result.is_empty());
             }
         }
     }
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn test_7() {
         let n = 1010;
-        let subj_paths = random_polygon(1000_000.0, 0.0, n);
+        let subj_paths = random_polygon(1_000_000.0, 0.0, n);
 
         let mut overlay = Overlay::new(n);
         overlay.add_contour(&subj_paths, ShapeType::Subject);
@@ -162,7 +162,7 @@ mod tests {
         if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
             graph.validate();
             let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-            assert!(result.len() > 0);
+            assert!(!result.is_empty());
         }
     }
 
@@ -180,7 +180,7 @@ mod tests {
                     if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                         graph.validate();
                         let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-                        assert!(result.len() > 0);
+                        assert!(!result.is_empty());
                     }
                 }
                 r += 0.001;
@@ -205,7 +205,7 @@ mod tests {
                     {
                         graph.validate();
                         let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
-                        assert!(result.len() > 0);
+                        assert!(!result.is_empty());
                     }
                     a += 0.005
                 }
@@ -218,7 +218,7 @@ mod tests {
     fn test_10() {
         let solver = Solver::AUTO;
         let clip = create_star(1.0, 2.0, 7, 0.0);
-        let a = 0.44000000000000028;
+        let a = 0.440_000_000_000_000_3;
         let r = 1.01;
         let subj = create_star(1.0, r, 7, a);
 
@@ -227,7 +227,7 @@ mod tests {
         {
             graph.validate();
             let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
-            assert!(result.len() > 0);
+            assert!(!result.is_empty());
         }
     }
 
@@ -245,7 +245,7 @@ mod tests {
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
-                assert!(result.len() > 0);
+                assert!(!result.is_empty());
             }
         }
     }
@@ -260,7 +260,7 @@ mod tests {
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-                assert!(result.len() > 0);
+                assert!(!result.is_empty());
             }
         }
     }
@@ -275,7 +275,7 @@ mod tests {
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-                assert!(result.len() > 0);
+                assert!(!result.is_empty());
             }
         }
     }
@@ -286,7 +286,7 @@ mod tests {
         let mut rng = rand::rng();
         let paths_count = 3;
         let mut subj_paths = Vec::with_capacity(paths_count);
-        for _ in 0..1000_000 {
+        for _ in 0..1_000_000 {
             subj_paths.clear();
             let x_range = 0..=8;
             let y_range = -8..=8;
@@ -303,7 +303,7 @@ mod tests {
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-                assert!(result.len() > 0);
+                assert!(!result.is_empty());
             }
         }
     }
@@ -320,7 +320,7 @@ mod tests {
         if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
             graph.validate();
             let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-            assert!(result.len() > 0);
+            assert!(!result.is_empty());
         }
     }
 

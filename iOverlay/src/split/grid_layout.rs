@@ -294,6 +294,8 @@ impl GridLayout {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::useless_vec)]
+
     use crate::geom::x_segment::XSegment;
     use crate::split::grid_layout::vec;
     use crate::split::grid_layout::{FragmentBuffer, GridLayout};
@@ -1105,8 +1107,8 @@ mod tests {
     #[test]
     fn test_10() {
         let layout = GridLayout {
-            min_x: -1000_000,
-            max_x: 1000_000,
+            min_x: -1_000_000,
+            max_x: 1_000_000,
             power: 10,
         };
 

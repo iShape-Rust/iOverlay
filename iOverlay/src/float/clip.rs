@@ -89,6 +89,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::float::clip::FloatClip;

@@ -848,7 +848,7 @@ mod tests {
     fn test_empty_input() {
         let subj: &[IntContour] = &[];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::with_contours(subj, &[]);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 0);

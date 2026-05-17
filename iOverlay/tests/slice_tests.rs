@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::len_zero, clippy::useless_vec)]
+
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::string::line::IntLine;

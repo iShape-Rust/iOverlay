@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::field_reassign_with_default, clippy::useless_vec)]
+
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};

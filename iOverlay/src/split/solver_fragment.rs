@@ -150,7 +150,7 @@ impl SplitSolver {
             return false;
         }
 
-        fragments.sort_unstable_by(|a, b| a.rect.min_y.cmp(&b.rect.min_y));
+        fragments.sort_unstable_by_key(|a| a.rect.min_y);
 
         let mut any_round = false;
 
@@ -195,8 +195,8 @@ impl SplitSolver {
             return;
         }
 
-        points.sort_unstable_by(|p0, p1| p0.y.cmp(&p1.y));
-        vertical_segments.sort_by(|s0, s1| s0.y_range.min.cmp(&s1.y_range.min));
+        points.sort_unstable_by_key(|p0| p0.y);
+        vertical_segments.sort_by_key(|s0| s0.y_range.min);
 
         let mut i = 0;
         for s in vertical_segments.iter() {

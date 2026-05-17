@@ -1,5 +1,12 @@
 #[cfg(test)]
 mod tests {
+    #![allow(
+        clippy::bool_assert_comparison,
+        clippy::needless_range_loop,
+        clippy::useless_vec,
+        clippy::zero_repeat_side_effects
+    )]
+
     use i_float::adapter::FloatPointAdapter;
     use i_float::float::compatible::FloatPointCompatible;
     use i_overlay::core::fill_rule::FillRule;

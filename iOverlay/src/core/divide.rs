@@ -68,7 +68,7 @@ impl ContourDecomposition for IntContour {
             return None;
         }
 
-        anchors.sort_by(|p0, p1| p0.id.cmp(&p1.id));
+        anchors.sort_by_key(|p0| p0.id);
 
         let mut contours = Vec::with_capacity((anchors.len() >> 1) + 1);
 

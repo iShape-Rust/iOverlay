@@ -249,6 +249,8 @@ impl IntClip for [IntPoint] {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::useless_vec)]
+
     use crate::core::fill_rule::FillRule;
     use crate::string::clip::{ClipRule, IntClip};
     use alloc::vec;

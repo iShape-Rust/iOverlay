@@ -406,7 +406,7 @@ mod tests {
 
         let result = FloatOverlay::with_subj_and_clip_fixed_scale(&shapes, &right_bottom_rect, scale);
 
-        assert!(!result.is_ok());
+        assert!(result.is_err());
     }
 
     #[test]

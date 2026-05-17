@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn test_big_cross_1() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn test_big_cross_2() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(1024, -s), IntPoint::new(1024, s));
@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn test_big_cross_3() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
         let q: i32 = s / 2;
 
         let ea = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(s, s));
@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn test_left_end() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(-s, s));
@@ -427,7 +427,7 @@ mod tests {
 
     #[test]
     fn test_right_end() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(s, -s), IntPoint::new(s, s));
@@ -446,7 +446,7 @@ mod tests {
 
     #[test]
     fn test_left_top() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, s), IntPoint::new(s, s));
         let eb = XSegment::new(IntPoint::new(-s, s), IntPoint::new(-s, -s));
