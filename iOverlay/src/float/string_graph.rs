@@ -12,7 +12,7 @@ use i_shape::float::simple::SimplifyContour;
 /// providing methods to extract geometric shapes from the graph after applying string-based operations.
 pub struct FloatStringGraph<'a, P: FloatPointCompatible> {
     pub graph: StringGraph<'a>,
-    pub adapter: FloatPointAdapter<P>,
+    pub adapter: FloatPointAdapter<P, i32>,
 }
 
 impl<P: FloatPointCompatible> FloatStringGraph<'_, P> {

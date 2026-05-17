@@ -6,7 +6,6 @@ use crate::string::clip::ClipRule;
 use crate::string::overlay::StringOverlay;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::float::number::FloatNumber;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::ShapeToFloat;
 use i_shape::source::resource::ShapeResource;
@@ -19,7 +18,7 @@ use i_shape::source::resource::ShapeResource;
 /// `x_int = (x_float - offset_x) * scale`. Use a fixed scale if you need predictable precision.
 pub struct FloatStringOverlay<P: FloatPointCompatible> {
     pub(super) overlay: StringOverlay,
-    pub(super) adapter: FloatPointAdapter<P>,
+    pub(super) adapter: FloatPointAdapter<P, i32>,
 }
 
 impl<P: FloatPointCompatible> FloatStringOverlay<P> {
@@ -33,7 +32,7 @@ impl<P: FloatPointCompatible> FloatStringOverlay<P> {
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
-    pub fn with_adapter(adapter: FloatPointAdapter<P>, capacity: usize) -> Self {
+    pub fn with_adapter(adapter: FloatPointAdapter<P, i32>, capacity: usize) -> Self {
         Self {
             overlay: StringOverlay::new(capacity),
             adapter,
@@ -81,16 +80,8 @@ impl<P: FloatPointCompatible> FloatStringOverlay<P> {
         R0: ShapeResource<P>,
         R1: ShapeResource<P>,
     {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-
         let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
-        let mut adapter = FloatPointAdapter::with_iter(iter);
-        if adapter.dir_scale < scale {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        adapter.dir_scale = scale;
-        adapter.inv_scale = P::Scalar::from_float(1.0 / s);
+        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());

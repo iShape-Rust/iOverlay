@@ -1,4 +1,6 @@
 use core::iter::Chain;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 
 pub(super) struct UniqueSegment {
@@ -87,17 +89,17 @@ where
 }
 
 #[inline]
-fn include_point(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> bool {
-    let a = p1.subtract(p0);
-    let b = p1.subtract(p2);
+fn include_point<I:IntNumber>(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>) -> bool {
+    let a = p1 - p0;
+    let b = p1 - p2;
 
-    if a.cross_product(b) != 0 {
+    if a.cross_product(b) != I::Wide::ZERO {
         // not collinear
         return true;
     }
 
     // collinear – keep only if we keep going opposite direction
-    a.dot_product(b) > 0
+    a.dot_product(b) > I::Wide::ZERO
 }
 #[cfg(test)]
 mod tests {

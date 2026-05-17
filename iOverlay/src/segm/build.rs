@@ -4,36 +4,38 @@ use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 
-pub(crate) trait BuildSegments {
-    fn append_path_iter<I: Iterator<Item = IntPoint>>(
+pub(crate) trait BuildSegments<I: IntNumber> {
+    fn append_path_iter<It: Iterator<Item = IntPoint<I>>>(
         &mut self,
-        iter: I,
+        iter: It,
         shape_type: ShapeType,
         keep_same_line_points: bool,
     ) -> bool;
 }
 
-impl<C: WindingCount> BuildSegments for Vec<Segment<C>> {
+impl<I: IntNumber, C: WindingCount> BuildSegments<I> for Vec<Segment<C, (), I>> {
     #[inline]
-    fn append_path_iter<I: Iterator<Item = IntPoint>>(
+    fn append_path_iter<It: Iterator<Item = IntPoint<I>>>(
         &mut self,
-        iter: I,
+        iter: It,
         shape_type: ShapeType,
         keep_same_line_points: bool,
     ) -> bool {
         if keep_same_line_points {
-            build_segments_with_filter::<DropOppositeCollinear, I, C>(self, iter, shape_type)
+            build_segments_with_filter::<I, DropOppositeCollinear, It, C>(self, iter, shape_type)
         } else {
-            build_segments_with_filter::<DropCollinear, I, C>(self, iter, shape_type)
+            build_segments_with_filter::<I, DropCollinear, It, C>(self, iter, shape_type)
         }
     }
 }
 
-fn build_segments_with_filter<F: PointFilter, I: Iterator<Item = IntPoint>, C: WindingCount>(
-    segments: &mut Vec<Segment<C>>,
-    mut iter: I,
+fn build_segments_with_filter<I: IntNumber, F: PointFilter<I>, It: Iterator<Item = IntPoint<I>>, C: WindingCount>(
+    segments: &mut Vec<Segment<C, (), I>>,
+    mut iter: It,
     shape_type: ShapeType,
 ) -> bool {
     // our goal add all not degenerate segments
@@ -88,41 +90,41 @@ fn build_segments_with_filter<F: PointFilter, I: Iterator<Item = IntPoint>, C: W
     filtered
 }
 
-trait PointFilter {
-    fn include_point(a: IntPoint, b: IntPoint, c: IntPoint) -> bool;
+trait PointFilter<I: IntNumber> {
+    fn include_point(a: IntPoint<I>, b: IntPoint<I>, c: IntPoint<I>) -> bool;
 }
 
 struct DropOppositeCollinear;
 struct DropCollinear;
 
-impl PointFilter for DropOppositeCollinear {
+impl<I: IntNumber> PointFilter<I> for DropOppositeCollinear {
     #[inline]
-    fn include_point(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> bool {
-        let a = p1.subtract(p0);
-        let b = p1.subtract(p2);
+    fn include_point(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>) -> bool {
+        let a = p1 - p0;
+        let b = p1 - p2;
 
-        if a.cross_product(b) != 0 {
+        if a.cross_product(b) != I::Wide::ZERO {
             // not collinear
             return true;
         }
 
         // collinear – keep only if we keep going same direction
-        a.dot_product(b) < 0
+        a.dot_product(b) < I::Wide::ZERO
     }
 }
 
-impl PointFilter for DropCollinear {
+impl<I: IntNumber> PointFilter<I> for DropCollinear {
     #[inline]
-    fn include_point(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> bool {
-        let a = p1.subtract(p0);
-        let b = p1.subtract(p2);
-        a.cross_product(b) != 0
+    fn include_point(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>) -> bool {
+        let a = p1 - p0;
+        let b = p1 - p2;
+        a.cross_product(b) != I::Wide::ZERO
     }
 }
 
-impl<C: Send> Segment<C> {
+impl<I: IntNumber, C: Send> Segment<C, (), I> {
     #[inline]
-    pub(crate) fn with_ab(p0: IntPoint, p1: IntPoint, direct: C, invert: C) -> Self {
+    pub(crate) fn with_ab(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C) -> Self {
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },
@@ -139,9 +141,9 @@ impl<C: Send> Segment<C> {
     }
 }
 
-impl<C: Send, D: OverlayEdgeData<C>> Segment<C, D> {
+impl<I: IntNumber, C: Send, D: OverlayEdgeData<C>> Segment<C, D, I> {
     #[inline]
-    pub(crate) fn with_ab_and_data(p0: IntPoint, p1: IntPoint, direct: C, invert: C, data: D) -> Self {
+    pub(crate) fn with_ab_and_data(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C, data: D) -> Self {
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },

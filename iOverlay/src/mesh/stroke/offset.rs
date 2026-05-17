@@ -242,7 +242,7 @@ where
 struct StrokeSolver<P: FloatPointCompatible> {
     r: P::Scalar,
     builder: StrokeBuilder<P>,
-    adapter: FloatPointAdapter<P>,
+    adapter: FloatPointAdapter<P, i32>,
     paths_count: usize,
     points_count: usize,
 }
@@ -278,14 +278,7 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-        if self.adapter.dir_scale < scale {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        self.adapter.dir_scale = scale;
-        self.adapter.inv_scale = P::Scalar::from_float(1.0 / s);
-
+        self.adapter = FloatPointAdapter::try_with_scale(self.adapter.rect().clone(), scale)?;
         Ok(())
     }
 
@@ -295,7 +288,7 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         is_closed_path: bool,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        let ir = self.adapter.len_float_to_int(self.r).abs();
+        let ir = self.adapter.round_len_to_int(self.r).abs();
         if ir <= 1 {
             // offset is too small
             return vec![];
@@ -336,7 +329,7 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        let ir = self.adapter.len_float_to_int(self.r).abs();
+        let ir = self.adapter.round_len_to_int(self.r).abs();
         if ir <= 1 {
             // offset is too small
             output.clear_and_reserve(0, 0);

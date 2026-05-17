@@ -41,11 +41,11 @@ impl<P: FloatPointCompatible> Section<P> {
 }
 
 pub(crate) trait SectionToSegment<P: FloatPointCompatible> {
-    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P>);
+    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P, i32>);
 }
 
 impl<P: FloatPointCompatible> SectionToSegment<P> for Vec<Segment<ShapeCountBoolean>> {
-    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P>) {
+    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P, i32>) {
         let a_top = adapter.float_to_int(&section.a_top);
         let b_top = adapter.float_to_int(&section.b_top);
         let a_bot = adapter.float_to_int(&section.a_bot);

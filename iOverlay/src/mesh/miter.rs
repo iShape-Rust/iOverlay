@@ -18,7 +18,7 @@ impl Miter {
         pb: P,
         va: P,
         vb: P,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
     ) -> SharpMiter {
         let ia = adapter.float_to_int(&pa);
         let ib = adapter.float_to_int(&pb);

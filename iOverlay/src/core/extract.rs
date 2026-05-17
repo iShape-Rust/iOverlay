@@ -434,7 +434,7 @@ impl GraphUtil {
                 // SAFETY: indices holds link ids emitted by GraphBuilder, so each i < links.len().
                 links.get_unchecked(i)
             };
-            if !link.is_direct() || Triangle::is_clockwise_point(top.a.point, top.b.point, link.b.point) {
+            if !link.is_direct() || Triangle::is_clockwise(top.a.point, top.b.point, link.b.point) {
                 continue;
             }
 
@@ -454,7 +454,7 @@ impl GraphUtil {
         // SAFETY: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
         // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
         let (l0, l1) = unsafe { (links.get_unchecked(bridge[0]), links.get_unchecked(bridge[1])) };
-        if Triangle::is_clockwise_point(l0.a.point, l0.b.point, l1.b.point) {
+        if Triangle::is_clockwise(l0.a.point, l0.b.point, l1.b.point) {
             bridge[0]
         } else {
             bridge[1]

@@ -18,7 +18,7 @@ trait OutlineBuild<P: FloatPointCompatible> {
     fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
 
@@ -70,7 +70,7 @@ impl<P: FloatPointCompatible + 'static> OutlineBuilder<P> {
     pub(super) fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         self.builder.build(path, adapter, segments);
@@ -92,7 +92,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> OutlineBuild<P> for Builder<J, 
     fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         if path.len() < 2 {
@@ -117,7 +117,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let iter = path.iter().map(|p| adapter.float_to_int(p));
@@ -152,7 +152,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
         &self,
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let vi = s1.b - s1.a;
@@ -175,7 +175,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
 
 impl<P: FloatPointCompatible> OffsetSection<P> {
     #[inline]
-    fn new(radius: P::Scalar, s: &UniqueSegment, adapter: &FloatPointAdapter<P>) -> Self {
+    fn new(radius: P::Scalar, s: &UniqueSegment, adapter: &FloatPointAdapter<P, i32>) -> Self {
         let a = adapter.int_to_float(&s.a);
         let b = adapter.int_to_float(&s.b);
         let ab = FloatPointMath::sub(&b, &a);

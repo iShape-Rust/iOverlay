@@ -15,7 +15,7 @@ pub(super) trait JoinBuilder<P: FloatPointCompatible> {
         &self,
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
     fn capacity(&self) -> usize;
@@ -29,7 +29,7 @@ impl BevelJoinBuilder {
     fn join<P: FloatPointCompatible>(
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
-        _adapter: &FloatPointAdapter<P>,
+        _adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         debug_assert_ne!(s0.b_top, s1.a_top, "must be validated before");
@@ -43,7 +43,7 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for BevelJoinBuilder {
         &self,
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         Self::join(s0, s1, adapter, segments);
@@ -96,7 +96,7 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for MiterJoinBuilder<P::Scalar> {
         &self,
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let ia = s0.b_top;
@@ -196,7 +196,7 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for RoundJoinBuilder<P::Scalar> {
         &self,
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);

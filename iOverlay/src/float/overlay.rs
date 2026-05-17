@@ -45,7 +45,7 @@ pub struct OverlayOptions<T: FloatNumber> {
 pub struct FloatOverlay<P: FloatPointCompatible> {
     pub(super) overlay: Overlay,
     pub(super) clean_result: bool,
-    pub(super) adapter: FloatPointAdapter<P>,
+    pub(super) adapter: FloatPointAdapter<P, i32>,
 }
 
 impl<P: FloatPointCompatible> FloatOverlay<P> {
@@ -57,7 +57,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
-    pub fn with_adapter(adapter: FloatPointAdapter<P>, capacity: usize) -> Self {
+    pub fn with_adapter(adapter: FloatPointAdapter<P, i32>, capacity: usize) -> Self {
         Self::new_custom(adapter, Default::default(), Default::default(), capacity)
     }
 
@@ -72,7 +72,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     ///   segments for efficient memory allocation.
     #[inline]
     pub fn new_custom(
-        adapter: FloatPointAdapter<P>,
+        adapter: FloatPointAdapter<P, i32>,
         options: OverlayOptions<P::Scalar>,
         solver: Solver,
         capacity: usize,
@@ -371,7 +371,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
 impl<T: FloatNumber> Default for OverlayOptions<T> {
     fn default() -> Self {
         // f32 precision is not enough to cover i32
-        let clean_result = T::bit_width() <= 32;
+        let clean_result = T::BITS <= 32;
         Self {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
@@ -386,13 +386,13 @@ impl<T: FloatNumber> Default for OverlayOptions<T> {
 impl<T: FloatNumber> OverlayOptions<T> {
     pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>>(
         &self,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
     ) -> IntOverlayOptions {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
-            min_output_area: adapter.sqr_float_to_int(self.min_output_area),
+            min_output_area: adapter.round_sqr_len_to_int(self.min_output_area) as u64,
             ogc: self.ogc,
         }
     }
@@ -409,7 +409,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
 
     pub fn ogc() -> Self {
         // f32 precision is not enough to cover i32
-        let clean_result = T::bit_width() <= 32;
+        let clean_result = T::BITS <= 32;
         Self {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,

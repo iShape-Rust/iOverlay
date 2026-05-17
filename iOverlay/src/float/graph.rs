@@ -17,13 +17,17 @@ use i_shape::float::simple::SimplifyContour;
 /// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
 pub struct FloatOverlayGraph<'a, P: FloatPointCompatible> {
     pub graph: OverlayGraph<'a>,
-    pub adapter: FloatPointAdapter<P>,
+    pub adapter: FloatPointAdapter<P, i32>,
     clean_result: bool,
 }
 
 impl<'a, P: FloatPointCompatible> FloatOverlayGraph<'a, P> {
     #[inline]
-    pub(crate) fn new(graph: OverlayGraph<'a>, adapter: FloatPointAdapter<P>, clean_result: bool) -> Self {
+    pub(crate) fn new(
+        graph: OverlayGraph<'a>,
+        adapter: FloatPointAdapter<P, i32>,
+        clean_result: bool,
+    ) -> Self {
         Self {
             graph,
             adapter,

@@ -213,7 +213,7 @@ where
 struct OutlineSolver<P: FloatPointCompatible> {
     outer_builder: OutlineBuilder<P>,
     inner_builder: OutlineBuilder<P>,
-    adapter: FloatPointAdapter<P>,
+    adapter: FloatPointAdapter<P, i32>,
     points_count: usize,
 }
 
@@ -260,13 +260,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
 
     fn apply_scale(&mut self, scale: f64) -> Result<(), FixedScaleOverlayError> {
         let s = P::Scalar::from_float(scale);
-        if self.adapter.dir_scale < s {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        self.adapter.dir_scale = s;
-        self.adapter.inv_scale = P::Scalar::from_float(1.0 / scale);
-
+        self.adapter = FloatPointAdapter::try_with_scale(self.adapter.rect().clone(), s)?;
         Ok(())
     }
 

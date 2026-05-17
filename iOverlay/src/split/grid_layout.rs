@@ -1134,10 +1134,10 @@ mod tests {
             let p2 = IntPoint::new(rect.min_x, rect.max_y);
             let p3 = IntPoint::new(rect.max_x, rect.max_y);
 
-            assert!(Triangle::is_cw_or_line_point(p0, segment.a, segment.b));
-            assert!(Triangle::is_cw_or_line_point(p1, segment.a, segment.b));
-            assert!(Triangle::is_cw_or_line_point(p2, segment.b, segment.a));
-            assert!(Triangle::is_cw_or_line_point(p3, segment.b, segment.a));
+            assert!(Triangle::is_cw_or_line(p0, segment.a, segment.b));
+            assert!(Triangle::is_cw_or_line(p1, segment.a, segment.b));
+            assert!(Triangle::is_cw_or_line(p2, segment.b, segment.a));
+            assert!(Triangle::is_cw_or_line(p3, segment.b, segment.a));
         }
     }
 
@@ -1551,10 +1551,10 @@ mod tests {
         let p2 = IntPoint::new(rect.min_x, rect.max_y);
         let p3 = IntPoint::new(rect.max_x, rect.max_y);
 
-        let a0 = Triangle::area_two_point(p0, segment.a, segment.b);
-        let a1 = Triangle::area_two_point(p1, segment.a, segment.b);
-        let a2 = Triangle::area_two_point(p2, segment.b, segment.a);
-        let a3 = Triangle::area_two_point(p3, segment.b, segment.a);
+        let a0 = Triangle::area_two(p0, segment.a, segment.b);
+        let a1 = Triangle::area_two(p1, segment.a, segment.b);
+        let a2 = Triangle::area_two(p2, segment.b, segment.a);
+        let a3 = Triangle::area_two(p3, segment.b, segment.a);
 
         assert!(a0 >= 0);
         assert!(a1 >= 0);

@@ -8,6 +8,7 @@ use crate::segm::segment::{NONE, Segment, SegmentFill};
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
 use core::ops::ControlFlow;
+use i_float::int::number::int::IntNumber;
 use i_shape::util::reserve::Reserve;
 
 pub(super) trait InclusionFilterStrategy {
@@ -25,11 +26,11 @@ impl<'a> StoreFillsHandler<'a> {
     }
 }
 
-impl<C, D> FillHandler<C, D> for StoreFillsHandler<'_> {
+impl<C, D, I: IntNumber> FillHandler<C, D, I> for StoreFillsHandler<'_> {
     type Output = ();
 
     #[inline(always)]
-    fn handle(&mut self, index: usize, _segment: &Segment<C, D>, fill: SegmentFill) -> ControlFlow<()> {
+    fn handle(&mut self, index: usize, _segment: &Segment<C, D, I>, fill: SegmentFill) -> ControlFlow<()> {
         // fills is pre-allocated to segments.len() and index is guaranteed
         // to be in range by the sweep algorithm
         unsafe { *self.fills.get_unchecked_mut(index) = fill };

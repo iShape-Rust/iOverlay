@@ -69,7 +69,7 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
     pub(super) fn add_to_start(
         &self,
         section: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let mut a = adapter.float_to_int(&section.a_top);
@@ -91,7 +91,7 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
     pub(super) fn add_to_end(
         &self,
         section: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         let mut a = adapter.float_to_int(&section.b_bot);

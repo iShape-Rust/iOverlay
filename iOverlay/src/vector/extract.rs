@@ -196,12 +196,27 @@ impl<D: OverlayEdgeData> StartVectorPathData<D> {
 }
 
 trait JoinHoles<D: OverlayEdgeData> {
-    fn join_sorted_holes(&mut self, holes: Vec<DataVectorPath<D>>, anchors: Vec<IdSegment>, clockwise: bool);
-    fn scan_join(&mut self, holes: Vec<DataVectorPath<D>>, hole_segments: Vec<IdSegment>, clockwise: bool);
+    fn join_sorted_holes(
+        &mut self,
+        holes: Vec<DataVectorPath<D>>,
+        anchors: Vec<IdSegment>,
+        clockwise: bool,
+    );
+    fn scan_join(
+        &mut self,
+        holes: Vec<DataVectorPath<D>>,
+        hole_segments: Vec<IdSegment>,
+        clockwise: bool,
+    );
 }
 
 impl<D: OverlayEdgeData> JoinHoles<D> for Vec<DataVectorShape<D>> {
-    fn join_sorted_holes(&mut self, holes: Vec<DataVectorPath<D>>, anchors: Vec<IdSegment>, clockwise: bool) {
+    fn join_sorted_holes(
+        &mut self,
+        holes: Vec<DataVectorPath<D>>,
+        anchors: Vec<IdSegment>,
+        clockwise: bool,
+    ) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -218,7 +233,12 @@ impl<D: OverlayEdgeData> JoinHoles<D> for Vec<DataVectorShape<D>> {
         self.scan_join(holes, anchors, clockwise);
     }
 
-    fn scan_join(&mut self, holes: Vec<DataVectorPath<D>>, hole_segments: Vec<IdSegment>, clockwise: bool) {
+    fn scan_join(
+        &mut self,
+        holes: Vec<DataVectorPath<D>>,
+        hole_segments: Vec<IdSegment>,
+        clockwise: bool,
+    ) {
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 

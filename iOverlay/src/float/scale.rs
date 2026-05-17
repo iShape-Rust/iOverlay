@@ -4,7 +4,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::overlay::{FloatOverlay, OverlayOptions};
 use crate::float::relate::FloatPredicateOverlay;
-use i_float::adapter::FloatPointAdapter;
+use i_float::adapter::{FloatPointAdapter, FloatPointAdapterScaleError};
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
@@ -31,6 +31,17 @@ impl FixedScaleOverlayError {
             return Err(Self::ScaleNonPositive);
         }
         Ok(s)
+    }
+}
+
+impl From<FloatPointAdapterScaleError> for FixedScaleOverlayError {
+    #[inline]
+    fn from(error: FloatPointAdapterScaleError) -> Self {
+        match error {
+            FloatPointAdapterScaleError::ScaleTooLarge => Self::ScaleTooLarge,
+            FloatPointAdapterScaleError::ScaleNonPositive => Self::ScaleNonPositive,
+            FloatPointAdapterScaleError::ScaleNotFinite => Self::ScaleNotFinite,
+        }
     }
 }
 
@@ -107,16 +118,8 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let mut adapter = FloatPointAdapter::with_iter(iter);
-        if adapter.dir_scale < scale {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        adapter.dir_scale = scale;
-        adapter.inv_scale = P::Scalar::from_float(1.0 / s);
+        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -151,16 +154,8 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let mut adapter = FloatPointAdapter::with_iter(iter);
-        if adapter.dir_scale < scale {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        adapter.dir_scale = scale;
-        adapter.inv_scale = P::Scalar::from_float(1.0 / s);
+        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -194,16 +189,8 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let mut adapter = FloatPointAdapter::with_iter(iter);
-        if adapter.dir_scale < scale {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        adapter.dir_scale = scale;
-        adapter.inv_scale = P::Scalar::from_float(1.0 / s);
+        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -234,16 +221,8 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let mut adapter = FloatPointAdapter::with_iter(iter);
-        if adapter.dir_scale < scale {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        adapter.dir_scale = scale;
-        adapter.inv_scale = P::Scalar::from_float(1.0 / s);
+        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());

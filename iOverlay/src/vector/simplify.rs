@@ -3,6 +3,7 @@ use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
+use i_float::int::vector::IntVector;
 
 /// Simplifies vector contours by removing collinear points when possible.
 pub(super) trait VectorSimplify {
@@ -160,9 +161,7 @@ impl<D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<D>] {
             let p1 = self[node.index].b;
             let p2 = self[node.next].b;
 
-            if p1.subtract(p0).cross_product(p2.subtract(p1)) == 0
-                && self[node.index].data == self[node.next].data
-            {
+            if (p1 - p0).cross_product(p2 - p1) == 0 && self[node.index].data == self[node.next].data {
                 n -= 1;
                 if n < 3 {
                     return None;
@@ -250,7 +249,7 @@ impl<D: OverlayEdgeData> VectorSimpleShape for [DataVectorPath<D>] {
 }
 
 #[inline]
-fn direction<D>(edge: &DataVectorEdge<D>) -> IntPoint {
+fn direction<D>(edge: &DataVectorEdge<D>) -> IntVector<i32> {
     edge.b - edge.a
 }
 

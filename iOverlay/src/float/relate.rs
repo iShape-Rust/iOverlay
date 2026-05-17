@@ -28,7 +28,7 @@ use i_shape::source::resource::ShapeResource;
 /// methods directly on shape types.
 pub struct FloatPredicateOverlay<P: FloatPointCompatible> {
     pub(crate) overlay: PredicateOverlay,
-    pub(crate) adapter: FloatPointAdapter<P>,
+    pub(crate) adapter: FloatPointAdapter<P, i32>,
 }
 
 impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
@@ -40,7 +40,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     /// * `adapter` - A `FloatPointAdapter` instance for coordinate conversion.
     /// * `capacity` - Initial capacity for storing segments.
     #[inline]
-    pub fn with_adapter(adapter: FloatPointAdapter<P>, capacity: usize) -> Self {
+    pub fn with_adapter(adapter: FloatPointAdapter<P, i32>, capacity: usize) -> Self {
         Self {
             overlay: PredicateOverlay::new(capacity),
             adapter,
@@ -58,7 +58,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     /// * `capacity` - Initial capacity for storing segments.
     #[inline]
     pub fn with_adapter_custom(
-        adapter: FloatPointAdapter<P>,
+        adapter: FloatPointAdapter<P, i32>,
         fill_rule: FillRule,
         solver: Solver,
         capacity: usize,

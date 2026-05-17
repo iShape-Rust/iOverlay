@@ -15,7 +15,7 @@ trait StrokeBuild<P: FloatPointCompatible> {
         &self,
         path: &[P],
         is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     );
 
@@ -70,7 +70,7 @@ impl<P: FloatPointCompatible + 'static> StrokeBuilder<P> {
         &self,
         path: &[P],
         is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         self.builder.build(path, is_closed_path, adapter, segments);
@@ -93,7 +93,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> StrokeBuild<P> for Builder<J, P
         &self,
         path: &[P],
         is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         if is_closed_path {
@@ -126,7 +126,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     fn open_segments(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         // build segments only from points which are not equal in int space
@@ -179,7 +179,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     fn closed_segments(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P>,
+        adapter: &FloatPointAdapter<P, i32>,
         segments: &mut Vec<Segment<ShapeCountBoolean>>,
     ) {
         if path.len() < 2 {
@@ -212,7 +212,12 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     }
 
     #[inline]
-    fn next_unique_point(start: usize, index: usize, path: &[P], adapter: &FloatPointAdapter<P>) -> usize {
+    fn next_unique_point(
+        start: usize,
+        index: usize,
+        path: &[P],
+        adapter: &FloatPointAdapter<P, i32>,
+    ) -> usize {
         let a = adapter.float_to_int(&path[start]);
         for (j, p) in path.iter().enumerate().skip(index) {
             let b = adapter.float_to_int(p);

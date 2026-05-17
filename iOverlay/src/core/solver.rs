@@ -1,5 +1,6 @@
 use crate::core::solver::Strategy::{Auto, Frag, List, Tree};
 use crate::segm::segment::Segment;
+use i_float::int::number::int::IntNumber;
 
 /// Represents the selection strategy or algorithm for processing geometric data, aimed at optimizing performance under various conditions.
 ///
@@ -161,7 +162,10 @@ impl Solver {
         }
     }
 
-    pub(crate) fn is_list_split<C: Send, D: Send>(&self, segments: &[Segment<C, D>]) -> bool {
+    pub(crate) fn is_list_split<C: Send, D: Send, I: IntNumber>(
+        &self,
+        segments: &[Segment<C, D, I>],
+    ) -> bool {
         match self.strategy {
             List => true,
             Tree | Frag => false,
@@ -169,11 +173,14 @@ impl Solver {
         }
     }
 
-    pub(crate) fn is_fragmentation_required<C: Send, D: Send>(&self, segments: &[Segment<C, D>]) -> bool {
+    pub(crate) fn is_fragmentation_required<C: Send, D: Send, I: IntNumber>(
+        &self,
+        segments: &[Segment<C, D, I>],
+    ) -> bool {
         segments.len() > Self::MIN_FRAGMENT_COUNT || self.strategy == Frag
     }
 
-    pub(crate) fn is_list_fill<C: Send, D: Send>(&self, segments: &[Segment<C, D>]) -> bool {
+    pub(crate) fn is_list_fill<C: Send, D: Send, I: IntNumber>(&self, segments: &[Segment<C, D, I>]) -> bool {
         match self.strategy {
             List => true,
             Tree | Frag => false,

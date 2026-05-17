@@ -1,39 +1,41 @@
 use crate::geom::x_segment::XSegment;
 use core::cmp::Ordering;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_tree::ExpiredKey;
+use i_tree::{Expiration, ExpiredKey};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct VSegment {
-    pub(crate) a: IntPoint,
-    pub(crate) b: IntPoint,
+pub(crate) struct VSegment<I: IntNumber = i32> {
+    pub(crate) a: IntPoint<I>,
+    pub(crate) b: IntPoint<I>,
 }
 
-impl VSegment {
+impl<I: IntNumber> VSegment<I> {
     #[inline(always)]
-    fn is_under_segment_order(&self, other: &VSegment) -> Ordering {
+    fn is_under_segment_order(&self, other: &VSegment<I>) -> Ordering {
         match self.a.cmp(&other.a) {
-            Ordering::Less => Triangle::clock_order_point(self.a, other.a, self.b),
-            Ordering::Equal => Triangle::clock_order_point(self.a, other.b, self.b),
-            Ordering::Greater => Triangle::clock_order_point(other.a, other.b, self.a),
+            Ordering::Less => Triangle::clock_order(self.a, other.a, self.b),
+            Ordering::Equal => Triangle::clock_order(self.a, other.b, self.b),
+            Ordering::Greater => Triangle::clock_order(other.a, other.b, self.a),
         }
     }
 
     #[inline(always)]
-    pub(crate) fn is_under_point_order(&self, p: IntPoint) -> Ordering {
+    pub(crate) fn is_under_point_order(&self, p: IntPoint<I>) -> Ordering {
         debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
         debug_assert!(p != self.a && p != self.b);
 
-        Triangle::clock_order_point(self.a, p, self.b)
+        Triangle::clock_order(self.a, p, self.b)
     }
 
     #[inline(always)]
-    pub(crate) fn is_under_segment(&self, other: &VSegment) -> bool {
+    pub(crate) fn is_under_segment(&self, other: &VSegment<I>) -> bool {
         match self.a.cmp(&other.a) {
-            Ordering::Less => Triangle::is_clockwise_point(self.a, other.a, self.b),
-            Ordering::Equal => Triangle::is_clockwise_point(self.a, other.b, self.b),
-            Ordering::Greater => Triangle::is_clockwise_point(other.a, other.b, self.a),
+            Ordering::Less => Triangle::is_clockwise(self.a, other.a, self.b),
+            Ordering::Equal => Triangle::is_clockwise(self.a, other.b, self.b),
+            Ordering::Greater => Triangle::is_clockwise(other.a, other.b, self.a),
         }
     }
 
@@ -41,37 +43,37 @@ impl VSegment {
     pub(crate) fn cmp_by_angle(&self, other: &Self) -> Ordering {
         // sort angles counterclockwise
         // debug_assert!(self.a == other.a);
-        let v0 = self.b.subtract(self.a);
-        let v1 = other.b.subtract(other.a);
+        let v0 = self.b - self.a;
+        let v1 = other.b - other.a;
         let cross = v0.cross_product(v1);
-        0.cmp(&cross)
+        I::Wide::ZERO.cmp(&cross)
     }
 }
 
-impl From<XSegment> for VSegment {
+impl<I: IntNumber> From<XSegment<I>> for VSegment<I> {
     #[inline(always)]
-    fn from(seg: XSegment) -> Self {
+    fn from(seg: XSegment<I>) -> Self {
         VSegment { a: seg.a, b: seg.b }
     }
 }
 
-impl PartialOrd<Self> for VSegment {
+impl<I: IntNumber> PartialOrd<Self> for VSegment<I> {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for VSegment {
+impl<I: IntNumber> Ord for VSegment<I> {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.is_under_segment_order(other)
     }
 }
 
-impl ExpiredKey<i32> for VSegment {
+impl<I: IntNumber + Expiration> ExpiredKey<I> for VSegment<I> {
     #[inline]
-    fn expiration(&self) -> i32 {
+    fn expiration(&self) -> I {
         self.b.x
     }
 }
