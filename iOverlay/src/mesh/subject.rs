@@ -3,7 +3,7 @@ use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use i_float::int::point::IntPoint;
 
-impl Segment<ShapeCountBoolean> {
+impl Segment<ShapeCountBoolean, i32> {
     #[inline]
     pub(crate) fn subject(p0: IntPoint, p1: IntPoint) -> Self {
         if p0 < p1 {

@@ -18,12 +18,12 @@ pub(crate) trait FillStrategy<C> {
     fn add_and_fill(this: C, bot: C) -> (C, SegmentFill);
 }
 
-pub(crate) trait FillHandler<C, D = (), I: IntNumber = i32> {
+pub(crate) trait FillHandler<C, I: IntNumber, D = ()> {
     type Output;
     fn handle(
         &mut self,
         index: usize,
-        segment: &Segment<C, D, I>,
+        segment: &Segment<C, I, D>,
         fill: SegmentFill,
     ) -> ControlFlow<Self::Output>;
     fn finalize(self) -> Self::Output;
@@ -32,7 +32,7 @@ pub(crate) trait FillHandler<C, D = (), I: IntNumber = i32> {
 #[inline]
 fn sweep_with_handler<I, C, D, F, S, H>(
     scan: &mut S,
-    segments: &[Segment<C, D, I>],
+    segments: &[Segment<C, I, D>],
     mut handler: H,
 ) -> H::Output
 where
@@ -40,7 +40,7 @@ where
     C: WindingCount,
     F: FillStrategy<C>,
     S: KeyExpCollection<VSegment<I>, I, C>,
-    H: FillHandler<C, D, I>,
+    H: FillHandler<C, I, D>,
 {
     let mut node = Vec::with_capacity(4);
     let n = segments.len();
@@ -89,7 +89,7 @@ where
     handler.finalize()
 }
 
-pub(crate) struct SweepRunner<C, I: IntNumber + Expiration = i32> {
+pub(crate) struct SweepRunner<C, I: IntNumber + Expiration> {
     list: Option<KeyExpList<VSegment<I>, I, C>>,
     tree: Option<KeyExpTree<VSegment<I>, I, C>>,
 }
@@ -107,12 +107,12 @@ impl<C: WindingCount, I: IntNumber + Expiration> SweepRunner<C, I> {
     pub(crate) fn run<D, F, H>(
         &mut self,
         solver: &Solver,
-        segments: &[Segment<C, D, I>],
+        segments: &[Segment<C, I, D>],
         handler: H,
     ) -> H::Output
     where
         F: FillStrategy<C>,
-        H: FillHandler<C, D, I>,
+        H: FillHandler<C, I, D>,
         D: Send,
     {
         let count = segments.len();
@@ -136,11 +136,11 @@ impl<C: WindingCount, I: IntNumber + Expiration> SweepRunner<C, I> {
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<C, D, I>],
+        segments: &[Segment<C, I, D>],
         handler: H,
     ) -> H::Output
     where
-        H: FillHandler<C, D, I>,
+        H: FillHandler<C, I, D>,
         D: Send,
         EvenOddStrategy: FillStrategy<C>,
         NonZeroStrategy: FillStrategy<C>,

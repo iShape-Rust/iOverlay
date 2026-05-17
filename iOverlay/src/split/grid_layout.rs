@@ -9,7 +9,7 @@ use i_float::int::rect::IntRect;
 pub(super) struct BorderVSegment {
     pub(super) id: usize,
     pub(super) x: i32,
-    pub(super) y_range: LineRange,
+    pub(super) y_range: LineRange<i32>,
 }
 
 pub(super) struct FragmentBuffer {
@@ -31,7 +31,7 @@ impl FragmentBuffer {
 
     pub(super) fn init_fragment_buffer<I>(&mut self, iter: I)
     where
-        I: Iterator<Item = XSegment>,
+        I: Iterator<Item = XSegment<i32>>,
     {
         let mut counts = vec![0; self.groups.len()];
         for s in iter {
@@ -83,7 +83,7 @@ impl FragmentBuffer {
     }
 
     #[inline]
-    pub(super) fn add_segment(&mut self, segment_index: usize, s: XSegment) {
+    pub(super) fn add_segment(&mut self, segment_index: usize, s: XSegment<i32>) {
         if s.a.y == s.b.y {
             self.add_horizontal(segment_index, s);
             return;
@@ -189,7 +189,7 @@ impl FragmentBuffer {
         );
     }
 
-    fn add_horizontal(&mut self, segment_index: usize, s: XSegment) {
+    fn add_horizontal(&mut self, segment_index: usize, s: XSegment<i32>) {
         let i0 = self.layout.index(s.a.x);
         let i1 = self.layout.index(s.b.x - 1);
 
@@ -263,7 +263,7 @@ impl GridLayout {
 
     pub(super) fn new<I>(iter: I, count: usize) -> Option<Self>
     where
-        I: Iterator<Item = XSegment>,
+        I: Iterator<Item = XSegment<i32>>,
     {
         let mut iter = iter.peekable();
         let first = iter.peek()?;
@@ -1539,7 +1539,7 @@ mod tests {
     }
 
     #[inline]
-    fn rect_compare(a: &IntRect, b: &IntRect) {
+    fn rect_compare(a: &IntRect<i32>, b: &IntRect<i32>) {
         assert_eq!(a.min_x, b.min_x);
         assert_eq!(a.max_x, b.max_x);
         assert_eq!(a.min_y, b.min_y);
@@ -1547,7 +1547,7 @@ mod tests {
     }
 
     #[inline]
-    fn validate_rect(segment: &XSegment, rect: &IntRect) {
+    fn validate_rect(segment: &XSegment<i32>, rect: &IntRect<i32>) {
         let p0 = IntPoint::new(rect.min_x, rect.min_y);
         let p1 = IntPoint::new(rect.max_x, rect.min_y);
         let p2 = IntPoint::new(rect.min_x, rect.max_y);

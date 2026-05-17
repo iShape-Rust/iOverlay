@@ -2,6 +2,8 @@ use crate::core::edge_data::OverlayEdgeData;
 use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_float::int::vector::IntVector;
 
@@ -14,18 +16,20 @@ pub(super) trait VectorSimplify {
 }
 
 pub(super) trait VectorSimpleContour {
+    type Int: IntNumber;
     type Data: OverlayEdgeData;
     fn is_simple(&self) -> bool;
-    fn simplified(&self) -> Option<DataVectorPath<Self::Data>>;
+    fn simplified(&self) -> Option<DataVectorPath<Self::Int, Self::Data>>;
 }
 
 pub(super) trait VectorSimpleShape {
+    type Int: IntNumber;
     type Data: OverlayEdgeData;
     fn is_simple(&self) -> bool;
-    fn simplified(&self) -> Option<DataVectorShape<Self::Data>>;
+    fn simplified(&self) -> Option<DataVectorShape<Self::Int, Self::Data>>;
 }
 
-impl<D: OverlayEdgeData> VectorSimplify for DataVectorPath<D> {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimplify for DataVectorPath<I, D> {
     #[inline]
     fn simplify_contour(&mut self) -> bool {
         if self.is_simple() {
@@ -40,7 +44,7 @@ impl<D: OverlayEdgeData> VectorSimplify for DataVectorPath<D> {
     }
 }
 
-impl<D: OverlayEdgeData> VectorSimplify for DataVectorShape<D> {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimplify for DataVectorShape<I, D> {
     #[inline]
     fn simplify_contour(&mut self) -> bool {
         let mut any_simplified = false;
@@ -71,7 +75,7 @@ impl<D: OverlayEdgeData> VectorSimplify for DataVectorShape<D> {
     }
 }
 
-impl<D: OverlayEdgeData> VectorSimplify for Vec<DataVectorShape<D>> {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimplify for Vec<DataVectorShape<I, D>> {
     #[inline]
     fn simplify_contour(&mut self) -> bool {
         let mut any_simplified = false;
@@ -98,7 +102,8 @@ impl<D: OverlayEdgeData> VectorSimplify for Vec<DataVectorShape<D>> {
     }
 }
 
-impl<D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<D>] {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<I, D>] {
+    type Int = I;
     type Data = D;
 
     #[inline]
@@ -111,7 +116,7 @@ impl<D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<D>] {
         let mut prev = &self[count - 1];
         for edge in self.iter() {
             let curr = direction(edge);
-            if curr.cross_product(direction(prev)) == 0 && edge.data == prev.data {
+            if curr.cross_product(direction(prev)) == I::Wide::ZERO && edge.data == prev.data {
                 return false;
             }
             prev = edge;
@@ -120,7 +125,7 @@ impl<D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<D>] {
         true
     }
 
-    fn simplified(&self) -> Option<DataVectorPath<D>> {
+    fn simplified(&self) -> Option<DataVectorPath<I, D>> {
         if self.len() < 3 {
             return None;
         }
@@ -161,7 +166,9 @@ impl<D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<D>] {
             let p1 = self[node.index].b;
             let p2 = self[node.next].b;
 
-            if (p1 - p0).cross_product(p2 - p1) == 0 && self[node.index].data == self[node.next].data {
+            if (p1 - p0).cross_product(p2 - p1) == I::Wide::ZERO
+                && self[node.index].data == self[node.next].data
+            {
                 n -= 1;
                 if n < 3 {
                     return None;
@@ -224,7 +231,8 @@ struct Node {
     prev: usize,
 }
 
-impl<D: OverlayEdgeData> VectorSimpleShape for [DataVectorPath<D>] {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimpleShape for [DataVectorPath<I, D>] {
+    type Int = I;
     type Data = D;
 
     #[inline]
@@ -232,7 +240,7 @@ impl<D: OverlayEdgeData> VectorSimpleShape for [DataVectorPath<D>] {
         self.iter().all(|contour| contour.is_simple())
     }
 
-    fn simplified(&self) -> Option<DataVectorShape<D>> {
+    fn simplified(&self) -> Option<DataVectorShape<I, D>> {
         let mut contours = Vec::with_capacity(self.len());
         for (i, contour) in self.iter().enumerate() {
             if contour.is_simple() {
@@ -249,7 +257,7 @@ impl<D: OverlayEdgeData> VectorSimpleShape for [DataVectorPath<D>] {
 }
 
 #[inline]
-fn direction<D>(edge: &DataVectorEdge<D>) -> IntVector<i32> {
+fn direction<I: IntNumber, D>(edge: &DataVectorEdge<I, D>) -> IntVector<I> {
     edge.b - edge.a
 }
 

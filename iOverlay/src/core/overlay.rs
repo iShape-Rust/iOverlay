@@ -65,9 +65,9 @@ pub struct Overlay {
     pub solver: Solver,
     pub options: IntOverlayOptions,
     pub boolean_buffer: Option<BooleanExtractionBuffer>,
-    pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
+    pub(crate) segments: Vec<Segment<ShapeCountBoolean, i32>>,
     pub(crate) split_solver: SplitSolver,
-    pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode>,
+    pub(crate) graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, i32>,
 }
 
 impl Overlay {
@@ -81,7 +81,7 @@ impl Overlay {
             boolean_buffer: Some(Default::default()),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, i32>::new(),
         }
     }
 
@@ -97,7 +97,7 @@ impl Overlay {
             boolean_buffer: Some(Default::default()),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode>::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, i32>::new(),
         }
     }
 
@@ -131,7 +131,7 @@ impl Overlay {
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
     /// - `subj`: An array of contours that together define the subject shape.
     /// - `clip`: An array of contours that together define the clip shape.
-    pub fn with_contours(subj: &[IntContour], clip: &[IntContour]) -> Self {
+    pub fn with_contours(subj: &[IntContour<i32>], clip: &[IntContour<i32>]) -> Self {
         let mut overlay = Self::new(subj.points_count() + clip.points_count());
         overlay.add_contours(subj, ShapeType::Subject);
         overlay.add_contours(clip, ShapeType::Clip);
@@ -144,8 +144,8 @@ impl Overlay {
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
     pub fn with_contours_custom(
-        subj: &[IntContour],
-        clip: &[IntContour],
+        subj: &[IntContour<i32>],
+        clip: &[IntContour<i32>],
         options: IntOverlayOptions,
         solver: Solver,
     ) -> Self {
@@ -158,7 +158,7 @@ impl Overlay {
     /// Creates a new `Overlay` instance and initializes it with subject and clip shapes.
     /// - `subj`: An array of shapes to be used as the subject in the overlay operation.
     /// - `clip`: An array of shapes to be used as the clip in the overlay operation.
-    pub fn with_shapes(subj: &[IntShape], clip: &[IntShape]) -> Self {
+    pub fn with_shapes(subj: &[IntShape<i32>], clip: &[IntShape<i32>]) -> Self {
         let mut overlay = Self::new(subj.points_count() + clip.points_count());
         overlay.add_shapes(subj, ShapeType::Subject);
         overlay.add_shapes(clip, ShapeType::Clip);
@@ -171,8 +171,8 @@ impl Overlay {
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
     pub fn with_shapes_options(
-        subj: &[IntShape],
-        clip: &[IntShape],
+        subj: &[IntShape<i32>],
+        clip: &[IntShape<i32>],
         options: IntOverlayOptions,
         solver: Solver,
     ) -> Self {
@@ -206,28 +206,28 @@ impl Overlay {
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
-    /// - `contours`: An array of `IntContour` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_contours(&mut self, contours: &[IntContour], shape_type: ShapeType) {
+    pub fn add_contours(&mut self, contours: &[IntContour<i32>], shape_type: ShapeType) {
         for contour in contours.iter() {
             self.add_contour(contour, shape_type);
         }
     }
 
     /// Adds a single shape to the overlay as either a subject or clip shape.
-    /// - `shape`: A reference to a `IntShape` instance to be added.
+    /// - `shape`: A reference to a `IntShape<i32>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
+    pub fn add_shape(&mut self, shape: &IntShape<i32>, shape_type: ShapeType) {
         self.add_contours(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
-    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
+    pub fn add_shapes(&mut self, shapes: &[IntShape<i32>], shape_type: ShapeType) {
         for shape in shapes.iter() {
             self.add_contours(shape, shape_type);
         }
@@ -239,10 +239,10 @@ impl Overlay {
     }
 
     /// Adds multiple flat-shape to the overlay as either subject or clip shapes.
-    /// - `buffer`: A buffer of `IntShapes` instances to be added to the overlay.
+    /// - `buffer`: A buffer of `IntShapes<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_flat_buffer(&mut self, buffer: &FlatContoursBuffer, shape_type: ShapeType) {
+    pub fn add_flat_buffer(&mut self, buffer: &FlatContoursBuffer<i32>, shape_type: ShapeType) {
         for range in buffer.ranges.iter() {
             let contour = &buffer.points[range.clone()];
             self.add_contour(contour, shape_type);
@@ -256,7 +256,7 @@ impl Overlay {
         &mut self,
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
-    ) -> Vec<VectorShape> {
+    ) -> Vec<VectorShape<i32>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -282,7 +282,7 @@ impl Overlay {
 
     /// Convert into vectors from the added paths or shapes, applying the specified build rule. This method is particularly useful for development purposes and for creating visualizations in educational demos, where understanding the impact of different rules on the final geometry is crucial.
     /// - `fill_rule`: The build rule to use for the shapes.
-    pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<DataVectorEdge> {
+    pub fn build_separate_vectors(&mut self, fill_rule: FillRule) -> Vec<DataVectorEdge<i32>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -295,7 +295,7 @@ impl Overlay {
     /// Convert into `OverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph<'_>> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<OverlayGraph<'_, i32>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return None;
@@ -316,11 +316,11 @@ impl Overlay {
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
-    /// - Returns: A vector of `IntShape` that meet the specified area criteria, representing the cleaned-up geometric result.
+    /// - Returns: A vector of `IntShape<i32>` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<i32>`, where:
+    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
@@ -346,7 +346,7 @@ impl Overlay {
     /// without subsequent modifications. By excluding unnecessary graph structures, it optimizes performance,
     /// particularly for complex or resource-intensive geometries.
     #[inline]
-    pub fn overlay(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes {
+    pub fn overlay(&mut self, overlay_rule: OverlayRule, fill_rule: FillRule) -> IntShapes<i32> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -369,18 +369,18 @@ impl Overlay {
     /// Executes a single Boolean operation and writes the result into a flat contour buffer.
     ///
     /// This is a lower-allocation alternative to [`Self::overlay`] when you want flat contour
-    /// output (`points` + `ranges`) instead of nested `IntShapes`.
+    /// output (`points` + `ranges`) instead of nested `IntShapes<i32>`.
     ///
     /// - `overlay_rule`: The Boolean operation to apply.
     /// - `fill_rule`: Fill rule used to determine interior regions.
-    /// - `output`: Destination [`FlatContoursBuffer`] that receives resulting contours.
+    /// - `output`: Destination [`FlatContoursBuffer<i32>`] that receives resulting contours.
     ///   Existing buffer contents are replaced.
     #[inline]
     pub fn overlay_into(
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
-        output: &mut FlatContoursBuffer,
+        output: &mut FlatContoursBuffer<i32>,
     ) {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
@@ -846,7 +846,7 @@ mod tests {
 
     #[test]
     fn test_empty_input() {
-        let subj: &[IntContour] = &[];
+        let subj: &[IntContour<i32>] = &[];
 
         let mut overlay = Overlay::with_contours(subj, &[]);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);

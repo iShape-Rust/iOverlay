@@ -24,18 +24,18 @@ pub trait Simplify {
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `options`: Adjust custom behavior.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<i32>`, where:
+    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes;
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<i32>;
 }
 
 impl Simplify for [IntPoint] {
     #[inline]
-    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<i32> {
         match Overlay::new_custom(self.len(), options, Default::default()).simplify_contour(self, fill_rule) {
             Some(shapes) => shapes,
             None => vec![vec![self.to_vec()]],
@@ -43,9 +43,9 @@ impl Simplify for [IntPoint] {
     }
 }
 
-impl Simplify for [IntContour] {
+impl Simplify for [IntContour<i32>] {
     #[inline]
-    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<i32> {
         match Overlay::new_custom(self.len(), options, Default::default()).simplify_shape(self, fill_rule) {
             Some(shapes) => shapes,
             None => vec![self.to_vec()],
@@ -53,9 +53,9 @@ impl Simplify for [IntContour] {
     }
 }
 
-impl Simplify for [IntShape] {
+impl Simplify for [IntShape<i32>] {
     #[inline]
-    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes {
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<i32> {
         Overlay::new_custom(self.points_count(), options, Default::default()).simplify_shapes(self, fill_rule)
     }
 }
@@ -72,9 +72,9 @@ impl Overlay {
     /// Skips full overlay if the contour is already simple (no splits, no loops, no collinear issues).
     /// Ensures correct winding order based on `fill_rule` and `options.output_direction`.
     ///
-    /// Returns `None` if the contour is valid and needs no changes, or `Some(IntShapes)` with the simplified result.
+    /// Returns `None` if the contour is valid and needs no changes, or `Some(IntShapes<i32>)` with the simplified result.
     #[inline]
-    pub fn simplify_contour(&mut self, contour: &[IntPoint], fill_rule: FillRule) -> Option<IntShapes> {
+    pub fn simplify_contour(&mut self, contour: &[IntPoint], fill_rule: FillRule) -> Option<IntShapes<i32>> {
         self.clear();
 
         let is_perfect = self.find_intersections(contour);
@@ -148,7 +148,11 @@ impl Overlay {
     }
 
     #[inline]
-    pub fn simplify_shape(&mut self, shape: &[IntContour], fill_rule: FillRule) -> Option<IntShapes> {
+    pub fn simplify_shape(
+        &mut self,
+        shape: &[IntContour<i32>],
+        fill_rule: FillRule,
+    ) -> Option<IntShapes<i32>> {
         if shape.len() == 1 {
             return self.simplify_contour(&shape[0], fill_rule);
         }
@@ -158,14 +162,14 @@ impl Overlay {
     }
 
     #[inline]
-    pub fn simplify_shapes(&mut self, shapes: &[IntShape], fill_rule: FillRule) -> IntShapes {
+    pub fn simplify_shapes(&mut self, shapes: &[IntShape<i32>], fill_rule: FillRule) -> IntShapes<i32> {
         self.clear();
         self.add_shapes(shapes, ShapeType::Subject);
         self.overlay(OverlayRule::Subject, fill_rule)
     }
 
     #[inline]
-    pub fn simplify_flat_buffer(&mut self, flat_buffer: &mut FlatContoursBuffer, fill_rule: FillRule) {
+    pub fn simplify_flat_buffer(&mut self, flat_buffer: &mut FlatContoursBuffer<i32>, fill_rule: FillRule) {
         self.clear();
 
         if flat_buffer.is_single_contour() {

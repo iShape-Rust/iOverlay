@@ -4,9 +4,18 @@ use crate::core::solver::Solver;
 use crate::geom::end::End;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_key_sort::sort::two_keys::TwoKeysSort;
+use i_tree::Expiration;
 
-impl<C: WindingCount, N: GraphNode, D: OverlayEdgeData<C>> GraphBuilder<C, N, D> {
+impl<I, C, N, D> GraphBuilder<C, N, I, D>
+where
+    I: IntNumber + Expiration + SortKey + Send + Sync,
+    C: WindingCount,
+    N: GraphNode,
+    D: OverlayEdgeData<C>,
+{
     pub(super) fn build_nodes_and_connect_links(&mut self, solver: &Solver) {
         let n = self.links.len();
         if n == 0 {

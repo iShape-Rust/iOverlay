@@ -10,7 +10,7 @@ impl SplitSolver {
     pub(super) fn list_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C, D>>,
+        segments: &mut Vec<Segment<C, i32, D>>,
         solver: &Solver,
     ) -> bool {
         let mut need_to_fix = true;

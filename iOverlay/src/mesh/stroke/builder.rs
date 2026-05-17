@@ -16,7 +16,7 @@ trait StrokeBuild<P: FloatPointCompatible> {
         path: &[P],
         is_closed_path: bool,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     );
 
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize;
@@ -71,7 +71,7 @@ impl<P: FloatPointCompatible + 'static> StrokeBuilder<P> {
         path: &[P],
         is_closed_path: bool,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         self.builder.build(path, is_closed_path, adapter, segments);
     }
@@ -94,7 +94,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> StrokeBuild<P> for Builder<J, P
         path: &[P],
         is_closed_path: bool,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         if is_closed_path {
             self.closed_segments(path, adapter, segments);
@@ -127,7 +127,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         // build segments only from points which are not equal in int space
 
@@ -180,7 +180,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         if path.len() < 2 {
             return;

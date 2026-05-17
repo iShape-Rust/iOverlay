@@ -324,7 +324,7 @@ mod tests {
         }
     }
 
-    fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> IntShape {
+    fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> IntShape<i32> {
         let da = PI / count as f64;
         let mut a = angle;
 
@@ -351,7 +351,7 @@ mod tests {
         [points].to_vec()
     }
 
-    fn random_polygon(radius: f64, angle: f64, n: usize) -> IntPath {
+    fn random_polygon(radius: f64, angle: f64, n: usize) -> IntPath<i32> {
         let mut result = Vec::with_capacity(n);
         let da: f64 = PI * 0.7;
         let mut a: f64 = angle;
@@ -369,7 +369,7 @@ mod tests {
         result
     }
 
-    fn random(radius: i32, n: usize) -> IntPath {
+    fn random(radius: i32, n: usize) -> IntPath<i32> {
         let a = radius / 2;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);

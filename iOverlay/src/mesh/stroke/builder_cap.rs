@@ -70,7 +70,7 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
         &self,
         section: &Section<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         let mut a = adapter.float_to_int(&section.a_top);
         if let Some(points) = &self.points {
@@ -92,7 +92,7 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
         &self,
         section: &Section<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         let mut a = adapter.float_to_int(&section.b_bot);
         if let Some(points) = &self.points {

@@ -349,7 +349,7 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         let mut overlay = Overlay::with_segments(segments);
         overlay.options = options.int_with_adapter(&self.adapter);
 
-        let mut int_output = FlatContoursBuffer::default();
+        let mut int_output = FlatContoursBuffer::<i32>::default();
         overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
 
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));

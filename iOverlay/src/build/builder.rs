@@ -26,11 +26,11 @@ impl<'a> StoreFillsHandler<'a> {
     }
 }
 
-impl<C, D, I: IntNumber> FillHandler<C, D, I> for StoreFillsHandler<'_> {
+impl<C, D, I: IntNumber> FillHandler<C, I, D> for StoreFillsHandler<'_> {
     type Output = ();
 
     #[inline(always)]
-    fn handle(&mut self, index: usize, _segment: &Segment<C, D, I>, fill: SegmentFill) -> ControlFlow<()> {
+    fn handle(&mut self, index: usize, _segment: &Segment<C, I, D>, fill: SegmentFill) -> ControlFlow<()> {
         // fills is pre-allocated to segments.len() and index is guaranteed
         // to be in range by the sweep algorithm
         unsafe { *self.fills.get_unchecked_mut(index) = fill };
@@ -45,15 +45,21 @@ pub(crate) trait GraphNode {
     fn with_indices(indices: &[usize]) -> Self;
 }
 
-pub(crate) struct GraphBuilder<C, N, D = ()> {
-    sweep_runner: SweepRunner<C>,
-    pub(super) links: Vec<OverlayLink<D>>,
+pub(crate) struct GraphBuilder<C, N, I: IntNumber + i_tree::Expiration, D = ()> {
+    sweep_runner: SweepRunner<C, I>,
+    pub(super) links: Vec<OverlayLink<I, D>>,
     pub(super) nodes: Vec<N>,
     pub(super) fills: Vec<SegmentFill>,
-    pub(super) ends: Vec<End>,
+    pub(super) ends: Vec<End<I>>,
 }
 
-impl<C: WindingCount, N: GraphNode, D: OverlayEdgeData<C>> GraphBuilder<C, N, D> {
+impl<C, N, I, D> GraphBuilder<C, N, I, D>
+where
+    C: WindingCount,
+    N: GraphNode,
+    I: IntNumber + i_tree::Expiration,
+    D: OverlayEdgeData<C>,
+{
     #[inline]
     pub(crate) fn new() -> Self {
         Self {
@@ -69,7 +75,7 @@ impl<C: WindingCount, N: GraphNode, D: OverlayEdgeData<C>> GraphBuilder<C, N, D>
     pub(super) fn build_fills_with_strategy<F: FillStrategy<C>>(
         &mut self,
         solver: &Solver,
-        segments: &[Segment<C, D>],
+        segments: &[Segment<C, I, D>],
     ) {
         self.fills.resize(segments.len(), NONE);
         self.sweep_runner
@@ -77,7 +83,10 @@ impl<C: WindingCount, N: GraphNode, D: OverlayEdgeData<C>> GraphBuilder<C, N, D>
     }
 
     #[inline]
-    pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(&mut self, segments: &[Segment<C, D>]) {
+    pub(super) fn build_links_by_filter<F: InclusionFilterStrategy>(
+        &mut self,
+        segments: &[Segment<C, I, D>],
+    ) {
         self.links.clear();
         self.links.reserve_capacity(segments.len());
 
@@ -95,7 +104,7 @@ impl<C: WindingCount, N: GraphNode, D: OverlayEdgeData<C>> GraphBuilder<C, N, D>
     }
 
     #[inline]
-    pub(super) fn build_links_all(&mut self, segments: &[Segment<C, D>]) {
+    pub(super) fn build_links_all(&mut self, segments: &[Segment<C, I, D>]) {
         self.links.clear();
         self.links.reserve_capacity(segments.len());
 

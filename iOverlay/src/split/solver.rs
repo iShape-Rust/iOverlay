@@ -23,7 +23,7 @@ impl SplitSolver {
     #[inline]
     pub(crate) fn split_segments<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C, D>>,
+        segments: &mut Vec<Segment<C, i32, D>>,
         solver: &Solver,
     ) -> bool {
         if segments.is_empty() {
@@ -40,7 +40,7 @@ impl SplitSolver {
     #[inline]
     fn split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C, D>>,
+        segments: &mut Vec<Segment<C, i32, D>>,
         solver: &Solver,
     ) -> bool {
         let is_list = solver.is_list_split(segments);
@@ -61,8 +61,8 @@ impl SplitSolver {
     pub(super) fn cross(
         i: usize,
         j: usize,
-        ei: &XSegment,
-        ej: &XSegment,
+        ei: &XSegment<i32>,
+        ej: &XSegment<i32>,
         marks: &mut Vec<LineMark>,
         radius: i64,
     ) -> bool {
@@ -136,7 +136,7 @@ impl SplitSolver {
 
     pub(super) fn apply<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C, D>>,
+        segments: &mut Vec<Segment<C, i32, D>>,
         reusable_buffer: &mut Vec<LineMark>,
         solver: &Solver,
     ) {
@@ -218,7 +218,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_sub_marks(marks: &mut [LineMark], x_seg: XSegment) {
+    fn sort_sub_marks(marks: &mut [LineMark], x_seg: XSegment<i32>) {
         let mut j0 = 0;
         let mut j = 1;
 
@@ -248,7 +248,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn y_range(j0: usize, j1: usize, s: XSegment, marks: &[LineMark]) -> (i32, i32) {
+    fn y_range(j0: usize, j1: usize, s: XSegment<i32>, marks: &[LineMark]) -> (i32, i32) {
         let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
         let y1 = if j1 == marks.len() {
             s.b.y

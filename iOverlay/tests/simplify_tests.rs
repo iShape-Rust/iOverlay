@@ -166,7 +166,7 @@ mod tests {
         .to_vec()
     }
 
-    fn square_shape(pos: IntPoint) -> IntShape {
+    fn square_shape(pos: IntPoint) -> IntShape<i32> {
         [square(pos)].to_vec()
     }
 }

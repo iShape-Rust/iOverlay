@@ -4,7 +4,7 @@ use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct XSegment<I: IntNumber = i32> {
+pub(crate) struct XSegment<I: IntNumber> {
     pub(crate) a: IntPoint<I>,
     pub(crate) b: IntPoint<I>,
 }

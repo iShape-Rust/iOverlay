@@ -37,7 +37,7 @@ impl ContourIndex {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct IdSegment<I: IntNumber = i32> {
+pub(crate) struct IdSegment<I: IntNumber> {
     pub(crate) contour_index: ContourIndex,
     pub(crate) v_segment: VSegment<I>,
 }
@@ -110,26 +110,26 @@ impl<I: IntNumber> IdSegments<I> for IntPath<I> {
     }
 }
 
-impl<D> IdSegments<i32> for DataVectorPath<D> {
+impl<I: IntNumber, D> IdSegments<I> for DataVectorPath<I, D> {
     #[inline]
     fn append_id_segments(
         &self,
-        buffer: &mut Vec<IdSegment>,
+        buffer: &mut Vec<IdSegment<I>>,
         id_data: ContourIndex,
-        x_min: i32,
-        x_max: i32,
+        x_min: I,
+        x_max: I,
         clockwise: bool,
     ) {
-        fn inner<'a, D: 'a, I: Iterator<Item = &'a DataVectorEdge<D>>>(
-            iter: I,
-            buffer: &mut Vec<IdSegment>,
+        fn inner<'a, D: 'a, I: IntNumber + 'a, It: Iterator<Item = &'a DataVectorEdge<I, D>>>(
+            iter: It,
+            buffer: &mut Vec<IdSegment<I>>,
             id_data: ContourIndex,
-            x_min: i32,
-            x_max: i32,
+            x_min: I,
+            x_max: I,
         ) {
             for vec in iter {
                 if vec.a.x < vec.b.x && x_min < vec.b.x && vec.a.x <= x_max {
-                    buffer.push(IdSegment::new(id_data, vec.a, vec.b));
+                    buffer.push(IdSegment::<I>::new(id_data, vec.a, vec.b));
                 }
             }
         }

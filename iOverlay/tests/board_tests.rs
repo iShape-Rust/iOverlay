@@ -49,13 +49,13 @@ mod tests {
         result.len()
     }
 
-    fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {
+    fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath<i32>> {
         let mut result = Vec::with_capacity(n * n);
         let mut y = start.y;
         for _ in 0..n {
             let mut x = start.x;
             for _ in 0..n {
-                let path: IntPath = vec![
+                let path: IntPath<i32> = vec![
                     IntPoint::new(x, y),
                     IntPoint::new(x, y + size),
                     IntPoint::new(x + size, y + size),

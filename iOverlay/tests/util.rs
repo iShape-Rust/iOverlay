@@ -34,7 +34,7 @@ pub mod overlay {
         }
     }
 
-    impl CircleCompare for Vec<IntShape> {
+    impl CircleCompare for Vec<IntShape<i32>> {
         fn are_equal(&self, other: &Self) -> bool {
             if self.len() != other.len() {
                 return false;
@@ -61,7 +61,7 @@ pub mod overlay {
     }
 
     #[allow(dead_code)]
-    pub fn is_group_of_shapes_one_of(group: &Vec<IntShape>, groups: &[Vec<IntShape>]) -> bool {
+    pub fn is_group_of_shapes_one_of(group: &Vec<IntShape<i32>>, groups: &[Vec<IntShape<i32>>]) -> bool {
         for item in groups.iter() {
             if item.are_equal(group) {
                 return true;
@@ -72,7 +72,7 @@ pub mod overlay {
     }
 
     #[allow(dead_code)]
-    pub fn is_paths_one_of(paths: &IntPaths, groups: &[IntPaths]) -> bool {
+    pub fn is_paths_one_of(paths: &IntPaths<i32>, groups: &[IntPaths<i32>]) -> bool {
         for item in groups.iter() {
             if item.eq(paths) {
                 return true;
@@ -92,7 +92,7 @@ pub mod overlay {
         }
     }
 
-    impl JsonPrint for IntPath {
+    impl JsonPrint for IntPath<i32> {
         fn json_print(&self) -> String {
             let mut s = String::with_capacity(16 * self.len());
             s.push('[');
@@ -107,7 +107,7 @@ pub mod overlay {
         }
     }
 
-    impl JsonPrint for IntPaths {
+    impl JsonPrint for IntPaths<i32> {
         fn json_print(&self) -> String {
             let mut s = String::with_capacity(100 * self.len());
             s.push('[');
@@ -122,7 +122,7 @@ pub mod overlay {
         }
     }
 
-    impl JsonPrint for IntShapes {
+    impl JsonPrint for IntShapes<i32> {
         fn json_print(&self) -> String {
             let mut s = String::with_capacity(200 * self.len());
             s.push('[');

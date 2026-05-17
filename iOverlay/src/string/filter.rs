@@ -4,7 +4,7 @@ use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use alloc::vec::Vec;
 
-impl OverlayLink {
+impl OverlayLink<i32> {
     #[inline]
     pub(super) fn visit_fill(&self, fill: u8, node_id: usize, clockwise: bool) -> u8 {
         let is_a = self.a.id == node_id;
@@ -42,7 +42,7 @@ impl OverlayLink {
     }
 }
 
-impl StringGraph<'_> {
+impl StringGraph<'_, i32> {
     #[inline(always)]
     pub(super) fn filter(&self, ext_rule: StringRule) -> Vec<u8> {
         match ext_rule {

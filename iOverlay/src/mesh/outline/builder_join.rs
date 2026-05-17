@@ -16,7 +16,7 @@ pub(super) trait JoinBuilder<P: FloatPointCompatible> {
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     );
     fn capacity(&self) -> usize;
     fn additional_offset(&self, radius: P::Scalar) -> P::Scalar;
@@ -30,7 +30,7 @@ impl BevelJoinBuilder {
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
         _adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         debug_assert_ne!(s0.b_top, s1.a_top, "must be validated before");
         segments.push(Segment::subject(s0.b_top, s1.a_top));
@@ -44,7 +44,7 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for BevelJoinBuilder {
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         Self::join(s0, s1, adapter, segments);
     }
@@ -97,7 +97,7 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for MiterJoinBuilder<P::Scalar> {
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         let ia = s0.b_top;
         let ib = s1.a_top;
@@ -197,7 +197,7 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for RoundJoinBuilder<P::Scalar> {
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         if self.limit_dot_product < dot_product {

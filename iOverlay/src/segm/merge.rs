@@ -2,12 +2,13 @@ use crate::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 
 pub(crate) trait ShapeSegmentsMerge {
     fn merge_if_needed(&mut self) -> bool;
 }
 
-impl<C: WindingCount, D: OverlayEdgeData<C>> ShapeSegmentsMerge for Vec<Segment<C, D>> {
+impl<I: IntNumber, C: WindingCount, D: OverlayEdgeData<C>> ShapeSegmentsMerge for Vec<Segment<C, I, D>> {
     fn merge_if_needed(&mut self) -> bool {
         if self.len() < 2 {
             return false;
@@ -28,7 +29,10 @@ impl<C: WindingCount, D: OverlayEdgeData<C>> ShapeSegmentsMerge for Vec<Segment<
     }
 }
 
-fn merge<C: WindingCount, D: OverlayEdgeData<C>>(segments: &mut [Segment<C, D>], after: usize) -> usize {
+fn merge<I: IntNumber, C: WindingCount, D: OverlayEdgeData<C>>(
+    segments: &mut [Segment<C, I, D>],
+    after: usize,
+) -> usize {
     let mut i = after;
     let mut j = i - 1;
     let mut prev = segments[j];
@@ -73,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_merge_if_needed_empty() {
-        let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::new();
+        let mut segments: Vec<Segment<ShapeCountBoolean, i32>> = Vec::new();
         segments.merge_if_needed();
         assert!(
             segments.is_empty(),

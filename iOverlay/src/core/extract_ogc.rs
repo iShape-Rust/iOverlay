@@ -13,12 +13,12 @@ use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::util::reserve::Reserve;
 
-impl OverlayGraph<'_> {
+impl OverlayGraph<'_, i32> {
     pub(crate) fn extract_ogc(
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
+    ) -> IntShapes<i32> {
         let is_main_dir_cw = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut contour_visited = if let Some(mut visited) = buffer.contour_visited.take() {
@@ -219,7 +219,7 @@ impl OverlayGraph<'_> {
         global_visited: &mut [VisitState],
         contour_visited: &mut [VisitState],
         points: &mut Vec<IntPoint>,
-    ) -> Option<IntShape> {
+    ) -> Option<IntShape<i32>> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;

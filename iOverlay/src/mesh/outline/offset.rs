@@ -277,7 +277,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
 
         let mut segments = Vec::new();
         let mut bool_buffer = BooleanExtractionBuffer::default();
-        let mut flat_buffer = FlatContoursBuffer::default();
+        let mut flat_buffer = FlatContoursBuffer::<i32>::default();
 
         for path in source.iter_paths() {
             let area = path.unsafe_int_area(&self.adapter);
@@ -343,7 +343,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         let clean_result = options.clean_result;
         let mut overlay = self.build_overlay(source, options);
 
-        let mut int_output = FlatContoursBuffer::default();
+        let mut int_output = FlatContoursBuffer::<i32>::default();
         overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);

@@ -10,18 +10,18 @@ use alloc::vec::Vec;
 use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
 
-impl StringGraph<'_> {
+impl StringGraph<'_, i32> {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<i32>`, where:
+    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
-    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
+    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes<i32> {
         self.extract_shapes_custom(string_rule, Default::default())
     }
 
@@ -29,15 +29,19 @@ impl StringGraph<'_> {
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `min_area`: The minimum area that a shape must have to be included in the results. Shapes smaller than this will be excluded.
-    /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
+    /// - Returns: A vector of `IntShape<i32>`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<i32>`, where:
+    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    pub fn extract_shapes_custom(&self, string_rule: StringRule, options: IntOverlayOptions) -> IntShapes {
+    pub fn extract_shapes_custom(
+        &self,
+        string_rule: StringRule,
+        options: IntOverlayOptions,
+    ) -> IntShapes<i32> {
         let clockwise = options.output_direction == ContourDirection::Clockwise;
         let mut fills = self.filter(string_rule);
         let mut shapes = Vec::new();
@@ -85,7 +89,7 @@ impl StringGraph<'_> {
     }
 
     #[inline]
-    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath {
+    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath<i32> {
         let start_link = unsafe {
             // SAFETY: start_index originates from iterating the fills array, which mirrors links.
             self.links.get_unchecked(start_index)
@@ -95,7 +99,7 @@ impl StringGraph<'_> {
         let mut node_id = start_link.b.id;
         let last_node_id = start_link.a.id;
 
-        let mut path = IntPath::new();
+        let mut path = IntPath::<i32>::new();
         path.push(start_link.a.point);
 
         fills[start_index] = start_link.visit_fill(fills[start_index], start_link.a.id, clockwise);

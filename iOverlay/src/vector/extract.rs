@@ -12,10 +12,13 @@ use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
 use crate::vector::simplify::VectorSimplify;
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
+use i_tree::Expiration;
 
-impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
-    pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge> {
+impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
+    pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge<i32>> {
         self.links
             .iter()
             .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, ()))
@@ -26,7 +29,7 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-    ) -> Vec<DataVectorShape<D>> {
+    ) -> Vec<DataVectorShape<i32, D>> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -116,7 +119,7 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
-    ) -> DataVectorPath<D> {
+    ) -> DataVectorPath<i32, D> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
@@ -149,8 +152,8 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
     }
 }
 
-impl<D: OverlayEdgeData> OverlayGraph<'_, D> {
-    pub fn extract_vectors(&self) -> Vec<DataVectorEdge<D>> {
+impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
+    pub fn extract_vectors(&self) -> Vec<DataVectorEdge<i32, D>> {
         self.links
             .iter()
             .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, link.data))
@@ -170,7 +173,7 @@ struct StartVectorPathData<D> {
 
 impl<D: OverlayEdgeData> StartVectorPathData<D> {
     #[inline(always)]
-    fn new(direction: bool, link: &OverlayLink<D>, link_id: usize) -> Self {
+    fn new(direction: bool, link: &OverlayLink<i32, D>, link_id: usize) -> Self {
         if direction {
             Self {
                 a: link.b.point,
@@ -195,26 +198,34 @@ impl<D: OverlayEdgeData> StartVectorPathData<D> {
     }
 }
 
-trait JoinHoles<D: OverlayEdgeData> {
+trait JoinHoles<I, D>
+where
+    I: IntNumber + Expiration + SortKey + Send + Sync,
+    D: OverlayEdgeData,
+{
     fn join_sorted_holes(
         &mut self,
-        holes: Vec<DataVectorPath<D>>,
-        anchors: Vec<IdSegment>,
+        holes: Vec<DataVectorPath<I, D>>,
+        anchors: Vec<IdSegment<I>>,
         clockwise: bool,
     );
     fn scan_join(
         &mut self,
-        holes: Vec<DataVectorPath<D>>,
-        hole_segments: Vec<IdSegment>,
+        holes: Vec<DataVectorPath<I, D>>,
+        hole_segments: Vec<IdSegment<I>>,
         clockwise: bool,
     );
 }
 
-impl<D: OverlayEdgeData> JoinHoles<D> for Vec<DataVectorShape<D>> {
+impl<I, D> JoinHoles<I, D> for Vec<DataVectorShape<I, D>>
+where
+    I: IntNumber + Expiration + SortKey + Send + Sync,
+    D: OverlayEdgeData,
+{
     fn join_sorted_holes(
         &mut self,
-        holes: Vec<DataVectorPath<D>>,
-        anchors: Vec<IdSegment>,
+        holes: Vec<DataVectorPath<I, D>>,
+        anchors: Vec<IdSegment<I>>,
         clockwise: bool,
     ) {
         if self.is_empty() || holes.is_empty() {
@@ -235,8 +246,8 @@ impl<D: OverlayEdgeData> JoinHoles<D> for Vec<DataVectorShape<D>> {
 
     fn scan_join(
         &mut self,
-        holes: Vec<DataVectorPath<D>>,
-        hole_segments: Vec<IdSegment>,
+        holes: Vec<DataVectorPath<I, D>>,
+        hole_segments: Vec<IdSegment<I>>,
         clockwise: bool,
     ) {
         let x_min = hole_segments[0].v_segment.a.x;
@@ -268,7 +279,7 @@ impl<D: OverlayEdgeData> JoinHoles<D> for Vec<DataVectorShape<D>> {
 }
 
 #[inline]
-fn most_left_bottom<D>(path: &DataVectorPath<D>) -> VSegment {
+fn most_left_bottom<I: IntNumber, D>(path: &DataVectorPath<I, D>) -> VSegment<I> {
     let mut index = 0;
     let mut a = path[0].a;
     for (i, e) in path.iter().enumerate().skip(1) {
@@ -288,7 +299,7 @@ fn most_left_bottom<D>(path: &DataVectorPath<D>) -> VSegment {
 }
 
 #[inline]
-fn is_sorted(segments: &[IdSegment]) -> bool {
+fn is_sorted<I: IntNumber>(segments: &[IdSegment<I>]) -> bool {
     segments
         .windows(2)
         .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
@@ -296,10 +307,10 @@ fn is_sorted(segments: &[IdSegment]) -> bool {
 
 trait DataGraphContour<D: OverlayEdgeData> {
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
-    fn push_node_and_get_other(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize;
+    fn push_node_and_get_other(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize;
 }
 
-impl<D: OverlayEdgeData> DataGraphContour<D> for DataVectorPath<D> {
+impl<D: OverlayEdgeData> DataGraphContour<D> for DataVectorPath<i32, D> {
     #[inline]
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
@@ -324,7 +335,7 @@ impl<D: OverlayEdgeData> DataGraphContour<D> for DataVectorPath<D> {
     }
 
     #[inline]
-    fn push_node_and_get_other(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize {
+    fn push_node_and_get_other(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize {
         if link.a.id == node_id {
             self.push(DataVectorEdge::new(
                 link.fill,

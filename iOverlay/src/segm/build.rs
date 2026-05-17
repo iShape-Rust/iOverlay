@@ -17,7 +17,7 @@ pub(crate) trait BuildSegments<I: IntNumber> {
     ) -> bool;
 }
 
-impl<I: IntNumber, C: WindingCount> BuildSegments<I> for Vec<Segment<C, (), I>> {
+impl<I: IntNumber, C: WindingCount> BuildSegments<I> for Vec<Segment<C, I>> {
     #[inline]
     fn append_path_iter<It: Iterator<Item = IntPoint<I>>>(
         &mut self,
@@ -33,8 +33,13 @@ impl<I: IntNumber, C: WindingCount> BuildSegments<I> for Vec<Segment<C, (), I>> 
     }
 }
 
-fn build_segments_with_filter<I: IntNumber, F: PointFilter<I>, It: Iterator<Item = IntPoint<I>>, C: WindingCount>(
-    segments: &mut Vec<Segment<C, (), I>>,
+fn build_segments_with_filter<
+    I: IntNumber,
+    F: PointFilter<I>,
+    It: Iterator<Item = IntPoint<I>>,
+    C: WindingCount,
+>(
+    segments: &mut Vec<Segment<C, I>>,
     mut iter: It,
     shape_type: ShapeType,
 ) -> bool {
@@ -122,7 +127,7 @@ impl<I: IntNumber> PointFilter<I> for DropCollinear {
     }
 }
 
-impl<I: IntNumber, C: Send> Segment<C, (), I> {
+impl<I: IntNumber, C: Send> Segment<C, I> {
     #[inline]
     pub(crate) fn with_ab(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C) -> Self {
         if p0 < p1 {
@@ -141,7 +146,7 @@ impl<I: IntNumber, C: Send> Segment<C, (), I> {
     }
 }
 
-impl<I: IntNumber, C: Send, D: OverlayEdgeData<C>> Segment<C, D, I> {
+impl<I: IntNumber, C: Send, D: OverlayEdgeData<C>> Segment<C, I, D> {
     #[inline]
     pub(crate) fn with_ab_and_data(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C, data: D) -> Self {
         if p0 < p1 {
@@ -415,7 +420,7 @@ mod tests {
     }
 
     fn test_count(points: &[IntPoint], count: usize, keep_same_line_points: bool) {
-        let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::new();
+        let mut segments: Vec<Segment<ShapeCountBoolean, i32>> = Vec::new();
         segments.append_path_iter(points.iter().copied(), ShapeType::Subject, keep_same_line_points);
         segments.merge_if_needed();
 
@@ -425,7 +430,7 @@ mod tests {
     fn test_roll_count(slice: &[IntPoint], count: usize, keep_same_line_points: bool) {
         let mut points = slice.to_vec();
         let n = points.len();
-        let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::with_capacity(n);
+        let mut segments: Vec<Segment<ShapeCountBoolean, i32>> = Vec::with_capacity(n);
         for _ in 0..n {
             segments.append_path_iter(points.iter().copied(), ShapeType::Subject, keep_same_line_points);
             segments.merge_if_needed();

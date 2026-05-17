@@ -25,9 +25,9 @@ pub struct EdgeOverlay<D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions,
     pub boolean_buffer: Option<BooleanExtractionBuffer>,
-    segments: Vec<Segment<ShapeCountBoolean, D>>,
+    segments: Vec<Segment<ShapeCountBoolean, i32, D>>,
     split_solver: SplitSolver,
-    graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, D>,
+    graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, i32, D>,
 }
 
 impl<D: OverlayEdgeData> EdgeOverlay<D> {
@@ -38,7 +38,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
             boolean_buffer: None,
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, D>::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, i32, D>::new(),
         }
     }
 
@@ -66,7 +66,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
-    ) -> Vec<DataVectorEdge<D>> {
+    ) -> Vec<DataVectorEdge<i32, D>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -87,7 +87,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
-    ) -> Vec<DataVectorShape<D>> {
+    ) -> Vec<DataVectorShape<i32, D>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();

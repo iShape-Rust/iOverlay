@@ -37,7 +37,7 @@ impl PointCoincidenceChecker {
     ///   clip in the segment are skipped for clip collection
     /// - Similarly for clip-only interior segments
     #[inline]
-    pub(crate) fn add_segment(&mut self, segment: &Segment<ShapeCountBoolean>, fill: SegmentFill) {
+    pub(crate) fn add_segment(&mut self, segment: &Segment<ShapeCountBoolean, i32>, fill: SegmentFill) {
         // Skip inner segments optimization:
         // If segment is entirely inside one shape's interior (filled on both sides)
         // and has no contribution from the other shape, it's not on a boundary
@@ -116,14 +116,14 @@ impl IntersectsHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean> for IntersectsHandler {
+impl FillHandler<ShapeCountBoolean, i32> for IntersectsHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        segment: &Segment<ShapeCountBoolean>,
+        segment: &Segment<ShapeCountBoolean, i32>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Shapes intersect if both contribute to any segment (interior overlap or boundary contact)
@@ -152,14 +152,14 @@ impl FillHandler<ShapeCountBoolean> for IntersectsHandler {
 /// Early-exits `true` on first interior overlap.
 pub(crate) struct InteriorsIntersectHandler;
 
-impl FillHandler<ShapeCountBoolean> for InteriorsIntersectHandler {
+impl FillHandler<ShapeCountBoolean, i32> for InteriorsIntersectHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        _segment: &Segment<ShapeCountBoolean>,
+        _segment: &Segment<ShapeCountBoolean, i32>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Interiors intersect if both shapes fill the same side
@@ -197,14 +197,14 @@ impl TouchesHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean> for TouchesHandler {
+impl FillHandler<ShapeCountBoolean, i32> for TouchesHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        segment: &Segment<ShapeCountBoolean>,
+        segment: &Segment<ShapeCountBoolean, i32>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Interior overlap = not a touch (early exit false)
@@ -243,14 +243,14 @@ impl PointIntersectsHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean> for PointIntersectsHandler {
+impl FillHandler<ShapeCountBoolean, i32> for PointIntersectsHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        segment: &Segment<ShapeCountBoolean>,
+        segment: &Segment<ShapeCountBoolean, i32>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Interior overlap = not a point-only intersection (early exit false)
@@ -285,14 +285,14 @@ impl WithinHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean> for WithinHandler {
+impl FillHandler<ShapeCountBoolean, i32> for WithinHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        _segment: &Segment<ShapeCountBoolean>,
+        _segment: &Segment<ShapeCountBoolean, i32>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         let subj_top = (fill & SUBJ_TOP) != 0;
@@ -324,7 +324,14 @@ mod tests {
     use super::*;
     use crate::geom::x_segment::XSegment;
 
-    fn make_segment(ax: i32, ay: i32, bx: i32, by: i32, subj: i32, clip: i32) -> Segment<ShapeCountBoolean> {
+    fn make_segment(
+        ax: i32,
+        ay: i32,
+        bx: i32,
+        by: i32,
+        subj: i32,
+        clip: i32,
+    ) -> Segment<ShapeCountBoolean, i32> {
         Segment {
             x_segment: XSegment {
                 a: IntPoint::new(ax, ay),

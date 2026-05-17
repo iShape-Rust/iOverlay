@@ -7,15 +7,21 @@ use crate::segm::string::ShapeCountString;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
+use i_tree::Expiration;
 
-impl GraphBuilder<ShapeCountString, Vec<usize>> {
+impl<I> GraphBuilder<ShapeCountString, Vec<usize>, I>
+where
+    I: IntNumber + Expiration + SortKey + Send + Sync,
+{
     #[inline]
     pub(crate) fn build_string_all(
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountString>],
-    ) -> StringGraph<'_> {
+        segments: &[Segment<ShapeCountString, I>],
+    ) -> StringGraph<'_, I> {
         self.build_string_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
         self.string_graph(solver)
@@ -27,8 +33,8 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
         fill_rule: FillRule,
         clip_rule: ClipRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountString>],
-    ) -> StringGraph<'_> {
+        segments: &[Segment<ShapeCountString, I>],
+    ) -> StringGraph<'_, I> {
         self.build_string_fills(fill_rule, solver, segments);
         match clip_rule {
             ClipRule {
@@ -56,7 +62,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountString>],
+        segments: &[Segment<ShapeCountString, I>],
     ) {
         match fill_rule {
             FillRule::EvenOdd => self.build_fills_with_strategy::<EvenOddStrategy>(solver, segments),
@@ -67,7 +73,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
     }
 
     #[inline]
-    fn string_graph(&mut self, solver: &Solver) -> StringGraph<'_> {
+    fn string_graph(&mut self, solver: &Solver) -> StringGraph<'_, I> {
         self.build_nodes_and_connect_links(solver);
         StringGraph {
             nodes: &self.nodes,

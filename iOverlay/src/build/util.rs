@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::two_keys::TwoKeysSort;
 
-impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N> {
+impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N, i32> {
     pub(crate) fn test_contour_for_loops(
         &mut self,
         contour: &[IntPoint],

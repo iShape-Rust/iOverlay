@@ -22,13 +22,13 @@ pub const BOTH_BOTTOM: SegmentFill = SUBJ_BOTTOM | CLIP_BOTTOM;
 pub const ALL: SegmentFill = SUBJ_BOTH | CLIP_BOTH;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Segment<C, D = (), I: IntNumber = i32> {
+pub(crate) struct Segment<C, I: IntNumber, D = ()> {
     pub(crate) x_segment: XSegment<I>,
     pub(crate) count: C,
     pub(crate) data: D,
 }
 
-impl<C: WindingCount, I: IntNumber> Segment<C, (), I> {
+impl<C: WindingCount, I: IntNumber> Segment<C, I> {
     #[inline(always)]
     #[allow(dead_code)]
     pub(crate) fn create_and_validate(a: IntPoint<I>, b: IntPoint<I>, count: C) -> Self {
@@ -36,7 +36,7 @@ impl<C: WindingCount, I: IntNumber> Segment<C, (), I> {
     }
 }
 
-impl<C: WindingCount, D: OverlayEdgeData<C>, I: IntNumber> Segment<C, D, I> {
+impl<C: WindingCount, I: IntNumber, D: OverlayEdgeData<C>> Segment<C, I, D> {
     #[inline(always)]
     pub(crate) fn create_and_validate_with_data(a: IntPoint<I>, b: IntPoint<I>, count: C, data: D) -> Self {
         if a < b {
@@ -55,23 +55,23 @@ impl<C: WindingCount, D: OverlayEdgeData<C>, I: IntNumber> Segment<C, D, I> {
     }
 }
 
-impl<C, D, I: IntNumber> PartialEq<Self> for Segment<C, D, I> {
+impl<C, I: IntNumber, D> PartialEq<Self> for Segment<C, I, D> {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.x_segment == other.x_segment
     }
 }
 
-impl<C, D, I: IntNumber> Eq for Segment<C, D, I> {}
+impl<C, I: IntNumber, D> Eq for Segment<C, I, D> {}
 
-impl<C, D, I: IntNumber> PartialOrd for Segment<C, D, I> {
+impl<C, I: IntNumber, D> PartialOrd for Segment<C, I, D> {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<C, D, I: IntNumber> Ord for Segment<C, D, I> {
+impl<C, I: IntNumber, D> Ord for Segment<C, I, D> {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.x_segment.cmp(&other.x_segment)

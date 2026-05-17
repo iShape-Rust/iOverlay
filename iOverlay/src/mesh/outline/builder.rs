@@ -19,7 +19,7 @@ trait OutlineBuild<P: FloatPointCompatible> {
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     );
 
     fn capacity(&self, points_count: usize) -> usize;
@@ -71,7 +71,7 @@ impl<P: FloatPointCompatible + 'static> OutlineBuilder<P> {
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         self.builder.build(path, adapter, segments);
     }
@@ -93,7 +93,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> OutlineBuild<P> for Builder<J, 
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         if path.len() < 2 {
             return;
@@ -118,7 +118,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
         &self,
         path: &[P],
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         let iter = path.iter().map(|p| adapter.float_to_int(p));
         let mut uniq_segments = if let Some(iter) = UniqueSegmentsIter::new(iter) {
@@ -153,7 +153,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
         s0: &OffsetSection<P>,
         s1: &OffsetSection<P>,
         adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
     ) {
         let vi = s1.b - s1.a;
         let vp = s0.b - s0.a;

@@ -89,7 +89,7 @@ where
 }
 
 #[inline]
-fn include_point<I:IntNumber>(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>) -> bool {
+fn include_point<I: IntNumber>(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>) -> bool {
     let a = p1 - p0;
     let b = p1 - p2;
 

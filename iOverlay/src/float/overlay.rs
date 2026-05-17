@@ -352,7 +352,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
         let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
-        let mut int_output = FlatContoursBuffer::default();
+        let mut int_output = FlatContoursBuffer::<i32>::default();
         self.overlay
             .overlay_into(overlay_rule, fill_rule, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));

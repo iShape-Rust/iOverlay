@@ -14,7 +14,7 @@ use i_tree::seg::tree::SegExpTree;
 #[derive(Debug, Clone, Copy)]
 struct IdSegment {
     id: usize,
-    x_segment: XSegment,
+    x_segment: XSegment<i32>,
 }
 
 impl ExpiredVal<i32> for IdSegment {
@@ -28,7 +28,7 @@ impl SplitSolver {
     pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C, D>>,
+        segments: &mut Vec<Segment<C, i32, D>>,
         solver: &Solver,
     ) -> bool {
         let range: SegRange<i32> = segments.ver_range().into();
@@ -86,9 +86,9 @@ impl SplitSolver {
     }
 }
 
-impl From<LineRange> for SegRange<i32> {
+impl From<LineRange<i32>> for SegRange<i32> {
     #[inline]
-    fn from(value: LineRange) -> Self {
+    fn from(value: LineRange<i32>) -> Self {
         Self {
             min: value.min,
             max: value.max,
@@ -97,11 +97,11 @@ impl From<LineRange> for SegRange<i32> {
 }
 
 trait VerticalRange {
-    fn ver_range(&self) -> LineRange;
+    fn ver_range(&self) -> LineRange<i32>;
 }
 
-impl<C: Send, D: Send> VerticalRange for Vec<Segment<C, D>> {
-    fn ver_range(&self) -> LineRange {
+impl<C: Send, D: Send> VerticalRange for Vec<Segment<C, i32, D>> {
+    fn ver_range(&self) -> LineRange<i32> {
         let mut min_y = self[0].x_segment.a.y;
         let mut max_y = min_y;
 
@@ -119,7 +119,7 @@ impl<C: Send, D: Send> VerticalRange for Vec<Segment<C, D>> {
     }
 }
 
-impl<C: Send, D: Send> Segment<C, D> {
+impl<C: Send, D: Send> Segment<C, i32, D> {
     #[inline]
     fn id_segment(&self, id: usize) -> IdSegment {
         IdSegment {

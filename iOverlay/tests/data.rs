@@ -28,17 +28,17 @@ pub mod overlay {
         #[serde(default, deserialize_with = "deserialize_fill_rule")]
         pub fill_rule: Option<FillRule>,
         #[serde(rename = "subjPaths")]
-        pub subj_paths: Vec<IntContour>,
+        pub subj_paths: Vec<IntContour<i32>>,
         #[serde(rename = "clipPaths")]
-        pub clip_paths: Vec<IntContour>,
-        pub clip: Vec<IntShapes>,
-        pub subject: Vec<IntShapes>,
-        pub difference: Vec<IntShapes>,
+        pub clip_paths: Vec<IntContour<i32>>,
+        pub clip: Vec<IntShapes<i32>>,
+        pub subject: Vec<IntShapes<i32>>,
+        pub difference: Vec<IntShapes<i32>>,
         #[serde(rename = "inverseDifference")]
-        pub inverse_difference: Vec<IntShapes>,
-        pub intersect: Vec<IntShapes>,
-        pub union: Vec<IntShapes>,
-        pub xor: Vec<IntShapes>,
+        pub inverse_difference: Vec<IntShapes<i32>>,
+        pub intersect: Vec<IntShapes<i32>>,
+        pub union: Vec<IntShapes<i32>>,
+        pub xor: Vec<IntShapes<i32>>,
     }
 
     impl BooleanTest {
@@ -72,11 +72,11 @@ pub mod overlay {
         #[serde(rename = "fillRule")]
         #[serde(default, deserialize_with = "deserialize_fill_rule")]
         pub fill_rule: Option<FillRule>,
-        pub body: Vec<IntContour>,
-        pub string: IntPaths,
-        pub slice: Vec<IntShapes>,
-        pub clip_direct: Vec<IntPaths>,
-        pub clip_invert: Vec<IntPaths>,
+        pub body: Vec<IntContour<i32>>,
+        pub string: IntPaths<i32>,
+        pub slice: Vec<IntShapes<i32>>,
+        pub clip_direct: Vec<IntPaths<i32>>,
+        pub clip_invert: Vec<IntPaths<i32>>,
     }
 
     impl StringTest {

@@ -174,7 +174,7 @@ mod tests {
         assert_eq!(positive[0].len(), 2);
     }
 
-    fn square(radius: i32, is_clockwise: bool) -> IntPath {
+    fn square(radius: i32, is_clockwise: bool) -> IntPath<i32> {
         let mut square = [
             IntPoint::new(-radius, -radius),
             IntPoint::new(-radius, radius),

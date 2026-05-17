@@ -7,7 +7,7 @@ use i_float::triangle::Triangle;
 use i_tree::{Expiration, ExpiredKey};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct VSegment<I: IntNumber = i32> {
+pub(crate) struct VSegment<I: IntNumber> {
     pub(crate) a: IntPoint<I>,
     pub(crate) b: IntPoint<I>,
 }

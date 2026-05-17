@@ -2,7 +2,7 @@ use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 #[derive(Clone, Copy)]
-pub(crate) struct End<I: IntNumber = i32> {
+pub(crate) struct End<I: IntNumber> {
     pub(crate) index: usize,
     pub(crate) point: IntPoint<I>,
 }

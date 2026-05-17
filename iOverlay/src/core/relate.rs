@@ -38,9 +38,9 @@ pub struct PredicateOverlay {
     pub solver: Solver,
     /// Fill rule for determining polygon interiors.
     pub fill_rule: FillRule,
-    pub(crate) segments: Vec<Segment<ShapeCountBoolean>>,
+    pub(crate) segments: Vec<Segment<ShapeCountBoolean, i32>>,
     pub(crate) split_solver: SplitSolver,
-    sweep_runner: SweepRunner<ShapeCountBoolean>,
+    sweep_runner: SweepRunner<ShapeCountBoolean, i32>,
 }
 
 impl PredicateOverlay {
@@ -55,7 +55,7 @@ impl PredicateOverlay {
         }
     }
 
-    fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, Output = T>>(&mut self, handler: H) -> T {
+    fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, i32, Output = T>>(&mut self, handler: H) -> T {
         if self.segments.is_empty() {
             return T::default();
         }
@@ -134,28 +134,28 @@ impl PredicateOverlay {
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
-    /// - `contours`: An array of `IntContour` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_contours(&mut self, contours: &[IntContour], shape_type: ShapeType) {
+    pub fn add_contours(&mut self, contours: &[IntContour<i32>], shape_type: ShapeType) {
         for contour in contours.iter() {
             self.add_contour(contour, shape_type);
         }
     }
 
     /// Adds a single shape to the overlay as either a subject or clip shape.
-    /// - `shape`: A reference to a `IntShape` instance to be added.
+    /// - `shape`: A reference to a `IntShape<i32>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_shape(&mut self, shape: &IntShape, shape_type: ShapeType) {
+    pub fn add_shape(&mut self, shape: &IntShape<i32>, shape_type: ShapeType) {
         self.add_contours(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
-    /// - `shapes`: An array of `IntShape` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_shapes(&mut self, shapes: &[IntShape], shape_type: ShapeType) {
+    pub fn add_shapes(&mut self, shapes: &[IntShape<i32>], shape_type: ShapeType) {
         for shape in shapes.iter() {
             self.add_contours(shape, shape_type);
         }

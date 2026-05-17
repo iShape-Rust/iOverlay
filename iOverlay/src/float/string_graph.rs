@@ -11,7 +11,7 @@ use i_shape::float::simple::SimplifyContour;
 /// The `FloatStringGraph` struct represents a graph structure with floating-point precision,
 /// providing methods to extract geometric shapes from the graph after applying string-based operations.
 pub struct FloatStringGraph<'a, P: FloatPointCompatible> {
-    pub graph: StringGraph<'a>,
+    pub graph: StringGraph<'a, i32>,
     pub adapter: FloatPointAdapter<P, i32>,
 }
 

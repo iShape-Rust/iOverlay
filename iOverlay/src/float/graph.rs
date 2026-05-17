@@ -16,7 +16,7 @@ use i_shape::float::simple::SimplifyContour;
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
 /// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
 pub struct FloatOverlayGraph<'a, P: FloatPointCompatible> {
-    pub graph: OverlayGraph<'a>,
+    pub graph: OverlayGraph<'a, i32>,
     pub adapter: FloatPointAdapter<P, i32>,
     clean_result: bool,
 }
@@ -24,7 +24,7 @@ pub struct FloatOverlayGraph<'a, P: FloatPointCompatible> {
 impl<'a, P: FloatPointCompatible> FloatOverlayGraph<'a, P> {
     #[inline]
     pub(crate) fn new(
-        graph: OverlayGraph<'a>,
+        graph: OverlayGraph<'a, i32>,
         adapter: FloatPointAdapter<P, i32>,
         clean_result: bool,
     ) -> Self {

@@ -5,10 +5,10 @@ use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 
 pub type SideFill = u8;
-pub type DataVectorPath<D = (), I = i32> = Vec<DataVectorEdge<D, I>>;
-pub type DataVectorShape<D = (), I = i32> = Vec<DataVectorPath<D, I>>;
-pub type VectorPath<I = i32> = DataVectorPath<(), I>;
-pub type VectorShape<I = i32> = DataVectorShape<(), I>;
+pub type DataVectorPath<I, D = ()> = Vec<DataVectorEdge<I, D>>;
+pub type DataVectorShape<I, D = ()> = Vec<DataVectorPath<I, D>>;
+pub type VectorPath<I> = DataVectorPath<I>;
+pub type VectorShape<I> = DataVectorShape<I>;
 
 pub const SUBJ_LEFT: u8 = 0b0001;
 pub const SUBJ_RIGHT: u8 = 0b0010;
@@ -31,14 +31,14 @@ impl Reverse for SideFill {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DataVectorEdge<D = (), I: IntNumber = i32> {
+pub struct DataVectorEdge<I: IntNumber, D = ()> {
     pub a: IntPoint<I>,
     pub b: IntPoint<I>,
     pub fill: SideFill,
     pub data: D,
 }
 
-impl<D: OverlayEdgeData, I: IntNumber> DataVectorEdge<D, I> {
+impl<I: IntNumber, D: OverlayEdgeData> DataVectorEdge<I, D> {
     pub(crate) fn new(fill: SideFill, a: IntPoint<I>, b: IntPoint<I>, data: D) -> Self {
         let (fill, data) = if a < b {
             (fill, data)

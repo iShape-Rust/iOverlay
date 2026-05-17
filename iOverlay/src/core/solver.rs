@@ -164,7 +164,7 @@ impl Solver {
 
     pub(crate) fn is_list_split<C: Send, D: Send, I: IntNumber>(
         &self,
-        segments: &[Segment<C, D, I>],
+        segments: &[Segment<C, I, D>],
     ) -> bool {
         match self.strategy {
             List => true,
@@ -175,12 +175,12 @@ impl Solver {
 
     pub(crate) fn is_fragmentation_required<C: Send, D: Send, I: IntNumber>(
         &self,
-        segments: &[Segment<C, D, I>],
+        segments: &[Segment<C, I, D>],
     ) -> bool {
         segments.len() > Self::MIN_FRAGMENT_COUNT || self.strategy == Frag
     }
 
-    pub(crate) fn is_list_fill<C: Send, D: Send, I: IntNumber>(&self, segments: &[Segment<C, D, I>]) -> bool {
+    pub(crate) fn is_list_fill<C: Send, D: Send, I: IntNumber>(&self, segments: &[Segment<C, I, D>]) -> bool {
         match self.strategy {
             List => true,
             Tree | Frag => false,

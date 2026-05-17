@@ -4,13 +4,13 @@ use i_float::int::rect::IntRect;
 #[derive(Debug, Clone)]
 pub(super) struct Fragment {
     pub(super) index: usize,
-    pub(super) rect: IntRect,
-    pub(super) x_segment: XSegment,
+    pub(super) rect: IntRect<i32>,
+    pub(super) x_segment: XSegment<i32>,
 }
 
 impl Fragment {
     #[inline]
-    pub(super) fn with_index_and_segment(index: usize, x_segment: XSegment) -> Self {
+    pub(super) fn with_index_and_segment(index: usize, x_segment: XSegment<i32>) -> Self {
         let (min_y, max_y) = if x_segment.a.y < x_segment.b.y {
             (x_segment.a.y, x_segment.b.y)
         } else {

@@ -14,7 +14,7 @@ pub(super) struct OffsetSection<P: FloatPointCompatible> {
 
 impl<P: FloatPointCompatible> OffsetSection<P> {
     #[inline]
-    pub(super) fn top_segment(&self) -> Option<Segment<ShapeCountBoolean>> {
+    pub(super) fn top_segment(&self) -> Option<Segment<ShapeCountBoolean, i32>> {
         if self.a_top != self.b_top {
             Some(Segment::subject(self.a_top, self.b_top))
         } else {
@@ -23,7 +23,7 @@ impl<P: FloatPointCompatible> OffsetSection<P> {
     }
 
     #[inline]
-    pub(super) fn a_segment(&self) -> Option<Segment<ShapeCountBoolean>> {
+    pub(super) fn a_segment(&self) -> Option<Segment<ShapeCountBoolean, i32>> {
         if self.a_top != self.a {
             Some(Segment::subject(self.a, self.a_top))
         } else {
@@ -32,7 +32,7 @@ impl<P: FloatPointCompatible> OffsetSection<P> {
     }
 
     #[inline]
-    pub(super) fn b_segment(&self) -> Option<Segment<ShapeCountBoolean>> {
+    pub(super) fn b_segment(&self) -> Option<Segment<ShapeCountBoolean, i32>> {
         if self.b_top != self.b {
             Some(Segment::subject(self.b_top, self.b))
         } else {

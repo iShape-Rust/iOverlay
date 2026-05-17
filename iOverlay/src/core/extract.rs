@@ -34,15 +34,15 @@ pub struct BooleanExtractionBuffer {
     pub(crate) contour_visited: Option<Vec<VisitState>>,
 }
 
-impl OverlayGraph<'_> {
+impl OverlayGraph<'_, i32> {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - `buffer`: Reusable buffer, optimisation purpose only.
-    /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
+    /// - Returns: A vector of `IntShape<i32>`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<i32>`, where:
+    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
@@ -51,7 +51,7 @@ impl OverlayGraph<'_> {
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
+    ) -> IntShapes<i32> {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ogc {
@@ -77,7 +77,7 @@ impl OverlayGraph<'_> {
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-        output: &mut FlatContoursBuffer,
+        output: &mut FlatContoursBuffer<i32>,
     ) {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -88,7 +88,7 @@ impl OverlayGraph<'_> {
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
+    ) -> IntShapes<i32> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut shapes = Vec::new();
@@ -213,7 +213,7 @@ impl OverlayGraph<'_> {
         &self,
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer,
-        output: &mut FlatContoursBuffer,
+        output: &mut FlatContoursBuffer<i32>,
     ) {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         let len = buffer.visited.len();
@@ -274,7 +274,7 @@ pub(crate) struct StartPathData {
 
 impl StartPathData {
     #[inline(always)]
-    pub(crate) fn new(direction: bool, link: &OverlayLink, link_id: usize) -> Self {
+    pub(crate) fn new(direction: bool, link: &OverlayLink<i32>, link_id: usize) -> Self {
         if direction {
             Self {
                 begin: link.b.point,
@@ -295,10 +295,10 @@ impl StartPathData {
 
 pub(crate) trait GraphContour {
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
-    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize;
+    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize;
 }
 
-impl GraphContour for IntContour {
+impl GraphContour for IntContour<i32> {
     #[inline]
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
@@ -322,7 +322,7 @@ impl GraphContour for IntContour {
     }
 
     #[inline]
-    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<D>, node_id: usize) -> usize {
+    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize {
         if link.a.id == node_id {
             self.push(link.a.point);
             link.b.id
@@ -387,7 +387,7 @@ impl GraphUtil {
     /// * `visited` is at least `links.len()` long (or whatever invariant applies)
     #[inline]
     pub(crate) unsafe fn find_left_top_link<D>(
-        links: &[OverlayLink<D>],
+        links: &[OverlayLink<i32, D>],
         nodes: &[OverlayNode],
         link_index: usize,
         visited: &[VisitState],
@@ -415,8 +415,8 @@ impl GraphUtil {
 
     #[inline(always)]
     fn find_left_top_link_on_indices<D>(
-        links: &[OverlayLink<D>],
-        link: &OverlayLink<D>,
+        links: &[OverlayLink<i32, D>],
+        link: &OverlayLink<i32, D>,
         link_index: usize,
         indices: &[usize],
         visited: &[VisitState],
@@ -450,7 +450,7 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_bridge<D>(links: &[OverlayLink<D>], bridge: &[usize; 2]) -> usize {
+    fn find_left_top_link_on_bridge<D>(links: &[OverlayLink<i32, D>], bridge: &[usize; 2]) -> usize {
         // SAFETY: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
         // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
         let (l0, l1) = unsafe { (links.get_unchecked(bridge[0]), links.get_unchecked(bridge[1])) };
@@ -463,7 +463,7 @@ impl GraphUtil {
 
     #[inline(always)]
     pub(crate) fn next_link<D>(
-        links: &[OverlayLink<D>],
+        links: &[OverlayLink<i32, D>],
         nodes: &[OverlayNode],
         link_id: usize,
         node_id: usize,
@@ -494,7 +494,7 @@ impl GraphUtil {
     // still unvisited when we enter. The unchecked accesses rely on that invariant.
     #[inline]
     fn find_nearest_link_to<D>(
-        links: &[OverlayLink<D>],
+        links: &[OverlayLink<i32, D>],
         target_index: usize,
         node_id: usize,
         clockwise: bool,

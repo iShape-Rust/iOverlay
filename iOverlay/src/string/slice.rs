@@ -7,15 +7,15 @@ use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
 
 pub trait IntSlice {
-    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes;
-    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes;
-    fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes;
-    fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes;
+    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes<i32>;
+    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes<i32>;
+    fn slice_by_path(&self, path: &IntPath<i32>, fill_rule: FillRule) -> IntShapes<i32>;
+    fn slice_by_paths(&self, paths: &[IntPath<i32>], fill_rule: FillRule) -> IntShapes<i32>;
 }
 
-impl IntSlice for IntShapes {
+impl IntSlice for IntShapes<i32> {
     #[inline]
-    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes {
+    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_line(line);
         overlay
@@ -25,7 +25,7 @@ impl IntSlice for IntShapes {
     }
 
     #[inline]
-    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes {
+    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_lines(lines);
         overlay
@@ -35,7 +35,7 @@ impl IntSlice for IntShapes {
     }
 
     #[inline]
-    fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes {
+    fn slice_by_path(&self, path: &IntPath<i32>, fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_path(path);
         overlay
@@ -45,7 +45,7 @@ impl IntSlice for IntShapes {
     }
 
     #[inline]
-    fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes {
+    fn slice_by_paths(&self, paths: &[IntPath<i32>], fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_paths(paths);
         overlay
@@ -55,9 +55,9 @@ impl IntSlice for IntShapes {
     }
 }
 
-impl IntSlice for IntShape {
+impl IntSlice for IntShape<i32> {
     #[inline]
-    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes {
+    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_line(line);
         overlay
@@ -67,7 +67,7 @@ impl IntSlice for IntShape {
     }
 
     #[inline]
-    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes {
+    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_lines(lines);
         overlay
@@ -77,7 +77,7 @@ impl IntSlice for IntShape {
     }
 
     #[inline]
-    fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes {
+    fn slice_by_path(&self, path: &IntPath<i32>, fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_path(path);
         overlay
@@ -87,7 +87,7 @@ impl IntSlice for IntShape {
     }
 
     #[inline]
-    fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes {
+    fn slice_by_paths(&self, paths: &[IntPath<i32>], fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_paths(paths);
         overlay
@@ -99,7 +99,7 @@ impl IntSlice for IntShape {
 
 impl IntSlice for [IntPoint] {
     #[inline]
-    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes {
+    fn slice_by_line(&self, line: IntLine, fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_line(line);
         overlay
@@ -109,7 +109,7 @@ impl IntSlice for [IntPoint] {
     }
 
     #[inline]
-    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes {
+    fn slice_by_lines(&self, lines: &[IntLine], fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_lines(lines);
         overlay
@@ -119,7 +119,7 @@ impl IntSlice for [IntPoint] {
     }
 
     #[inline]
-    fn slice_by_path(&self, path: &IntPath, fill_rule: FillRule) -> IntShapes {
+    fn slice_by_path(&self, path: &IntPath<i32>, fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_path(path);
         overlay
@@ -129,7 +129,7 @@ impl IntSlice for [IntPoint] {
     }
 
     #[inline]
-    fn slice_by_paths(&self, paths: &[IntPath], fill_rule: FillRule) -> IntShapes {
+    fn slice_by_paths(&self, paths: &[IntPath<i32>], fill_rule: FillRule) -> IntShapes<i32> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_paths(paths);
         overlay

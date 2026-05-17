@@ -489,7 +489,7 @@ mod tests {
         }
     }
 
-    fn random_polygon(radius: i32, n: usize) -> IntPath {
+    fn random_polygon(radius: i32, n: usize) -> IntPath<i32> {
         let a = radius / 2;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);
