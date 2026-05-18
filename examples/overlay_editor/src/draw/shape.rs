@@ -155,7 +155,7 @@ impl ShapeWidget {
                     .collect();
 
                 let sub_triangulation =
-                    stroke_builder.build_closed_path_mesh::<FloatPoint<f32>, usize>(&world_path);
+                    stroke_builder.build_closed_path_mesh::<usize>(&world_path);
                 builder.append(sub_triangulation);
             }
         }
@@ -192,7 +192,7 @@ impl ShapeWidget {
                 .collect();
 
             let sub_triangulation =
-                stroke_builder.build_closed_path_mesh::<FloatPoint<f32>, usize>(&world_path);
+                stroke_builder.build_closed_path_mesh::<usize>(&world_path);
             builder.append(sub_triangulation);
         }
 

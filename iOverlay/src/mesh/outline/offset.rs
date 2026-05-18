@@ -1220,6 +1220,24 @@ mod tests {
         };
     }
 
+    #[test]
+    fn test_real_case_1_offset() {
+        let contour = vec![
+            [53.0, 42.0],
+            [35.0, 66.0],
+            [26.0, 75.0],
+            [27.0, 74.0],
+            [53.0f64, 42.0],
+        ];
+
+        let style = OutlineStyle::new(1.0f64).line_join(LineJoin::Round(1.0f64));
+        contour.outline(&style);
+
+        if let Some(shape) = contour.outline(&style).first() {
+            assert!(shape[0].len() < 1_000);
+        };
+    }
+
     fn create_star(r0: f64, r1: f64, count: usize, angle: f64) -> Shape<[f64; 2]> {
         let da = core::f64::consts::PI / count as f64;
         let mut a = angle;
