@@ -22,7 +22,7 @@ use i_shape::int::shape::{IntContour, IntShape};
 pub struct StringOverlay {
     pub options: IntOverlayOptions,
     pub(super) segments: Vec<Segment<ShapeCountString, i32>>,
-    pub(crate) split_solver: SplitSolver,
+    pub(crate) split_solver: SplitSolver<i32>,
     pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>, i32>,
 }
 

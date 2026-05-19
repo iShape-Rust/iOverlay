@@ -56,7 +56,7 @@ impl<'a, P: FloatPointCompatible> FloatOverlayGraph<'a, P> {
     pub fn extract_shapes(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
+        buffer: &mut BooleanExtractionBuffer<i32>,
     ) -> Shapes<P> {
         let shapes = self.graph.extract_shapes(overlay_rule, buffer);
         let mut float = shapes.to_float(&self.adapter);

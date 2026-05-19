@@ -43,7 +43,7 @@ pub struct OverlayOptions<T: FloatNumber> {
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
 pub struct FloatOverlay<P: FloatPointCompatible> {
-    pub(super) overlay: Overlay,
+    pub(super) overlay: Overlay<i32>,
     pub(super) clean_result: bool,
     pub(super) adapter: FloatPointAdapter<P, i32>,
 }

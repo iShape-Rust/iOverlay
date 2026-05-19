@@ -13,12 +13,18 @@ use crate::vector::simplify::VectorSimplify;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_tree::Expiration;
 
-impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
-    pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge<i32>> {
+impl<I, D> OverlayGraph<'_, I, D>
+where
+    I: IntNumber + Expiration + SortKey + Send + Sync,
+    D: OverlayEdgeData,
+{
+    pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge<I>> {
         self.links
             .iter()
             .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, ()))
@@ -28,8 +34,8 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
     pub fn extract_vector_shapes(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-    ) -> Vec<DataVectorShape<i32, D>> {
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> Vec<DataVectorShape<I, D>> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -95,7 +101,7 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
                     }
                 };
 
-                debug_assert_eq!(v_segment, most_left_bottom(&contour));
+                debug_assert!(v_segment == most_left_bottom(&contour));
                 let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id_data, v_segment));
                 holes.push(contour);
@@ -115,11 +121,11 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
 
     fn find_vector_contour(
         &self,
-        start_data: StartVectorPathData<D>,
+        start_data: StartVectorPathData<I, D>,
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
-    ) -> DataVectorPath<i32, D> {
+    ) -> DataVectorPath<I, D> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
@@ -152,8 +158,8 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
     }
 }
 
-impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
-    pub fn extract_vectors(&self) -> Vec<DataVectorEdge<i32, D>> {
+impl<I: IntNumber, D: OverlayEdgeData> OverlayGraph<'_, I, D> {
+    pub fn extract_vectors(&self) -> Vec<DataVectorEdge<I, D>> {
         self.links
             .iter()
             .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, link.data))
@@ -161,9 +167,9 @@ impl<D: OverlayEdgeData> OverlayGraph<'_, i32, D> {
     }
 }
 
-struct StartVectorPathData<D> {
-    a: IntPoint,
-    b: IntPoint,
+struct StartVectorPathData<I: IntNumber, D> {
+    a: IntPoint<I>,
+    b: IntPoint<I>,
     node_id: usize,
     link_id: usize,
     last_node_id: usize,
@@ -171,9 +177,9 @@ struct StartVectorPathData<D> {
     data: D,
 }
 
-impl<D: OverlayEdgeData> StartVectorPathData<D> {
+impl<I: IntNumber, D: OverlayEdgeData> StartVectorPathData<I, D> {
     #[inline(always)]
-    fn new(direction: bool, link: &OverlayLink<i32, D>, link_id: usize) -> Self {
+    fn new(direction: bool, link: &OverlayLink<I, D>, link_id: usize) -> Self {
         if direction {
             Self {
                 a: link.b.point,
@@ -305,12 +311,12 @@ fn is_sorted<I: IntNumber>(segments: &[IdSegment<I>]) -> bool {
         .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
 }
 
-trait DataGraphContour<D: OverlayEdgeData> {
+trait DataGraphContour<I: IntNumber, D: OverlayEdgeData> {
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
-    fn push_node_and_get_other(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize;
+    fn push_node_and_get_other(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
 }
 
-impl<D: OverlayEdgeData> DataGraphContour<D> for DataVectorPath<i32, D> {
+impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath<I, D> {
     #[inline]
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
@@ -329,13 +335,14 @@ impl<D: OverlayEdgeData> DataGraphContour<D> for DataVectorPath<i32, D> {
 
         let double_area = self
             .iter()
-            .fold(0i64, |acc, edge| acc + edge.a.cross_product(edge.b));
+            .fold(I::Wide::ZERO, |acc, edge| acc + edge.a.cross_product(edge.b));
+        let min_area = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(min_output_area);
 
-        ((double_area.unsigned_abs() >> 1) >= min_output_area, is_modified)
+        ((double_area.unsigned_abs() >> 1) >= min_area, is_modified)
     }
 
     #[inline]
-    fn push_node_and_get_other(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize {
+    fn push_node_and_get_other(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize {
         if link.a.id == node_id {
             self.push(DataVectorEdge::new(
                 link.fill,

@@ -39,7 +39,7 @@ pub struct PredicateOverlay {
     /// Fill rule for determining polygon interiors.
     pub fill_rule: FillRule,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean, i32>>,
-    pub(crate) split_solver: SplitSolver,
+    pub(crate) split_solver: SplitSolver<i32>,
     sweep_runner: SweepRunner<ShapeCountBoolean, i32>,
 }
 

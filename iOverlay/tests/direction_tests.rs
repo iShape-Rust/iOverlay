@@ -35,10 +35,10 @@ mod tests {
         };
 
         let r0 = &path.simplify(FillRule::NonZero, op0)[0][0];
-        debug_assert!(r0.area_two() < 0);
+        debug_assert!(r0.area_two() < 0i64);
 
         let r1 = &path.simplify(FillRule::NonZero, op1)[0][0];
-        debug_assert!(r1.area_two() > 0);
+        debug_assert!(r1.area_two() > 0i64);
     }
 
     #[test]
@@ -75,12 +75,12 @@ mod tests {
         };
 
         let r0 = &path.simplify(FillRule::NonZero, op0)[0];
-        debug_assert!(r0[0].area_two() < 0);
-        debug_assert!(r0[1].area_two() > 0);
+        debug_assert!(r0[0].area_two() < 0i64);
+        debug_assert!(r0[1].area_two() > 0i64);
 
         let r1 = &path.simplify(FillRule::NonZero, op1)[0];
-        debug_assert!(r1[0].area_two() > 0);
-        debug_assert!(r1[1].area_two() < 0);
+        debug_assert!(r1[0].area_two() > 0i64);
+        debug_assert!(r1[1].area_two() < 0i64);
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
 
         // test default behavior
         let r = Overlay::with_contours(&path, &[]).overlay(OverlayRule::Subject, FillRule::NonZero);
-        debug_assert!(r[0][0].area_two() < 0);
-        debug_assert!(r[0][1].area_two() > 0);
+        debug_assert!(r[0][0].area_two() < 0i64);
+        debug_assert!(r[0][1].area_two() > 0i64);
     }
 }

@@ -5,12 +5,18 @@ use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
+use i_tree::{Expiration, LayoutNumber};
 
-impl SplitSolver {
+impl<I> SplitSolver<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+{
     pub(super) fn list_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C, i32, D>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
         let mut need_to_fix = true;
@@ -23,7 +29,7 @@ impl SplitSolver {
             need_to_fix = false;
             self.marks.clear();
 
-            let radius: i64 = snap_radius.radius();
+            let radius = snap_radius.radius::<I>();
 
             for (i, si) in segments.iter().enumerate() {
                 let xsi = &si.x_segment;
@@ -38,7 +44,7 @@ impl SplitSolver {
                         continue;
                     }
 
-                    let is_round = SplitSolver::cross(i, j, xsi, xsj, &mut self.marks, radius);
+                    let is_round = Self::cross(i, j, xsi, xsj, &mut self.marks, radius);
                     need_to_fix = need_to_fix || is_round
                 }
             }

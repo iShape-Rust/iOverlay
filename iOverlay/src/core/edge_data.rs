@@ -1,4 +1,5 @@
 use crate::segm::boolean::ShapeCountBoolean;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + PartialEq + Send + Sync {
@@ -8,7 +9,7 @@ pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + PartialEq + Send + Sync
     }
 
     #[inline(always)]
-    fn split(self, _ctx: EdgeDataSplit) -> (Self, Self) {
+    fn split<I: IntNumber>(self, _ctx: EdgeDataSplit<I>) -> (Self, Self) {
         (self, self)
     }
 
@@ -16,10 +17,10 @@ pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + PartialEq + Send + Sync
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct EdgeDataSplit {
-    pub a: IntPoint,
-    pub p: IntPoint,
-    pub b: IntPoint,
+pub struct EdgeDataSplit<I: IntNumber> {
+    pub a: IntPoint<I>,
+    pub p: IntPoint<I>,
+    pub b: IntPoint<I>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

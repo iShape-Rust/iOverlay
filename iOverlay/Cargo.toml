@@ -14,7 +14,7 @@ categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 [dependencies]
 #i_float = { version = "^2.0.0" }
 #i_shape = { version = "^2.0.0" }
-i_tree = { version = "^0.18.0" }
+i_tree = { version = "^0.18.0", path = "../../iTree" }
 i_key_sort = { version = "^0.10.1" }
 
 i_float = { path = "../../iFloat"}

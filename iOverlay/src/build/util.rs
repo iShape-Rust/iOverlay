@@ -1,14 +1,21 @@
 use crate::build::builder::{GraphBuilder, GraphNode};
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_key_sort::sort::two_keys::TwoKeysSort;
 
-impl<C: WindingCount, N: GraphNode> GraphBuilder<C, N, i32> {
+impl<C, N, I> GraphBuilder<C, N, I>
+where
+    C: WindingCount,
+    N: GraphNode,
+    I: IntNumber + i_tree::Expiration + SortKey + Send + Sync,
+{
     pub(crate) fn test_contour_for_loops(
         &mut self,
-        contour: &[IntPoint],
-        buffer: &mut Vec<IntPoint>,
+        contour: &[IntPoint<I>],
+        buffer: &mut Vec<IntPoint<I>>,
     ) -> bool {
         let n = contour.len();
         if n < 64 {

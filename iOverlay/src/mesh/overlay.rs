@@ -6,7 +6,7 @@ use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
 
-impl Overlay {
+impl Overlay<i32> {
     #[inline]
     pub(crate) fn add_segments(&mut self, segments: &[Segment<ShapeCountBoolean, i32>]) {
         self.segments.extend_from_slice(segments);

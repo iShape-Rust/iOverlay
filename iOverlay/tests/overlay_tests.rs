@@ -27,7 +27,7 @@ mod tests {
             ogc: false,
         };
 
-        fn overlay(test: &BooleanTest, options: IntOverlayOptions, solver: Solver) -> Overlay {
+        fn overlay(test: &BooleanTest, options: IntOverlayOptions, solver: Solver) -> Overlay<i32> {
             Overlay::with_contours_custom(&test.subj_paths, &test.clip_paths, options, solver)
         }
 

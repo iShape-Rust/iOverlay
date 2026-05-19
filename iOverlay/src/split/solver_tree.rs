@@ -7,32 +7,38 @@ use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_tree::ExpiredVal;
 use i_tree::seg::exp::{SegExpCollection, SegRange};
 use i_tree::seg::tree::SegExpTree;
+use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Debug, Clone, Copy)]
-struct IdSegment {
+struct IdSegment<I: IntNumber> {
     id: usize,
-    x_segment: XSegment<i32>,
+    x_segment: XSegment<I>,
 }
 
-impl ExpiredVal<i32> for IdSegment {
+impl<I: IntNumber + Expiration> ExpiredVal<I> for IdSegment<I> {
     #[inline]
-    fn expiration(&self) -> i32 {
+    fn expiration(&self) -> I {
         self.x_segment.b.x
     }
 }
 
-impl SplitSolver {
+impl<I> SplitSolver<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+{
     pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C, i32, D>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
-        let range: SegRange<i32> = segments.ver_range().into();
-        let mut tree: SegExpTree<i32, i32, IdSegment> = if let Some(tree) = SegExpTree::new(range) {
+        let range: SegRange<I> = segments.ver_range().into();
+        let mut tree: SegExpTree<I, I, IdSegment<I>> = if let Some(tree) = SegExpTree::new(range) {
             tree
         } else {
             return self.list_split(snap_radius, segments, solver);
@@ -49,7 +55,7 @@ impl SplitSolver {
             need_to_fix = false;
             self.marks.clear();
 
-            let radius = snap_radius.radius();
+            let radius = snap_radius.radius::<I>();
 
             for (i, si) in segments.iter().enumerate() {
                 let time = si.x_segment.a.x;
@@ -61,8 +67,7 @@ impl SplitSolver {
                         (sj.id, i, &sj.x_segment, &si.x_segment)
                     };
 
-                    let is_round =
-                        SplitSolver::cross(this_index, scan_index, this, scan, &mut self.marks, radius);
+                    let is_round = Self::cross(this_index, scan_index, this, scan, &mut self.marks, radius);
 
                     need_to_fix = is_round || need_to_fix;
                 }
@@ -86,9 +91,9 @@ impl SplitSolver {
     }
 }
 
-impl From<LineRange<i32>> for SegRange<i32> {
+impl<I: IntNumber> From<LineRange<I>> for SegRange<I> {
     #[inline]
-    fn from(value: LineRange<i32>) -> Self {
+    fn from(value: LineRange<I>) -> Self {
         Self {
             min: value.min,
             max: value.max,
@@ -97,11 +102,15 @@ impl From<LineRange<i32>> for SegRange<i32> {
 }
 
 trait VerticalRange {
-    fn ver_range(&self) -> LineRange<i32>;
+    type Int: IntNumber;
+
+    fn ver_range(&self) -> LineRange<Self::Int>;
 }
 
-impl<C: Send, D: Send> VerticalRange for Vec<Segment<C, i32, D>> {
-    fn ver_range(&self) -> LineRange<i32> {
+impl<I: IntNumber, C: Send, D: Send> VerticalRange for Vec<Segment<C, I, D>> {
+    type Int = I;
+
+    fn ver_range(&self) -> LineRange<I> {
         let mut min_y = self[0].x_segment.a.y;
         let mut max_y = min_y;
 
@@ -119,9 +128,9 @@ impl<C: Send, D: Send> VerticalRange for Vec<Segment<C, i32, D>> {
     }
 }
 
-impl<C: Send, D: Send> Segment<C, i32, D> {
+impl<I: IntNumber, C: Send, D: Send> Segment<C, I, D> {
     #[inline]
-    fn id_segment(&self, id: usize) -> IdSegment {
+    fn id_segment(&self, id: usize) -> IdSegment<I> {
         IdSegment {
             id,
             x_segment: self.x_segment,

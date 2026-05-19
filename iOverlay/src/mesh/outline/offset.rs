@@ -264,7 +264,11 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         Ok(())
     }
 
-    fn build_overlay<S: ShapeResource<P>>(&self, source: &S, options: OverlayOptions<P::Scalar>) -> Overlay {
+    fn build_overlay<S: ShapeResource<P>>(
+        &self,
+        source: &S,
+        options: OverlayOptions<P::Scalar>,
+    ) -> Overlay<i32> {
         let total_capacity = self.outer_builder.capacity(self.points_count);
         let mut overlay = Overlay::new_custom(
             total_capacity,

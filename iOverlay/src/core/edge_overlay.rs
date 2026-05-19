@@ -24,9 +24,9 @@ pub struct InputEdge<D> {
 pub struct EdgeOverlay<D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions,
-    pub boolean_buffer: Option<BooleanExtractionBuffer>,
+    pub boolean_buffer: Option<BooleanExtractionBuffer<i32>>,
     segments: Vec<Segment<ShapeCountBoolean, i32, D>>,
-    split_solver: SplitSolver,
+    split_solver: SplitSolver<i32>,
     graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, i32, D>,
 }
 

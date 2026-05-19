@@ -9,12 +9,18 @@ use crate::split::line_mark::LineMark;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
+use i_tree::{Expiration, LayoutNumber};
 
-impl SplitSolver {
+impl<I> SplitSolver<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+{
     pub(super) fn fragment_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C, i32, D>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
         let layout =
@@ -40,7 +46,7 @@ impl SplitSolver {
                 buffer.add_segment(i, segment.x_segment);
             }
 
-            need_to_fix = self.process(snap_radius.radius(), &mut buffer, solver);
+            need_to_fix = self.process(snap_radius.radius::<I>(), &mut buffer, solver);
 
             #[cfg(debug_assertions)]
             debug_assert!(buffer.is_on_border_sorted());
@@ -75,7 +81,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn process(&mut self, radius: i64, buffer: &mut FragmentBuffer, _solver: &Solver) -> bool {
+    fn process(&mut self, radius: I::Wide, buffer: &mut FragmentBuffer<I>, _solver: &Solver) -> bool {
         #[cfg(feature = "allow_multithreading")]
         {
             if _solver.multithreading.is_some() {
@@ -87,37 +93,37 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn serial_split(&mut self, radius: i64, buffer: &mut FragmentBuffer) -> bool {
+    fn serial_split(&mut self, radius: I::Wide, buffer: &mut FragmentBuffer<I>) -> bool {
         let mut is_any_round = false;
         for group in buffer.groups.iter_mut() {
             if group.is_empty() {
                 continue;
             }
-            let any_round = SplitSolver::bin_split(radius, group, &mut self.marks);
+            let any_round = Self::bin_split(radius, group, &mut self.marks);
             is_any_round = is_any_round || any_round;
         }
         is_any_round
     }
 
     #[cfg(feature = "allow_multithreading")]
-    fn parallel_split(&mut self, radius: i64, buffer: &mut FragmentBuffer) -> bool {
+    fn parallel_split(&mut self, radius: I::Wide, buffer: &mut FragmentBuffer<I>) -> bool {
         use rayon::iter::IntoParallelRefMutIterator;
         use rayon::iter::ParallelIterator;
 
-        struct TaskResult {
+        struct TaskResult<I: IntNumber> {
             any_round: bool,
-            marks: Vec<LineMark>,
+            marks: Vec<LineMark<I>>,
         }
 
         debug_assert!(!buffer.groups.is_empty(), "groups.len() >= 1");
         let marks_capacity = self.marks.capacity() / buffer.groups.len();
 
-        let results: Vec<TaskResult> = buffer
+        let results: Vec<TaskResult<I>> = buffer
             .groups
             .par_iter_mut()
             .map(|group| {
                 let mut marks = Vec::with_capacity(marks_capacity);
-                let any_round = SplitSolver::bin_split(radius, group, &mut marks);
+                let any_round = Self::bin_split(radius, group, &mut marks);
                 TaskResult { any_round, marks }
             })
             .collect();
@@ -145,7 +151,7 @@ impl SplitSolver {
         is_any_round
     }
 
-    fn bin_split(radius: i64, fragments: &mut [Fragment], marks: &mut Vec<LineMark>) -> bool {
+    fn bin_split(radius: I::Wide, fragments: &mut [Fragment<I>], marks: &mut Vec<LineMark<I>>) -> bool {
         if fragments.len() < 2 {
             return false;
         }
@@ -180,9 +186,9 @@ impl SplitSolver {
 
     fn on_border_split(
         &mut self,
-        border_x: i32,
-        fragments: &[Fragment],
-        vertical_segments: &mut [BorderVSegment],
+        border_x: I,
+        fragments: &[Fragment<I>],
+        vertical_segments: &mut [BorderVSegment<I>],
     ) {
         let mut points = Vec::new();
         for fragment in fragments.iter() {
@@ -214,18 +220,23 @@ impl SplitSolver {
         }
     }
 
-    fn cross_fragments(fi: &Fragment, fj: &Fragment, radius: i64, marks: &mut Vec<LineMark>) -> bool {
-        let cross = if let Some(cross) = CrossSolver::cross(&fi.x_segment, &fj.x_segment, radius) {
+    fn cross_fragments(
+        fi: &Fragment<I>,
+        fj: &Fragment<I>,
+        radius: I::Wide,
+        marks: &mut Vec<LineMark<I>>,
+    ) -> bool {
+        let cross = if let Some(cross) = CrossSolver::<I>::cross(&fi.x_segment, &fj.x_segment, radius) {
             cross
         } else {
             return false;
         };
 
-        let r = radius as i32;
+        let r = I::from_wide(radius);
 
         match cross.cross_type {
             CrossType::Overlay => {
-                let mask = CrossSolver::collinear(&fi.x_segment, &fj.x_segment);
+                let mask = CrossSolver::<I>::collinear(&fi.x_segment, &fj.x_segment);
                 if mask == 0 {
                     return false;
                 }

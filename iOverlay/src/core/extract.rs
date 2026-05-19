@@ -10,12 +10,17 @@ use crate::geom::v_segment::VSegment;
 use crate::i_shape::flat::buffer::FlatContoursBuffer;
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
+use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
 use i_shape::util::reserve::Reserve;
+use i_tree::Expiration;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
@@ -27,14 +32,26 @@ pub(crate) enum VisitState {
     HullVisited = 3,
 }
 
-#[derive(Default)]
-pub struct BooleanExtractionBuffer {
-    pub(crate) points: Vec<IntPoint>,
+pub struct BooleanExtractionBuffer<I: IntNumber> {
+    pub(crate) points: Vec<IntPoint<I>>,
     pub(crate) visited: Vec<VisitState>,
     pub(crate) contour_visited: Option<Vec<VisitState>>,
 }
 
-impl OverlayGraph<'_, i32> {
+impl<I: IntNumber> Default for BooleanExtractionBuffer<I> {
+    fn default() -> Self {
+        Self {
+            points: Vec::new(),
+            visited: Vec::new(),
+            contour_visited: None,
+        }
+    }
+}
+
+impl<I> OverlayGraph<'_, I>
+where
+    I: IntNumber + Expiration + SortKey + Send + Sync,
+{
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - `buffer`: Reusable buffer, optimisation purpose only.
@@ -50,8 +67,8 @@ impl OverlayGraph<'_, i32> {
     pub fn extract_shapes(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes<i32> {
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> IntShapes<I> {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ogc {
@@ -76,8 +93,8 @@ impl OverlayGraph<'_, i32> {
     pub fn extract_contours_into(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-        output: &mut FlatContoursBuffer<i32>,
+        buffer: &mut BooleanExtractionBuffer<I>,
+        output: &mut FlatContoursBuffer<I>,
     ) {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -87,8 +104,8 @@ impl OverlayGraph<'_, i32> {
     pub(crate) fn extract(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes<i32> {
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> IntShapes<I> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut shapes = Vec::new();
@@ -160,7 +177,7 @@ impl OverlayGraph<'_, i32> {
                     }
                 };
 
-                debug_assert_eq!(v_segment, contour.left_bottom_segment());
+                debug_assert!(v_segment == contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id_data, v_segment));
                 holes.push(contour);
@@ -180,11 +197,11 @@ impl OverlayGraph<'_, i32> {
 
     pub(crate) fn find_contour(
         &self,
-        start_data: &StartPathData,
+        start_data: &StartPathData<I>,
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
-        points: &mut Vec<IntPoint>,
+        points: &mut Vec<IntPoint<I>>,
     ) {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
@@ -212,8 +229,8 @@ impl OverlayGraph<'_, i32> {
     fn extract_contours(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-        output: &mut FlatContoursBuffer<i32>,
+        buffer: &mut BooleanExtractionBuffer<I>,
+        output: &mut FlatContoursBuffer<I>,
     ) {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         let len = buffer.visited.len();
@@ -265,16 +282,16 @@ impl OverlayGraph<'_, i32> {
     }
 }
 
-pub(crate) struct StartPathData {
-    pub(crate) begin: IntPoint,
+pub(crate) struct StartPathData<I: IntNumber> {
+    pub(crate) begin: IntPoint<I>,
     pub(crate) node_id: usize,
     pub(crate) link_id: usize,
     pub(crate) last_node_id: usize,
 }
 
-impl StartPathData {
+impl<I: IntNumber> StartPathData<I> {
     #[inline(always)]
-    pub(crate) fn new(direction: bool, link: &OverlayLink<i32>, link_id: usize) -> Self {
+    pub(crate) fn new(direction: bool, link: &OverlayLink<I>, link_id: usize) -> Self {
         if direction {
             Self {
                 begin: link.b.point,
@@ -293,12 +310,12 @@ impl StartPathData {
     }
 }
 
-pub(crate) trait GraphContour {
+pub(crate) trait GraphContour<I: IntNumber> {
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool);
-    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize;
+    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
 }
 
-impl GraphContour for IntContour<i32> {
+impl<I: IntNumber> GraphContour<I> for IntContour<I> {
     #[inline]
     fn validate(&mut self, min_output_area: u64, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
@@ -316,13 +333,14 @@ impl GraphContour for IntContour<i32> {
         }
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() >> 1;
-        let is_valid = abs_area >= min_output_area;
+        let min_area = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(min_output_area);
+        let is_valid = abs_area >= min_area;
 
         (is_valid, is_modified)
     }
 
     #[inline]
-    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<i32, D>, node_id: usize) -> usize {
+    fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize {
         if link.a.id == node_id {
             self.push(link.a.point);
             link.b.id
@@ -386,8 +404,8 @@ impl GraphUtil {
     /// * For bridge nodes, both `bridge[k] < links.len()`
     /// * `visited` is at least `links.len()` long (or whatever invariant applies)
     #[inline]
-    pub(crate) unsafe fn find_left_top_link<D>(
-        links: &[OverlayLink<i32, D>],
+    pub(crate) unsafe fn find_left_top_link<I: IntNumber, D>(
+        links: &[OverlayLink<I, D>],
         nodes: &[OverlayNode],
         link_index: usize,
         visited: &[VisitState],
@@ -414,9 +432,9 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_indices<D>(
-        links: &[OverlayLink<i32, D>],
-        link: &OverlayLink<i32, D>,
+    fn find_left_top_link_on_indices<I: IntNumber, D>(
+        links: &[OverlayLink<I, D>],
+        link: &OverlayLink<I, D>,
         link_index: usize,
         indices: &[usize],
         visited: &[VisitState],
@@ -450,7 +468,10 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    fn find_left_top_link_on_bridge<D>(links: &[OverlayLink<i32, D>], bridge: &[usize; 2]) -> usize {
+    fn find_left_top_link_on_bridge<I: IntNumber, D>(
+        links: &[OverlayLink<I, D>],
+        bridge: &[usize; 2],
+    ) -> usize {
         // SAFETY: every bridge index comes straight from GraphBuilder::build_nodes_and_connect_links,
         // which only records values in 0..links.len(), so the unchecked lookups stay in-bounds.
         let (l0, l1) = unsafe { (links.get_unchecked(bridge[0]), links.get_unchecked(bridge[1])) };
@@ -462,8 +483,8 @@ impl GraphUtil {
     }
 
     #[inline(always)]
-    pub(crate) fn next_link<D>(
-        links: &[OverlayLink<i32, D>],
+    pub(crate) fn next_link<I: IntNumber, D>(
+        links: &[OverlayLink<I, D>],
         nodes: &[OverlayNode],
         link_id: usize,
         node_id: usize,
@@ -493,8 +514,8 @@ impl GraphUtil {
     // so every element is a valid index into `links`, and at least one of them is
     // still unvisited when we enter. The unchecked accesses rely on that invariant.
     #[inline]
-    fn find_nearest_link_to<D>(
-        links: &[OverlayLink<i32, D>],
+    fn find_nearest_link_to<I: IntNumber, D>(
+        links: &[OverlayLink<I, D>],
         target_index: usize,
         node_id: usize,
         clockwise: bool,

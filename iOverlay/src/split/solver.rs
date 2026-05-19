@@ -8,22 +8,30 @@ use crate::segm::winding::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::line_mark::{LineMark, SortMarkByIndexAndPoint};
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
+use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Clone)]
-pub(crate) struct SplitSolver {
-    pub(super) marks: Vec<LineMark>,
+pub(crate) struct SplitSolver<I: IntNumber> {
+    pub(super) marks: Vec<LineMark<I>>,
 }
 
-impl SplitSolver {
+impl<I: IntNumber> SplitSolver<I> {
     #[inline(always)]
     pub(crate) fn new() -> Self {
         Self { marks: Vec::new() }
     }
+}
 
+impl<I> SplitSolver<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+{
     #[inline]
     pub(crate) fn split_segments<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C, i32, D>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
         if segments.is_empty() {
@@ -40,7 +48,7 @@ impl SplitSolver {
     #[inline]
     fn split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C, i32, D>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
         let is_list = solver.is_list_split(segments);
@@ -61,12 +69,12 @@ impl SplitSolver {
     pub(super) fn cross(
         i: usize,
         j: usize,
-        ei: &XSegment<i32>,
-        ej: &XSegment<i32>,
-        marks: &mut Vec<LineMark>,
-        radius: i64,
+        ei: &XSegment<I>,
+        ej: &XSegment<I>,
+        marks: &mut Vec<LineMark<I>>,
+        radius: I::Wide,
     ) -> bool {
-        let cross = if let Some(cross) = CrossSolver::cross(ei, ej, radius) {
+        let cross = if let Some(cross) = CrossSolver::<I>::cross(ei, ej, radius) {
             cross
         } else {
             return false;
@@ -96,7 +104,7 @@ impl SplitSolver {
                 });
             }
             CrossType::Overlay => {
-                let mask = CrossSolver::collinear(ei, ej);
+                let mask = CrossSolver::<I>::collinear(ei, ej);
                 if mask == 0 {
                     return false;
                 }
@@ -136,8 +144,8 @@ impl SplitSolver {
 
     pub(super) fn apply<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C, i32, D>>,
-        reusable_buffer: &mut Vec<LineMark>,
+        segments: &mut Vec<Segment<C, I, D>>,
+        reusable_buffer: &mut Vec<LineMark<I>>,
         solver: &Solver,
     ) {
         self.marks
@@ -218,7 +226,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_sub_marks(marks: &mut [LineMark], x_seg: XSegment<i32>) {
+    fn sort_sub_marks(marks: &mut [LineMark<I>], x_seg: XSegment<I>) {
         let mut j0 = 0;
         let mut j = 1;
 
@@ -248,7 +256,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn y_range(j0: usize, j1: usize, s: XSegment<i32>, marks: &[LineMark]) -> (i32, i32) {
+    fn y_range(j0: usize, j1: usize, s: XSegment<I>, marks: &[LineMark<I>]) -> (I, I) {
         let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
         let y1 = if j1 == marks.len() {
             s.b.y
@@ -259,7 +267,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_sub_marks_by_y(y0: i32, y1: i32, marks: &mut [LineMark]) {
+    fn sort_sub_marks_by_y(y0: I, y1: I, marks: &mut [LineMark<I>]) {
         // The x-coordinate is the same for every point
         // By default, the range should be sorted in ascending order by the y-coordinate.
         if y0 > y1 {
