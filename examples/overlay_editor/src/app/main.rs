@@ -6,6 +6,7 @@ use crate::app::string::content::StringMessage;
 use crate::app::string::content::StringState;
 use crate::app::stroke::content::StrokeMessage;
 use crate::app::stroke::content::StrokeState;
+use crate::app::variable_stroke::content::{VariableStrokeMessage, VariableStrokeState};
 use iced::keyboard::key::Named;
 use iced::keyboard::Key;
 use iced::widget::{rule, Space};
@@ -29,6 +30,7 @@ pub(super) struct MainState {
     pub(super) boolean: BooleanState,
     pub(super) string: StringState,
     pub(super) stroke: StrokeState,
+    pub(super) variable_stroke: VariableStrokeState,
     pub(super) outline: OutlineState,
 }
 
@@ -37,6 +39,7 @@ pub(crate) enum MainAction {
     Boolean,
     String,
     Stroke,
+    VariableStroke,
     Outline,
 }
 
@@ -46,6 +49,7 @@ impl MainAction {
             MainAction::Boolean => "Boolean",
             MainAction::String => "String",
             MainAction::Stroke => "Stroke",
+            MainAction::VariableStroke => "Variable Stroke",
             MainAction::Outline => "Outline",
         }
     }
@@ -62,6 +66,7 @@ pub(crate) enum AppMessage {
     Bool(BooleanMessage),
     String(StringMessage),
     Stroke(StrokeMessage),
+    VariableStroke(VariableStrokeMessage),
     Outline(OutlineMessage),
     NextTest,
     PrevTest,
@@ -74,6 +79,7 @@ impl EditorApp {
                 MainAction::Boolean,
                 MainAction::String,
                 MainAction::Stroke,
+                MainAction::VariableStroke,
                 MainAction::Outline,
             ],
             state: MainState {
@@ -81,6 +87,7 @@ impl EditorApp {
                 boolean: BooleanState::new(&mut app_resource.boolean),
                 string: StringState::new(&mut app_resource.string),
                 stroke: StrokeState::new(&mut app_resource.stroke),
+                variable_stroke: VariableStrokeState::new(),
                 outline: OutlineState::new(&mut app_resource.outline),
             },
             app_resource,
@@ -96,19 +103,22 @@ impl EditorApp {
             AppMessage::Bool(msg) => self.boolean_update(msg),
             AppMessage::String(msg) => self.string_update(msg),
             AppMessage::Stroke(msg) => self.stroke_update(msg),
+            AppMessage::VariableStroke(msg) => self.variable_stroke_update(msg),
             AppMessage::Outline(msg) => self.outline_update(msg),
             AppMessage::NextTest => match self.state.selected_action {
-                    MainAction::Boolean => self.boolean_next_test(),
-                    MainAction::String => self.string_next_test(),
-                    MainAction::Stroke => self.stroke_next_test(),
-                    MainAction::Outline => self.outline_next_test(),
-                },
+                MainAction::Boolean => self.boolean_next_test(),
+                MainAction::String => self.string_next_test(),
+                MainAction::Stroke => self.stroke_next_test(),
+                MainAction::VariableStroke => self.variable_stroke_next_test(),
+                MainAction::Outline => self.outline_next_test(),
+            },
             AppMessage::PrevTest => match self.state.selected_action {
                 MainAction::Boolean => self.boolean_prev_test(),
                 MainAction::String => self.string_prev_test(),
                 MainAction::Stroke => self.stroke_prev_test(),
+                MainAction::VariableStroke => self.variable_stroke_prev_test(),
                 MainAction::Outline => self.outline_prev_test(),
-            }
+            },
         }
 
         Task::none()
@@ -133,6 +143,7 @@ impl EditorApp {
                     MainAction::Boolean => self.boolean_init(),
                     MainAction::String => self.string_init(),
                     MainAction::Stroke => self.stroke_init(),
+                    MainAction::VariableStroke => self.variable_stroke_init(),
                     MainAction::Outline => self.outline_init(),
                 }
             }
@@ -157,6 +168,9 @@ impl EditorApp {
             MainAction::Stroke => content
                 .push(rule::vertical(1).style(style_separator))
                 .push(self.stroke_content()),
+            MainAction::VariableStroke => content
+                .push(rule::vertical(1).style(style_separator))
+                .push(self.variable_stroke_content()),
             MainAction::Outline => content
                 .push(rule::vertical(1).style(style_separator))
                 .push(self.outline_content()),
@@ -167,11 +181,7 @@ impl EditorApp {
 
     fn main_navigation(&self) -> Column<'_, AppMessage> {
         self.main_actions.iter().fold(
-            Column::new().push(
-                Space::new()
-                    .width(Length::Fill)
-                    .height(Length::Fixed(2.0)),
-            ),
+            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0))),
             |column, item| {
                 let is_selected = self.state.selected_action.eq(item);
                 column.push(
