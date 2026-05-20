@@ -13,7 +13,7 @@ impl SnapRadius {
     }
 
     pub(super) fn radius<I: IntNumber>(&self) -> I::Wide {
-        I::Wide::one_shl(self.current as u32)
+        I::Wide::ONE << self.current as u32
     }
 }
 

@@ -258,14 +258,12 @@ pub(super) struct GridLayout<I: IntNumber> {
 impl<I: IntNumber> GridLayout<I> {
     #[inline]
     pub(super) fn index(&self, x: I) -> usize {
-        let step = I::Wide::one_shl(self.power);
-        ((x.wide() - self.min_x.wide()) / step).to_usize()
+        ((x - self.min_x) >> self.power).to_usize()
     }
 
     #[inline]
     pub(super) fn pos(&self, index: usize) -> I {
-        let offset = I::Wide::from_usize(index) * I::Wide::one_shl(self.power);
-        I::from_wide(offset + self.min_x.wide())
+        I::from_usize(index << self.power) + self.min_x
     }
 
     pub(super) fn new<It>(iter: It, count: usize) -> Option<Self>
