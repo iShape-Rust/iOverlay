@@ -13,6 +13,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
@@ -98,7 +99,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     pub fn new_empty(options: OverlayOptions<P::Scalar>, solver: Solver, capacity: usize) -> Self {
         let clean_result = options.clean_result;
         let adapter = FloatPointAdapter::new(FloatRect::zero());
-        let overlay = Overlay::new_custom(capacity, options.int_default(), solver);
+        let overlay = Overlay::new_custom(capacity, options.int_default::<i32>(), solver);
         Self {
             overlay,
             clean_result,
@@ -389,22 +390,22 @@ impl<T: FloatNumber> OverlayOptions<T> {
     pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>, I: IntNumber>(
         &self,
         adapter: &FloatPointAdapter<P, I>,
-    ) -> IntOverlayOptions {
+    ) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
-            min_output_area: adapter.round_sqr_len_to_int(self.min_output_area).to_usize() as u64,
+            min_output_area: adapter.round_sqr_len_to_int(self.min_output_area).to_uint(),
             ogc: self.ogc,
         }
     }
 
-    pub(crate) fn int_default(&self) -> IntOverlayOptions {
+    pub(crate) fn int_default<I: IntNumber>(&self) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
-            min_output_area: 0,
+            min_output_area: <I::Wide as WideIntNumber>::UInt::ZERO,
             ogc: self.ogc,
         }
     }

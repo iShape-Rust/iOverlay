@@ -15,6 +15,8 @@ use crate::split::solver::SplitSolver;
 use crate::vector::edge::{DataVectorEdge, VectorShape};
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_shape::int::count::PointsCount;
@@ -29,7 +31,7 @@ use super::graph::{OverlayGraph, OverlayNode};
 /// during the Boolean operation process. You can use this to adjust output
 /// direction, eliminate small artifacts, or retain collinear points.
 #[derive(Debug, Clone, Copy)]
-pub struct IntOverlayOptions {
+pub struct IntOverlayOptions<U: UIntNumber> {
     /// Preserve collinear points in the input before Boolean operations.
     pub preserve_input_collinear: bool,
 
@@ -40,7 +42,7 @@ pub struct IntOverlayOptions {
     pub preserve_output_collinear: bool,
 
     /// Minimum area threshold to include a contour in the result.
-    pub min_output_area: u64,
+    pub min_output_area: U,
 
     /// If true, extract OGC-valid shapes.
     pub ogc: bool,
@@ -66,7 +68,7 @@ pub enum ContourDirection {
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 pub struct Overlay<I: IntNumber + Expiration> {
     pub solver: Solver,
-    pub options: IntOverlayOptions,
+    pub options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
     pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean, I>>,
     pub(crate) split_solver: SplitSolver<I>,
@@ -96,7 +98,11 @@ where
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn new_custom(capacity: usize, options: IntOverlayOptions, solver: Solver) -> Self {
+    pub fn new_custom(
+        capacity: usize,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+        solver: Solver,
+    ) -> Self {
         Self {
             solver,
             options,
@@ -125,7 +131,7 @@ where
     pub fn with_contour_custom(
         subj: &[IntPoint<I>],
         clip: &[IntPoint<I>],
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
         solver: Solver,
     ) -> Self {
         let mut overlay = Self::new_custom(subj.len() + clip.len(), options, solver);
@@ -152,7 +158,7 @@ where
     pub fn with_contours_custom(
         subj: &[IntContour<I>],
         clip: &[IntContour<I>],
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
         solver: Solver,
     ) -> Self {
         let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
@@ -179,7 +185,7 @@ where
     pub fn with_shapes_options(
         subj: &[IntShape<I>],
         clip: &[IntShape<I>],
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
         solver: Solver,
     ) -> Self {
         let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
@@ -406,25 +412,25 @@ where
     }
 }
 
-impl Default for IntOverlayOptions {
+impl<U: UIntNumber> Default for IntOverlayOptions<U> {
     fn default() -> Self {
         Self {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: U::ZERO,
             ogc: false,
         }
     }
 }
 
-impl IntOverlayOptions {
+impl<U: UIntNumber> IntOverlayOptions<U> {
     pub fn keep_all_points() -> Self {
         Self {
             preserve_input_collinear: true,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
-            min_output_area: 0,
+            min_output_area: U::ZERO,
             ogc: false,
         }
     }
@@ -433,7 +439,7 @@ impl IntOverlayOptions {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
-            min_output_area: 0,
+            min_output_area: U::ZERO,
             ogc: false,
         }
     }
@@ -442,7 +448,7 @@ impl IntOverlayOptions {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: U::ZERO,
             ogc: true,
         }
     }

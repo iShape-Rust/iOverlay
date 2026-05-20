@@ -10,6 +10,7 @@ use alloc::vec::Vec;
 use core::ops::ControlFlow;
 use i_float::int::number::int::IntNumber;
 use i_shape::util::reserve::Reserve;
+use i_tree::Expiration;
 
 pub(super) trait InclusionFilterStrategy {
     fn is_included(fill: SegmentFill) -> bool;
@@ -45,7 +46,7 @@ pub(crate) trait GraphNode {
     fn with_indices(indices: &[usize]) -> Self;
 }
 
-pub(crate) struct GraphBuilder<C, N, I: IntNumber + i_tree::Expiration, D = ()> {
+pub(crate) struct GraphBuilder<C, N, I: IntNumber + Expiration, D = ()> {
     sweep_runner: SweepRunner<C, I>,
     pub(super) links: Vec<OverlayLink<I, D>>,
     pub(super) nodes: Vec<N>,
@@ -57,7 +58,7 @@ impl<C, N, I, D> GraphBuilder<C, N, I, D>
 where
     C: WindingCount,
     N: GraphNode,
-    I: IntNumber + i_tree::Expiration,
+    I: IntNumber + Expiration,
     D: OverlayEdgeData<C>,
 {
     #[inline]

@@ -22,7 +22,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -30,7 +30,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -62,7 +62,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -70,7 +70,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 

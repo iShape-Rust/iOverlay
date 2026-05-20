@@ -8,6 +8,7 @@ use crate::string::split::{BinStore, Split};
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
@@ -40,7 +41,11 @@ impl<I: IntNumber + Expiration + SortKey> StringGraph<'_, I> {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    pub fn extract_shapes_custom(&self, string_rule: StringRule, options: IntOverlayOptions) -> IntShapes<I> {
+    pub fn extract_shapes_custom(
+        &self,
+        string_rule: StringRule,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+    ) -> IntShapes<I> {
         let clockwise = options.output_direction == ContourDirection::Clockwise;
         let mut fills = self.filter(string_rule);
         let mut shapes = Vec::new();

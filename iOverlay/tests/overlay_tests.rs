@@ -23,11 +23,11 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
-        fn overlay(test: &BooleanTest, options: IntOverlayOptions, solver: Solver) -> Overlay<i32> {
+        fn overlay(test: &BooleanTest, options: IntOverlayOptions<u64>, solver: Solver) -> Overlay<i32> {
             Overlay::with_contours_custom(&test.subj_paths, &test.clip_paths, options, solver)
         }
 

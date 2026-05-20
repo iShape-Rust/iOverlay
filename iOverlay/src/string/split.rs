@@ -10,7 +10,7 @@ use i_shape::util::reserve::Reserve;
 pub(super) trait Split<I: IntNumber> {
     fn split_loops(
         self,
-        min_area: u64,
+        min_area: <I::Wide as WideIntNumber>::UInt,
         contour_buffer: &mut IntContour<I>,
         bin_store: &mut BinStore<I>,
     ) -> Vec<Self>
@@ -21,7 +21,7 @@ pub(super) trait Split<I: IntNumber> {
 impl<I: IntNumber> Split<I> for IntContour<I> {
     fn split_loops(
         self,
-        min_area: u64,
+        min_area: <I::Wide as WideIntNumber>::UInt,
         contour_buffer: &mut IntContour<I>,
         bin_store: &mut BinStore<I>,
     ) -> Vec<Self> {
@@ -162,17 +162,17 @@ impl<I: IntNumber> BinStore<I> {
 }
 
 trait ValidateArea<I: IntNumber> {
-    fn validate_area(&self, min_area: u64) -> bool;
+    fn validate_area(&self, min_area: <I::Wide as WideIntNumber>::UInt) -> bool;
 }
 
 impl<I: IntNumber> ValidateArea<I> for IntContour<I> {
     #[inline]
-    fn validate_area(&self, min_area: u64) -> bool {
-        if min_area == 0 {
+    fn validate_area(&self, min_area: <I::Wide as WideIntNumber>::UInt) -> bool {
+        if min_area == <I::Wide as WideIntNumber>::UInt::ZERO {
             return true;
         }
         let abs_area = self.unsafe_area().unsigned_abs() >> 1;
-        abs_area < <I::Wide as WideIntNumber>::UInt::from_u64(min_area)
+        abs_area < min_area
     }
 }
 

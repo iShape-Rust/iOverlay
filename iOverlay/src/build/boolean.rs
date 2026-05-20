@@ -20,6 +20,7 @@ use crate::segm::segment::{
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_key_sort::sort::key::SortKey;
 use i_shape::util::reserve::Reserve;
 use i_tree::Expiration;
@@ -33,7 +34,7 @@ where
     pub(crate) fn build_boolean_all(
         &mut self,
         fill_rule: FillRule,
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
         solver: &Solver,
         segments: &[Segment<ShapeCountBoolean, I, D>],
     ) -> OverlayGraph<'_, I, D> {
@@ -47,7 +48,7 @@ where
         &mut self,
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
         solver: &Solver,
         segments: &[Segment<ShapeCountBoolean, I, D>],
     ) -> OverlayGraph<'_, I, D> {
@@ -80,7 +81,11 @@ where
     }
 
     #[inline]
-    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph<'_, I, D> {
+    fn boolean_graph(
+        &mut self,
+        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+        solver: &Solver,
+    ) -> OverlayGraph<'_, I, D> {
         self.build_nodes_and_connect_links(solver);
         OverlayGraph {
             nodes: &self.nodes,

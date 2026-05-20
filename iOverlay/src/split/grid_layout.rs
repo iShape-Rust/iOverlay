@@ -120,8 +120,9 @@ impl<I: IntNumber> FragmentBuffer<I> {
         let k = (height << p) / width;
 
         let mut w = (self.layout.pos(i0 + 1).wide() - s.a.x.wide()).to_uint();
-        let dw = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::one_shl(self.layout.power);
+
         let one = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::ONE;
+        let dw = one << self.layout.power;
 
         for i in i0..i1 {
             let h_min = (w * k) >> p;
