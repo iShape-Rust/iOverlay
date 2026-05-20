@@ -12,6 +12,8 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
@@ -384,15 +386,15 @@ impl<T: FloatNumber> Default for OverlayOptions<T> {
 }
 
 impl<T: FloatNumber> OverlayOptions<T> {
-    pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>>(
+    pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>, I: IntNumber>(
         &self,
-        adapter: &FloatPointAdapter<P, i32>,
+        adapter: &FloatPointAdapter<P, I>,
     ) -> IntOverlayOptions {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
-            min_output_area: adapter.round_sqr_len_to_int(self.min_output_area) as u64,
+            min_output_area: adapter.round_sqr_len_to_int(self.min_output_area).to_usize() as u64,
             ogc: self.ogc,
         }
     }

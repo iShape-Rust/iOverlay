@@ -26,7 +26,7 @@ impl<I: IntNumber> SplitSolver<I> {
 
 impl<I> SplitSolver<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
     pub(crate) fn split_segments<C: WindingCount, D: OverlayEdgeData<C>>(

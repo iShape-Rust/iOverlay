@@ -11,7 +11,7 @@ use i_tree::{Expiration, LayoutNumber};
 
 impl<I> SplitSolver<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     pub(super) fn list_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,

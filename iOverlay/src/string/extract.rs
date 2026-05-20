@@ -7,10 +7,13 @@ use crate::string::rule::StringRule;
 use crate::string::split::{BinStore, Split};
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
+use i_tree::Expiration;
 
-impl StringGraph<'_, i32> {
+impl<I: IntNumber + Expiration + SortKey> StringGraph<'_, I> {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// # Shape Representation
@@ -21,7 +24,7 @@ impl StringGraph<'_, i32> {
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
-    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes<i32> {
+    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes<I> {
         self.extract_shapes_custom(string_rule, Default::default())
     }
 
@@ -37,11 +40,7 @@ impl StringGraph<'_, i32> {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    pub fn extract_shapes_custom(
-        &self,
-        string_rule: StringRule,
-        options: IntOverlayOptions,
-    ) -> IntShapes<i32> {
+    pub fn extract_shapes_custom(&self, string_rule: StringRule, options: IntOverlayOptions) -> IntShapes<I> {
         let clockwise = options.output_direction == ContourDirection::Clockwise;
         let mut fills = self.filter(string_rule);
         let mut shapes = Vec::new();
@@ -89,7 +88,7 @@ impl StringGraph<'_, i32> {
     }
 
     #[inline]
-    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath<i32> {
+    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath<I> {
         let start_link = unsafe {
             // SAFETY: start_index originates from iterating the fills array, which mirrors links.
             self.links.get_unchecked(start_index)
@@ -99,7 +98,7 @@ impl StringGraph<'_, i32> {
         let mut node_id = start_link.b.id;
         let last_node_id = start_link.a.id;
 
-        let mut path = IntPath::<i32>::new();
+        let mut path = IntPath::<I>::new();
         path.push(start_link.a.point);
 
         fills[start_index] = start_link.visit_fill(fills[start_index], start_link.a.id, clockwise);
@@ -255,6 +254,31 @@ mod tests {
         ];
 
         let mut overlay = StringOverlay::with_shape(&paths);
+        overlay.add_string_contour(&window);
+        let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
+
+        let r = graph.extract_shapes_custom(StringRule::Slice, Default::default());
+
+        assert_eq!(r.len(), 2);
+    }
+
+    #[test]
+    fn test_i64_overlay() {
+        let paths = vec![vec![
+            IntPoint::<i64>::new(-10, 10),
+            IntPoint::new(-10, -10),
+            IntPoint::new(10, -10),
+            IntPoint::new(10, 10),
+        ]];
+
+        let window = vec![
+            IntPoint::new(-5, -5),
+            IntPoint::new(-5, 5),
+            IntPoint::new(5, 5),
+            IntPoint::new(5, -5),
+        ];
+
+        let mut overlay = StringOverlay::<i64>::with_shape(&paths);
         overlay.add_string_contour(&window);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
 

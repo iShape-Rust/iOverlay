@@ -9,14 +9,15 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
+use i_float::int::number::int::IntNumber;
 
-pub(super) trait JoinBuilder<P: FloatPointCompatible> {
+pub(super) trait JoinBuilder<P: FloatPointCompatible, I: IntNumber> {
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     );
     fn capacity(&self) -> usize;
     fn additional_offset(&self, radius: P::Scalar) -> P::Scalar;
@@ -26,31 +27,31 @@ pub(super) struct BevelJoinBuilder;
 
 impl BevelJoinBuilder {
     #[inline]
-    fn join_top<P: FloatPointCompatible>(
+    fn join_top<P: FloatPointCompatible, I: IntNumber>(
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         Self::add_segment(&s0.b_top, &s1.a_top, adapter, segments);
     }
 
     #[inline]
-    fn join_bot<P: FloatPointCompatible>(
+    fn join_bot<P: FloatPointCompatible, I: IntNumber>(
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         Self::add_segment(&s1.a_bot, &s0.b_bot, adapter, segments);
     }
 
     #[inline]
-    fn add_segment<P: FloatPointCompatible>(
+    fn add_segment<P: FloatPointCompatible, I: IntNumber>(
         a: &P,
         b: &P,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let ia = adapter.float_to_int(a);
         let ib = adapter.float_to_int(b);
@@ -60,14 +61,14 @@ impl BevelJoinBuilder {
     }
 }
 
-impl<P: FloatPointCompatible> JoinBuilder<P> for BevelJoinBuilder {
+impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for BevelJoinBuilder {
     #[inline]
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         Self::join_top(s0, s1, adapter, segments);
         Self::join_bot(s0, s1, adapter, segments);
@@ -117,13 +118,13 @@ impl<T: FloatNumber> MiterJoinBuilder<T> {
     }
 }
 
-impl<P: FloatPointCompatible> JoinBuilder<P> for MiterJoinBuilder<P::Scalar> {
+impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for MiterJoinBuilder<P::Scalar> {
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
         if cross_product.abs() < P::Scalar::from_float(0.0001) {
@@ -237,13 +238,13 @@ impl<T: FloatNumber> RoundJoinBuilder<T> {
         }
     }
 }
-impl<P: FloatPointCompatible> JoinBuilder<P> for RoundJoinBuilder<P::Scalar> {
+impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for RoundJoinBuilder<P::Scalar> {
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         if self.limit_dot_product < dot_product {

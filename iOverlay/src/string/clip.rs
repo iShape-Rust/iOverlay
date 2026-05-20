@@ -7,9 +7,12 @@ use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
+use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClipRule {
@@ -20,9 +23,9 @@ pub struct ClipRule {
     pub boundary_included: bool,
 }
 
-impl StringGraph<'_, i32> {
+impl<I: IntNumber> StringGraph<'_, I> {
     #[inline]
-    pub(super) fn into_clip_string_lines(self) -> Vec<IntPath<i32>> {
+    pub(super) fn into_clip_string_lines(self) -> Vec<IntPath<I>> {
         let mut paths = Vec::new();
 
         let links = self.links;
@@ -61,10 +64,10 @@ impl StringGraph<'_, i32> {
     #[inline]
     fn find_next_point(
         nodes: &[Vec<usize>],
-        links: &mut [OverlayLink<i32>],
-        a: IdPoint<i32>,
+        links: &mut [OverlayLink<I>],
+        a: IdPoint<I>,
         is_out_node: bool,
-    ) -> Option<IdPoint<i32>> {
+    ) -> Option<IdPoint<I>> {
         let node = unsafe {
             // SAFETY: a.id comes from an existing link endpoint, so it indexes nodes.
             nodes.get_unchecked(a.id)
@@ -89,7 +92,7 @@ const CLIP_BACK: SegmentFill = STRING_BACK_CLIP << 2;
 const CLIP_FORWARD: SegmentFill = STRING_FORWARD_CLIP << 2;
 const CLIP_ALL: SegmentFill = CLIP_BACK | CLIP_FORWARD;
 
-impl OverlayLink<i32> {
+impl<I: IntNumber> OverlayLink<I> {
     #[inline]
     fn visit_if_possible(&mut self, is_forward: bool) -> bool {
         if is_forward {
@@ -119,7 +122,7 @@ impl OverlayLink<i32> {
     }
 }
 
-pub trait IntClip {
+pub trait IntClip<I: IntNumber> {
     /// Clips a single line according to the specified build and clip rules.
     /// - `line`: The line to be clipped, represented by two points.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
@@ -127,7 +130,7 @@ pub trait IntClip {
     ///
     /// # Returns
     /// A vector of `IntPath<i32>` instances representing the clipped sections of the input line.
-    fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>>;
+    fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 
     /// Clips multiple lines according to the specified build and clip rules.
     /// - `lines`: A slice of `IntLine` instances representing lines to be clipped.
@@ -136,7 +139,7 @@ pub trait IntClip {
     ///
     /// # Returns
     /// A vector of `IntPath<i32>` instances containing the clipped portions of the input lines.
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>>;
+    fn clip_lines(&self, lines: &[IntLine<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 
     /// Clips a single path according to the specified build and clip rules.
     /// - `path`: A reference to an `IntPath<i32>`, which is a sequence of points representing the path to be clipped.
@@ -145,7 +148,7 @@ pub trait IntClip {
     ///
     /// # Returns
     /// A vector of `IntPath<i32>` instances representing the clipped sections of the path.
-    fn clip_path(&self, path: &IntPath<i32>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>>;
+    fn clip_path(&self, path: &IntPath<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 
     /// Clips multiple paths according to the specified build and clip rules.
     /// - `paths`: A slice of `IntPath<i32>` instances, each representing a path to be clipped.
@@ -154,113 +157,102 @@ pub trait IntClip {
     ///
     /// # Returns
     /// A vector of `IntPath<i32>` instances containing the clipped portions of the input paths.
-    fn clip_paths(
-        &self,
-        paths: &[IntPath<i32>],
-        fill_rule: FillRule,
-        clip_rule: ClipRule,
-    ) -> Vec<IntPath<i32>>;
+    fn clip_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 }
 
-impl IntClip for IntShapes<i32> {
+impl<I> IntClip<I> for IntShapes<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     #[inline]
-    fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_line(line);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_lines(&self, lines: &[IntLine<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_lines(lines);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_path(&self, path: &IntPath<i32>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_path(&self, path: &IntPath<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_path(path);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_paths(
-        &self,
-        paths: &[IntPath<i32>],
-        fill_rule: FillRule,
-        clip_rule: ClipRule,
-    ) -> Vec<IntPath<i32>> {
+    fn clip_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shapes(self);
         overlay.add_string_paths(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 }
 
-impl IntClip for IntShape<i32> {
+impl<I> IntClip<I> for IntShape<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     #[inline]
-    fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_line(line);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_lines(&self, lines: &[IntLine<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_lines(lines);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_path(&self, path: &IntPath<i32>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_path(&self, path: &IntPath<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_path(path);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_paths(
-        &self,
-        paths: &[IntPath<i32>],
-        fill_rule: FillRule,
-        clip_rule: ClipRule,
-    ) -> Vec<IntPath<i32>> {
+    fn clip_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape(self);
         overlay.add_string_paths(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 }
 
-impl IntClip for [IntPoint] {
+impl<I> IntClip<I> for [IntPoint<I>]
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     #[inline]
-    fn clip_line(&self, line: IntLine, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_line(line);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_lines(&self, lines: &[IntLine], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_lines(&self, lines: &[IntLine<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_lines(lines);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_path(&self, path: &IntPath<i32>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    fn clip_path(&self, path: &IntPath<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_path(path);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 
     #[inline]
-    fn clip_paths(
-        &self,
-        paths: &[IntPath<i32>],
-        fill_rule: FillRule,
-        clip_rule: ClipRule,
-    ) -> Vec<IntPath<i32>> {
+    fn clip_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::with_shape_contour(self);
         overlay.add_string_paths(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
@@ -331,6 +323,27 @@ mod tests {
 
         assert_eq!(result_0.len(), 1);
         assert_eq!(result_1.len(), 2);
+    }
+
+    #[test]
+    fn test_i64_clip() {
+        let path = vec![
+            IntPoint::<i64>::new(-10, -10),
+            IntPoint::new(-10, 10),
+            IntPoint::new(10, 10),
+            IntPoint::new(10, -10),
+        ];
+
+        let result = path.clip_line(
+            [IntPoint::new(0, -15), IntPoint::new(0, 15)],
+            FillRule::NonZero,
+            ClipRule {
+                invert: false,
+                boundary_included: false,
+            },
+        );
+
+        assert_eq!(result.len(), 1);
     }
 
     #[test]

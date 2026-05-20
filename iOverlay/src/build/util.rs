@@ -10,7 +10,7 @@ impl<C, N, I> GraphBuilder<C, N, I>
 where
     C: WindingCount,
     N: GraphNode,
-    I: IntNumber + i_tree::Expiration + SortKey + Send + Sync,
+    I: IntNumber + i_tree::Expiration + SortKey,
 {
     pub(crate) fn test_contour_for_loops(
         &mut self,

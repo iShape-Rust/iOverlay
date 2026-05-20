@@ -503,7 +503,7 @@ mod tests {
         points
     }
 
-    fn random_lines(radius: i32, n: usize) -> Vec<IntLine> {
+    fn random_lines(radius: i32, n: usize) -> Vec<IntLine<i32>> {
         let a = radius / 2;
         let range = -a..=a;
         let mut lines = Vec::with_capacity(n);

@@ -38,7 +38,7 @@ pub trait Simplify<I: IntNumber> {
 
 impl<I> Simplify<I> for [IntPoint<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<I> {
@@ -51,7 +51,7 @@ where
 
 impl<I> Simplify<I> for [IntContour<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<I> {
@@ -64,7 +64,7 @@ where
 
 impl<I> Simplify<I> for [IntShape<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions) -> IntShapes<I> {
@@ -80,7 +80,7 @@ enum ContourFillDirection {
 
 impl<I> Overlay<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     /// Fast-path simplification for a single contour.
     ///

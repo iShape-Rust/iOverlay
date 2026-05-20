@@ -13,34 +13,36 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 
-trait OutlineBuild<P: FloatPointCompatible> {
+trait OutlineBuild<P: FloatPointCompatible, I: IntNumber> {
     fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     );
 
     fn capacity(&self, points_count: usize) -> usize;
     fn additional_offset(&self, radius: P::Scalar) -> P::Scalar;
 }
 
-pub(super) struct OutlineBuilder<P: FloatPointCompatible> {
-    builder: Box<dyn OutlineBuild<P>>,
+pub(super) struct OutlineBuilder<P: FloatPointCompatible, I: IntNumber> {
+    builder: Box<dyn OutlineBuild<P, I>>,
 }
 
-struct Builder<J: JoinBuilder<P>, P: FloatPointCompatible> {
+struct Builder<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> {
     extend: bool,
     radius: P::Scalar,
     join_builder: J,
-    _phantom: PhantomData<P>,
+    _phantom: PhantomData<(P, I)>,
 }
 
-impl<P: FloatPointCompatible + 'static> OutlineBuilder<P> {
-    pub(super) fn new(radius: P::Scalar, join: &LineJoin<P::Scalar>) -> OutlineBuilder<P> {
+impl<P: FloatPointCompatible + 'static, I: IntNumber + 'static> OutlineBuilder<P, I> {
+    pub(super) fn new(radius: P::Scalar, join: &LineJoin<P::Scalar>) -> OutlineBuilder<P, I> {
         let extend = radius > P::Scalar::from_float(0.0);
-        let builder: Box<dyn OutlineBuild<P>> = {
+        let builder: Box<dyn OutlineBuild<P, I>> = {
             match join {
                 LineJoin::Miter(ratio) => Box::new(Builder {
                     extend,
@@ -70,8 +72,8 @@ impl<P: FloatPointCompatible + 'static> OutlineBuilder<P> {
     pub(super) fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         self.builder.build(path, adapter, segments);
     }
@@ -87,13 +89,13 @@ impl<P: FloatPointCompatible + 'static> OutlineBuilder<P> {
     }
 }
 
-impl<J: JoinBuilder<P>, P: FloatPointCompatible> OutlineBuild<P> for Builder<J, P> {
+impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> OutlineBuild<P, I> for Builder<J, P, I> {
     #[inline]
     fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         if path.len() < 2 {
             return;
@@ -113,12 +115,12 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> OutlineBuild<P> for Builder<J, 
     }
 }
 
-impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
+impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> Builder<J, P, I> {
     fn build(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let iter = path.iter().map(|p| adapter.float_to_int(p));
         let mut uniq_segments = if let Some(iter) = UniqueSegmentsIter::new(iter) {
@@ -150,17 +152,20 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     #[inline]
     fn feed_join(
         &self,
-        s0: &OffsetSection<P>,
-        s1: &OffsetSection<P>,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        s0: &OffsetSection<P, I>,
+        s1: &OffsetSection<P, I>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let vi = s1.b - s1.a;
         let vp = s0.b - s0.a;
 
         let cross = vi.cross_product(vp);
-        debug_assert!(cross != 0, "not possible! UniqueSegmentsIter guarantee it");
-        let outer_corner = (cross > 0) == self.extend;
+        debug_assert!(
+            cross != I::Wide::ZERO,
+            "not possible! UniqueSegmentsIter guarantee it"
+        );
+        let outer_corner = (cross > I::Wide::ZERO) == self.extend;
         if outer_corner {
             if s0.b_top != s1.a_top {
                 self.join_builder.add_join(s0, s1, adapter, segments);
@@ -173,9 +178,9 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     }
 }
 
-impl<P: FloatPointCompatible> OffsetSection<P> {
+impl<P: FloatPointCompatible, I: IntNumber> OffsetSection<P, I> {
     #[inline]
-    fn new(radius: P::Scalar, s: &UniqueSegment, adapter: &FloatPointAdapter<P, i32>) -> Self {
+    fn new(radius: P::Scalar, s: &UniqueSegment<I>, adapter: &FloatPointAdapter<P, I>) -> Self {
         let a = adapter.int_to_float(&s.a);
         let b = adapter.int_to_float(&s.b);
         let ab = FloatPointMath::sub(&b, &a);
@@ -207,5 +212,30 @@ impl<T> VecPushSome<T> for Vec<T> {
         if let Some(v) = value {
             self.push(v);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::mesh::outline::builder::OutlineBuilder;
+    use crate::mesh::style::LineJoin;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use crate::segm::segment::Segment;
+    use alloc::vec::Vec;
+    use i_float::adapter::FloatPointAdapter;
+    use i_float::float::rect::FloatRect;
+
+    #[test]
+    fn test_i64_builder() {
+        let path = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]];
+        let mut rect = FloatRect::with_iter(path.iter()).unwrap();
+        rect.add_offset(2.0);
+        let adapter = FloatPointAdapter::<[f64; 2], i64>::new(rect);
+        let builder = OutlineBuilder::<[f64; 2], i64>::new(1.0, &LineJoin::Bevel);
+
+        let mut segments = Vec::<Segment<ShapeCountBoolean, i64>>::new();
+        builder.build(&path, &adapter, &mut segments);
+
+        assert!(!segments.is_empty());
     }
 }

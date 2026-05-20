@@ -29,7 +29,7 @@ impl<I: IntNumber + Expiration> ExpiredVal<I> for IdSegment<I> {
 
 impl<I> SplitSolver<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,

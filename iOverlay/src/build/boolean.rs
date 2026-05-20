@@ -26,7 +26,7 @@ use i_tree::Expiration;
 
 impl<I, D> GraphBuilder<ShapeCountBoolean, OverlayNode, I, D>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
     D: OverlayEdgeData,
 {
     #[inline]

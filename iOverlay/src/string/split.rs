@@ -1,26 +1,29 @@
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::IntContour;
 use i_shape::util::reserve::Reserve;
 
-pub(super) trait Split {
+pub(super) trait Split<I: IntNumber> {
     fn split_loops(
         self,
         min_area: u64,
-        contour_buffer: &mut IntContour<i32>,
-        bin_store: &mut BinStore,
+        contour_buffer: &mut IntContour<I>,
+        bin_store: &mut BinStore<I>,
     ) -> Vec<Self>
     where
         Self: Sized;
 }
 
-impl Split for IntContour<i32> {
+impl<I: IntNumber> Split<I> for IntContour<I> {
     fn split_loops(
         self,
         min_area: u64,
-        contour_buffer: &mut IntContour<i32>,
-        bin_store: &mut BinStore,
+        contour_buffer: &mut IntContour<I>,
+        bin_store: &mut BinStore<I>,
     ) -> Vec<Self> {
         if self.is_empty() {
             return Vec::new();
@@ -30,7 +33,7 @@ impl Split for IntContour<i32> {
 
         bin_store.init(&self);
 
-        let mut result: Vec<IntContour<i32>> = Vec::with_capacity(16);
+        let mut result: Vec<IntContour<I>> = Vec::with_capacity(16);
 
         for point in self {
             let next_pos = contour_buffer.len() + 1;
@@ -62,8 +65,8 @@ impl Split for IntContour<i32> {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct PointItem {
-    point: IntPoint,
+struct PointItem<I: IntNumber> {
+    point: IntPoint<I>,
     pos: usize,
 }
 
@@ -73,13 +76,13 @@ struct Bin {
     data: usize,
 }
 
-pub(super) struct BinStore {
+pub(super) struct BinStore<I: IntNumber> {
     mask: u32,
     bins: Vec<Bin>,
-    items: Vec<PointItem>,
+    items: Vec<PointItem<I>>,
 }
 
-impl BinStore {
+impl<I: IntNumber> BinStore<I> {
     pub(super) fn new() -> Self {
         Self {
             mask: 0,
@@ -88,7 +91,7 @@ impl BinStore {
         }
     }
 
-    fn init(&mut self, contour: &IntContour<i32>) {
+    fn init(&mut self, contour: &IntContour<I>) {
         let log = contour.len().ilog2().saturating_sub(4).clamp(1, 30);
         let bins_count = (1 << log) as usize;
 
@@ -123,7 +126,7 @@ impl BinStore {
     }
 
     #[inline]
-    fn insert_if_not_exist(&mut self, point: IntPoint, pos: usize) -> usize {
+    fn insert_if_not_exist(&mut self, point: IntPoint<I>, pos: usize) -> usize {
         let index = self.bin_index(point);
         let bin = unsafe {
             // SAFETY: insert_if_not_exist only touches bins within the pre-sized array; bin_index shares the same invariant.
@@ -150,26 +153,26 @@ impl BinStore {
     }
 
     #[inline]
-    fn bin_index(&self, p: IntPoint) -> usize {
-        let x = p.x.unsigned_abs();
-        let y = p.y.unsigned_abs();
-        let hash = x.wrapping_mul(31) ^ y.wrapping_mul(17);
-        (hash & self.mask) as usize
+    fn bin_index(&self, p: IntPoint<I>) -> usize {
+        let x = p.x.wide().wrapping_mul(I::Wide::from_usize(31));
+        let y = p.y.wide().wrapping_mul(I::Wide::from_usize(17));
+        let hash = x.wrapping_add(y);
+        (hash & I::Wide::from_usize(self.mask as usize)).to_usize()
     }
 }
 
-trait ValidateArea {
+trait ValidateArea<I: IntNumber> {
     fn validate_area(&self, min_area: u64) -> bool;
 }
 
-impl ValidateArea for IntContour<i32> {
+impl<I: IntNumber> ValidateArea<I> for IntContour<I> {
     #[inline]
     fn validate_area(&self, min_area: u64) -> bool {
         if min_area == 0 {
             return true;
         }
         let abs_area = self.unsafe_area().unsigned_abs() >> 1;
-        abs_area < min_area
+        abs_area < <I::Wide as WideIntNumber>::UInt::from_u64(min_area)
     }
 }
 

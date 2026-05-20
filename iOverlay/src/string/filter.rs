@@ -3,8 +3,9 @@ use crate::segm::segment::{SUBJ_BOTH, SUBJ_BOTTOM, SUBJ_TOP};
 use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 
-impl OverlayLink<i32> {
+impl<I: IntNumber> OverlayLink<I> {
     #[inline]
     pub(super) fn visit_fill(&self, fill: u8, node_id: usize, clockwise: bool) -> u8 {
         let is_a = self.a.id == node_id;
@@ -42,7 +43,7 @@ impl OverlayLink<i32> {
     }
 }
 
-impl StringGraph<'_, i32> {
+impl<I: IntNumber> StringGraph<'_, I> {
     #[inline(always)]
     pub(super) fn filter(&self, ext_rule: StringRule) -> Vec<u8> {
         match ext_rule {

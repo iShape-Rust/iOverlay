@@ -115,13 +115,13 @@ impl ShapeBinder {
     }
 }
 
-pub(crate) trait JoinHoles<I: IntNumber + Expiration + SortKey + Send + Sync> {
+pub(crate) trait JoinHoles<I: IntNumber + Expiration + SortKey> {
     fn join_unsorted_holes(&mut self, holes: Vec<IntContour<I>>, clockwise: bool);
     fn join_sorted_holes(&mut self, holes: Vec<IntContour<I>>, anchors: Vec<IdSegment<I>>, clockwise: bool);
     fn scan_join(&mut self, holes: Vec<IntPath<I>>, hole_segments: Vec<IdSegment<I>>, clockwise: bool);
 }
 
-impl<I: IntNumber + Expiration + SortKey + Send + Sync> JoinHoles<I> for Vec<IntShape<I>> {
+impl<I: IntNumber + Expiration + SortKey> JoinHoles<I> for Vec<IntShape<I>> {
     #[inline]
     fn join_unsorted_holes(&mut self, holes: Vec<IntPath<I>>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
@@ -243,7 +243,7 @@ pub(crate) trait SortByAngle {
     fn add_sort_by_angle(&mut self);
 }
 
-impl<I: IntNumber + SortKey + Send + Sync> SortByAngle for [IdSegment<I>] {
+impl<I: IntNumber + SortKey> SortByAngle for [IdSegment<I>] {
     #[inline]
     fn sort_by_a_then_by_angle(&mut self) {
         self.sort_by_two_keys_then_by(

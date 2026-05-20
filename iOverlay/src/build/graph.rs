@@ -11,7 +11,7 @@ use i_tree::Expiration;
 
 impl<I, C, N, D> GraphBuilder<C, N, I, D>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
     C: WindingCount,
     N: GraphNode,
     D: OverlayEdgeData<C>,

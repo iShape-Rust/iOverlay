@@ -21,7 +21,7 @@ use i_tree::Expiration;
 
 impl<I, D> OverlayGraph<'_, I, D>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
     D: OverlayEdgeData,
 {
     pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge<I>> {
@@ -206,7 +206,7 @@ impl<I: IntNumber, D: OverlayEdgeData> StartVectorPathData<I, D> {
 
 trait JoinHoles<I, D>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
     D: OverlayEdgeData,
 {
     fn join_sorted_holes(
@@ -225,7 +225,7 @@ where
 
 impl<I, D> JoinHoles<I, D> for Vec<DataVectorShape<I, D>>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
     D: OverlayEdgeData,
 {
     fn join_sorted_holes(

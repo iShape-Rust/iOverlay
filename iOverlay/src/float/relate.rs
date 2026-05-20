@@ -27,7 +27,7 @@ use i_shape::source::resource::ShapeResource;
 /// For a more ergonomic API, see the [`FloatRelate`] trait which provides
 /// methods directly on shape types.
 pub struct FloatPredicateOverlay<P: FloatPointCompatible> {
-    pub(crate) overlay: PredicateOverlay,
+    pub(crate) overlay: PredicateOverlay<i32>,
     pub(crate) adapter: FloatPointAdapter<P, i32>,
 }
 

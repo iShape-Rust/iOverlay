@@ -13,6 +13,10 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
@@ -21,6 +25,7 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::resource::ShapeResource;
+use i_tree::{Expiration, LayoutNumber};
 
 pub trait OutlineOffset<P: FloatPointCompatible> {
     /// Generates an outline shapes for contours, or shapes.
@@ -139,7 +144,7 @@ where
         style: &OutlineStyle<P::Scalar>,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        match OutlineSolver::prepare(self, style) {
+        match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver.build(self, options),
             None => vec![],
         }
@@ -151,7 +156,7 @@ where
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        match OutlineSolver::prepare(self, style) {
+        match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver.build_into(self, options, output),
             None => output.clear_and_reserve(0, 0),
         }
@@ -181,7 +186,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::prepare(self, style) {
+        let mut solver = match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver,
             None => return Ok(vec![]),
         };
@@ -197,7 +202,7 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::prepare(self, style) {
+        let mut solver = match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -210,14 +215,18 @@ where
     }
 }
 
-struct OutlineSolver<P: FloatPointCompatible> {
-    outer_builder: OutlineBuilder<P>,
-    inner_builder: OutlineBuilder<P>,
-    adapter: FloatPointAdapter<P, i32>,
+struct OutlineSolver<P: FloatPointCompatible, I: IntNumber> {
+    outer_builder: OutlineBuilder<P, I>,
+    inner_builder: OutlineBuilder<P, I>,
+    adapter: FloatPointAdapter<P, I>,
     points_count: usize,
 }
 
-impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
+impl<P, I> OutlineSolver<P, I>
+where
+    P: FloatPointCompatible + 'static,
+    I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+{
     fn prepare<S: ShapeResource<P>>(source: &S, style: &OutlineStyle<P::Scalar>) -> Option<Self> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
@@ -234,8 +243,8 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         }
 
         let join = style.join.clone().normalize();
-        let outer_builder: OutlineBuilder<P> = OutlineBuilder::new(-style.outer_offset, &join);
-        let inner_builder: OutlineBuilder<P> = OutlineBuilder::new(-style.inner_offset, &join);
+        let outer_builder: OutlineBuilder<P, I> = OutlineBuilder::new(-style.outer_offset, &join);
+        let inner_builder: OutlineBuilder<P, I> = OutlineBuilder::new(-style.inner_offset, &join);
 
         let outer_radius = style.outer_offset;
         let inner_radius = style.inner_offset;
@@ -248,7 +257,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(additional_offset);
 
-        let adapter = FloatPointAdapter::new(rect);
+        let adapter = FloatPointAdapter::<P, I>::new(rect);
 
         Some(Self {
             outer_builder,
@@ -268,7 +277,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         &self,
         source: &S,
         options: OverlayOptions<P::Scalar>,
-    ) -> Overlay<i32> {
+    ) -> Overlay<I> {
         let total_capacity = self.outer_builder.capacity(self.points_count);
         let mut overlay = Overlay::new_custom(
             total_capacity,
@@ -281,11 +290,11 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
 
         let mut segments = Vec::new();
         let mut bool_buffer = BooleanExtractionBuffer::default();
-        let mut flat_buffer = FlatContoursBuffer::<i32>::default();
+        let mut flat_buffer = FlatContoursBuffer::<I>::with_capacity(0);
 
         for path in source.iter_paths() {
             let area = path.unsafe_int_area(&self.adapter);
-            if area.abs() <= 1 {
+            if area.unsigned_abs() <= <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(1) {
                 // ignore degenerate paths
                 continue;
             }
@@ -293,7 +302,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
             offset_overlay.clear();
             segments.clear();
 
-            let contour_fill_rule = if area < 0 {
+            let contour_fill_rule = if area < I::Wide::ZERO {
                 offset_overlay.options.output_direction = ContourDirection::CounterClockwise;
                 segments.reserve(self.outer_builder.capacity(path.len()));
                 self.outer_builder.build(path, &self.adapter, &mut segments);
@@ -347,7 +356,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         let clean_result = options.clean_result;
         let mut overlay = self.build_overlay(source, options);
 
-        let mut int_output = FlatContoursBuffer::<i32>::default();
+        let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
         overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);

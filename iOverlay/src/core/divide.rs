@@ -31,12 +31,12 @@ impl<I: IntNumber> SubPath<I> {
     }
 }
 
-pub trait ContourDecomposition {
-    fn decompose_contours(&self) -> Option<Vec<IntContour<i32>>>;
+pub trait ContourDecomposition<I: IntNumber> {
+    fn decompose_contours(&self) -> Option<Vec<IntContour<I>>>;
 }
 
-impl ContourDecomposition for IntContour<i32> {
-    fn decompose_contours(&self) -> Option<Vec<IntContour<i32>>> {
+impl<I: IntNumber> ContourDecomposition<I> for IntContour<I> {
+    fn decompose_contours(&self) -> Option<Vec<IntContour<I>>> {
         if self.len() < 3 {
             return None;
         }
@@ -78,10 +78,10 @@ impl ContourDecomposition for IntContour<i32> {
         let mut i = 0;
         while i < anchors.len() {
             let a = anchors[i];
-            let mut sub_path: SubPath<i32> = if let Some(sub_path) = queue.pop() {
+            let mut sub_path: SubPath<I> = if let Some(sub_path) = queue.pop() {
                 sub_path
             } else {
-                queue.push(SubPath::<i32>::start(a));
+                queue.push(SubPath::<I>::start(a));
                 i += 1;
                 continue;
             };
@@ -92,17 +92,17 @@ impl ContourDecomposition for IntContour<i32> {
                 if let Some(prev) = queue.last_mut() {
                     prev.shift(a);
                 } else {
-                    queue.push(SubPath::<i32>::start(a));
+                    queue.push(SubPath::<I>::start(a));
                 }
             } else {
                 sub_path.join(a, self);
                 queue.push(sub_path);
-                queue.push(SubPath::<i32>::start(a));
+                queue.push(SubPath::<I>::start(a));
             }
             i += 1;
         }
 
-        let mut sub_path: SubPath<i32> = queue.pop().unwrap();
+        let mut sub_path: SubPath<I> = queue.pop().unwrap();
 
         if sub_path.last < self.len() {
             sub_path.path.extend_from_slice(&self[sub_path.last..]);

@@ -18,7 +18,7 @@ use i_tree::Expiration;
 
 impl<I> OverlayGraph<'_, I>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
 {
     pub(crate) fn extract_ogc(
         &self,

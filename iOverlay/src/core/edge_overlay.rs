@@ -12,25 +12,32 @@ use crate::segm::winding::WindingCount;
 use crate::split::solver::SplitSolver;
 use crate::vector::edge::{DataVectorEdge, DataVectorShape};
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
+use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct InputEdge<D> {
-    pub a: IntPoint,
-    pub b: IntPoint,
+pub struct InputEdge<I: IntNumber, D> {
+    pub a: IntPoint<I>,
+    pub b: IntPoint<I>,
     pub data: D,
 }
 
-pub struct EdgeOverlay<D: OverlayEdgeData> {
+pub struct EdgeOverlay<I: IntNumber + Expiration, D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions,
-    pub boolean_buffer: Option<BooleanExtractionBuffer<i32>>,
-    segments: Vec<Segment<ShapeCountBoolean, i32, D>>,
-    split_solver: SplitSolver<i32>,
-    graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, i32, D>,
+    pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
+    segments: Vec<Segment<ShapeCountBoolean, I, D>>,
+    split_solver: SplitSolver<I>,
+    graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, I, D>,
 }
 
-impl<D: OverlayEdgeData> EdgeOverlay<D> {
+impl<I, D> EdgeOverlay<I, D>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    D: OverlayEdgeData,
+{
     pub fn new(capacity: usize) -> Self {
         Self {
             solver: Default::default(),
@@ -38,11 +45,11 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
             boolean_buffer: None,
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, i32, D>::new(),
+            graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, I, D>::new(),
         }
     }
 
-    pub fn add_edge(&mut self, edge: InputEdge<D>, shape_type: ShapeType) {
+    pub fn add_edge(&mut self, edge: InputEdge<I, D>, shape_type: ShapeType) {
         if edge.a == edge.b {
             return;
         }
@@ -53,9 +60,9 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         ));
     }
 
-    pub fn add_edges<I>(&mut self, edges: I, shape_type: ShapeType)
+    pub fn add_edges<It>(&mut self, edges: It, shape_type: ShapeType)
     where
-        I: IntoIterator<Item = InputEdge<D>>,
+        It: IntoIterator<Item = InputEdge<I, D>>,
     {
         for edge in edges {
             self.add_edge(edge, shape_type);
@@ -66,7 +73,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
-    ) -> Vec<DataVectorEdge<i32, D>> {
+    ) -> Vec<DataVectorEdge<I, D>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -87,7 +94,7 @@ impl<D: OverlayEdgeData> EdgeOverlay<D> {
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
-    ) -> Vec<DataVectorShape<i32, D>> {
+    ) -> Vec<DataVectorShape<I, D>> {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
             return Vec::new();

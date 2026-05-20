@@ -17,7 +17,7 @@ use i_shape::source::resource::ShapeResource;
 /// The float-to-integer conversion is controlled by the `FloatPointAdapter` scale:
 /// `x_int = (x_float - offset_x) * scale`. Use a fixed scale if you need predictable precision.
 pub struct FloatStringOverlay<P: FloatPointCompatible> {
-    pub(super) overlay: StringOverlay,
+    pub(super) overlay: StringOverlay<i32>,
     pub(super) adapter: FloatPointAdapter<P, i32>,
 }
 

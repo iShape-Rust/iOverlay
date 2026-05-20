@@ -10,8 +10,11 @@ use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_shape::int::shape::{IntContour, IntShape};
+use i_tree::{Expiration, LayoutNumber};
 
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
@@ -26,24 +29,27 @@ use i_shape::int::shape::{IntContour, IntShape};
 /// use i_overlay::core::relate::PredicateOverlay;
 /// use i_overlay::core::overlay::ShapeType;
 ///
-/// let mut overlay = PredicateOverlay::new(16);
+/// let mut overlay = PredicateOverlay::<i32>::new(16);
 /// // Add subject and clip segments...
 /// let intersects = overlay.intersects();
 /// ```
 ///
 /// For float coordinates, prefer using [`FloatPredicateOverlay`](crate::float::relate::FloatPredicateOverlay)
 /// or the [`FloatRelate`](crate::float::relate::FloatRelate) trait.
-pub struct PredicateOverlay {
+pub struct PredicateOverlay<I: IntNumber + Expiration> {
     /// Solver configuration for segment operations.
     pub solver: Solver,
     /// Fill rule for determining polygon interiors.
     pub fill_rule: FillRule,
-    pub(crate) segments: Vec<Segment<ShapeCountBoolean, i32>>,
-    pub(crate) split_solver: SplitSolver<i32>,
-    sweep_runner: SweepRunner<ShapeCountBoolean, i32>,
+    pub(crate) segments: Vec<Segment<ShapeCountBoolean, I>>,
+    pub(crate) split_solver: SplitSolver<I>,
+    sweep_runner: SweepRunner<ShapeCountBoolean, I>,
 }
 
-impl PredicateOverlay {
+impl<I> PredicateOverlay<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     #[inline]
     pub fn new(capacity: usize) -> Self {
         Self {
@@ -55,7 +61,7 @@ impl PredicateOverlay {
         }
     }
 
-    fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, i32, Output = T>>(&mut self, handler: H) -> T {
+    fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, I, Output = T>>(&mut self, handler: H) -> T {
         if self.segments.is_empty() {
             return T::default();
         }
@@ -73,7 +79,7 @@ impl PredicateOverlay {
     #[inline]
     pub fn intersects(&mut self) -> bool {
         let capacity = self.segments.len();
-        self.evaluate(IntersectsHandler::new(capacity))
+        self.evaluate(IntersectsHandler::<I>::new(capacity))
     }
 
     /// Returns `true` if the interiors of subject and clip shapes overlap.
@@ -92,7 +98,7 @@ impl PredicateOverlay {
     #[inline]
     pub fn touches(&mut self) -> bool {
         let capacity = self.segments.len();
-        self.evaluate(TouchesHandler::new(capacity))
+        self.evaluate(TouchesHandler::<I>::new(capacity))
     }
 
     /// Returns `true` if subject and clip shapes intersect by point coincidence only.
@@ -102,7 +108,7 @@ impl PredicateOverlay {
     #[inline]
     pub fn point_intersects(&mut self) -> bool {
         let capacity = self.segments.len();
-        self.evaluate(PointIntersectsHandler::new(capacity))
+        self.evaluate(PointIntersectsHandler::<I>::new(capacity))
     }
 
     /// Returns `true` if subject is completely within clip.
@@ -120,7 +126,7 @@ impl PredicateOverlay {
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_path_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I, shape_type: ShapeType) {
+    pub fn add_path_iter<It: Iterator<Item = IntPoint<I>>>(&mut self, iter: It, shape_type: ShapeType) {
         self.segments.append_path_iter(iter, shape_type, false);
     }
 
@@ -128,7 +134,7 @@ impl PredicateOverlay {
     /// - `contour`: An array of points that form a closed path.
     /// - `shape_type`: Specifies the role of the added path in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_contour(&mut self, contour: &[IntPoint], shape_type: ShapeType) {
+    pub fn add_contour(&mut self, contour: &[IntPoint<I>], shape_type: ShapeType) {
         self.segments
             .append_path_iter(contour.iter().copied(), shape_type, false);
     }
@@ -137,7 +143,7 @@ impl PredicateOverlay {
     /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_contours(&mut self, contours: &[IntContour<i32>], shape_type: ShapeType) {
+    pub fn add_contours(&mut self, contours: &[IntContour<I>], shape_type: ShapeType) {
         for contour in contours.iter() {
             self.add_contour(contour, shape_type);
         }
@@ -147,7 +153,7 @@ impl PredicateOverlay {
     /// - `shape`: A reference to a `IntShape<i32>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_shape(&mut self, shape: &IntShape<i32>, shape_type: ShapeType) {
+    pub fn add_shape(&mut self, shape: &IntShape<I>, shape_type: ShapeType) {
         self.add_contours(shape, shape_type);
     }
 
@@ -155,7 +161,7 @@ impl PredicateOverlay {
     /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
-    pub fn add_shapes(&mut self, shapes: &[IntShape<i32>], shape_type: ShapeType) {
+    pub fn add_shapes(&mut self, shapes: &[IntShape<I>], shape_type: ShapeType) {
         for shape in shapes.iter() {
             self.add_contours(shape, shape_type);
         }
@@ -186,6 +192,30 @@ mod tests {
         let mut overlay = PredicateOverlay::new(16);
         overlay.add_contour(&square(0, 0, 10), ShapeType::Subject);
         overlay.add_contour(&square(5, 5, 10), ShapeType::Clip);
+        assert!(overlay.intersects());
+    }
+
+    #[test]
+    fn test_add_contour_intersects_i64() {
+        let mut overlay = PredicateOverlay::<i64>::new(16);
+        overlay.add_contour(
+            &[
+                IntPoint::new(0, 0),
+                IntPoint::new(0, 10),
+                IntPoint::new(10, 10),
+                IntPoint::new(10, 0),
+            ],
+            ShapeType::Subject,
+        );
+        overlay.add_contour(
+            &[
+                IntPoint::new(5, 5),
+                IntPoint::new(5, 15),
+                IntPoint::new(15, 15),
+                IntPoint::new(15, 5),
+            ],
+            ShapeType::Clip,
+        );
         assert!(overlay.intersects());
     }
 

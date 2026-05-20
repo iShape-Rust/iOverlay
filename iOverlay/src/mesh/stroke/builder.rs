@@ -6,59 +6,65 @@ use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_float::int::number::int::IntNumber;
 
-trait StrokeBuild<P: FloatPointCompatible> {
+trait StrokeBuild<P: FloatPointCompatible, I: IntNumber> {
     fn build(
         &self,
         path: &[P],
         is_closed_path: bool,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     );
 
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize;
     fn additional_offset(&self, radius: P::Scalar) -> P::Scalar;
 }
 
-pub(super) struct StrokeBuilder<P: FloatPointCompatible> {
-    builder: Box<dyn StrokeBuild<P>>,
+pub(super) struct StrokeBuilder<P: FloatPointCompatible, I: IntNumber> {
+    builder: Box<dyn StrokeBuild<P, I>>,
 }
 
-struct Builder<J: JoinBuilder<P>, P: FloatPointCompatible> {
+struct Builder<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> {
     radius: P::Scalar,
     join_builder: J,
     start_cap_builder: CapBuilder<P>,
     end_cap_builder: CapBuilder<P>,
+    _phantom: PhantomData<I>,
 }
 
-impl<P: FloatPointCompatible + 'static> StrokeBuilder<P> {
-    pub(super) fn new(style: StrokeStyle<P>) -> StrokeBuilder<P> {
+impl<P: FloatPointCompatible + 'static, I: IntNumber + 'static> StrokeBuilder<P, I> {
+    pub(super) fn new(style: StrokeStyle<P>) -> StrokeBuilder<P, I> {
         let radius = P::Scalar::from_float(0.5 * style.width.to_f64().max(0.0));
 
         let start_cap_builder = CapBuilder::new(style.start_cap.normalize(), radius);
         let end_cap_builder = CapBuilder::new(style.end_cap.normalize(), radius);
 
-        let builder: Box<dyn StrokeBuild<P>> = match style.join.normalize() {
+        let builder: Box<dyn StrokeBuild<P, I>> = match style.join.normalize() {
             LineJoin::Miter(ratio) => Box::new(Builder {
                 radius,
                 join_builder: MiterJoinBuilder::new(ratio, radius),
                 start_cap_builder,
                 end_cap_builder,
+                _phantom: Default::default(),
             }),
             LineJoin::Round(ratio) => Box::new(Builder {
                 radius,
                 join_builder: RoundJoinBuilder::new(ratio, radius),
                 start_cap_builder,
                 end_cap_builder,
+                _phantom: Default::default(),
             }),
             LineJoin::Bevel => Box::new(Builder {
                 radius,
                 join_builder: BevelJoinBuilder {},
                 start_cap_builder,
                 end_cap_builder,
+                _phantom: Default::default(),
             }),
         };
 
@@ -70,8 +76,8 @@ impl<P: FloatPointCompatible + 'static> StrokeBuilder<P> {
         &self,
         path: &[P],
         is_closed_path: bool,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         self.builder.build(path, is_closed_path, adapter, segments);
     }
@@ -87,14 +93,14 @@ impl<P: FloatPointCompatible + 'static> StrokeBuilder<P> {
     }
 }
 
-impl<J: JoinBuilder<P>, P: FloatPointCompatible> StrokeBuild<P> for Builder<J, P> {
+impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> StrokeBuild<P, I> for Builder<J, P, I> {
     #[inline]
     fn build(
         &self,
         path: &[P],
         is_closed_path: bool,
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         if is_closed_path {
             self.closed_segments(path, adapter, segments);
@@ -122,12 +128,12 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> StrokeBuild<P> for Builder<J, P
     }
 }
 
-impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
+impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> Builder<J, P, I> {
     fn open_segments(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         // build segments only from points which are not equal in int space
 
@@ -179,8 +185,8 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     fn closed_segments(
         &self,
         path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-        segments: &mut Vec<Segment<ShapeCountBoolean, i32>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         if path.len() < 2 {
             return;
@@ -212,12 +218,7 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
     }
 
     #[inline]
-    fn next_unique_point(
-        start: usize,
-        index: usize,
-        path: &[P],
-        adapter: &FloatPointAdapter<P, i32>,
-    ) -> usize {
+    fn next_unique_point(start: usize, index: usize, path: &[P], adapter: &FloatPointAdapter<P, I>) -> usize {
         let a = adapter.float_to_int(&path[start]);
         for (j, p) in path.iter().enumerate().skip(index) {
             let b = adapter.float_to_int(p);
@@ -227,5 +228,30 @@ impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
         }
 
         usize::MAX
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::mesh::stroke::builder::StrokeBuilder;
+    use crate::mesh::style::StrokeStyle;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use crate::segm::segment::Segment;
+    use alloc::vec::Vec;
+    use i_float::adapter::FloatPointAdapter;
+    use i_float::float::rect::FloatRect;
+
+    #[test]
+    fn test_i64_builder() {
+        let path = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]];
+        let mut rect = FloatRect::with_iter(path.iter()).unwrap();
+        rect.add_offset(2.0);
+        let adapter = FloatPointAdapter::<[f64; 2], i64>::new(rect);
+        let builder = StrokeBuilder::<[f64; 2], i64>::new(StrokeStyle::new(2.0));
+
+        let mut segments = Vec::<Segment<ShapeCountBoolean, i64>>::new();
+        builder.build(&path, false, &adapter, &mut segments);
+
+        assert!(!segments.is_empty());
     }
 }

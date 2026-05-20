@@ -13,7 +13,7 @@ pub(super) trait SortMarkByIndexAndPoint<I: IntNumber> {
     fn sort_by_index_and_point(&mut self, parallel: bool, reusable_buffer: &mut Vec<LineMark<I>>);
 }
 
-impl<I: IntNumber + Send + Sync> SortMarkByIndexAndPoint<I> for [LineMark<I>] {
+impl<I: IntNumber> SortMarkByIndexAndPoint<I> for [LineMark<I>] {
     #[inline]
     fn sort_by_index_and_point(&mut self, parallel: bool, reusable_buffer: &mut Vec<LineMark<I>>) {
         self.sort_by_one_key_then_by_and_buffer(

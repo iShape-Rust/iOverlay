@@ -6,19 +6,21 @@ use crate::segm::segment::{
 };
 use alloc::vec::Vec;
 use core::ops::ControlFlow;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_key_sort::sort::two_keys::TwoKeysSort;
 
 /// Collects segment endpoints and checks for coincidence between subject and clip.
 ///
 /// Uses optimized algorithm: collect into separate Vecs, sort with `sort_by_two_keys`,
 /// dedup, then binary search from shorter into longer array.
-pub(crate) struct PointCoincidenceChecker {
-    subj_points: Vec<IntPoint>,
-    clip_points: Vec<IntPoint>,
+pub(crate) struct PointCoincidenceChecker<I: IntNumber> {
+    subj_points: Vec<IntPoint<I>>,
+    clip_points: Vec<IntPoint<I>>,
 }
 
-impl PointCoincidenceChecker {
+impl<I: IntNumber + SortKey> PointCoincidenceChecker<I> {
     /// Create a new checker with pre-allocated capacity.
     ///
     /// `capacity` is the number of segments; each segment contributes 2 endpoints.
@@ -37,7 +39,7 @@ impl PointCoincidenceChecker {
     ///   clip in the segment are skipped for clip collection
     /// - Similarly for clip-only interior segments
     #[inline]
-    pub(crate) fn add_segment(&mut self, segment: &Segment<ShapeCountBoolean, i32>, fill: SegmentFill) {
+    pub(crate) fn add_segment(&mut self, segment: &Segment<ShapeCountBoolean, I>, fill: SegmentFill) {
         // Skip inner segments optimization:
         // If segment is entirely inside one shape's interior (filled on both sides)
         // and has no contribution from the other shape, it's not on a boundary
@@ -104,11 +106,11 @@ impl PointCoincidenceChecker {
 /// loop as soon as an intersection is detected, avoiding processing of remaining segments.
 ///
 /// Also collects endpoint information for point coincidence check in finalize.
-pub(crate) struct IntersectsHandler {
-    point_checker: PointCoincidenceChecker,
+pub(crate) struct IntersectsHandler<I: IntNumber> {
+    point_checker: PointCoincidenceChecker<I>,
 }
 
-impl IntersectsHandler {
+impl<I: IntNumber + SortKey> IntersectsHandler<I> {
     pub(crate) fn new(capacity: usize) -> Self {
         Self {
             point_checker: PointCoincidenceChecker::new(capacity),
@@ -116,14 +118,14 @@ impl IntersectsHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean, i32> for IntersectsHandler {
+impl<I: IntNumber + SortKey> FillHandler<ShapeCountBoolean, I> for IntersectsHandler<I> {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        segment: &Segment<ShapeCountBoolean, i32>,
+        segment: &Segment<ShapeCountBoolean, I>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Shapes intersect if both contribute to any segment (interior overlap or boundary contact)
@@ -152,14 +154,14 @@ impl FillHandler<ShapeCountBoolean, i32> for IntersectsHandler {
 /// Early-exits `true` on first interior overlap.
 pub(crate) struct InteriorsIntersectHandler;
 
-impl FillHandler<ShapeCountBoolean, i32> for InteriorsIntersectHandler {
+impl<I: IntNumber> FillHandler<ShapeCountBoolean, I> for InteriorsIntersectHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        _segment: &Segment<ShapeCountBoolean, i32>,
+        _segment: &Segment<ShapeCountBoolean, I>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Interiors intersect if both shapes fill the same side
@@ -183,12 +185,12 @@ impl FillHandler<ShapeCountBoolean, i32> for InteriorsIntersectHandler {
 /// the shapes don't just touch.
 ///
 /// Also collects endpoint information for point coincidence check in finalize.
-pub(crate) struct TouchesHandler {
+pub(crate) struct TouchesHandler<I: IntNumber> {
     has_boundary_contact: bool,
-    point_checker: PointCoincidenceChecker,
+    point_checker: PointCoincidenceChecker<I>,
 }
 
-impl TouchesHandler {
+impl<I: IntNumber + SortKey> TouchesHandler<I> {
     pub(crate) fn new(capacity: usize) -> Self {
         Self {
             has_boundary_contact: false,
@@ -197,14 +199,14 @@ impl TouchesHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean, i32> for TouchesHandler {
+impl<I: IntNumber + SortKey> FillHandler<ShapeCountBoolean, I> for TouchesHandler<I> {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        segment: &Segment<ShapeCountBoolean, i32>,
+        segment: &Segment<ShapeCountBoolean, I>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Interior overlap = not a touch (early exit false)
@@ -231,11 +233,11 @@ impl FillHandler<ShapeCountBoolean, i32> for TouchesHandler {
 /// - Returns `false` if there's interior overlap (early exit)
 /// - Returns `false` if there's edge/boundary contact (shared segments, early exit)
 /// - Returns `true` ONLY if shapes touch by point coincidence without any edge overlap
-pub(crate) struct PointIntersectsHandler {
-    point_checker: PointCoincidenceChecker,
+pub(crate) struct PointIntersectsHandler<I: IntNumber> {
+    point_checker: PointCoincidenceChecker<I>,
 }
 
-impl PointIntersectsHandler {
+impl<I: IntNumber + SortKey> PointIntersectsHandler<I> {
     pub(crate) fn new(capacity: usize) -> Self {
         Self {
             point_checker: PointCoincidenceChecker::new(capacity),
@@ -243,14 +245,14 @@ impl PointIntersectsHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean, i32> for PointIntersectsHandler {
+impl<I: IntNumber + SortKey> FillHandler<ShapeCountBoolean, I> for PointIntersectsHandler<I> {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        segment: &Segment<ShapeCountBoolean, i32>,
+        segment: &Segment<ShapeCountBoolean, I>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         // Interior overlap = not a point-only intersection (early exit false)
@@ -285,14 +287,14 @@ impl WithinHandler {
     }
 }
 
-impl FillHandler<ShapeCountBoolean, i32> for WithinHandler {
+impl<I: IntNumber> FillHandler<ShapeCountBoolean, I> for WithinHandler {
     type Output = bool;
 
     #[inline(always)]
     fn handle(
         &mut self,
         _index: usize,
-        _segment: &Segment<ShapeCountBoolean, i32>,
+        _segment: &Segment<ShapeCountBoolean, I>,
         fill: SegmentFill,
     ) -> ControlFlow<bool> {
         let subj_top = (fill & SUBJ_TOP) != 0;
@@ -342,22 +344,29 @@ mod tests {
         }
     }
 
+    fn finalize_i32<H>(handler: H) -> H::Output
+    where
+        H: crate::build::sweep::FillHandler<ShapeCountBoolean, i32>,
+    {
+        handler.finalize()
+    }
+
     #[test]
     fn test_point_coincidence_no_points() {
-        let checker = PointCoincidenceChecker::new(10);
+        let checker = PointCoincidenceChecker::<i32>::new(10);
         assert!(!checker.has_coincidence());
     }
 
     #[test]
     fn test_point_coincidence_subj_only() {
-        let mut checker = PointCoincidenceChecker::new(10);
+        let mut checker = PointCoincidenceChecker::<i32>::new(10);
         checker.add_segment(&make_segment(0, 0, 10, 0, 1, 0), SUBJ_TOP);
         assert!(!checker.has_coincidence());
     }
 
     #[test]
     fn test_point_coincidence_coincident_point() {
-        let mut checker = PointCoincidenceChecker::new(10);
+        let mut checker = PointCoincidenceChecker::<i32>::new(10);
         // Subject segment with endpoint at (10, 10)
         checker.add_segment(&make_segment(0, 0, 10, 10, 1, 0), SUBJ_TOP);
         // Clip segment with endpoint at (10, 10)
@@ -367,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_point_coincidence_no_coincidence() {
-        let mut checker = PointCoincidenceChecker::new(10);
+        let mut checker = PointCoincidenceChecker::<i32>::new(10);
         checker.add_segment(&make_segment(0, 0, 5, 5, 1, 0), SUBJ_TOP);
         checker.add_segment(&make_segment(10, 10, 20, 20, 0, 1), CLIP_TOP);
         assert!(!checker.has_coincidence());
@@ -375,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_point_coincidence_shared_segment_is_line_not_point() {
-        let mut checker = PointCoincidenceChecker::new(10);
+        let mut checker = PointCoincidenceChecker::<i32>::new(10);
         // Segment with both SUBJ and CLIP fill is a shared edge (line intersection),
         // not a point coincidence. Only one array gets populated, so no coincidence.
         checker.add_segment(&make_segment(0, 0, 10, 10, 1, 1), SUBJ_TOP | CLIP_BOTTOM);
@@ -384,7 +393,7 @@ mod tests {
 
     #[test]
     fn test_point_coincidence_dedup_works() {
-        let mut checker = PointCoincidenceChecker::new(10);
+        let mut checker = PointCoincidenceChecker::<i32>::new(10);
         // Two subject segments sharing endpoint (5, 5)
         checker.add_segment(&make_segment(0, 0, 5, 5, 1, 0), SUBJ_TOP);
         checker.add_segment(&make_segment(5, 5, 10, 10, 1, 0), SUBJ_TOP);
@@ -396,7 +405,7 @@ mod tests {
     #[test]
     fn test_intersects_handler_both_top() {
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = IntersectsHandler::new(10);
+        let mut handler = IntersectsHandler::<i32>::new(10);
         let fill = SUBJ_TOP | CLIP_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Break(true)));
@@ -405,7 +414,7 @@ mod tests {
     #[test]
     fn test_intersects_handler_both_bottom() {
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = IntersectsHandler::new(10);
+        let mut handler = IntersectsHandler::<i32>::new(10);
         let fill = SUBJ_BOTTOM | CLIP_BOTTOM;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Break(true)));
@@ -415,7 +424,7 @@ mod tests {
     fn test_intersects_handler_boundary_contact() {
         // Boundary contact (edge sharing) is still an intersection per DE-9IM
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = IntersectsHandler::new(10);
+        let mut handler = IntersectsHandler::<i32>::new(10);
         let fill = SUBJ_TOP | CLIP_BOTTOM;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Break(true)));
@@ -425,7 +434,7 @@ mod tests {
     fn test_intersects_handler_no_intersection() {
         // Only subject contributes - no intersection
         let seg = make_segment(0, 0, 10, 0, 1, 0);
-        let mut handler = IntersectsHandler::new(10);
+        let mut handler = IntersectsHandler::<i32>::new(10);
         let fill = SUBJ_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
@@ -439,13 +448,13 @@ mod tests {
 
     #[test]
     fn test_intersects_handler_finalize_with_coincidence() {
-        let mut handler = IntersectsHandler::new(10);
+        let mut handler = IntersectsHandler::<i32>::new(10);
         // Add segments that don't trigger early exit but have point coincidence
         let seg1 = make_segment(0, 0, 10, 10, 1, 0);
         let seg2 = make_segment(10, 10, 20, 20, 0, 1);
         let _ = handler.handle(0, &seg1, SUBJ_TOP);
         let _ = handler.handle(1, &seg2, CLIP_TOP);
-        assert!(handler.finalize());
+        assert!(finalize_i32(handler));
     }
 
     #[test]
@@ -474,13 +483,13 @@ mod tests {
         let fill = SUBJ_TOP | CLIP_BOTTOM;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
-        assert!(!handler.finalize());
+        assert!(!finalize_i32(handler));
     }
 
     #[test]
     fn test_touches_handler_boundary_only() {
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = TouchesHandler::new(10);
+        let mut handler = TouchesHandler::<i32>::new(10);
         let fill = SUBJ_TOP | CLIP_BOTTOM;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
@@ -490,7 +499,7 @@ mod tests {
     #[test]
     fn test_touches_handler_interior_overlap() {
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = TouchesHandler::new(10);
+        let mut handler = TouchesHandler::<i32>::new(10);
         let fill = SUBJ_TOP | CLIP_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Break(false))); // early exit on interior overlap
@@ -499,7 +508,7 @@ mod tests {
     #[test]
     fn test_touches_handler_no_contact() {
         let seg = make_segment(0, 0, 10, 0, 1, 0);
-        let mut handler = TouchesHandler::new(10);
+        let mut handler = TouchesHandler::<i32>::new(10);
         let fill = SUBJ_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
@@ -508,13 +517,13 @@ mod tests {
 
     #[test]
     fn test_touches_handler_point_coincidence() {
-        let mut handler = TouchesHandler::new(10);
+        let mut handler = TouchesHandler::<i32>::new(10);
         // Add segments that don't touch via fill but have point coincidence
         let seg1 = make_segment(0, 0, 10, 10, 1, 0);
         let seg2 = make_segment(10, 10, 20, 20, 0, 1);
         let _ = handler.handle(0, &seg1, SUBJ_TOP);
         let _ = handler.handle(1, &seg2, CLIP_TOP);
-        assert!(handler.finalize());
+        assert!(finalize_i32(handler));
     }
 
     #[test]
@@ -525,7 +534,7 @@ mod tests {
         let fill = SUBJ_TOP | CLIP_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
-        assert!(handler.finalize());
+        assert!(finalize_i32(handler));
     }
 
     #[test]
@@ -542,7 +551,7 @@ mod tests {
     fn test_within_handler_empty_subject() {
         let handler = WithinHandler::new();
         // Empty subject is not within anything
-        assert!(!handler.finalize());
+        assert!(!finalize_i32(handler));
     }
 
     #[test]
@@ -553,12 +562,12 @@ mod tests {
         let fill = CLIP_TOP;
         let result = handler.handle(0, &seg, fill);
         assert!(matches!(result, ControlFlow::Continue(())));
-        assert!(!handler.finalize());
+        assert!(!finalize_i32(handler));
     }
 
     #[test]
     fn test_point_intersects_handler_point_only() {
-        let mut handler = PointIntersectsHandler::new(10);
+        let mut handler = PointIntersectsHandler::<i32>::new(10);
         // Subject segment ending at (10, 10)
         let seg1 = make_segment(0, 0, 10, 10, 1, 0);
         // Clip segment starting at (10, 10)
@@ -573,7 +582,7 @@ mod tests {
     fn test_point_intersects_handler_edge_contact() {
         // Segment belongs to both subject and clip (shared edge)
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = PointIntersectsHandler::new(10);
+        let mut handler = PointIntersectsHandler::<i32>::new(10);
         // Both shapes have fill on opposite sides (boundary contact)
         let fill = SUBJ_TOP | CLIP_BOTTOM;
         let result = handler.handle(0, &seg, fill);
@@ -584,7 +593,7 @@ mod tests {
     #[test]
     fn test_point_intersects_handler_interior_overlap() {
         let seg = make_segment(0, 0, 10, 0, 1, 1);
-        let mut handler = PointIntersectsHandler::new(10);
+        let mut handler = PointIntersectsHandler::<i32>::new(10);
         // Interior overlap (both shapes fill the same side)
         let fill = SUBJ_TOP | CLIP_TOP;
         let result = handler.handle(0, &seg, fill);
@@ -596,7 +605,7 @@ mod tests {
     fn test_point_intersects_handler_no_contact() {
         let seg1 = make_segment(0, 0, 5, 5, 1, 0);
         let seg2 = make_segment(10, 10, 20, 20, 0, 1);
-        let mut handler = PointIntersectsHandler::new(10);
+        let mut handler = PointIntersectsHandler::<i32>::new(10);
         let _ = handler.handle(0, &seg1, SUBJ_TOP);
         let _ = handler.handle(1, &seg2, CLIP_TOP);
         // No contact at all → false

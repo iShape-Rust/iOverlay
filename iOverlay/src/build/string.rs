@@ -13,7 +13,7 @@ use i_tree::Expiration;
 
 impl<I> GraphBuilder<ShapeCountString, Vec<usize>, I>
 where
-    I: IntNumber + Expiration + SortKey + Send + Sync,
+    I: IntNumber + Expiration + SortKey,
 {
     #[inline]
     pub(crate) fn build_string_all(

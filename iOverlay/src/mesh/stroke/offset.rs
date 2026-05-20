@@ -12,12 +12,17 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use i_tree::{Expiration, LayoutNumber};
 
 pub trait StrokeOffset<P: FloatPointCompatible> {
     /// Generates a stroke shapes for paths, contours, or shapes.
@@ -184,7 +189,7 @@ where
         is_closed_path: bool,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        match StrokeSolver::prepare(self, style) {
+        match StrokeSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver.build(self, is_closed_path, options),
             None => vec![],
         }
@@ -197,7 +202,7 @@ where
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        match StrokeSolver::prepare(self, style) {
+        match StrokeSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver.build_into(self, is_closed_path, options, output),
             None => output.clear_and_reserve(0, 0),
         }
@@ -210,7 +215,7 @@ where
         options: OverlayOptions<P::Scalar>,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        let mut solver = match StrokeSolver::prepare(self, style) {
+        let mut solver = match StrokeSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver,
             None => return Ok(vec![]),
         };
@@ -226,7 +231,7 @@ where
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
-        let mut solver = match StrokeSolver::prepare(self, style) {
+        let mut solver = match StrokeSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -239,15 +244,19 @@ where
     }
 }
 
-struct StrokeSolver<P: FloatPointCompatible> {
+struct StrokeSolver<P: FloatPointCompatible, I: IntNumber> {
     r: P::Scalar,
-    builder: StrokeBuilder<P>,
-    adapter: FloatPointAdapter<P, i32>,
+    builder: StrokeBuilder<P, I>,
+    adapter: FloatPointAdapter<P, I>,
     paths_count: usize,
     points_count: usize,
 }
 
-impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
+impl<P, I> StrokeSolver<P, I>
+where
+    P: 'static + FloatPointCompatible,
+    I: 'static + IntNumber + Expiration + LayoutNumber + SortKey,
+{
     fn prepare<S: ShapeResource<P>>(source: &S, style: StrokeStyle<P>) -> Option<Self> {
         let mut paths_count = 0;
         let mut points_count = 0;
@@ -261,12 +270,12 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         }
 
         let r = P::Scalar::from_float(0.5 * style.width.to_f64());
-        let builder = StrokeBuilder::new(style);
+        let builder = StrokeBuilder::<P, I>::new(style);
         let a = builder.additional_offset(r);
 
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(a);
-        let adapter = FloatPointAdapter::new(rect);
+        let adapter = FloatPointAdapter::<P, I>::new(rect);
 
         Some(Self {
             r,
@@ -288,8 +297,8 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         is_closed_path: bool,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        let ir = self.adapter.round_len_to_int(self.r).abs();
-        if ir <= 1 {
+        let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
+        if ir <= <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(1) {
             // offset is too small
             return vec![];
         }
@@ -329,8 +338,8 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        let ir = self.adapter.round_len_to_int(self.r).abs();
-        if ir <= 1 {
+        let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
+        if ir <= <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(1) {
             // offset is too small
             output.clear_and_reserve(0, 0);
             return;
@@ -349,7 +358,7 @@ impl<P: 'static + FloatPointCompatible> StrokeSolver<P> {
         let mut overlay = Overlay::with_segments(segments);
         overlay.options = options.int_with_adapter(&self.adapter);
 
-        let mut int_output = FlatContoursBuffer::<i32>::default();
+        let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
         overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
 
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));

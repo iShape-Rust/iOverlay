@@ -75,7 +75,7 @@ pub struct Overlay<I: IntNumber + Expiration> {
 
 impl<I> Overlay<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey + Send + Sync,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     /// Constructs a new `Overlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.

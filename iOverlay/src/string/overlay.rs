@@ -14,19 +14,25 @@ use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
+use i_tree::{Expiration, LayoutNumber};
 
-pub struct StringOverlay {
+pub struct StringOverlay<I: IntNumber + Expiration> {
     pub options: IntOverlayOptions,
-    pub(super) segments: Vec<Segment<ShapeCountString, i32>>,
-    pub(crate) split_solver: SplitSolver<i32>,
-    pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>, i32>,
+    pub(super) segments: Vec<Segment<ShapeCountString, I>>,
+    pub(crate) split_solver: SplitSolver<I>,
+    pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>, I>,
 }
 
-impl StringOverlay {
+impl<I> StringOverlay<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     /// Constructs a new `StringOverlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
@@ -36,7 +42,7 @@ impl StringOverlay {
             options: Default::default(),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>, i32>::new(),
+            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>, I>::new(),
         }
     }
 
@@ -49,14 +55,14 @@ impl StringOverlay {
             options,
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
-            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>, i32>::new(),
+            graph_builder: GraphBuilder::<ShapeCountString, Vec<usize>, I>::new(),
         }
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with a single shape contour.
     /// - `contour`: An array of points that form a closed path.
     #[inline]
-    pub fn with_shape_contour(contour: &[IntPoint]) -> Self {
+    pub fn with_shape_contour(contour: &[IntPoint<I>]) -> Self {
         let mut overlay = Self::new(contour.len());
         overlay.add_shape_contour(contour);
         overlay
@@ -65,7 +71,7 @@ impl StringOverlay {
     /// Creates a new `StringOverlay` instance and initializes it with multiple shape contours.
     /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
     #[inline]
-    pub fn with_shape_contours(contours: &[IntContour<i32>]) -> Self {
+    pub fn with_shape_contours(contours: &[IntContour<I>]) -> Self {
         let mut overlay = Self::new(contours.points_count());
         overlay.add_shape_contours(contours);
         overlay
@@ -74,7 +80,7 @@ impl StringOverlay {
     /// Creates a new `StringOverlay` instance and initializes it with s shape.
     /// - `shape`: An `IntShape<i32>` instances to be added to the overlay.
     #[inline]
-    pub fn with_shape(shape: &[IntContour<i32>]) -> Self {
+    pub fn with_shape(shape: &[IntContour<I>]) -> Self {
         let mut overlay = Self::new(shape.points_count());
         overlay.add_shape_contours(shape);
         overlay
@@ -83,7 +89,7 @@ impl StringOverlay {
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
     /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
     #[inline]
-    pub fn with_shapes(shapes: &[IntShape<i32>]) -> Self {
+    pub fn with_shapes(shapes: &[IntShape<I>]) -> Self {
         let mut overlay = Self::new(shapes.points_count());
         overlay.add_shapes(shapes);
         overlay
@@ -94,20 +100,20 @@ impl StringOverlay {
     /// when paths are not directly stored in a collection.
     /// - `iter`: An iterator over references to `IntPoint` that defines the path.
     #[inline]
-    pub fn add_shape_contour_iter<I: Iterator<Item = IntPoint>>(&mut self, iter: I) {
+    pub fn add_shape_contour_iter<It: Iterator<Item = IntPoint<I>>>(&mut self, iter: It) {
         self.segments.append_path_iter(iter, ShapeType::Subject, false);
     }
 
     /// Adds a single path to the overlay as a shape paths.
     /// - `contour`: An array of points that form a closed path.
     #[inline]
-    pub fn add_shape_contour(&mut self, contour: &[IntPoint]) {
+    pub fn add_shape_contour(&mut self, contour: &[IntPoint<I>]) {
         self.add_shape_contour_iter(contour.iter().copied());
     }
 
     /// Adds multiple paths to the overlay as shape paths.
     /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
-    pub fn add_shape_contours(&mut self, contours: &[IntContour<i32>]) {
+    pub fn add_shape_contours(&mut self, contours: &[IntContour<I>]) {
         for contour in contours.iter() {
             self.add_shape_contour(contour);
         }
@@ -116,7 +122,7 @@ impl StringOverlay {
     /// Adds a list of shape to the overlay.
     /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
     #[inline]
-    pub fn add_shapes(&mut self, shapes: &[IntShape<i32>]) {
+    pub fn add_shapes(&mut self, shapes: &[IntShape<I>]) {
         for shape in shapes {
             self.add_shape_contours(shape);
         }
@@ -125,7 +131,7 @@ impl StringOverlay {
     /// Adds a single line (open path) to the overlay.
     /// - `line`: An `IntLine` representing the open line (defined by two points).
     #[inline]
-    pub fn add_string_line(&mut self, line: IntLine) {
+    pub fn add_string_line(&mut self, line: IntLine<I>) {
         let a = line[0];
         let b = line[1];
         let segment = match a.cmp(&b) {
@@ -154,7 +160,7 @@ impl StringOverlay {
     /// Adds multiple lines (open paths) to the overlay.
     /// - `lines`: An array of `IntLine` instances to be added.
     #[inline]
-    pub fn add_string_lines(&mut self, lines: &[IntLine]) {
+    pub fn add_string_lines(&mut self, lines: &[IntLine<I>]) {
         for &line in lines {
             self.add_string_line(line);
         }
@@ -163,7 +169,7 @@ impl StringOverlay {
     /// Adds a string path to the overlay.
     /// - `path`: A path representing a string line.
     #[inline]
-    pub fn add_string_path(&mut self, path: &[IntPoint]) {
+    pub fn add_string_path(&mut self, path: &[IntPoint<I>]) {
         if path.len() < 2 {
             return;
         }
@@ -181,7 +187,7 @@ impl StringOverlay {
     /// Adds a string line contour to the overlay.
     /// - `contour`: A contour representing a string line closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     #[inline]
-    pub fn add_string_contour(&mut self, contour: &[IntPoint]) {
+    pub fn add_string_contour(&mut self, contour: &[IntPoint<I>]) {
         if contour.len() < 2 {
             return;
         }
@@ -199,7 +205,7 @@ impl StringOverlay {
     /// Adds a string line paths to the overlay.
     /// - `paths`: A collection of paths, each representing a string line.
     #[inline]
-    pub fn add_string_paths(&mut self, paths: &[IntPath<i32>]) {
+    pub fn add_string_paths(&mut self, paths: &[IntPath<I>]) {
         for path in paths {
             self.add_string_path(path);
         }
@@ -208,7 +214,7 @@ impl StringOverlay {
     /// Adds a string line contours to the overlay.
     /// - `contours`: A collection of contours, each representing a string line closed path.
     #[inline]
-    pub fn add_string_contours(&mut self, contours: &[IntContour<i32>]) {
+    pub fn add_string_contours(&mut self, contours: &[IntContour<I>]) {
         for contour in contours {
             self.add_string_contour(contour);
         }
@@ -220,7 +226,7 @@ impl StringOverlay {
     /// # Returns
     /// A vector of `IntPath<i32>` instances representing the clipped sections of the input lines.
     #[inline]
-    pub fn clip_string_lines(self, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<i32>> {
+    pub fn clip_string_lines(self, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         self.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
     }
 
@@ -237,7 +243,7 @@ impl StringOverlay {
         fill_rule: FillRule,
         clip_rule: ClipRule,
         solver: Solver,
-    ) -> Vec<IntPath<i32>> {
+    ) -> Vec<IntPath<I>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return Vec::new();
@@ -251,7 +257,7 @@ impl StringOverlay {
     /// This graph is used for string operations, enabling analysis and manipulation of geometric data.
     /// - `fill_rule`: The rule that defines how to build shapes (e.g., non-zero, even-odd).
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<StringGraph<'_, i32>> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<StringGraph<'_, I>> {
         self.build_graph_view_with_solver(fill_rule, Default::default())
     }
 
@@ -264,7 +270,7 @@ impl StringOverlay {
         &mut self,
         fill_rule: FillRule,
         solver: Solver,
-    ) -> Option<StringGraph<'_, i32>> {
+    ) -> Option<StringGraph<'_, I>> {
         self.split_solver.split_segments(&mut self.segments, &solver);
         if self.segments.is_empty() {
             return None;
