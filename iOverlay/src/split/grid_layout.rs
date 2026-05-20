@@ -286,11 +286,11 @@ impl<I: IntNumber> GridLayout<I> {
     }
 
     fn with_min_max(min_x: I, max_x: I, max_power: u32) -> Option<Self> {
-        let dx = max_x.wide() - min_x.wide();
-        if dx < I::Wide::FOUR {
+        let dx = max_x - min_x;
+        if dx < I::FOUR {
             return None;
         }
-        let log = dx.to_uint().ilog2();
+        let log = dx.ilog2();
         let power = if log > max_power { log - max_power } else { 1 };
 
         Some(Self { min_x, max_x, power })
