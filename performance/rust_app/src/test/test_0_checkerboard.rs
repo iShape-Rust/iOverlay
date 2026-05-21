@@ -43,7 +43,7 @@ multithreading off
 
 // A grid of overlapping squares forming a simple checkerboard pattern.
 impl CheckerboardTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64, simple_geometry: bool) { // 1000
+    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) { // 1000
         let subj_paths = Util::many_squares(IntPoint::new(0, 0), 20, 30, n);
         let clip_paths = Util::many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
@@ -52,16 +52,9 @@ impl CheckerboardTest {
 
         let start = Instant::now();
 
-        if simple_geometry {
-            // for _i in 0..sq_it_count {
-            //     let _ = Overlay::with_contours(&subj_paths, &clip_paths)
-            //         .overlay_45geom_with_min_area_and_solver(rule, FillRule::NonZero, 0, solver);
-            // }
-        } else {
-            for _i in 0..sq_it_count {
-                let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                    .overlay(rule, FillRule::NonZero);
-            }
+        for _i in 0..sq_it_count {
+            let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();

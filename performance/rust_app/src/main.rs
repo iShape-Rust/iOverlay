@@ -40,25 +40,16 @@ fn main() {
             args_map.insert("test".to_string(), 7.to_string());
             let count = 32;
             args_map.insert("count".to_string(), count.to_string());
-            args_map.insert("geom".to_string(), true.to_string());
         }
     }
 
     let test_key = args_map.get("test").expect("Test number is not set");
     let multithreading_key = args_map.get("multithreading").expect("Multithreading is not set");
     let complex_key = args_map.get("complex").expect("Complex is not set");
-    let geom_key = args_map.get("geom");
 
     let test: usize = test_key.parse().expect("Unable to parse test as an integer");
     let multithreading: bool = multithreading_key.parse().expect("Unable to parse multithreading as an boolean");
     let complex: bool = complex_key.parse().expect("Unable to parse complex as an boolean");
-
-    let geom = if let Some(key) = geom_key {
-        let value: bool = key.parse().expect("Unable to parse complex as an boolean");
-        value
-    } else {
-        false
-    };
 
     let multithreading = if multithreading {
         Some(MultithreadOptions::default())
@@ -71,22 +62,22 @@ fn main() {
     if complex {
         match test {
             0 => {
-                run_test_0(geom, solver);
+                run_test_0(solver);
             }
             1 => {
-                run_test_1(geom, solver);
+                run_test_1(solver);
             }
             2 => {
-                run_test_2(geom, solver);
+                run_test_2(solver);
             }
             3 => {
                 run_test_3();
             }
             4 => {
-                run_test_4(geom, solver);
+                run_test_4(solver);
             }
             5 => {
-                run_test_5(geom, solver);
+                run_test_5(solver);
             }
             6 => {
                 run_test_6(solver);
@@ -95,7 +86,7 @@ fn main() {
                 run_test_7(solver);
             }
             8 => {
-                run_test_8(geom, solver);
+                run_test_8(solver);
             }
             _ => {
                 println!("Test is not found");
@@ -106,22 +97,22 @@ fn main() {
         let count: usize = count_key.parse().expect("Unable to parse count as an integer");
         match test {
             0 => {
-                CheckerboardTest::run(count, OverlayRule::Xor, solver, 1.0, geom);
+                CheckerboardTest::run(count, OverlayRule::Xor, solver, 1.0);
             }
             1 => {
-                NotOverlapTest::run(count, OverlayRule::Union, solver, 1.0, geom);
+                NotOverlapTest::run(count, OverlayRule::Union, solver, 1.0);
             }
             2 => {
-                LinesNetTest::run(count, OverlayRule::Intersect, solver, 1.0, geom);
+                LinesNetTest::run(count, OverlayRule::Intersect, solver, 1.0);
             }
             3 => {
                 SpiralTest::run(count, 100.0);
             }
             4 => {
-                WindowsTest::run(count, OverlayRule::Difference, solver, 1.0, geom);
+                WindowsTest::run(count, OverlayRule::Difference, solver, 1.0);
             }
             5 => {
-                CrossTest::run(count, OverlayRule::Xor, solver, 1.0, geom);
+                CrossTest::run(count, OverlayRule::Xor, solver, 1.0);
             }
             6 => {
                 CorrosionTest::run(count, OverlayRule::Difference, solver, 1.0);
@@ -130,7 +121,7 @@ fn main() {
                 ConcentricTest::run(count, OverlayRule::Intersect, solver, 1.0);
             }
             8 => {
-                WindMillTest::run(count, OverlayRule::Intersect, solver, 1.0, geom);
+                WindMillTest::run(count, OverlayRule::Intersect, solver, 1.0);
             }
             _ => {
                 println!("Test is not found");
@@ -139,27 +130,27 @@ fn main() {
     }
 }
 
-fn run_test_0(geom: bool, solver: Solver) {
+fn run_test_0(solver: Solver) {
     println!("run Checkerboard test");
     for i in 1..12 {
         let n = 1 << i;
-        CheckerboardTest::run(n, OverlayRule::Xor, solver, 1000.0, geom);
+        CheckerboardTest::run(n, OverlayRule::Xor, solver, 1000.0);
     }
 }
 
-fn run_test_1(geom: bool, solver: Solver) {
+fn run_test_1(solver: Solver) {
     println!("run NotOverlap test");
     for i in 1..12 {
         let n = 1 << i;
-        NotOverlapTest::run(n, OverlayRule::Xor, solver, 1000.0, geom);
+        NotOverlapTest::run(n, OverlayRule::Xor, solver, 1000.0);
     }
 }
 
-fn run_test_2(geom: bool, solver: Solver) {
+fn run_test_2(solver: Solver) {
     println!("run LinesNet test");
     for i in 1..12 {
         let n = 1 << i;
-        LinesNetTest::run(n, OverlayRule::Intersect, solver, 500.0, geom);
+        LinesNetTest::run(n, OverlayRule::Intersect, solver, 500.0);
     }
 }
 
@@ -171,19 +162,19 @@ fn run_test_3() {
     }
 }
 
-fn run_test_4(geom: bool, solver: Solver) {
+fn run_test_4(solver: Solver) {
     println!("run Windows test");
     for i in 1..12 {
         let n = 1 << i;
-        WindowsTest::run(n, OverlayRule::Difference, solver, 500.0, geom);
+        WindowsTest::run(n, OverlayRule::Difference, solver, 500.0);
     }
 }
 
-fn run_test_5(geom: bool, solver: Solver) {
+fn run_test_5(solver: Solver) {
     println!("run NestedSquares test");
     for i in 1..18 {
         let n = 1 << i;
-        CrossTest::run(n, OverlayRule::Xor, solver, 500.0, geom);
+        CrossTest::run(n, OverlayRule::Xor, solver, 500.0);
     }
 }
 
@@ -205,11 +196,11 @@ fn run_test_7(solver: Solver) {
     }
 }
 
-fn run_test_8(geom: bool, solver: Solver) {
+fn run_test_8(solver: Solver) {
     println!("run WindMill test");
     let mut n = 1;
     for _ in 1..12 {
-        WindMillTest::run(n, OverlayRule::Difference, solver, 100.0, geom);
+        WindMillTest::run(n, OverlayRule::Difference, solver, 100.0);
         n = n << 1;
     }
     WindMillTest::validate(100, OverlayRule::Difference, solver);

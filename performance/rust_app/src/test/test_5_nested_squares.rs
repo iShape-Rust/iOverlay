@@ -54,7 +54,7 @@ pub(crate) struct CrossTest;
 
 // A series of concentric squares, each progressively larger than the last.
 impl CrossTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64, simple_geometry: bool) { // 500
+    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) { // 500
         let (subj_paths, clip_paths) = Util::concentric_squares(4, n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
@@ -62,16 +62,9 @@ impl CrossTest {
 
         let start = Instant::now();
 
-        if simple_geometry {
-            // for _ in 0..sq_it_count {
-            //     let _ = Overlay::with_contours(&subj_paths, &clip_paths)
-            //         .overlay_45geom_with_min_area_and_solver(rule, FillRule::NonZero, 0, solver);
-            // }
-        } else {
-            for _ in 0..sq_it_count {
-                let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                    .overlay(rule, FillRule::NonZero);
-            }
+        for _ in 0..sq_it_count {
+            let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                .overlay(rule, FillRule::NonZero);
         }
         let duration = start.elapsed();
         let time = duration.as_secs_f64() / sq_it_count as f64;

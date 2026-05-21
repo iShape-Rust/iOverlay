@@ -41,7 +41,7 @@ pub(crate) struct WindowsTest;
 
 // A grid of square frames, each with a smaller square cutout in the center.
 impl WindowsTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64, simple_geometry: bool) { // 500
+    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) { // 500
         let offset = 30;
         let x = (n as i32) * offset / 2;
         let origin = IntPoint::new(-x, -x);
@@ -52,16 +52,9 @@ impl WindowsTest {
 
         let start = Instant::now();
 
-        if simple_geometry {
-            // for _ in 0..sq_it_count {
-            //     let _ = Overlay::with_contours(&subj_paths, &clip_paths)
-            //         .overlay_45geom_with_min_area_and_solver(rule, FillRule::NonZero, 0, solver);
-            // }
-        } else {
-            for _ in 0..sq_it_count {
-                let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                    .overlay(rule, FillRule::NonZero);
-            }
+        for _ in 0..sq_it_count {
+            let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();
