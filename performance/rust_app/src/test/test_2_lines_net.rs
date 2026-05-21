@@ -1,9 +1,9 @@
-use std::time::Instant;
+use crate::test::util::{OverlayInt, Util};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::core::solver::Solver;
-use crate::test::util::Util;
+use std::time::Instant;
 
 pub(crate) struct LinesNetTest;
 
@@ -72,18 +72,24 @@ geom multithreading off
 
 // A grid is formed by the intersection of a set of vertical and horizontal lines.
 impl LinesNetTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) { // 500
-        let subj_paths = Util::many_lines_x(20, n);
-        let clip_paths = Util::many_lines_y(20, n);
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+        // 500
+        if Util::skip_if_out_of_range::<I>(n, 10 * n + 10) {
+            return;
+        }
+
+        let subj_paths = Util::many_lines_x(I::from_usize(20), n);
+        let clip_paths = Util::many_lines_y(I::from_usize(20), n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
-        let sq_it_count= it_count * it_count;
+        let sq_it_count = it_count * it_count;
 
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                .overlay(rule, FillRule::NonZero);
+            let _ =
+                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                    .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();

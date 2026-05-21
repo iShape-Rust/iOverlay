@@ -1,7 +1,10 @@
-use std::time::Instant;
+use crate::test::util::{OverlayInt, Util};
 use i_overlay::core::fill_rule::FillRule;
-use i_overlay::float::simplify::SimplifyShape;
-use crate::test::util::Util;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::core::solver::Solver;
+use i_overlay::float::overlay::FloatOverlay;
+use i_overlay::i_float::float::point::FloatPoint;
+use std::time::Instant;
 
 pub(crate) struct SpiralTest;
 
@@ -60,16 +63,22 @@ multithreading off
 
 // Two irregular self-intersecting polygons are generated, the vertices of which are defined by a fixed radius and angle.
 impl SpiralTest {
-    pub(crate) fn run(n: usize, scale: f64) { // 1000
+    pub(crate) fn run<I: OverlayInt>(n: usize, solver: Solver, scale: f64) {
+        // 1000
         let subj_path = Util::spiral(n, 100.0);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
-        let sq_it_count= it_count * it_count;
+        let sq_it_count = it_count * it_count;
 
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ = subj_path.simplify_shape(FillRule::NonZero);
+            let _ = FloatOverlay::<FloatPoint<f64>, I>::with_subj_custom_with_int(
+                &subj_path,
+                Default::default(),
+                solver,
+            )
+            .overlay(OverlayRule::Subject, FillRule::NonZero);
         }
 
         let duration = start.elapsed();

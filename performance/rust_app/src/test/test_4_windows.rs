@@ -1,10 +1,10 @@
-use std::time::Instant;
+use crate::test::util::{OverlayInt, Util};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::core::solver::Solver;
 use i_overlay::i_float::int::point::IntPoint;
-use crate::test::util::Util;
+use std::time::Instant;
 
 pub(crate) struct WindowsTest;
 /*
@@ -41,20 +41,27 @@ pub(crate) struct WindowsTest;
 
 // A grid of square frames, each with a smaller square cutout in the center.
 impl WindowsTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) { // 500
-        let offset = 30;
-        let x = (n as i32) * offset / 2;
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+        // 500
+        if Util::skip_if_out_of_range::<I>(n, 15 * n + 20) {
+            return;
+        }
+
+        let offset = I::from_usize(30);
+        let x = I::from_usize(n) * offset / I::TWO;
         let origin = IntPoint::new(-x, -x);
-        let (subj_paths, clip_paths) = Util::many_windows(origin, 20, 10, offset, n);
+        let (subj_paths, clip_paths) =
+            Util::many_windows(origin, I::from_usize(20), I::from_usize(10), offset, n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
-        let sq_it_count= it_count * it_count;
+        let sq_it_count = it_count * it_count;
 
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                .overlay(rule, FillRule::NonZero);
+            let _ =
+                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                    .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();

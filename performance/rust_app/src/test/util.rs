@@ -1,15 +1,41 @@
-use std::f64::consts::PI;
+use i_key_sort::sort::key::SortKey;
 use i_overlay::i_float::float::point::FloatPoint;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::base::data::Contour;
 use i_overlay::i_shape::int::path::IntPath;
+use i_tree::{Expiration, LayoutNumber};
+use std::f64::consts::PI;
 
 pub(super) struct Util;
 
-impl Util {
+pub(crate) trait OverlayInt: IntNumber + Expiration + LayoutNumber + SortKey {}
 
-    pub(super) fn many_squares<I: IntNumber>(start: IntPoint<I>, size: I, offset: I, n: usize) -> Vec<IntPath<I>> {
+impl<I> OverlayInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
+
+impl Util {
+    pub(super) fn skip_if_out_of_range<I: IntNumber>(n: usize, max_abs_coord: usize) -> bool {
+        let max = I::MAX.to_usize();
+        if max_abs_coord <= max {
+            return false;
+        }
+
+        println!(
+            "{}     - skipped (requires coordinate {}, i{} max {})",
+            n,
+            max_abs_coord,
+            I::BITS,
+            max
+        );
+        true
+    }
+
+    pub(super) fn many_squares<I: IntNumber>(
+        start: IntPoint<I>,
+        size: I,
+        offset: I,
+        n: usize,
+    ) -> Vec<IntPath<I>> {
         let mut result = Vec::with_capacity(n * n);
         let mut y = start.y;
         for _ in 0..n {
@@ -30,8 +56,13 @@ impl Util {
         result
     }
 
-
-    pub(super) fn many_windows<I: IntNumber>(start: IntPoint<I>, a: I, b: I, offset: I, n: usize) -> (Vec<IntPath<I>>, Vec<IntPath<I>>) {
+    pub(super) fn many_windows<I: IntNumber>(
+        start: IntPoint<I>,
+        a: I,
+        b: I,
+        offset: I,
+        n: usize,
+    ) -> (Vec<IntPath<I>>, Vec<IntPath<I>>) {
         let mut boundaries = Vec::with_capacity(n * n);
         let mut holes = Vec::with_capacity(n * n);
         let mut y = start.y;
@@ -64,7 +95,10 @@ impl Util {
         (boundaries, holes)
     }
 
-    pub(super) fn concentric_squares<I: IntNumber>(a: I, n: usize) -> (Vec<IntPath<I>>, Vec<IntPath<I>>) {
+    pub(super) fn concentric_squares<I: IntNumber>(
+        a: I,
+        n: usize,
+    ) -> (Vec<IntPath<I>>, Vec<IntPath<I>>) {
         let mut vert = Vec::with_capacity(2 * n);
         let mut horz = Vec::with_capacity(2 * n);
         let s = I::TWO * a;
@@ -164,9 +198,15 @@ impl Util {
                 r - 0.2 * radius
             };
 
-            let p = FloatPoint { x: rr * sx, y: rr * sy };
+            let p = FloatPoint {
+                x: rr * sx,
+                y: rr * sy,
+            };
             let n = (p - p0).normalize();
-            let t = FloatPoint { x: w * -n.y, y: w * n.x };
+            let t = FloatPoint {
+                x: w * -n.y,
+                y: w * n.x,
+            };
 
             a_path.push(p0 + t);
             a_path.push(p + t);

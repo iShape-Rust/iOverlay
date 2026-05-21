@@ -7,4 +7,4 @@ pub(crate) mod test_5_nested_squares;
 pub(crate) mod test_6_corrosion;
 pub(crate) mod test_7_concentric;
 pub(crate) mod test_8_wind_mill;
-mod util;
+pub(crate) mod util;

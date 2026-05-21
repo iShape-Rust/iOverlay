@@ -1,9 +1,10 @@
+use crate::test::util::OverlayInt;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
-use std::f64::consts::PI;
-use std::time::Instant;
 use i_overlay::core::solver::Solver;
 use i_overlay::float::overlay::FloatOverlay;
+use std::f64::consts::PI;
+use std::time::Instant;
 
 pub(crate) struct CorrosionTest;
 
@@ -41,7 +42,7 @@ pub(crate) struct CorrosionTest;
 
 // A series of concentric squares, each progressively larger than the last.
 impl CorrosionTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         // 500
         let (subj_paths, clip_paths) = Self::geometry(100.0, n);
 
@@ -51,7 +52,12 @@ impl CorrosionTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let mut overlay = FloatOverlay::with_subj_and_clip_custom(&subj_paths, &clip_paths, Default::default(), solver);
+            let mut overlay = FloatOverlay::<[f64; 2], I>::with_subj_and_clip_custom_with_int(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            );
             let _res = overlay.overlay(rule, FillRule::NonZero);
         }
         let duration = start.elapsed();
