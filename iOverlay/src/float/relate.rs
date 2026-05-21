@@ -230,6 +230,9 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
 /// // Non-overlapping shapes (fast bounding-box rejection)
 /// assert!(!square.intersects(&distant));
 /// assert!(square.disjoint(&distant));
+///
+/// // Select the integer engine explicitly.
+/// assert!(square.intersects_as::<i64>(&other));
 /// ```
 ///
 /// # Supported Types

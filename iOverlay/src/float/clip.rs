@@ -14,6 +14,22 @@ use i_tree::{Expiration, LayoutNumber};
 ///
 /// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
 /// when you need to select `i16`, `i32`, or `i64` explicitly.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::core::fill_rule::FillRule;
+/// use i_overlay::float::clip::FloatClip;
+/// use i_overlay::string::clip::ClipRule;
+///
+/// let shape = vec![[0.0, 0.0], [0.0, 2.0], [2.0, 2.0], [2.0, 0.0]];
+/// let line = vec![[-1.0, 1.0], [3.0, 1.0]];
+/// let clip_rule = ClipRule { invert: false, boundary_included: false };
+///
+/// let result = line.clip_by_as::<i64>(&shape, FillRule::EvenOdd, clip_rule);
+///
+/// assert_eq!(result.len(), 1);
+/// ```
 pub trait FloatClip<R, P>
 where
     R: ShapeResource<P>,

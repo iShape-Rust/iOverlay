@@ -15,6 +15,19 @@ use i_tree::{Expiration, LayoutNumber};
 ///
 /// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
 /// when you need to select `i16`, `i32`, or `i64` explicitly.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::core::fill_rule::FillRule;
+/// use i_overlay::float::simplify::SimplifyShape;
+///
+/// let shape = vec![[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+///
+/// let result = shape.simplify_shape_as::<i64>(FillRule::NonZero);
+///
+/// assert_eq!(result.len(), 1);
+/// ```
 pub trait SimplifyShape<P: FloatPointCompatible> {
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     ///

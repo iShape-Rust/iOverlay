@@ -128,6 +128,22 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use i_overlay::core::fill_rule::FillRule;
+    /// use i_overlay::core::overlay_rule::OverlayRule;
+    /// use i_overlay::float::overlay::FloatOverlay;
+    ///
+    /// let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+    /// let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+    ///
+    /// let mut overlay = FloatOverlay::<[f64; 2], i64>::from_subj_and_clip(&subj, &clip);
+    /// let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+    ///
+    /// assert_eq!(result.len(), 1);
+    /// ```
     pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
         R0: ShapeResource<P> + ?Sized,

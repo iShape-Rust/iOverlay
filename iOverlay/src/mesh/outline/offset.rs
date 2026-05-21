@@ -27,6 +27,24 @@ use i_shape::float::simple::SimplifyContour;
 use i_shape::source::resource::ShapeResource;
 use i_tree::{Expiration, LayoutNumber};
 
+/// Trait for offsetting float contours and shapes.
+///
+/// Default methods use the `i32` integer engine. Use the `*_as::<I>` methods when you need to
+/// select `i16`, `i32`, or `i64` explicitly.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::mesh::outline::offset::OutlineOffset;
+/// use i_overlay::mesh::style::OutlineStyle;
+///
+/// let path = [[0.0, 0.0], [10.0, 0.0], [0.0, 10.0]];
+/// let style = OutlineStyle::new(1.0);
+///
+/// let result = path.outline_as::<i64>(&style);
+///
+/// assert_eq!(result.len(), 1);
+/// ```
 pub trait OutlineOffset<P: FloatPointCompatible> {
     /// Generates an outline shapes for contours, or shapes.
     ///

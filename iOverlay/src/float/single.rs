@@ -13,6 +13,21 @@ use i_tree::{Expiration, LayoutNumber};
 ///
 /// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
 /// when you need to select `i16`, `i32`, or `i64` explicitly.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::core::fill_rule::FillRule;
+/// use i_overlay::core::overlay_rule::OverlayRule;
+/// use i_overlay::float::single::SingleFloatOverlay;
+///
+/// let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+/// let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+///
+/// let result = subj.overlay_as::<i64>(&clip, OverlayRule::Difference, FillRule::EvenOdd);
+///
+/// assert_eq!(result.len(), 1);
+/// ```
 pub trait SingleFloatOverlay<R0, R1, P>
 where
     R0: ShapeResource<P>,
