@@ -65,7 +65,7 @@ impl ConcentricTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let mut overlay = FloatOverlay::<[f64; 2], I>::with_subj_and_clip_custom_with_int(
+            let mut overlay = FloatOverlay::<[f64; 2], I>::from_subj_and_clip_custom(
                 &subj_paths,
                 &clip_paths,
                 Default::default(),

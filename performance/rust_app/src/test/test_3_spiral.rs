@@ -73,7 +73,7 @@ impl SpiralTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ = FloatOverlay::<FloatPoint<f64>, I>::with_subj_custom_with_int(
+            let _ = FloatOverlay::<FloatPoint<f64>, I>::from_subj_custom(
                 &subj_path,
                 Default::default(),
                 solver,
