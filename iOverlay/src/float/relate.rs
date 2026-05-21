@@ -209,9 +209,8 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
 /// directly on contours, shapes, and shape collections without explicit
 /// overlay construction.
 ///
-/// This convenience trait uses the default integer engine (`i32`). Use
-/// `FloatPredicateOverlay::<P, I>::from_subj_and_clip` when you need to select `i16`, `i32`,
-/// or `i64` explicitly.
+/// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
+/// when you need to select `i16`, `i32`, or `i64` explicitly.
 ///
 /// # Example
 ///
@@ -254,19 +253,39 @@ where
     /// overlap and boundary contact (shapes sharing an edge).
     fn intersects(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::intersects`], but with an explicit integer engine.
+    fn intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if the interiors of this shape and another overlap.
     ///
     /// Unlike `intersects()`, this returns `false` for shapes that only share
     /// boundary points (edges or vertices) without interior overlap.
     fn interiors_intersect(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::interiors_intersect`], but with an explicit integer engine.
+    fn interiors_intersect_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if this shape touches another (boundaries intersect but interiors don't).
     ///
     /// Returns `true` when shapes share boundary points but their interiors don't overlap.
     fn touches(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::touches`], but with an explicit integer engine.
+    fn touches_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if this shape intersects another by point coincidence only.
     fn point_intersects(&self, other: &R1) -> bool;
+
+    /// Same as [`Self::point_intersects`], but with an explicit integer engine.
+    fn point_intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 
     /// Returns `true` if this shape is completely within another.
     ///
@@ -274,15 +293,30 @@ where
     /// also has fill on the same side.
     fn within(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::within`], but with an explicit integer engine.
+    fn within_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if this shape does not intersect with another (no shared points).
     ///
     /// This is the negation of `intersects()`.
     fn disjoint(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::disjoint`], but with an explicit integer engine.
+    fn disjoint_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if this shape completely covers another.
     ///
     /// `covers(A, B)` is equivalent to `within(B, A)`.
     fn covers(&self, other: &R1) -> bool;
+
+    /// Same as [`Self::covers`], but with an explicit integer engine.
+    fn covers_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 }
 
 impl<R0, R1, P> FloatRelate<R1, P> for R0
@@ -297,8 +331,24 @@ where
     }
 
     #[inline]
+    fn intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).intersects()
+    }
+
+    #[inline]
     fn interiors_intersect(&self, other: &R1) -> bool {
         FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).interiors_intersect()
+    }
+
+    #[inline]
+    fn interiors_intersect_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).interiors_intersect()
     }
 
     #[inline]
@@ -307,8 +357,24 @@ where
     }
 
     #[inline]
+    fn touches_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).touches()
+    }
+
+    #[inline]
     fn point_intersects(&self, other: &R1) -> bool {
         FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).point_intersects()
+    }
+
+    #[inline]
+    fn point_intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).point_intersects()
     }
 
     #[inline]
@@ -317,13 +383,37 @@ where
     }
 
     #[inline]
+    fn within_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).within()
+    }
+
+    #[inline]
     fn disjoint(&self, other: &R1) -> bool {
         !self.intersects(other)
     }
 
     #[inline]
+    fn disjoint_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        !self.intersects_as::<I>(other)
+    }
+
+    #[inline]
     fn covers(&self, other: &R1) -> bool {
         other.within(self)
+    }
+
+    #[inline]
+    fn covers_as<I>(&self, other: &R1) -> bool
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        other.within_as::<I>(self)
     }
 }
 
@@ -340,6 +430,7 @@ mod tests {
 
         assert!(square.intersects(&other));
         assert!(other.intersects(&square));
+        assert!(square.intersects_as::<i64>(&other));
     }
 
     #[test]

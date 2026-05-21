@@ -4,14 +4,16 @@ use crate::float::scale::FixedScaleOverlayError;
 use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::clip::ClipRule;
 use i_float::float::compatible::FloatPointCompatible;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Paths;
 use i_shape::source::resource::ShapeResource;
+use i_tree::{Expiration, LayoutNumber};
 
 /// Trait for clipping float string paths by float shapes.
 ///
-/// This convenience trait uses the default integer engine (`i32`). Use
-/// `FloatStringOverlay::<P, I>::from_shape_and_string` when you need to select `i16`, `i32`,
-/// or `i64` explicitly.
+/// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
+/// when you need to select `i16`, `i32`, or `i64` explicitly.
 pub trait FloatClip<R, P>
 where
     R: ShapeResource<P>,
@@ -29,6 +31,11 @@ where
     /// # Returns
     /// A `Paths<P>` collection of string lines that meet the clipping conditions.
     fn clip_by(&self, source: &R, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>;
+
+    /// Same as [`Self::clip_by`], but with an explicit integer engine.
+    fn clip_by_as<I>(&self, source: &R, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 
     /// Clips paths according to the specified build and clip rules using a fixed float-to-integer scale.
     /// - `resource`: A clipping shape.
@@ -50,6 +57,17 @@ where
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError>;
 
+    /// Same as [`Self::clip_by_fixed_scale`], but with an explicit integer engine.
+    fn clip_by_fixed_scale_as<I>(
+        &self,
+        source: &R,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        scale: P::Scalar,
+    ) -> Result<Paths<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Clips paths according to the specified build and clip rules.
     /// - `resource`: A clipping shape.
     ///   `ShapeResource` can be one of the following:
@@ -69,6 +87,17 @@ where
         clip_rule: ClipRule,
         solver: Solver,
     ) -> Paths<P>;
+
+    /// Same as [`Self::clip_by_with_solver`], but with an explicit integer engine.
+    fn clip_by_with_solver_as<I>(
+        &self,
+        source: &R,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: Solver,
+    ) -> Paths<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 
     /// Clips paths according to the specified build and clip rules using a fixed float-to-integer scale.
     /// - `resource`: A clipping shape.
@@ -91,6 +120,18 @@ where
         solver: Solver,
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError>;
+
+    /// Same as [`Self::clip_by_fixed_scale_with_solver`], but with an explicit integer engine.
+    fn clip_by_fixed_scale_with_solver_as<I>(
+        &self,
+        source: &R,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: Solver,
+        scale: P::Scalar,
+    ) -> Result<Paths<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 }
 
 #[cfg(test)]
@@ -116,6 +157,12 @@ mod tests {
 
         assert_eq!(paths.len(), 1);
         assert_eq!(paths[0], [[0.0, 1.0], [2.0, 1.0]]);
+
+        let paths = string
+            .clip_by_fixed_scale_as::<i64>(&shape, FillRule::EvenOdd, clip_rule, 10.0)
+            .unwrap();
+
+        assert_eq!(paths.len(), 1);
     }
 
     #[test]
@@ -162,6 +209,14 @@ where
     }
 
     #[inline]
+    fn clip_by_as<I>(&self, resource: &R0, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        self.clip_by_with_solver_as::<I>(resource, fill_rule, clip_rule, Default::default())
+    }
+
+    #[inline]
     fn clip_by_with_solver(
         &self,
         resource: &R0,
@@ -170,6 +225,21 @@ where
         solver: Solver,
     ) -> Paths<P> {
         FloatStringOverlay::<P>::with_shape_and_string(resource, self)
+            .clip_string_lines_with_solver(fill_rule, clip_rule, solver)
+    }
+
+    #[inline]
+    fn clip_by_with_solver_as<I>(
+        &self,
+        resource: &R0,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: Solver,
+    ) -> Paths<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        FloatStringOverlay::<P, I>::from_shape_and_string(resource, self)
             .clip_string_lines_with_solver(fill_rule, clip_rule, solver)
     }
 
@@ -185,6 +255,26 @@ where
     }
 
     #[inline]
+    fn clip_by_fixed_scale_as<I>(
+        &self,
+        resource: &R0,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        scale: P::Scalar,
+    ) -> Result<Paths<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        self.clip_by_fixed_scale_with_solver_as::<I>(
+            resource,
+            fill_rule,
+            clip_rule,
+            Default::default(),
+            scale,
+        )
+    }
+
+    #[inline]
     fn clip_by_fixed_scale_with_solver(
         &self,
         resource: &R0,
@@ -195,6 +285,24 @@ where
     ) -> Result<Paths<P>, FixedScaleOverlayError> {
         Ok(
             FloatStringOverlay::<P>::with_shape_and_string_fixed_scale(resource, self, scale)?
+                .clip_string_lines_with_solver(fill_rule, clip_rule, solver),
+        )
+    }
+
+    #[inline]
+    fn clip_by_fixed_scale_with_solver_as<I>(
+        &self,
+        resource: &R0,
+        fill_rule: FillRule,
+        clip_rule: ClipRule,
+        solver: Solver,
+        scale: P::Scalar,
+    ) -> Result<Paths<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(
+            FloatStringOverlay::<P, I>::from_shape_and_string_fixed_scale(resource, self, scale)?
                 .clip_string_lines_with_solver(fill_rule, clip_rule, solver),
         )
     }

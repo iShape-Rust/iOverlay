@@ -625,6 +625,20 @@ let mut overlay = FloatOverlay::<[f64; 2], i64>::from_subj_and_clip(&subj, &clip
 let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
 ```
 
+The sugar traits also use `i32` by default. Use the `*_as::<I>` methods when you want to keep
+the shorthand API and still select the integer engine explicitly:
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::single::SingleFloatOverlay;
+
+let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+
+let result = subj.overlay_as::<i64>(&clip, OverlayRule::Difference, FillRule::EvenOdd);
+```
+
 ---
 
 ### 5. How do I enable OGC-valid output?

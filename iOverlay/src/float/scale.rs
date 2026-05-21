@@ -55,9 +55,8 @@ impl From<FloatPointAdapterScaleError> for FixedScaleOverlayError {
 /// `x_int = (x_float - offset_x) * scale`.
 /// Larger `scale` gives higher precision but must fit within the safe integer bounds.
 ///
-/// This convenience trait uses the default integer engine (`i32`). Use
-/// `FloatOverlay::<P, I>::from_subj_and_clip_fixed_scale` when you need to select `i16`,
-/// `i32`, or `i64` explicitly.
+/// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
+/// when you need to select `i16`, `i32`, or `i64` explicitly.
 pub trait FixedScaleFloatOverlay<R0, R1, P>
 where
     R0: ShapeResource<P>,
@@ -82,6 +81,17 @@ where
         fill_rule: FillRule,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Same as [`Self::overlay_with_fixed_scale`], but with an explicit integer engine.
+    fn overlay_with_fixed_scale_as<I>(
+        &self,
+        source: &R1,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 }
 
 impl<R0, R1, P> FixedScaleFloatOverlay<R0, R1, P> for R0
@@ -100,6 +110,23 @@ where
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         Ok(
             FloatOverlay::<P>::with_subj_and_clip_fixed_scale(self, source, scale)?
+                .overlay(overlay_rule, fill_rule),
+        )
+    }
+
+    #[inline]
+    fn overlay_with_fixed_scale_as<I>(
+        &self,
+        source: &R1,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(
+            FloatOverlay::<P, I>::from_subj_and_clip_fixed_scale(self, source, scale)?
                 .overlay(overlay_rule, fill_rule),
         )
     }
@@ -327,9 +354,8 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
 /// float-to-integer scale, which is useful when you need consistent precision
 /// across multiple operations or when working with known coordinate bounds.
 ///
-/// This convenience trait uses the default integer engine (`i32`). Use
-/// `FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale` when you need to select
-/// `i16`, `i32`, or `i64` explicitly.
+/// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
+/// when you need to select `i16`, `i32`, or `i64` explicitly.
 ///
 /// # Example
 ///
@@ -355,6 +381,15 @@ where
         scale: P::Scalar,
     ) -> Result<bool, FixedScaleOverlayError>;
 
+    /// Same as [`Self::intersects_with_fixed_scale`], but with an explicit integer engine.
+    fn intersects_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if interiors of shapes overlap, using fixed-scale precision.
     fn interiors_intersect_with_fixed_scale(
         &self,
@@ -362,18 +397,63 @@ where
         scale: P::Scalar,
     ) -> Result<bool, FixedScaleOverlayError>;
 
+    /// Same as [`Self::interiors_intersect_with_fixed_scale`], but with an explicit integer engine.
+    fn interiors_intersect_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if shapes touch (boundaries intersect but interiors don't), using fixed-scale precision.
     fn touches_with_fixed_scale(&self, other: &R1, scale: P::Scalar) -> Result<bool, FixedScaleOverlayError>;
 
+    /// Same as [`Self::touches_with_fixed_scale`], but with an explicit integer engine.
+    fn touches_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if this shape is completely within another, using fixed-scale precision.
     fn within_with_fixed_scale(&self, other: &R1, scale: P::Scalar) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Same as [`Self::within_with_fixed_scale`], but with an explicit integer engine.
+    fn within_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 
     /// Returns `true` if shapes do not intersect, using fixed-scale precision.
     fn disjoint_with_fixed_scale(&self, other: &R1, scale: P::Scalar)
     -> Result<bool, FixedScaleOverlayError>;
 
+    /// Same as [`Self::disjoint_with_fixed_scale`], but with an explicit integer engine.
+    fn disjoint_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
+
     /// Returns `true` if this shape completely covers another, using fixed-scale precision.
     fn covers_with_fixed_scale(&self, other: &R1, scale: P::Scalar) -> Result<bool, FixedScaleOverlayError>;
+
+    /// Same as [`Self::covers_with_fixed_scale`], but with an explicit integer engine.
+    fn covers_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey;
 }
 
 impl<R0, R1, P> FixedScaleFloatRelate<R1, P> for R0
@@ -392,6 +472,18 @@ where
     }
 
     #[inline]
+    fn intersects_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale(self, other, scale)?.intersects())
+    }
+
+    #[inline]
     fn interiors_intersect_with_fixed_scale(
         &self,
         other: &R1,
@@ -404,13 +496,52 @@ where
     }
 
     #[inline]
+    fn interiors_intersect_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(
+            FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale(self, other, scale)?
+                .interiors_intersect(),
+        )
+    }
+
+    #[inline]
     fn touches_with_fixed_scale(&self, other: &R1, scale: P::Scalar) -> Result<bool, FixedScaleOverlayError> {
         Ok(FloatPredicateOverlay::<P>::with_subj_and_clip_fixed_scale(self, other, scale)?.touches())
     }
 
     #[inline]
+    fn touches_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale(self, other, scale)?.touches())
+    }
+
+    #[inline]
     fn within_with_fixed_scale(&self, other: &R1, scale: P::Scalar) -> Result<bool, FixedScaleOverlayError> {
         Ok(FloatPredicateOverlay::<P>::with_subj_and_clip_fixed_scale(self, other, scale)?.within())
+    }
+
+    #[inline]
+    fn within_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale(self, other, scale)?.within())
     }
 
     #[inline]
@@ -423,8 +554,32 @@ where
     }
 
     #[inline]
+    fn disjoint_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(!FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale(self, other, scale)?.intersects())
+    }
+
+    #[inline]
     fn covers_with_fixed_scale(&self, other: &R1, scale: P::Scalar) -> Result<bool, FixedScaleOverlayError> {
         Ok(FloatPredicateOverlay::<P>::with_subj_and_clip_fixed_scale(other, self, scale)?.within())
+    }
+
+    #[inline]
+    fn covers_with_fixed_scale_as<I>(
+        &self,
+        other: &R1,
+        scale: P::Scalar,
+    ) -> Result<bool, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey,
+    {
+        Ok(FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale(other, self, scale)?.within())
     }
 }
 
@@ -449,6 +604,12 @@ mod tests {
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[0][0].len(), 4);
+
+        let shapes = left_rect
+            .overlay_with_fixed_scale_as::<i64>(&right_rect, OverlayRule::Union, FillRule::EvenOdd, 10.0)
+            .unwrap();
+
+        assert_eq!(shapes.len(), 1);
     }
 
     #[test]

@@ -144,6 +144,84 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>;
+
+    /// Same as [`Self::stroke`], but with an explicit integer engine.
+    fn stroke_as<I>(&self, style: StrokeStyle<P>, is_closed_path: bool) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_into`], but with an explicit integer engine.
+    fn stroke_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_custom`], but with an explicit integer engine.
+    fn stroke_custom_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+    ) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_custom_into`], but with an explicit integer engine.
+    fn stroke_custom_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_fixed_scale`], but with an explicit integer engine.
+    fn stroke_fixed_scale_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_fixed_scale_into`], but with an explicit integer engine.
+    fn stroke_fixed_scale_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_custom_fixed_scale`], but with an explicit integer engine.
+    fn stroke_custom_fixed_scale_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::stroke_custom_fixed_scale_into`], but with an explicit integer engine.
+    fn stroke_custom_fixed_scale_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
 }
 
 impl<S, P> StrokeOffset<P> for S
@@ -232,6 +310,120 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
         let mut solver = match StrokeSolver::<P, i32>::prepare(self, style) {
+            Some(solver) => solver,
+            None => {
+                output.clear_and_reserve(0, 0);
+                return Ok(());
+            }
+        };
+        solver.apply_scale(scale)?;
+        solver.build_into(self, is_closed_path, options, output);
+        Ok(())
+    }
+
+    fn stroke_as<I>(&self, style: StrokeStyle<P>, is_closed_path: bool) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.stroke_custom_as::<I>(style, is_closed_path, Default::default())
+    }
+
+    fn stroke_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.stroke_custom_into_as::<I>(style, is_closed_path, Default::default(), output)
+    }
+
+    fn stroke_custom_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+    ) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        match StrokeSolver::<P, I>::prepare(self, style) {
+            Some(solver) => solver.build(self, is_closed_path, options),
+            None => vec![],
+        }
+    }
+
+    fn stroke_custom_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        match StrokeSolver::<P, I>::prepare(self, style) {
+            Some(solver) => solver.build_into(self, is_closed_path, options, output),
+            None => output.clear_and_reserve(0, 0),
+        }
+    }
+
+    fn stroke_fixed_scale_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.stroke_custom_fixed_scale_as::<I>(style, is_closed_path, Default::default(), scale)
+    }
+
+    fn stroke_fixed_scale_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.stroke_custom_fixed_scale_into_as::<I>(style, is_closed_path, Default::default(), scale, output)
+    }
+
+    fn stroke_custom_fixed_scale_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        let mut solver = match StrokeSolver::<P, I>::prepare(self, style) {
+            Some(solver) => solver,
+            None => return Ok(vec![]),
+        };
+        solver.apply_scale(scale)?;
+        Ok(solver.build(self, is_closed_path, options))
+    }
+
+    fn stroke_custom_fixed_scale_into_as<I>(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        let mut solver = match StrokeSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -415,6 +607,16 @@ mod tests {
 
         let style = StrokeStyle::new(2.0);
         let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+    }
+
+    #[test]
+    fn test_simple_as() {
+        let path = [[0.0, 0.0], [10.0, 0.0]];
+
+        let style = StrokeStyle::new(2.0);
+        let shapes = path.stroke_as::<i64>(style, false);
 
         assert_eq!(shapes.len(), 1);
     }
