@@ -7,6 +7,10 @@ use i_shape::source::resource::ShapeResource;
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and build rules.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use
+/// `FloatOverlay::<P, I>::from_subj_and_clip` when you need to select `i16`, `i32`, or `i64`
+/// explicitly.
 pub trait SingleFloatOverlay<R0, R1, P>
 where
     R0: ShapeResource<P>,

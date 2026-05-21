@@ -28,9 +28,9 @@ pub trait Simplify<I: IntNumber> {
     /// - `fill_rule`: Fill rule to determine filled areas (non-zero, even-odd, positive, negative).
     /// - `options`: Adjust custom behavior.
     /// # Shape Representation
-    /// The output is a `IntShapes<i32>`, where:
-    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
@@ -104,7 +104,7 @@ where
     /// Skips full overlay if the contour is already simple (no splits, no loops, no collinear issues).
     /// Ensures correct winding order based on `fill_rule` and `options.output_direction`.
     ///
-    /// Returns `None` if the contour is valid and needs no changes, or `Some(IntShapes<i32>)` with the simplified result.
+    /// Returns `None` if the contour is valid and needs no changes, or `Some(IntShapes<I>)` with the simplified result.
     #[inline]
     pub fn simplify_contour(&mut self, contour: &[IntPoint<I>], fill_rule: FillRule) -> Option<IntShapes<I>> {
         self.clear();

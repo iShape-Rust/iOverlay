@@ -59,7 +59,7 @@ where
     ///     - `Path`: A path representing a string line.
     ///     - `Paths`: A collection of paths, each representing a string line.
     ///     - `Vec<Paths>`: A collection of grouped paths, where each group may consist of multiple paths.
-    pub fn with_shape_and_string_with_int<R0, R1>(shape: &R0, string: &R1) -> Self
+    pub fn from_shape_and_string<R0, R1>(shape: &R0, string: &R1) -> Self
     where
         R0: ShapeResource<P>,
         R1: ShapeResource<P>,
@@ -78,7 +78,7 @@ where
     ///
     /// This variant validates that the requested scale is finite, positive, and fits the
     /// input bounds. Use `scale = 1.0 / grid_size` if you want a grid-size style parameter.
-    pub fn with_shape_and_string_fixed_scale_with_int<R0, R1>(
+    pub fn from_shape_and_string_fixed_scale<R0, R1>(
         shape: &R0,
         string: &R1,
         scale: P::Scalar,
@@ -208,7 +208,7 @@ impl<P: FloatPointCompatible> FloatStringOverlay<P> {
         R0: ShapeResource<P>,
         R1: ShapeResource<P>,
     {
-        Self::with_shape_and_string_with_int(shape, string)
+        Self::from_shape_and_string(shape, string)
     }
 
     /// Creates a new `FloatStringOverlay` instance with a fixed float-to-integer scale.
@@ -223,7 +223,7 @@ impl<P: FloatPointCompatible> FloatStringOverlay<P> {
         R0: ShapeResource<P>,
         R1: ShapeResource<P>,
     {
-        Self::with_shape_and_string_fixed_scale_with_int(shape, string, scale)
+        Self::from_shape_and_string_fixed_scale(shape, string, scale)
     }
 }
 

@@ -140,7 +140,7 @@ where
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
-    /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_contours(&mut self, contours: &[IntContour<I>], shape_type: ShapeType) {
@@ -150,7 +150,7 @@ where
     }
 
     /// Adds a single shape to the overlay as either a subject or clip shape.
-    /// - `shape`: A reference to a `IntShape<i32>` instance to be added.
+    /// - `shape`: A reference to a `IntShape<I>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_shape(&mut self, shape: &IntShape<I>, shape_type: ShapeType) {
@@ -158,7 +158,7 @@ where
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
-    /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>], shape_type: ShapeType) {

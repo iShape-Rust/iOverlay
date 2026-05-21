@@ -129,7 +129,7 @@ pub trait IntClip<I: IntNumber> {
     /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
     ///
     /// # Returns
-    /// A vector of `IntPath<i32>` instances representing the clipped sections of the input line.
+    /// A vector of `IntPath<I>` instances representing the clipped sections of the input line.
     fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 
     /// Clips multiple lines according to the specified build and clip rules.
@@ -138,25 +138,25 @@ pub trait IntClip<I: IntNumber> {
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the results.
     ///
     /// # Returns
-    /// A vector of `IntPath<i32>` instances containing the clipped portions of the input lines.
+    /// A vector of `IntPath<I>` instances containing the clipped portions of the input lines.
     fn clip_lines(&self, lines: &[IntLine<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 
     /// Clips a single path according to the specified build and clip rules.
-    /// - `path`: A reference to an `IntPath<i32>`, which is a sequence of points representing the path to be clipped.
+    /// - `path`: A reference to an `IntPath<I>`, which is a sequence of points representing the path to be clipped.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of path segments.
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
     ///
     /// # Returns
-    /// A vector of `IntPath<i32>` instances representing the clipped sections of the path.
+    /// A vector of `IntPath<I>` instances representing the clipped sections of the path.
     fn clip_path(&self, path: &IntPath<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 
     /// Clips multiple paths according to the specified build and clip rules.
-    /// - `paths`: A slice of `IntPath<i32>` instances, each representing a path to be clipped.
+    /// - `paths`: A slice of `IntPath<I>` instances, each representing a path to be clipped.
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of path segments.
     /// - `clip_rule`: The rule for clipping, determining how boundary and inversion settings affect the result.
     ///
     /// # Returns
-    /// A vector of `IntPath<i32>` instances containing the clipped portions of the input paths.
+    /// A vector of `IntPath<I>` instances containing the clipped portions of the input paths.
     fn clip_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>>;
 }
 

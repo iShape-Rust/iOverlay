@@ -55,11 +55,11 @@ where
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.
     /// - `buffer`: Reusable buffer, optimisation purpose only.
-    /// - Returns: A vector of `IntShape<i32>`, representing the geometric result of the applied overlay rule.
+    /// - Returns: A vector of `IntShape<I>`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
-    /// The output is a `IntShapes<i32>`, where:
-    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.

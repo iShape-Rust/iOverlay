@@ -218,7 +218,7 @@ where
     }
 
     /// Adds multiple paths to the overlay as either subject or clip paths.
-    /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_contours(&mut self, contours: &[IntContour<I>], shape_type: ShapeType) {
@@ -228,7 +228,7 @@ where
     }
 
     /// Adds a single shape to the overlay as either a subject or clip shape.
-    /// - `shape`: A reference to a `IntShape<i32>` instance to be added.
+    /// - `shape`: A reference to a `IntShape<I>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_shape(&mut self, shape: &IntShape<I>, shape_type: ShapeType) {
@@ -236,7 +236,7 @@ where
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
-    /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>], shape_type: ShapeType) {
@@ -251,7 +251,7 @@ where
     }
 
     /// Adds multiple flat-shape to the overlay as either subject or clip shapes.
-    /// - `buffer`: A buffer of `IntShapes<i32>` instances to be added to the overlay.
+    /// - `buffer`: A buffer of `IntShapes<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
     pub fn add_flat_buffer(&mut self, buffer: &FlatContoursBuffer<I>, shape_type: ShapeType) {
@@ -328,11 +328,11 @@ where
     /// ### Parameters:
     /// - `overlay_rule`: The boolean operation rule to apply, determining how shapes are combined or subtracted.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
-    /// - Returns: A vector of `IntShape<i32>` that meet the specified area criteria, representing the cleaned-up geometric result.
+    /// - Returns: A vector of `IntShape<I>` that meet the specified area criteria, representing the cleaned-up geometric result.
     /// # Shape Representation
-    /// The output is a `IntShapes<i32>`, where:
-    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
@@ -381,11 +381,11 @@ where
     /// Executes a single Boolean operation and writes the result into a flat contour buffer.
     ///
     /// This is a lower-allocation alternative to [`Self::overlay`] when you want flat contour
-    /// output (`points` + `ranges`) instead of nested `IntShapes<i32>`.
+    /// output (`points` + `ranges`) instead of nested `IntShapes<I>`.
     ///
     /// - `overlay_rule`: The Boolean operation to apply.
     /// - `fill_rule`: Fill rule used to determine interior regions.
-    /// - `output`: Destination [`FlatContoursBuffer<i32>`] that receives resulting contours.
+    /// - `output`: Destination [`FlatContoursBuffer<I>`] that receives resulting contours.
     ///   Existing buffer contents are replaced.
     #[inline]
     pub fn overlay_into(

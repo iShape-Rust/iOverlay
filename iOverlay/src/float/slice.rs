@@ -10,6 +10,10 @@ use i_shape::source::resource::ShapeResource;
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
 /// allowing for boolean operations based on the specified build rule.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use
+/// `FloatStringOverlay::<P, I>::from_shape_and_string` when you need to select `i16`, `i32`,
+/// or `i64` explicitly.
 pub trait FloatSlice<R, P>
 where
     R: ShapeResource<P>,

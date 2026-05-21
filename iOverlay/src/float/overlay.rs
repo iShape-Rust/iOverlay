@@ -25,6 +25,11 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use i_tree::{Expiration, LayoutNumber};
 
+/// Options for float overlay extraction.
+///
+/// `F` is the floating-point scalar type (`f32` or `f64`). `I` is the integer engine
+/// (`i16`, `i32`, or `i64`) used internally for float-to-integer conversion and
+/// precision limits. The default integer engine is `i32`.
 #[derive(Debug, Clone, Copy)]
 pub struct OverlayOptions<F: FloatNumber, I: IntNumber = i32> {
     /// Preserve collinear points in the input before Boolean operations.
@@ -123,7 +128,7 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    pub fn with_subj_and_clip_with_int<R0, R1>(subj: &R0, clip: &R1) -> Self
+    pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
@@ -147,7 +152,7 @@ where
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn with_subj_and_clip_custom_with_int<R0, R1>(
+    pub fn from_subj_and_clip_custom<R0, R1>(
         subj: &R0,
         clip: &R1,
         options: OverlayOptions<P::Scalar, I>,
@@ -173,7 +178,7 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    pub fn with_subj_with_int<R>(subj: &R) -> Self
+    pub fn from_subj<R>(subj: &R) -> Self
     where
         R: ShapeResource<P> + ?Sized,
     {
@@ -192,11 +197,7 @@ where
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn with_subj_custom_with_int<R>(
-        subj: &R,
-        options: OverlayOptions<P::Scalar, I>,
-        solver: Solver,
-    ) -> Self
+    pub fn from_subj_custom<R>(subj: &R, options: OverlayOptions<P::Scalar, I>, solver: Solver) -> Self
     where
         R: ShapeResource<P> + ?Sized,
     {
@@ -393,7 +394,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        Self::with_subj_and_clip_with_int(subj, clip)
+        Self::from_subj_and_clip(subj, clip)
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
@@ -409,7 +410,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        Self::with_subj_and_clip_custom_with_int(subj, clip, options, solver)
+        Self::from_subj_and_clip_custom(subj, clip, options, solver)
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject.
@@ -419,7 +420,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     where
         R: ShapeResource<P> + ?Sized,
     {
-        Self::with_subj_with_int(subj)
+        Self::from_subj(subj)
     }
 
     /// Creates a new `FloatOverlay` instance and initializes it with subject.
@@ -429,7 +430,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     where
         R: ShapeResource<P> + ?Sized,
     {
-        Self::with_subj_custom_with_int(subj, options, solver)
+        Self::from_subj_custom(subj, options, solver)
     }
 }
 
@@ -524,9 +525,9 @@ mod tests {
         let left_rect = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
         let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
 
-        let low = FloatOverlay::<[f64; 2], i16>::with_subj_and_clip_with_int(&left_rect, &right_rect)
+        let low = FloatOverlay::<[f64; 2], i16>::from_subj_and_clip(&left_rect, &right_rect)
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
-        let high = FloatOverlay::<[f64; 2], i64>::with_subj_and_clip_with_int(&left_rect, &right_rect)
+        let high = FloatOverlay::<[f64; 2], i64>::from_subj_and_clip(&left_rect, &right_rect)
             .overlay(OverlayRule::Union, FillRule::EvenOdd);
 
         assert_eq!(low[0][0].len(), 4);

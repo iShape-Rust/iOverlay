@@ -7,6 +7,11 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Paths;
 use i_shape::source::resource::ShapeResource;
 
+/// Trait for clipping float string paths by float shapes.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use
+/// `FloatStringOverlay::<P, I>::from_shape_and_string` when you need to select `i16`, `i32`,
+/// or `i64` explicitly.
 pub trait FloatClip<R, P>
 where
     R: ShapeResource<P>,

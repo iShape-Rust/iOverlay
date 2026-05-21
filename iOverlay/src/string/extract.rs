@@ -18,9 +18,9 @@ impl<I: IntNumber + Expiration + SortKey> StringGraph<'_, I> {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// # Shape Representation
-    /// The output is a `IntShapes<i32>`, where:
-    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
@@ -33,11 +33,11 @@ impl<I: IntNumber + Expiration + SortKey> StringGraph<'_, I> {
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `min_area`: The minimum area that a shape must have to be included in the results. Shapes smaller than this will be excluded.
-    /// - Returns: A vector of `IntShape<i32>`, representing the geometric result of the applied overlay rule.
+    /// - Returns: A vector of `IntShape<I>`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
-    /// The output is a `IntShapes<i32>`, where:
-    /// - The outer `Vec<IntShape<i32>>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour<i32>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.

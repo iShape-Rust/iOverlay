@@ -77,7 +77,7 @@ where
     }
 
     /// Creates a new predicate overlay from subject and clip shapes.
-    pub fn with_subj_and_clip_with_int<R0, R1>(subj: &R0, clip: &R1) -> Self
+    pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
@@ -97,7 +97,7 @@ where
     }
 
     /// Creates a new predicate overlay with custom solver and fill rule.
-    pub fn with_subj_and_clip_custom_with_int<R0, R1>(
+    pub fn from_subj_and_clip_custom<R0, R1>(
         subj: &R0,
         clip: &R1,
         fill_rule: FillRule,
@@ -183,7 +183,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        Self::with_subj_and_clip_with_int(subj, clip)
+        Self::from_subj_and_clip(subj, clip)
     }
 
     /// Creates a new predicate overlay with custom solver and fill rule.
@@ -199,7 +199,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        Self::with_subj_and_clip_custom_with_int(subj, clip, fill_rule, solver)
+        Self::from_subj_and_clip_custom(subj, clip, fill_rule, solver)
     }
 }
 
@@ -208,6 +208,10 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
 /// This trait provides convenient methods for testing spatial relationships
 /// directly on contours, shapes, and shape collections without explicit
 /// overlay construction.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use
+/// `FloatPredicateOverlay::<P, I>::from_subj_and_clip` when you need to select `i16`, `i32`,
+/// or `i64` explicitly.
 ///
 /// # Example
 ///

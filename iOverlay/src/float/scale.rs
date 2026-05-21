@@ -54,6 +54,10 @@ impl From<FloatPointAdapterScaleError> for FixedScaleOverlayError {
 /// The `scale` parameter defines the float-to-integer conversion:
 /// `x_int = (x_float - offset_x) * scale`.
 /// Larger `scale` gives higher precision but must fit within the safe integer bounds.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use
+/// `FloatOverlay::<P, I>::from_subj_and_clip_fixed_scale` when you need to select `i16`,
+/// `i32`, or `i64` explicitly.
 pub trait FixedScaleFloatOverlay<R0, R1, P>
 where
     R0: ShapeResource<P>,
@@ -118,7 +122,7 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    pub fn with_subj_and_clip_fixed_scale_with_int<R0, R1>(
+    pub fn from_subj_and_clip_fixed_scale<R0, R1>(
         subj: &R0,
         clip: &R1,
         scale: P::Scalar,
@@ -152,7 +156,7 @@ where
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn with_subj_and_clip_fixed_scale_custom_with_int<R0, R1>(
+    pub fn from_subj_and_clip_fixed_scale_custom<R0, R1>(
         subj: &R0,
         clip: &R1,
         options: OverlayOptions<P::Scalar, I>,
@@ -190,7 +194,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        FloatOverlay::<P, i32>::with_subj_and_clip_fixed_scale_with_int(subj, clip, scale)
+        FloatOverlay::<P, i32>::from_subj_and_clip_fixed_scale(subj, clip, scale)
     }
 
     /// Creates a new `FloatOverlay` instance with a fixed float-to-integer scale.
@@ -207,9 +211,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        FloatOverlay::<P, i32>::with_subj_and_clip_fixed_scale_custom_with_int(
-            subj, clip, options, solver, scale,
-        )
+        FloatOverlay::<P, i32>::from_subj_and_clip_fixed_scale_custom(subj, clip, options, solver, scale)
     }
 }
 
@@ -229,7 +231,7 @@ where
     /// * `subj` - A `ShapeResource` defining the subject geometry.
     /// * `clip` - A `ShapeResource` defining the clip geometry.
     /// * `scale` - Fixed float-to-integer scale factor.
-    pub fn with_subj_and_clip_fixed_scale_with_int<R0, R1>(
+    pub fn from_subj_and_clip_fixed_scale<R0, R1>(
         subj: &R0,
         clip: &R1,
         scale: P::Scalar,
@@ -259,7 +261,7 @@ where
     /// * `fill_rule` - Fill rule to determine filled areas.
     /// * `solver` - Type of solver to use.
     /// * `scale` - Fixed float-to-integer scale factor.
-    pub fn with_subj_and_clip_fixed_scale_custom_with_int<R0, R1>(
+    pub fn from_subj_and_clip_fixed_scale_custom<R0, R1>(
         subj: &R0,
         clip: &R1,
         fill_rule: FillRule,
@@ -296,7 +298,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        FloatPredicateOverlay::<P, i32>::with_subj_and_clip_fixed_scale_with_int(subj, clip, scale)
+        FloatPredicateOverlay::<P, i32>::from_subj_and_clip_fixed_scale(subj, clip, scale)
     }
 
     /// Creates a new predicate overlay with subject and clip shapes using fixed-scale precision
@@ -313,7 +315,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        FloatPredicateOverlay::<P, i32>::with_subj_and_clip_fixed_scale_custom_with_int(
+        FloatPredicateOverlay::<P, i32>::from_subj_and_clip_fixed_scale_custom(
             subj, clip, fill_rule, solver, scale,
         )
     }
@@ -324,6 +326,10 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
 /// This trait provides methods for testing spatial relationships using a fixed
 /// float-to-integer scale, which is useful when you need consistent precision
 /// across multiple operations or when working with known coordinate bounds.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use
+/// `FloatPredicateOverlay::<P, I>::from_subj_and_clip_fixed_scale` when you need to select
+/// `i16`, `i32`, or `i64` explicitly.
 ///
 /// # Example
 ///

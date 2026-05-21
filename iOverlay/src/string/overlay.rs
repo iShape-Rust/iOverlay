@@ -73,7 +73,7 @@ where
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with multiple shape contours.
-    /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     #[inline]
     pub fn with_shape_contours(contours: &[IntContour<I>]) -> Self {
         let mut overlay = Self::new(contours.points_count());
@@ -82,7 +82,7 @@ where
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with s shape.
-    /// - `shape`: An `IntShape<i32>` instances to be added to the overlay.
+    /// - `shape`: An `IntShape<I>` instances to be added to the overlay.
     #[inline]
     pub fn with_shape(shape: &[IntContour<I>]) -> Self {
         let mut overlay = Self::new(shape.points_count());
@@ -91,7 +91,7 @@ where
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
-    /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     #[inline]
     pub fn with_shapes(shapes: &[IntShape<I>]) -> Self {
         let mut overlay = Self::new(shapes.points_count());
@@ -116,7 +116,7 @@ where
     }
 
     /// Adds multiple paths to the overlay as shape paths.
-    /// - `contours`: An array of `IntContour<i32>` instances to be added to the overlay.
+    /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     pub fn add_shape_contours(&mut self, contours: &[IntContour<I>]) {
         for contour in contours.iter() {
             self.add_shape_contour(contour);
@@ -124,7 +124,7 @@ where
     }
 
     /// Adds a list of shape to the overlay.
-    /// - `shapes`: An array of `IntShape<i32>` instances to be added to the overlay.
+    /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     #[inline]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>]) {
         for shape in shapes {
@@ -228,7 +228,7 @@ where
     /// - `fill_rule`: Specifies the rule determining the filled areas, influencing the inclusion of line segments.
     /// - `clip_rule`: The rule for clipping, determining how the boundary and inversion settings affect the result.
     /// # Returns
-    /// A vector of `IntPath<i32>` instances representing the clipped sections of the input lines.
+    /// A vector of `IntPath<I>` instances representing the clipped sections of the input lines.
     #[inline]
     pub fn clip_string_lines(self, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         self.clip_string_lines_with_solver(fill_rule, clip_rule, Default::default())
@@ -240,7 +240,7 @@ where
     /// - `solver`: A solver type to be used for advanced control over the graph building process.
     ///
     /// # Returns
-    /// A vector of `IntPath<i32>` instances representing the clipped sections of the input lines.
+    /// A vector of `IntPath<I>` instances representing the clipped sections of the input lines.
     #[inline]
     pub fn clip_string_lines_with_solver(
         mut self,

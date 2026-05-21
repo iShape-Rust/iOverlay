@@ -56,7 +56,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Buffering**: offsets paths and polygons.
 - **Fill Rules**: even-odd, non-zero, positive and negative.
-- **Data Types**: Supports i32, f32, and f64 APIs.
+- **Data Types**: Supports `i16`/`i32`/`i64` integer APIs and `f32`/`f64` floating-point APIs.
 
 &nbsp;
 ## Demo
@@ -607,7 +607,27 @@ If you need more control, use `FloatPointAdapter::with_scale` and `FloatOverlay:
 
 ---
 
-### 4. How do I enable OGC-valid output?
+### 4. How do I select the integer engine for float overlays?
+
+If you need control over the float-to-integer precision range, select the integer engine at
+compile time with the `from_*` constructors. The supported engines are `i16`, `i32`, and `i64`.
+The default engine is `i32`; use `i64` when the input bounds need a wider integer range.
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::overlay::FloatOverlay;
+
+let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+
+let mut overlay = FloatOverlay::<[f64; 2], i64>::from_subj_and_clip(&subj, &clip);
+let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+```
+
+---
+
+### 5. How do I enable OGC-valid output?
 
 Set the `ogc` flag in `OverlayOptions`.
 
