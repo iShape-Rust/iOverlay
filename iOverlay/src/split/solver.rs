@@ -191,7 +191,7 @@ where
                 continue;
             }
 
-            // we have servral points
+            // we have several points
             let sub_marks = &mut self.marks[start..i];
             Self::sort_sub_marks(sub_marks, x_seg);
 
