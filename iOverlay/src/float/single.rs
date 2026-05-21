@@ -34,7 +34,7 @@ where
 {
     #[inline]
     fn overlay(&self, resource: &R1, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P> {
-        FloatOverlay::with_subj_and_clip(self, resource).overlay(overlay_rule, fill_rule)
+        FloatOverlay::<P>::with_subj_and_clip(self, resource).overlay(overlay_rule, fill_rule)
     }
 }
 

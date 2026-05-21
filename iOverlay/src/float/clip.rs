@@ -164,7 +164,7 @@ where
         clip_rule: ClipRule,
         solver: Solver,
     ) -> Paths<P> {
-        FloatStringOverlay::with_shape_and_string(resource, self)
+        FloatStringOverlay::<P>::with_shape_and_string(resource, self)
             .clip_string_lines_with_solver(fill_rule, clip_rule, solver)
     }
 
@@ -189,7 +189,7 @@ where
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError> {
         Ok(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(resource, self, scale)?
+            FloatStringOverlay::<P>::with_shape_and_string_fixed_scale(resource, self, scale)?
                 .clip_string_lines_with_solver(fill_rule, clip_rule, solver),
         )
     }

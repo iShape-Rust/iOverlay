@@ -8,6 +8,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
 use crate::i_shape::source::resource::ShapeResource;
+use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -15,15 +16,17 @@ use i_float::float::rect::FloatRect;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Debug, Clone, Copy)]
-pub struct OverlayOptions<T: FloatNumber> {
+pub struct OverlayOptions<F: FloatNumber, I: IntNumber = i32> {
     /// Preserve collinear points in the input before Boolean operations.
     pub preserve_input_collinear: bool,
 
@@ -34,7 +37,7 @@ pub struct OverlayOptions<T: FloatNumber> {
     pub preserve_output_collinear: bool,
 
     /// Minimum area threshold to include a contour in the result.
-    pub min_output_area: T,
+    pub min_output_area: F,
 
     /// If true, extract OGC-valid shapes.
     pub ogc: bool,
@@ -42,16 +45,22 @@ pub struct OverlayOptions<T: FloatNumber> {
     /// If true, the result will be cleaned from precision-related issues
     /// such as duplicate or nearly identical points. Especially useful for `f32` coordinates.
     pub clean_result: bool,
+
+    phantom_data: PhantomData<I>,
 }
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
-pub struct FloatOverlay<P: FloatPointCompatible> {
-    pub(super) overlay: Overlay<i32>,
+pub struct FloatOverlay<P: FloatPointCompatible, I: IntNumber + Expiration = i32> {
+    pub(super) overlay: Overlay<I>,
     pub(super) clean_result: bool,
-    pub(super) adapter: FloatPointAdapter<P, i32>,
+    pub(super) adapter: FloatPointAdapter<P, I>,
 }
 
-impl<P: FloatPointCompatible> FloatOverlay<P> {
+impl<P, I> FloatOverlay<P, I>
+where
+    P: FloatPointCompatible,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
     /// by converting float-based geometry to integer space, using a pre-configured adapter.
     ///
@@ -60,7 +69,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
-    pub fn with_adapter(adapter: FloatPointAdapter<P, i32>, capacity: usize) -> Self {
+    pub fn with_adapter(adapter: FloatPointAdapter<P, I>, capacity: usize) -> Self {
         Self::new_custom(adapter, Default::default(), Default::default(), capacity)
     }
 
@@ -75,8 +84,8 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     ///   segments for efficient memory allocation.
     #[inline]
     pub fn new_custom(
-        adapter: FloatPointAdapter<P, i32>,
-        options: OverlayOptions<P::Scalar>,
+        adapter: FloatPointAdapter<P, I>,
+        options: OverlayOptions<P::Scalar, I>,
         solver: Solver,
         capacity: usize,
     ) -> Self {
@@ -96,10 +105,10 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
-    pub fn new_empty(options: OverlayOptions<P::Scalar>, solver: Solver, capacity: usize) -> Self {
+    pub fn new_empty(options: OverlayOptions<P::Scalar, I>, solver: Solver, capacity: usize) -> Self {
         let clean_result = options.clean_result;
         let adapter = FloatPointAdapter::new(FloatRect::zero());
-        let overlay = Overlay::new_custom(capacity, options.int_default::<i32>(), solver);
+        let overlay = Overlay::new_custom(capacity, options.int_default(), solver);
         Self {
             overlay,
             clean_result,
@@ -114,7 +123,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    pub fn with_subj_and_clip_with_int<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
@@ -138,10 +147,10 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn with_subj_and_clip_custom<R0, R1>(
+    pub fn with_subj_and_clip_custom_with_int<R0, R1>(
         subj: &R0,
         clip: &R1,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
         solver: Solver,
     ) -> Self
     where
@@ -164,7 +173,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
-    pub fn with_subj<R>(subj: &R) -> Self
+    pub fn with_subj_with_int<R>(subj: &R) -> Self
     where
         R: ShapeResource<P> + ?Sized,
     {
@@ -183,7 +192,11 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn with_subj_custom<R>(subj: &R, options: OverlayOptions<P::Scalar>, solver: Solver) -> Self
+    pub fn with_subj_custom_with_int<R>(
+        subj: &R,
+        options: OverlayOptions<P::Scalar, I>,
+        solver: Solver,
+    ) -> Self
     where
         R: ShapeResource<P> + ?Sized,
     {
@@ -275,7 +288,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     /// Convert into `FloatOverlayGraph` from the added paths or shapes using the specified build rule. This graph is the foundation for executing boolean operations, allowing for the analysis and manipulation of the geometric data. The `OverlayGraph` created by this method represents a preprocessed state of the input shapes, optimized for the application of boolean operations based on the provided build rule.
     /// - `fill_rule`: Specifies the rule for determining filled areas within the shapes, influencing how the resulting graph represents intersections and unions.
     #[inline]
-    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatOverlayGraph<'_, P>> {
+    pub fn build_graph_view(&mut self, fill_rule: FillRule) -> Option<FloatOverlayGraph<'_, P, I>> {
         let graph = self.overlay.build_graph_view(fill_rule)?;
         Some(FloatOverlayGraph::new(
             graph,
@@ -355,7 +368,7 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
         let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
-        let mut int_output = FlatContoursBuffer::<i32>::default();
+        let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
         self.overlay
             .overlay_into(overlay_rule, fill_rule, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
@@ -371,23 +384,72 @@ impl<P: FloatPointCompatible> FloatOverlay<P> {
     }
 }
 
-impl<T: FloatNumber> Default for OverlayOptions<T> {
+impl<P: FloatPointCompatible> FloatOverlay<P> {
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    where
+        R0: ShapeResource<P> + ?Sized,
+        R1: ShapeResource<P> + ?Sized,
+    {
+        Self::with_subj_and_clip_with_int(subj, clip)
+    }
+
+    /// Creates a new `FloatOverlay` instance and initializes it with subject and clip shapes.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        options: OverlayOptions<P::Scalar, i32>,
+        solver: Solver,
+    ) -> Self
+    where
+        R0: ShapeResource<P> + ?Sized,
+        R1: ShapeResource<P> + ?Sized,
+    {
+        Self::with_subj_and_clip_custom_with_int(subj, clip, options, solver)
+    }
+
+    /// Creates a new `FloatOverlay` instance and initializes it with subject.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj<R>(subj: &R) -> Self
+    where
+        R: ShapeResource<P> + ?Sized,
+    {
+        Self::with_subj_with_int(subj)
+    }
+
+    /// Creates a new `FloatOverlay` instance and initializes it with subject.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_custom<R>(subj: &R, options: OverlayOptions<P::Scalar, i32>, solver: Solver) -> Self
+    where
+        R: ShapeResource<P> + ?Sized,
+    {
+        Self::with_subj_custom_with_int(subj, options, solver)
+    }
+}
+
+impl<F: FloatNumber, I: IntNumber> Default for OverlayOptions<F, I> {
     fn default() -> Self {
-        // f32 precision is not enough to cover i32
-        let clean_result = T::BITS <= 32;
+        let clean_result = F::BITS <= I::BITS;
         Self {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: T::from_float(0.0),
+            min_output_area: F::from_float(0.0),
             ogc: false,
             clean_result,
+            phantom_data: Default::default(),
         }
     }
 }
 
-impl<T: FloatNumber> OverlayOptions<T> {
-    pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>, I: IntNumber>(
+impl<T: FloatNumber, I: IntNumber> OverlayOptions<T, I> {
+    pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>>(
         &self,
         adapter: &FloatPointAdapter<P, I>,
     ) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
@@ -400,7 +462,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
         }
     }
 
-    pub(crate) fn int_default<I: IntNumber>(&self) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
+    pub(crate) fn int_default(&self) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
@@ -411,8 +473,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
     }
 
     pub fn ogc() -> Self {
-        // f32 precision is not enough to cover i32
-        let clean_result = T::BITS <= 32;
+        let clean_result = T::BITS <= I::BITS;
         Self {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
@@ -420,6 +481,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
             min_output_area: T::from_float(0.0),
             ogc: true,
             clean_result,
+            phantom_data: Default::default(),
         }
     }
 }
@@ -428,7 +490,7 @@ impl<T: FloatNumber> OverlayOptions<T> {
 mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay_rule::OverlayRule;
-    use crate::float::overlay::FloatOverlay;
+    use crate::float::overlay::{FloatOverlay, OverlayOptions};
     use alloc::vec;
 
     #[test]
@@ -455,6 +517,28 @@ mod tests {
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
         assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_custom_int_engines() {
+        let left_rect = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
+        let right_rect = [[1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]];
+
+        let low = FloatOverlay::<[f64; 2], i16>::with_subj_and_clip_with_int(&left_rect, &right_rect)
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+        let high = FloatOverlay::<[f64; 2], i64>::with_subj_and_clip_with_int(&left_rect, &right_rect)
+            .overlay(OverlayRule::Union, FillRule::EvenOdd);
+
+        assert_eq!(low[0][0].len(), 4);
+        assert_eq!(high[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_options_clean_result_depends_on_int_bits() {
+        assert!(!OverlayOptions::<f64, i32>::default().clean_result);
+        assert!(OverlayOptions::<f64, i64>::default().clean_result);
+        assert!(!OverlayOptions::<f32, i16>::default().clean_result);
+        assert!(OverlayOptions::<f32, i32>::default().clean_result);
     }
 
     #[test]

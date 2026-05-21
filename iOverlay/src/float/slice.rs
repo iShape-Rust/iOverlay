@@ -102,7 +102,7 @@ where
 {
     #[inline]
     fn slice_by(&self, resource: &R0, fill_rule: FillRule) -> Shapes<P> {
-        FloatStringOverlay::with_shape_and_string(self, resource)
+        FloatStringOverlay::<P>::with_shape_and_string(self, resource)
             .build_graph_view(fill_rule)
             .map(|graph| graph.extract_shapes(StringRule::Slice))
             .unwrap_or_default()
@@ -116,7 +116,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         Ok(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(self, resource, scale)?
+            FloatStringOverlay::<P>::with_shape_and_string_fixed_scale(self, resource, scale)?
                 .build_graph_view(fill_rule)
                 .map(|graph| graph.extract_shapes(StringRule::Slice))
                 .unwrap_or_default(),
@@ -131,7 +131,7 @@ where
         options: OverlayOptions<P::Scalar>,
         solver: Solver,
     ) -> Shapes<P> {
-        FloatStringOverlay::with_shape_and_string(self, resource)
+        FloatStringOverlay::<P>::with_shape_and_string(self, resource)
             .build_graph_view_with_solver(fill_rule, solver)
             .map(|graph| graph.extract_shapes_custom(StringRule::Slice, options))
             .unwrap_or_default()
@@ -147,7 +147,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         Ok(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(self, resource, scale)?
+            FloatStringOverlay::<P>::with_shape_and_string_fixed_scale(self, resource, scale)?
                 .build_graph_view_with_solver(fill_rule, solver)
                 .map(|graph| graph.extract_shapes_custom(StringRule::Slice, options))
                 .unwrap_or_default(),

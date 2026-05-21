@@ -276,7 +276,7 @@ where
     fn build_overlay<S: ShapeResource<P>>(
         &self,
         source: &S,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
     ) -> Overlay<I> {
         let total_capacity = self.outer_builder.capacity(self.points_count);
         let mut overlay = Overlay::new_custom(
@@ -327,7 +327,7 @@ where
         overlay
     }
 
-    fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar>) -> Shapes<P> {
+    fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar, I>) -> Shapes<P> {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
         let mut overlay = self.build_overlay(source, options);
@@ -349,7 +349,7 @@ where
     fn build_into<S: ShapeResource<P>>(
         self,
         source: &S,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
         let preserve_output_collinear = options.preserve_output_collinear;

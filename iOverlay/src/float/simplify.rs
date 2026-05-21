@@ -38,7 +38,7 @@ where
 {
     #[inline]
     fn simplify_shape(&self, fill_rule: FillRule) -> Shapes<P> {
-        FloatOverlay::with_subj_custom(self, Default::default(), Default::default())
+        FloatOverlay::<P>::with_subj_custom(self, Default::default(), Default::default())
             .overlay(OverlayRule::Subject, fill_rule)
     }
 
@@ -49,7 +49,7 @@ where
         options: OverlayOptions<P::Scalar>,
         solver: Solver,
     ) -> Shapes<P> {
-        FloatOverlay::with_subj_custom(self, options, solver).overlay(OverlayRule::Subject, fill_rule)
+        FloatOverlay::<P>::with_subj_custom(self, options, solver).overlay(OverlayRule::Subject, fill_rule)
     }
 }
 

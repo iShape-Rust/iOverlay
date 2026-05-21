@@ -3,19 +3,26 @@ use crate::string::graph::StringGraph;
 use crate::string::rule::StringRule;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use i_tree::{Expiration, LayoutNumber};
 
 /// The `FloatStringGraph` struct represents a graph structure with floating-point precision,
 /// providing methods to extract geometric shapes from the graph after applying string-based operations.
-pub struct FloatStringGraph<'a, P: FloatPointCompatible> {
-    pub graph: StringGraph<'a, i32>,
-    pub adapter: FloatPointAdapter<P, i32>,
+pub struct FloatStringGraph<'a, P: FloatPointCompatible, I: IntNumber = i32> {
+    pub graph: StringGraph<'a, I>,
+    pub adapter: FloatPointAdapter<P, I>,
 }
 
-impl<P: FloatPointCompatible> FloatStringGraph<'_, P> {
+impl<P, I> FloatStringGraph<'_, P, I>
+where
+    P: FloatPointCompatible,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     /// Extracts shapes from the overlay graph based on the specified string rule.
     /// This method is used to retrieve the final geometric shapes after boolean operations have been applied.
     /// It's suitable for most use cases where the minimum area of shapes is not a concern.
@@ -59,7 +66,7 @@ impl<P: FloatPointCompatible> FloatStringGraph<'_, P> {
     pub fn extract_shapes_custom(
         &self,
         string_rule: StringRule,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P> {
         let shapes = self
             .graph

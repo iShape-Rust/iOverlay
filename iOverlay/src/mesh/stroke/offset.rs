@@ -295,7 +295,7 @@ where
         self,
         source: &S,
         is_closed_path: bool,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P> {
         let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
         if ir <= <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(1) {
@@ -335,7 +335,7 @@ where
         self,
         source: &S,
         is_closed_path: bool,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
         let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();

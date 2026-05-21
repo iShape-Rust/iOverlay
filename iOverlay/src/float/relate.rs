@@ -4,7 +4,10 @@ use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::source::resource::ShapeResource;
+use i_tree::{Expiration, LayoutNumber};
 
 /// Float-coordinate wrapper for spatial predicate evaluation.
 ///
@@ -26,12 +29,16 @@ use i_shape::source::resource::ShapeResource;
 ///
 /// For a more ergonomic API, see the [`FloatRelate`] trait which provides
 /// methods directly on shape types.
-pub struct FloatPredicateOverlay<P: FloatPointCompatible> {
-    pub(crate) overlay: PredicateOverlay<i32>,
-    pub(crate) adapter: FloatPointAdapter<P, i32>,
+pub struct FloatPredicateOverlay<P: FloatPointCompatible, I: IntNumber + Expiration = i32> {
+    pub(crate) overlay: PredicateOverlay<I>,
+    pub(crate) adapter: FloatPointAdapter<P, I>,
 }
 
-impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
+impl<P, I> FloatPredicateOverlay<P, I>
+where
+    P: FloatPointCompatible,
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
     /// Creates a new predicate overlay with a pre-configured adapter.
     ///
     /// Use this when you need fixed-scale precision via `FloatPointAdapter::with_scale()`.
@@ -40,7 +47,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     /// * `adapter` - A `FloatPointAdapter` instance for coordinate conversion.
     /// * `capacity` - Initial capacity for storing segments.
     #[inline]
-    pub fn with_adapter(adapter: FloatPointAdapter<P, i32>, capacity: usize) -> Self {
+    pub fn with_adapter(adapter: FloatPointAdapter<P, I>, capacity: usize) -> Self {
         Self {
             overlay: PredicateOverlay::new(capacity),
             adapter,
@@ -58,7 +65,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     /// * `capacity` - Initial capacity for storing segments.
     #[inline]
     pub fn with_adapter_custom(
-        adapter: FloatPointAdapter<P, i32>,
+        adapter: FloatPointAdapter<P, I>,
         fill_rule: FillRule,
         solver: Solver,
         capacity: usize,
@@ -70,13 +77,13 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     }
 
     /// Creates a new predicate overlay from subject and clip shapes.
-    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    pub fn with_subj_and_clip_with_int<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -90,7 +97,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     }
 
     /// Creates a new predicate overlay with custom solver and fill rule.
-    pub fn with_subj_and_clip_custom<R0, R1>(
+    pub fn with_subj_and_clip_custom_with_int<R0, R1>(
         subj: &R0,
         clip: &R1,
         fill_rule: FillRule,
@@ -101,7 +108,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -164,6 +171,35 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     #[inline]
     pub fn within(&mut self) -> bool {
         self.overlay.within()
+    }
+}
+
+impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
+    /// Creates a new predicate overlay from subject and clip shapes.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    where
+        R0: ShapeResource<P> + ?Sized,
+        R1: ShapeResource<P> + ?Sized,
+    {
+        Self::with_subj_and_clip_with_int(subj, clip)
+    }
+
+    /// Creates a new predicate overlay with custom solver and fill rule.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        fill_rule: FillRule,
+        solver: Solver,
+    ) -> Self
+    where
+        R0: ShapeResource<P> + ?Sized,
+        R1: ShapeResource<P> + ?Sized,
+    {
+        Self::with_subj_and_clip_custom_with_int(subj, clip, fill_rule, solver)
     }
 }
 
@@ -253,27 +289,27 @@ where
 {
     #[inline]
     fn intersects(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).intersects()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).intersects()
     }
 
     #[inline]
     fn interiors_intersect(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).interiors_intersect()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).interiors_intersect()
     }
 
     #[inline]
     fn touches(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).touches()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).touches()
     }
 
     #[inline]
     fn point_intersects(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).point_intersects()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).point_intersects()
     }
 
     #[inline]
     fn within(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).within()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).within()
     }
 
     #[inline]
@@ -537,7 +573,7 @@ mod tests {
         let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
 
         let iter = square.iter().chain(other.iter());
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, i32>::with_iter(iter);
 
         let mut overlay = FloatPredicateOverlay::with_adapter(adapter, 16);
         overlay.add_source(&square, ShapeType::Subject);
@@ -556,7 +592,7 @@ mod tests {
         let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
 
         let iter = square.iter().chain(other.iter());
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, i32>::with_iter(iter);
 
         let mut overlay =
             FloatPredicateOverlay::with_adapter_custom(adapter, FillRule::NonZero, Solver::default(), 16);
