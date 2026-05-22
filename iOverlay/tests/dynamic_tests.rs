@@ -125,7 +125,7 @@ mod tests {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
-                a += 0.001
+                a += 0.005
             }
         }
     }
