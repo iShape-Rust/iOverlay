@@ -37,7 +37,11 @@ where
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
-        let range: SegRange<I> = segments.ver_range().into();
+        let range: SegRange<I> = if let Some(range) = segments.ver_range() {
+            range.into()
+        } else {
+            return false;
+        };
         let mut tree: SegExpTree<I, I, IdSegment<I>> = if let Some(tree) = SegExpTree::new(range) {
             tree
         } else {
@@ -104,14 +108,14 @@ impl<I: IntNumber> From<LineRange<I>> for SegRange<I> {
 trait VerticalRange {
     type Int: IntNumber;
 
-    fn ver_range(&self) -> LineRange<Self::Int>;
+    fn ver_range(&self) -> Option<LineRange<Self::Int>>;
 }
 
 impl<I: IntNumber, C: Send, D: Send> VerticalRange for Vec<Segment<C, I, D>> {
     type Int = I;
 
-    fn ver_range(&self) -> LineRange<I> {
-        let mut min_y = self[0].x_segment.a.y;
+    fn ver_range(&self) -> Option<LineRange<I>> {
+        let mut min_y = self.first()?.x_segment.a.y;
         let mut max_y = min_y;
 
         for edge in self.iter() {
@@ -121,10 +125,10 @@ impl<I: IntNumber, C: Send, D: Send> VerticalRange for Vec<Segment<C, I, D>> {
             max_y = max_y.max(edge.x_segment.b.y);
         }
 
-        LineRange {
+        Some(LineRange {
             min: min_y,
             max: max_y,
-        }
+        })
     }
 }
 

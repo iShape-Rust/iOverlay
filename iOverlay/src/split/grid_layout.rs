@@ -256,7 +256,7 @@ pub(super) struct GridLayout<I: IntNumber> {
 impl<I: IntNumber> GridLayout<I> {
     #[inline]
     pub(super) fn index(&self, x: I) -> usize {
-        ((x - self.min_x) >> self.power).to_usize()
+        ((x.wide() - self.min_x.wide()) >> self.power).to_usize()
     }
 
     #[inline]
@@ -284,8 +284,8 @@ impl<I: IntNumber> GridLayout<I> {
     }
 
     fn with_min_max(min_x: I, max_x: I, max_power: u32) -> Option<Self> {
-        let dx = max_x - min_x;
-        if dx < I::FOUR {
+        let dx = max_x.wide() - min_x.wide();
+        if dx < I::Wide::FOUR {
             return None;
         }
         let log = dx.ilog2();

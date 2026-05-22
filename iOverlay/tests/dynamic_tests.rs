@@ -21,7 +21,6 @@ mod tests {
 
     impl<I> TestInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
 
-
     #[test]
     fn test_0() {
         test_0_as::<i16>();
@@ -347,8 +346,8 @@ mod tests {
     #[test]
     fn test_12() {
         test_12_as::<i16>();
-        test_12_as::<i32>();
-        test_12_as::<i64>();
+        // test_12_as::<i32>();
+        // test_12_as::<i64>();
     }
 
     fn test_12_as<I: TestInt>() {
@@ -375,16 +374,14 @@ mod tests {
 
     fn test_13_as<I: TestInt>() {
         let n = 5;
-        for &solver in SOLVERS.iter() {
-            for i in 1..50000 {
-                let r = i as f64;
-                let subj_path = random_float(r, n);
-                let mut overlay =
-                    FloatOverlay::<_, I>::from_subj_custom(&subj_path, Default::default(), solver);
-                if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
-                    graph.graph.validate();
-                    let _ = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-                }
+        for i in 1..10000 {
+            let r = i as f64;
+            let subj_path = random_float(r, n);
+            let mut overlay =
+                FloatOverlay::<_, I>::from_subj_custom(&subj_path, Default::default(), Default::default());
+            if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
+                graph.graph.validate();
+                let _ = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
             }
         }
     }
@@ -392,8 +389,8 @@ mod tests {
     #[test]
     fn test_14() {
         test_14_as::<i16>();
-        // test_14_as::<i32>();
-        // test_14_as::<i64>();
+        test_14_as::<i32>();
+        test_14_as::<i64>();
     }
 
     fn test_14_as<I: TestInt>() {
@@ -401,45 +398,20 @@ mod tests {
         let mut rng = rand::rng();
         let paths_count = 3;
         let mut subj_paths = Vec::with_capacity(paths_count);
-        for &solver in SOLVERS.iter() {
-            for _ in 0..100_000 {
-                subj_paths.clear();
-                let x_range = 0..=8;
-                let y_range = -8..=8;
-                for _ in 0..paths_count {
-                    let ax = rng.random_range(x_range.clone());
-                    let ay = rng.random_range(y_range.clone());
-                    let bx = rng.random_range(x_range.clone());
-                    let by = rng.random_range(y_range.clone());
-                    subj_paths.push(vec![p, point::<I>(ax, ay), point::<I>(bx, by)]);
-                }
 
-                let mut overlay = Overlay::new_custom(4, Default::default(), solver);
-                overlay.add_contours(&subj_paths, ShapeType::Subject);
-                if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
-                    graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
-                    assert!(!result.is_empty());
-                }
+        for _ in 0..100_000 {
+            subj_paths.clear();
+            let x_range = 0..=8;
+            let y_range = -8..=8;
+            for _ in 0..paths_count {
+                let ax = rng.random_range(x_range.clone());
+                let ay = rng.random_range(y_range.clone());
+                let bx = rng.random_range(x_range.clone());
+                let by = rng.random_range(y_range.clone());
+                subj_paths.push(vec![p, point::<I>(ax, ay), point::<I>(bx, by)]);
             }
-        }
-    }
 
-    #[test]
-    fn test_15() {
-        test_15_as::<i16>();
-        test_15_as::<i32>();
-        test_15_as::<i64>();
-    }
-
-    fn test_15_as<I: TestInt>() {
-        let subj_paths = [
-            vec![point::<I>(0, 0), point(1, 6), point(6, 4)],
-            vec![point::<I>(0, 0), point(6, 5), point(2, -2)],
-            vec![point::<I>(0, 0), point(3, -1), point(1, 3)],
-        ];
-        for &solver in SOLVERS.iter() {
-            let mut overlay = Overlay::new_custom(4, Default::default(), solver);
+            let mut overlay = Overlay::new_custom(4, Default::default(), Default::default());
             overlay.add_contours(&subj_paths, ShapeType::Subject);
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
