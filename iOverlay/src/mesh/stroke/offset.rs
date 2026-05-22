@@ -508,7 +508,7 @@ where
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P> {
         let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
-        if ir <= <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(1) {
+        if ir <= I::WideUInt::ONE {
             // offset is too small
             return vec![];
         }
@@ -549,7 +549,7 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
         let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
-        if ir <= <<I::Wide as WideIntNumber>::UInt as UIntNumber>::from_u64(1) {
+        if ir <= I::WideUInt::ONE {
             // offset is too small
             output.clear_and_reserve(0, 0);
             return;

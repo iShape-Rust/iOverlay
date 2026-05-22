@@ -7,7 +7,6 @@ use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::i_float::int::number::int::IntNumber;
-use crate::i_float::int::number::wide_int::WideIntNumber;
 use crate::i_float::int::point::IntPoint;
 use alloc::vec;
 use i_key_sort::sort::key::SortKey;
@@ -34,11 +33,7 @@ pub trait Simplify<I: IntNumber> {
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    fn simplify(
-        &self,
-        fill_rule: FillRule,
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
-    ) -> IntShapes<I>;
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I>;
 }
 
 impl<I> Simplify<I> for [IntPoint<I>]
@@ -46,11 +41,7 @@ where
     I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
-    fn simplify(
-        &self,
-        fill_rule: FillRule,
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
-    ) -> IntShapes<I> {
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
         match Overlay::new_custom(self.len(), options, Default::default()).simplify_contour(self, fill_rule) {
             Some(shapes) => shapes,
             None => vec![vec![self.to_vec()]],
@@ -63,11 +54,7 @@ where
     I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
-    fn simplify(
-        &self,
-        fill_rule: FillRule,
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
-    ) -> IntShapes<I> {
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
         match Overlay::new_custom(self.len(), options, Default::default()).simplify_shape(self, fill_rule) {
             Some(shapes) => shapes,
             None => vec![self.to_vec()],
@@ -80,11 +67,7 @@ where
     I: IntNumber + Expiration + LayoutNumber + SortKey,
 {
     #[inline]
-    fn simplify(
-        &self,
-        fill_rule: FillRule,
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
-    ) -> IntShapes<I> {
+    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
         Overlay::new_custom(self.points_count(), options, Default::default()).simplify_shapes(self, fill_rule)
     }
 }

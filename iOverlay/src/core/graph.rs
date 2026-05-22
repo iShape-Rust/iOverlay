@@ -7,7 +7,6 @@ use crate::build::builder::GraphNode;
 use crate::core::overlay::IntOverlayOptions;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
 
 /// A representation of geometric shapes organized for efficient boolean operations.
 ///
@@ -16,7 +15,7 @@ use i_float::int::number::wide_int::WideIntNumber;
 /// Use `OverlayGraph` to perform boolean operations on the geometric shapes you've added to an `Overlay`, after it has processed the shapes according to the specified build and overlay rules.
 /// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
 pub struct OverlayGraph<'a, I: IntNumber, D = ()> {
-    pub(crate) options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+    pub(crate) options: IntOverlayOptions<I::WideUInt>,
     pub(crate) nodes: &'a [OverlayNode],
     pub(crate) links: &'a [OverlayLink<I, D>],
 }

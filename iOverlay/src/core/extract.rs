@@ -311,21 +311,13 @@ impl<I: IntNumber> StartPathData<I> {
 }
 
 pub(crate) trait GraphContour<I: IntNumber> {
-    fn validate(
-        &mut self,
-        min_output_area: <I::Wide as WideIntNumber>::UInt,
-        preserve_output_collinear: bool,
-    ) -> (bool, bool);
+    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool);
     fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
 }
 
 impl<I: IntNumber> GraphContour<I> for IntContour<I> {
     #[inline]
-    fn validate(
-        &mut self,
-        min_output_area: <I::Wide as WideIntNumber>::UInt,
-        preserve_output_collinear: bool,
-    ) -> (bool, bool) {
+    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
             self.simplify_contour()
         } else {
@@ -336,7 +328,7 @@ impl<I: IntNumber> GraphContour<I> for IntContour<I> {
             return (false, is_modified);
         }
 
-        if min_output_area == <I::Wide as WideIntNumber>::UInt::ZERO {
+        if min_output_area == I::WideUInt::ZERO {
             return (true, is_modified);
         }
         let area = self.unsafe_area();

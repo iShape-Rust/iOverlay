@@ -16,7 +16,6 @@ use crate::vector::edge::{DataVectorEdge, VectorShape};
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_shape::int::count::PointsCount;
@@ -68,7 +67,7 @@ pub enum ContourDirection {
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
 pub struct Overlay<I: IntNumber + Expiration> {
     pub solver: Solver,
-    pub options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+    pub options: IntOverlayOptions<I::WideUInt>,
     pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
     pub(crate) segments: Vec<Segment<ShapeCountBoolean, I>>,
     pub(crate) split_solver: SplitSolver<I>,
@@ -98,11 +97,7 @@ where
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    pub fn new_custom(
-        capacity: usize,
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
-        solver: Solver,
-    ) -> Self {
+    pub fn new_custom(capacity: usize, options: IntOverlayOptions<I::WideUInt>, solver: Solver) -> Self {
         Self {
             solver,
             options,
@@ -131,7 +126,7 @@ where
     pub fn with_contour_custom(
         subj: &[IntPoint<I>],
         clip: &[IntPoint<I>],
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+        options: IntOverlayOptions<I::WideUInt>,
         solver: Solver,
     ) -> Self {
         let mut overlay = Self::new_custom(subj.len() + clip.len(), options, solver);
@@ -158,7 +153,7 @@ where
     pub fn with_contours_custom(
         subj: &[IntContour<I>],
         clip: &[IntContour<I>],
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+        options: IntOverlayOptions<I::WideUInt>,
         solver: Solver,
     ) -> Self {
         let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
@@ -185,7 +180,7 @@ where
     pub fn with_shapes_options(
         subj: &[IntShape<I>],
         clip: &[IntShape<I>],
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+        options: IntOverlayOptions<I::WideUInt>,
         solver: Solver,
     ) -> Self {
         let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);

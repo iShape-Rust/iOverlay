@@ -13,7 +13,6 @@ use crate::split::solver::SplitSolver;
 use crate::vector::edge::{DataVectorEdge, DataVectorShape};
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_tree::{Expiration, LayoutNumber};
@@ -27,7 +26,7 @@ pub struct InputEdge<I: IntNumber, D> {
 
 pub struct EdgeOverlay<I: IntNumber + Expiration, D: OverlayEdgeData> {
     pub solver: Solver,
-    pub options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+    pub options: IntOverlayOptions<I::WideUInt>,
     pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
     segments: Vec<Segment<ShapeCountBoolean, I, D>>,
     split_solver: SplitSolver<I>,

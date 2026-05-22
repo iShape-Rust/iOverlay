@@ -294,14 +294,8 @@ impl<I: IntNumber> CrossSolver<I> {
             let uxy_b = xy_b.unsigned_abs();
             let udiv = div.unsigned_abs();
 
-            let kx = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::Product::multiply(
-                a1x.unsigned_abs(),
-                uxy_b,
-            );
-            let ky = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::Product::multiply(
-                a1y.unsigned_abs(),
-                uxy_b,
-            );
+            let kx = <I::WideUInt as UIntNumber>::Product::multiply(a1x.unsigned_abs(), uxy_b);
+            let ky = <I::WideUInt as UIntNumber>::Product::multiply(a1y.unsigned_abs(), uxy_b);
 
             let ux = kx.divide_with_rounding(udiv);
             let uy = ky.divide_with_rounding(udiv);

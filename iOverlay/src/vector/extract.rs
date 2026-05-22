@@ -312,21 +312,13 @@ fn is_sorted<I: IntNumber>(segments: &[IdSegment<I>]) -> bool {
 }
 
 trait DataGraphContour<I: IntNumber, D: OverlayEdgeData> {
-    fn validate(
-        &mut self,
-        min_output_area: <I::Wide as WideIntNumber>::UInt,
-        preserve_output_collinear: bool,
-    ) -> (bool, bool);
+    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool);
     fn push_node_and_get_other(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
 }
 
 impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath<I, D> {
     #[inline]
-    fn validate(
-        &mut self,
-        min_output_area: <I::Wide as WideIntNumber>::UInt,
-        preserve_output_collinear: bool,
-    ) -> (bool, bool) {
+    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool) {
         let is_modified = if !preserve_output_collinear {
             self.simplify_contour()
         } else {
@@ -337,7 +329,7 @@ impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath
             return (false, is_modified);
         }
 
-        if min_output_area == <I::Wide as WideIntNumber>::UInt::ZERO {
+        if min_output_area == I::WideUInt::ZERO {
             return (true, is_modified);
         }
 

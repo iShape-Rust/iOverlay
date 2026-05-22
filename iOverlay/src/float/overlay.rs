@@ -469,7 +469,7 @@ impl<T: FloatNumber, I: IntNumber> OverlayOptions<T, I> {
     pub(crate) fn int_with_adapter<P: FloatPointCompatible<Scalar = T>>(
         &self,
         adapter: &FloatPointAdapter<P, I>,
-    ) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
+    ) -> IntOverlayOptions<I::WideUInt> {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
@@ -479,12 +479,12 @@ impl<T: FloatNumber, I: IntNumber> OverlayOptions<T, I> {
         }
     }
 
-    pub(crate) fn int_default(&self) -> IntOverlayOptions<<I::Wide as WideIntNumber>::UInt> {
+    pub(crate) fn int_default(&self) -> IntOverlayOptions<I::WideUInt> {
         IntOverlayOptions {
             preserve_input_collinear: self.preserve_input_collinear,
             output_direction: self.output_direction,
             preserve_output_collinear: self.preserve_output_collinear,
-            min_output_area: <I::Wide as WideIntNumber>::UInt::ZERO,
+            min_output_area: I::WideUInt::ZERO,
             ogc: self.ogc,
         }
     }

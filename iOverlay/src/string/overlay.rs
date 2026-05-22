@@ -15,7 +15,6 @@ use crate::string::line::IntLine;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use i_float::int::number::int::IntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_shape::int::count::PointsCount;
@@ -24,7 +23,7 @@ use i_shape::int::shape::{IntContour, IntShape};
 use i_tree::{Expiration, LayoutNumber};
 
 pub struct StringOverlay<I: IntNumber + Expiration> {
-    pub options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
+    pub options: IntOverlayOptions<I::WideUInt>,
     pub(super) segments: Vec<Segment<ShapeCountString, I>>,
     pub(crate) split_solver: SplitSolver<I>,
     pub(crate) graph_builder: GraphBuilder<ShapeCountString, Vec<usize>, I>,
@@ -51,10 +50,7 @@ where
     /// This pre-allocation helps in optimizing memory usage and performance.
     /// - `capacity`: The initial capacity for storing edge data. Ideally, this should be set to the sum of the edges of all shapes to be added to the overlay, ensuring efficient data management.
     /// - `options`: Adjust custom behavior.
-    pub fn with_options(
-        capacity: usize,
-        options: IntOverlayOptions<<I::Wide as WideIntNumber>::UInt>,
-    ) -> Self {
+    pub fn with_options(capacity: usize, options: IntOverlayOptions<I::WideUInt>) -> Self {
         Self {
             options,
             segments: Vec::with_capacity(capacity),

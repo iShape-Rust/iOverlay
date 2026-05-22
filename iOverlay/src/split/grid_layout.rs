@@ -112,23 +112,21 @@ impl<I: IntNumber> FragmentBuffer<I> {
 
         let is_inc = s.a.y <= s.b.y;
 
-        let width = (s.b.x.wide() - s.a.x.wide()).to_uint();
+        let width = (s.b.x - s.a.x).to_uint();
         let height = (s.b.y.wide() - s.a.y.wide()).unsigned_abs();
 
         let log = (width * height).ilog2();
-        let p = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::LAST_BIT_INDEX - log;
+        let p = I::WideUInt::LAST_BIT_INDEX - log;
         let k = (height << p) / width;
 
-        let mut w = (self.layout.pos(i0 + 1).wide() - s.a.x.wide()).to_uint();
-
-        let one = <<I::Wide as WideIntNumber>::UInt as UIntNumber>::ONE;
-        let dw = one << self.layout.power;
+        let mut w = (self.layout.pos(i0 + 1) - s.a.x).to_uint();
+        let dw = I::WideUInt::ONE << self.layout.power;
 
         for i in i0..i1 {
             let h_min = (w * k) >> p;
             let mut h_max = h_min;
             while h_max * width < height * w {
-                h_max += one;
+                h_max += I::WideUInt::ONE;
             }
 
             let max_x = x0 + I::from_uint(w);
