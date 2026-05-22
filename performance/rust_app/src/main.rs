@@ -63,9 +63,9 @@ fn main() {
         if args_map.is_empty() {
             args_map.insert("multithreading".to_string(), "false".to_string());
             args_map.insert("complex".to_string(), "false".to_string());
-            args_map.insert("test".to_string(), 7.to_string());
-            args_map.insert("int".to_string(), "i32".to_string());
-            let count = 32;
+            args_map.insert("test".to_string(), 3.to_string());
+            args_map.insert("int".to_string(), "i64".to_string());
+            let count = 4096;
             args_map.insert("count".to_string(), count.to_string());
         }
     }
@@ -201,7 +201,7 @@ fn run_selected_test_with_int<I: test::util::OverlayInt>(
 
 fn run_test_0<I: test::util::OverlayInt>(solver: Solver) {
     println!("run Checkerboard test");
-    for i in 1..12 {
+    for i in 1..11 {
         let n = 1 << i;
         CheckerboardTest::run::<I>(n, OverlayRule::Xor, solver, 1000.0);
     }
@@ -209,7 +209,7 @@ fn run_test_0<I: test::util::OverlayInt>(solver: Solver) {
 
 fn run_test_1<I: test::util::OverlayInt>(solver: Solver) {
     println!("run NotOverlap test");
-    for i in 1..12 {
+    for i in 1..11 {
         let n = 1 << i;
         NotOverlapTest::run::<I>(n, OverlayRule::Xor, solver, 1000.0);
     }
@@ -217,7 +217,7 @@ fn run_test_1<I: test::util::OverlayInt>(solver: Solver) {
 
 fn run_test_2<I: test::util::OverlayInt>(solver: Solver) {
     println!("run LinesNet test");
-    for i in 1..12 {
+    for i in 1..11 {
         let n = 1 << i;
         LinesNetTest::run::<I>(n, OverlayRule::Intersect, solver, 500.0);
     }
@@ -225,7 +225,7 @@ fn run_test_2<I: test::util::OverlayInt>(solver: Solver) {
 
 fn run_test_3<I: test::util::OverlayInt>(solver: Solver) {
     println!("run Spiral test");
-    for i in 1..21 {
+    for i in 1..20 {
         let n = 1 << i;
         SpiralTest::run::<I>(n, solver, 1000.0)
     }
@@ -233,7 +233,7 @@ fn run_test_3<I: test::util::OverlayInt>(solver: Solver) {
 
 fn run_test_4<I: test::util::OverlayInt>(solver: Solver) {
     println!("run Windows test");
-    for i in 1..12 {
+    for i in 1..11 {
         let n = 1 << i;
         WindowsTest::run::<I>(n, OverlayRule::Difference, solver, 500.0);
     }
@@ -241,7 +241,7 @@ fn run_test_4<I: test::util::OverlayInt>(solver: Solver) {
 
 fn run_test_5<I: test::util::OverlayInt>(solver: Solver) {
     println!("run NestedSquares test");
-    for i in 1..18 {
+    for i in 1..17 {
         let n = 1 << i;
         CrossTest::run::<I>(n, OverlayRule::Xor, solver, 500.0);
     }
@@ -250,7 +250,7 @@ fn run_test_5<I: test::util::OverlayInt>(solver: Solver) {
 fn run_test_6<I: test::util::OverlayInt>(solver: Solver) {
     println!("run Corrosion test");
     let mut n = 1;
-    for _ in 1..12 {
+    for _ in 1..11 {
         CorrosionTest::run::<I>(n, OverlayRule::Difference, solver, 100.0);
         n = n << 1;
     }
@@ -259,7 +259,7 @@ fn run_test_6<I: test::util::OverlayInt>(solver: Solver) {
 fn run_test_7<I: test::util::OverlayInt>(solver: Solver) {
     println!("run Concentric test");
     let mut n = 1;
-    for _ in 1..12 {
+    for _ in 1..11 {
         ConcentricTest::run::<I>(n, OverlayRule::Intersect, solver, 100.0);
         n = n << 1;
     }
@@ -268,7 +268,7 @@ fn run_test_7<I: test::util::OverlayInt>(solver: Solver) {
 fn run_test_8<I: test::util::OverlayInt>(solver: Solver) {
     println!("run WindMill test");
     let mut n = 1;
-    for _ in 1..12 {
+    for _ in 1..11 {
         WindMillTest::run::<I>(n, OverlayRule::Difference, solver, 100.0);
         n = n << 1;
     }
