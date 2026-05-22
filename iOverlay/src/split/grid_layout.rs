@@ -125,8 +125,10 @@ impl<I: IntNumber> FragmentBuffer<I> {
         for i in i0..i1 {
             let h_min = (w * k) >> p;
             let mut h_max = h_min;
-            while h_max * width < height * w {
-                h_max += I::WideUInt::ONE;
+
+            let hw = height * w;
+            if h_max * width < hw {
+                h_max = (hw + width - I::WideUInt::ONE) / width;
             }
 
             let max_x = x0 + I::from_uint(w);
