@@ -40,8 +40,11 @@ where
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
         let any_merged = segments.merge_if_needed();
-        let any_intersection = self.split(segments, solver);
+        if !segments.is_empty() {
+            return true;
+        }
 
+        let any_intersection = self.split(segments, solver);
         any_merged | any_intersection
     }
 
