@@ -40,7 +40,7 @@ where
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
         let any_merged = segments.merge_if_needed();
-        if !segments.is_empty() {
+        if segments.is_empty() {
             return true;
         }
 
