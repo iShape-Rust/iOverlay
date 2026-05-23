@@ -9,9 +9,9 @@ use std::time::Instant;
 pub(crate) struct SpiralTest;
 
 /*
-
-// 3
-// Intersection:
+test 3
+SpiralTest
+Intersection:
 
 i16
 

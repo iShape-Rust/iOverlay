@@ -9,9 +9,9 @@ use std::time::Instant;
 pub(crate) struct CorrosionTest;
 
 /*
-
-// 6
-// Difference:
+test 6
+CorrosionTest
+Difference:
 
 i16
 

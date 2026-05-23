@@ -8,9 +8,9 @@ use std::time::Instant;
 pub(crate) struct LinesNetTest;
 
 /*
-
-// 2
-// Intersection:
+test 2
+LinesNetTest
+Intersection:
 
 i16
 

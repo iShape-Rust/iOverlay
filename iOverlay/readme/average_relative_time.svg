@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="300" viewBox="0 0 860 300" role="img" aria-labelledby="title desc">
+  <title id="title">Average Relative Time</title>
+  <desc id="desc">Geometric mean relative time across benchmark rows where every solver has a result. i32 off is the baseline.</desc>
+  <style>
+    svg {
+      color-scheme: light dark;
+      --text: #17202a;
+      --muted: #5d6673;
+      --grid: #cfd6df;
+      --baseline: #2b3440;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --text: #edf2f7;
+        --muted: #a8b3c2;
+        --grid: #465260;
+        --baseline: #d9e2ec;
+      }
+    }
+
+    .title {
+      fill: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .label {
+      fill: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .value {
+      fill: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .note,
+    .tick {
+      fill: var(--muted);
+      font-size: 12px;
+    }
+
+    .grid {
+      stroke: var(--grid);
+      stroke-width: 1;
+      opacity: 0.72;
+    }
+
+    .baseline {
+      stroke: var(--baseline);
+      stroke-width: 1.5;
+      stroke-dasharray: 4 5;
+    }
+  </style>
+
+  <text class="title" x="190" y="24">Average relative time, i32 off = 1.00x</text>
+
+  <line class="grid" x1="413.6" y1="34" x2="413.6" y2="256"/>
+  <text class="tick" x="413.6" y="280" text-anchor="middle">0.50</text>
+  <line class="grid" x1="525.4" y1="34" x2="525.4" y2="256"/>
+  <text class="tick" x="525.4" y="280" text-anchor="middle">0.75</text>
+  <line class="grid" x1="637.2" y1="34" x2="637.2" y2="256"/>
+  <text class="tick" x="637.2" y="280" text-anchor="middle">1.00</text>
+  <line class="grid" x1="749.0" y1="34" x2="749.0" y2="256"/>
+  <text class="tick" x="749.0" y="280" text-anchor="middle">1.25</text>
+  <line class="baseline" x1="637.2" y1="34" x2="637.2" y2="256"/>
+
+  <text class="label" x="178" y="64.7" text-anchor="end">i16 off</text>
+  <rect x="190" y="50.0" width="411.7" height="21.7" rx="3" fill="#3b82f6"/>
+  <text class="value" x="609.7" y="64.7">0.92x</text>
+
+  <text class="label" x="178" y="100.4" text-anchor="end">i32 off</text>
+  <rect x="190" y="85.7" width="447.2" height="21.7" rx="3" fill="#22c55e"/>
+  <text class="value" x="645.2" y="100.4">1.00x</text>
+
+  <text class="label" x="178" y="136.1" text-anchor="end">i64 off</text>
+  <rect x="190" y="121.3" width="579.6" height="21.7" rx="3" fill="#a855f7"/>
+  <text class="value" x="777.6" y="136.1">1.30x</text>
+
+  <text class="label" x="178" y="171.7" text-anchor="end">i16 on</text>
+  <rect x="190" y="157.0" width="382.1" height="21.7" rx="3" fill="#f59e0b"/>
+  <text class="value" x="580.1" y="171.7">0.85x</text>
+
+  <text class="label" x="178" y="207.4" text-anchor="end">i32 on</text>
+  <rect x="190" y="192.7" width="384.8" height="21.7" rx="3" fill="#ef4444"/>
+  <text class="value" x="582.8" y="207.4">0.86x</text>
+
+  <text class="label" x="178" y="243.1" text-anchor="end">i64 on</text>
+  <rect x="190" y="228.3" width="483.7" height="21.7" rx="3" fill="#64748b"/>
+  <text class="value" x="681.7" y="243.1">1.08x</text>
+
+  <text class="note" x="190" y="296">Lower is faster. Apple M4, 24 GB.</text>
+</svg>

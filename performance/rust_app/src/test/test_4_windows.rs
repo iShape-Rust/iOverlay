@@ -8,8 +8,9 @@ use std::time::Instant;
 
 pub(crate) struct WindowsTest;
 /*
-// 4
-// Difference:
+test 4
+WindowsTest
+Difference:
 
 i16
 

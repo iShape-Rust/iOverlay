@@ -9,8 +9,9 @@ use std::time::Instant;
 pub(crate) struct CheckerboardTest;
 
 /*
-// test 0
-// Xor:
+test 0
+CheckerboardTest
+Xor:
 
 i16
 
@@ -101,7 +102,7 @@ multithreading off
 impl CheckerboardTest {
     pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         // 1000
-        if Util::skip_if_out_of_range::<I>(n, 30 * n + 20) {
+        if Util::skip_if_out_of_range::<I>(n, 15 * n + 10) {
             return;
         }
 

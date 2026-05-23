@@ -70,9 +70,16 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 &nbsp;
 ## Performance
 
-iOverlay is optimized for large and complex inputs while preserving robust geometry semantics. The benchmark report compares iOverlay to other polygon overlay engines with a focus on throughput and performance.
+iOverlay supports:
 
-See the detailed report: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
+- `i16`/`i32`/`i64` math solvers
+- `on`/`off` multithreading feature
+
+<img src="readme/average_relative_time.svg" alt="Average relative time for iOverlay Rust solvers" style="max-width:860px;width:100%;">
+
+For bigger data sets, the math engine and multithreading mode have a larger impact on runtime. Results below were measured on Apple M4, 24 GB.
+
+See the detailed reports: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html) and [Rust Solver Benchmarks](https://ishape-rust.github.io/iShape-js/overlay/performance/rust_i_overlay.html)
 
 &nbsp;
 ## Getting Started

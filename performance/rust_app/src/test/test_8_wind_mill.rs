@@ -11,8 +11,9 @@ use std::time::Instant;
 pub(crate) struct WindMillTest;
 
 /*
-// 7
-// Difference:
+test 8
+WindMillTest
+Difference:
 
 i16
 
