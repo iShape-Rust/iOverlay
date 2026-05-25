@@ -494,7 +494,7 @@ where
             offset_overlay.clear();
             segments.clear();
 
-            let contour_fill_rule = if area < I::Wide::ZERO {
+            let contour_fill_rule = if area > I::Wide::ZERO {
                 offset_overlay.options.output_direction = ContourDirection::CounterClockwise;
                 segments.reserve(self.outer_builder.capacity(path.len()));
                 self.outer_builder.build(path, &self.adapter, &mut segments);

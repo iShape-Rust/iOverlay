@@ -1563,10 +1563,10 @@ mod tests {
         let a2 = Triangle::area_two(p2, segment.b, segment.a);
         let a3 = Triangle::area_two(p3, segment.b, segment.a);
 
-        assert!(a0 >= 0);
-        assert!(a1 >= 0);
-        assert!(a2 >= 0);
-        assert!(a3 >= 0);
+        assert!(a0 <= 0);
+        assert!(a1 <= 0);
+        assert!(a2 <= 0);
+        assert!(a3 <= 0);
     }
 
     #[inline]

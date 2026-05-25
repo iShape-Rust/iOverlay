@@ -475,7 +475,7 @@ mod tests {
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
         assert_eq!(shape[0].len(), 4);
-        assert_eq!(shape[0].area(), -100i64);
+        assert_eq!(shape[0].area(), 100i64);
     }
 
     #[test]
@@ -502,7 +502,7 @@ mod tests {
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
         assert_eq!(shape[0].len(), 4);
-        assert_eq!(shape[0].area(), -100i64);
+        assert_eq!(shape[0].area(), 100i64);
     }
 
     #[test]
@@ -529,9 +529,9 @@ mod tests {
         let shape = &result[0];
         assert_eq!(shape.len(), 2);
         assert_eq!(shape[0].len(), 4);
-        assert_eq!(shape[0].area(), -16i64);
+        assert_eq!(shape[0].area(), 16i64);
         assert_eq!(shape[1].len(), 4);
-        assert_eq!(shape[1].area(), 4i64);
+        assert_eq!(shape[1].area(), -4i64);
     }
 
     #[test]
@@ -557,7 +557,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
-        assert_eq!(shape[0].area(), -10i64);
+        assert_eq!(shape[0].area(), 10i64);
     }
 
     #[test]
@@ -589,7 +589,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
-        assert_eq!(shape[0].area(), -17i64);
+        assert_eq!(shape[0].area(), 17i64);
     }
 
     #[test]
@@ -615,7 +615,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
-        assert_eq!(shape[0].area(), -16i64);
+        assert_eq!(shape[0].area(), 16i64);
     }
 
     #[test]
@@ -653,7 +653,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
-        assert_eq!(shape[0].area(), -27i64);
+        assert_eq!(shape[0].area(), 27i64);
     }
 
     #[test]
@@ -679,7 +679,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
-        assert_eq!(shape[0].area(), -12i64);
+        assert_eq!(shape[0].area(), 12i64);
     }
 
     #[test]
@@ -705,7 +705,7 @@ mod tests {
         assert_eq!(result.len(), 1);
         let shape = &result[0];
         assert_eq!(shape.len(), 1);
-        assert_eq!(shape[0].area(), -4i64);
+        assert_eq!(shape[0].area(), 4i64);
     }
 
     #[test]
@@ -731,7 +731,7 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
         assert_eq!(result[1].len(), 1);
-        assert_eq!(result.area(), -4i64);
+        assert_eq!(result.area(), 4i64);
     }
 
     #[test]
@@ -756,7 +756,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 1);
-        assert_eq!(result.area(), -6i64);
+        assert_eq!(result.area(), 6i64);
     }
 
     #[test]
@@ -781,7 +781,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 1);
-        assert_eq!(result.area(), -14i64);
+        assert_eq!(result.area(), 14i64);
     }
 
     #[test]
@@ -806,7 +806,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 1);
-        assert_eq!(result.area(), -25i64);
+        assert_eq!(result.area(), 25i64);
     }
 
     #[test]
@@ -831,7 +831,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 1);
-        assert_eq!(result.area(), -25i64);
+        assert_eq!(result.area(), 25i64);
     }
 
     #[test]
@@ -848,7 +848,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].len(), 1);
-        assert_eq!(result.area(), -8i64);
+        assert_eq!(result.area(), 8i64);
     }
 
     #[test]
