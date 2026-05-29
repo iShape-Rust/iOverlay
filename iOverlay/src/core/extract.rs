@@ -23,7 +23,7 @@ use i_shape::util::reserve::Reserve;
 use i_tree::Expiration;
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Copy, Clone, PartialEq, Default)]
 pub(crate) enum VisitState {
     #[default]
     Unvisited = 0,

@@ -5,7 +5,7 @@ use crate::segm::segment::SegmentFill;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub(crate) struct OverlayLink<I: IntNumber, D = ()> {
     pub(crate) a: IdPoint<I>,
     pub(crate) b: IdPoint<I>,

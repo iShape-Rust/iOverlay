@@ -36,7 +36,7 @@ impl ContourIndex {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub(crate) struct IdSegment<I: IntNumber> {
     pub(crate) contour_index: ContourIndex,
     pub(crate) v_segment: VSegment<I>,

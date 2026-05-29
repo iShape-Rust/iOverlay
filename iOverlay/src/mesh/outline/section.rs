@@ -4,7 +4,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(super) struct OffsetSection<P: FloatPointCompatible, I: IntNumber> {
     pub(super) a: IntPoint<I>,
     pub(super) b: IntPoint<I>,

@@ -2,7 +2,7 @@ use crate::geom::x_segment::XSegment;
 use i_float::int::number::int::IntNumber;
 use i_float::int::rect::IntRect;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(super) struct Fragment<I: IntNumber> {
     pub(super) index: usize,
     pub(super) rect: IntRect<I>,

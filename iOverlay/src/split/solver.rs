@@ -12,7 +12,6 @@ use i_float::int::number::int::IntNumber;
 use i_key_sort::sort::key::SortKey;
 use i_tree::{Expiration, LayoutNumber};
 
-#[derive(Clone)]
 pub(crate) struct SplitSolver<I: IntNumber> {
     pub(super) marks: Vec<LineMark<I>>,
 }

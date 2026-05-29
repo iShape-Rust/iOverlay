@@ -14,7 +14,7 @@ use i_tree::seg::exp::{SegExpCollection, SegRange};
 use i_tree::seg::tree::SegExpTree;
 use i_tree::{Expiration, LayoutNumber};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 struct IdSegment<I: IntNumber> {
     id: usize,
     x_segment: XSegment<I>,

@@ -1,7 +1,7 @@
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) struct IdPoint<I: IntNumber> {
     pub(crate) id: usize,
     pub(crate) point: IntPoint<I>,

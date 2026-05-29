@@ -20,7 +20,6 @@ pub struct OverlayGraph<'a, I: IntNumber, D = ()> {
     pub(crate) links: &'a [OverlayLink<I, D>],
 }
 
-#[derive(Debug)]
 pub(crate) enum OverlayNode {
     Bridge([usize; 2]),
     Cross(Vec<usize>),

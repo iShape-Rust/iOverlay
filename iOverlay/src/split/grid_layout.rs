@@ -8,7 +8,6 @@ use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::rect::IntRect;
 
-#[derive(Debug, Clone)]
 pub(super) struct BorderVSegment<I: IntNumber> {
     pub(super) id: usize,
     pub(super) x: I,

@@ -269,7 +269,7 @@ mod tests {
     use alloc::vec;
     use i_float::int_pnt;
 
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    #[derive(Clone, Copy, PartialEq)]
     enum TestData {
         A,
         B,

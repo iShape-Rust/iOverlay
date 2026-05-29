@@ -64,13 +64,13 @@ impl<I: IntNumber> Split<I> for IntContour<I> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 struct PointItem<I: IntNumber> {
     point: IntPoint<I>,
     pos: usize,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 struct Bin {
     offset: usize,
     data: usize,

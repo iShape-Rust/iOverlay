@@ -13,7 +13,6 @@ use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
 
-#[derive(Debug, Clone)]
 pub(super) struct CapBuilder<P> {
     points: Option<Vec<P>>,
 }

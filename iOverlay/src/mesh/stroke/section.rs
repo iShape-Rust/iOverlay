@@ -7,7 +7,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(super) struct Section<P: FloatPointCompatible> {
     pub(super) a: P,
     pub(super) b: P,
