@@ -101,9 +101,7 @@ mod tests {
 
     #[test]
     fn test_03() {
-        let subj: Path<_> = int_path![
-            [3, 4], [5, 0], [3, 3], [4, 2], [5, -2]
-        ];
+        let subj: Path<_> = int_path![[3, 4], [5, 0], [3, 3], [4, 2], [5, -2]];
 
         let solver = Solver {
             strategy: Strategy::Tree,
@@ -124,9 +122,7 @@ mod tests {
 
     #[test]
     fn test_04() {
-        let subj: Path<IntPoint<i16>> = int_path![
-            [-4, -2], [1, -3], [-1, 3], [1, -4], [4, -3]
-        ];
+        let subj: Path<IntPoint<i16>> = int_path![[-4, -2], [1, -3], [-1, 3], [1, -4], [4, -3]];
 
         let solver = Solver {
             strategy: Strategy::Tree,

@@ -16,14 +16,14 @@ pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + PartialEq + Send + Sync
     fn merge(ctx: EdgeDataMerge<C, Self>) -> Self;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct EdgeDataSplit<I: IntNumber> {
     pub a: IntPoint<I>,
     pub p: IntPoint<I>,
     pub b: IntPoint<I>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct EdgeDataMerge<C, D> {
     pub lhs_data: D,
     pub lhs_count: C,
@@ -34,7 +34,7 @@ pub struct EdgeDataMerge<C, D> {
 
 impl<C> OverlayEdgeData<C> for ()
 where
-    C: Copy + Send + Sync,
+    C: Send + Sync,
 {
     #[inline(always)]
     fn merge(_: EdgeDataMerge<C, Self>) -> Self {}
