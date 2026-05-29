@@ -22,12 +22,13 @@ where
         snap_radius: SnapRadius,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) -> bool {
         let layout =
             if let Some(layout) = GridLayout::new(segments.iter().map(|it| it.x_segment), segments.len()) {
                 layout
             } else {
-                return self.tree_split(snap_radius, segments, solver);
+                return self.tree_split(snap_radius, segments, solver, store);
             };
 
         let mut reusable_buffer = Vec::new();
@@ -72,7 +73,7 @@ where
             any_intersection = true;
             buffer.clear();
 
-            self.apply(segments, &mut reusable_buffer, solver);
+            self.apply(segments, &mut reusable_buffer, solver, store);
 
             snap_radius.increment();
         }

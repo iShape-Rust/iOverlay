@@ -3,17 +3,19 @@ use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 pub trait OverlayEdgeData<C = ShapeCountBoolean>: Copy + PartialEq + Send + Sync {
+    type Store: Default;
+
     #[inline(always)]
-    fn reversed(self) -> Self {
+    fn reversed(self, _store: &mut Self::Store) -> Self {
         self
     }
 
     #[inline(always)]
-    fn split<I: IntNumber>(self, _ctx: EdgeDataSplit<I>) -> (Self, Self) {
+    fn split<I: IntNumber>(self, _ctx: EdgeDataSplit<I>, _store: &mut Self::Store) -> (Self, Self) {
         (self, self)
     }
 
-    fn merge(ctx: EdgeDataMerge<C, Self>) -> Self;
+    fn merge(ctx: EdgeDataMerge<C, Self>, store: &mut Self::Store) -> Self;
 }
 
 #[derive(Debug, Clone)]
@@ -36,6 +38,8 @@ impl<C> OverlayEdgeData<C> for ()
 where
     C: Send + Sync,
 {
+    type Store = ();
+
     #[inline(always)]
-    fn merge(_: EdgeDataMerge<C, Self>) -> Self {}
+    fn merge(_: EdgeDataMerge<C, Self>, _: &mut Self::Store) -> Self {}
 }

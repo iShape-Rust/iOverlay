@@ -40,10 +40,21 @@ pub struct DataVectorEdge<I: IntNumber, D = ()> {
 
 impl<I: IntNumber, D: OverlayEdgeData> DataVectorEdge<I, D> {
     pub(crate) fn new(fill: SideFill, a: IntPoint<I>, b: IntPoint<I>, data: D) -> Self {
+        let mut store = D::Store::default();
+        Self::new_with_store(fill, a, b, data, &mut store)
+    }
+
+    pub(crate) fn new_with_store(
+        fill: SideFill,
+        a: IntPoint<I>,
+        b: IntPoint<I>,
+        data: D,
+        store: &mut D::Store,
+    ) -> Self {
         let (fill, data) = if a < b {
             (fill, data)
         } else {
-            (fill.reverse(), data.reversed())
+            (fill.reverse(), data.reversed(store))
         };
 
         Self { a, b, fill, data }

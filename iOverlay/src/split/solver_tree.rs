@@ -36,6 +36,7 @@ where
         snap_radius: SnapRadius,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) -> bool {
         let range: SegRange<I> = if let Some(range) = segments.ver_range() {
             range.into()
@@ -45,7 +46,7 @@ where
         let mut tree: SegExpTree<I, I, IdSegment<I>> = if let Some(tree) = SegExpTree::new(range) {
             tree
         } else {
-            return self.list_split(snap_radius, segments, solver);
+            return self.list_split(snap_radius, segments, solver, store);
         };
 
         let mut reusable_buffer = Vec::new();
@@ -86,7 +87,7 @@ where
             any_intersection = true;
             tree.clear();
 
-            self.apply(segments, &mut reusable_buffer, solver);
+            self.apply(segments, &mut reusable_buffer, solver, store);
 
             snap_radius.increment();
         }

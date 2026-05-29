@@ -36,6 +36,16 @@ where
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer<I>,
     ) -> Vec<DataVectorShape<I, D>> {
+        let mut store = D::Store::default();
+        self.extract_vector_shapes_with_store(overlay_rule, buffer, &mut store)
+    }
+
+    pub fn extract_vector_shapes_with_store(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer<I>,
+        store: &mut D::Store,
+    ) -> Vec<DataVectorShape<I, D>> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
@@ -70,7 +80,7 @@ where
             let start_data = StartVectorPathData::new(direction, link, left_top_link);
 
             let mut contour =
-                self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited);
+                self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited, store);
             let (is_valid, is_modified) = contour.validate(
                 self.options.min_output_area,
                 self.options.preserve_output_collinear,
@@ -125,6 +135,7 @@ where
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
+        store: &mut D::Store,
     ) -> DataVectorPath<I, D> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
@@ -133,11 +144,12 @@ where
         visited.visit_edge(link_id, visited_state);
 
         let mut contour = DataVectorPath::new();
-        contour.push(DataVectorEdge::new(
+        contour.push(DataVectorEdge::new_with_store(
             start_data.fill,
             start_data.a,
             start_data.b,
             start_data.data,
+            store,
         ));
 
         // Find a closed tour
@@ -149,7 +161,7 @@ where
                 // traversal helpers, so this stays in-bounds.
                 self.links.get_unchecked(link_id)
             };
-            node_id = contour.push_node_and_get_other(link, node_id);
+            node_id = contour.push_node_and_get_other(link, node_id, store);
 
             visited.visit_edge(link_id, visited_state);
         }
@@ -160,9 +172,16 @@ where
 
 impl<I: IntNumber, D: OverlayEdgeData> OverlayGraph<'_, I, D> {
     pub fn extract_vectors(&self) -> Vec<DataVectorEdge<I, D>> {
+        let mut store = D::Store::default();
+        self.extract_vectors_with_store(&mut store)
+    }
+
+    pub fn extract_vectors_with_store(&self, store: &mut D::Store) -> Vec<DataVectorEdge<I, D>> {
         self.links
             .iter()
-            .map(|link| DataVectorEdge::new(link.fill, link.a.point, link.b.point, link.data))
+            .map(|link| {
+                DataVectorEdge::new_with_store(link.fill, link.a.point, link.b.point, link.data, store)
+            })
             .collect()
     }
 }
@@ -313,7 +332,12 @@ fn is_sorted<I: IntNumber>(segments: &[IdSegment<I>]) -> bool {
 
 trait DataGraphContour<I: IntNumber, D: OverlayEdgeData> {
     fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool);
-    fn push_node_and_get_other(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
+    fn push_node_and_get_other(
+        &mut self,
+        link: &OverlayLink<I, D>,
+        node_id: usize,
+        store: &mut D::Store,
+    ) -> usize;
 }
 
 impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath<I, D> {
@@ -341,21 +365,28 @@ impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath
     }
 
     #[inline]
-    fn push_node_and_get_other(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize {
+    fn push_node_and_get_other(
+        &mut self,
+        link: &OverlayLink<I, D>,
+        node_id: usize,
+        store: &mut D::Store,
+    ) -> usize {
         if link.a.id == node_id {
-            self.push(DataVectorEdge::new(
+            self.push(DataVectorEdge::new_with_store(
                 link.fill,
                 link.a.point,
                 link.b.point,
                 link.data,
+                store,
             ));
             link.b.id
         } else {
-            self.push(DataVectorEdge::new(
+            self.push(DataVectorEdge::new_with_store(
                 link.fill,
                 link.b.point,
                 link.a.point,
                 link.data,
+                store,
             ));
             link.a.id
         }

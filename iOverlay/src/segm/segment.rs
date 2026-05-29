@@ -28,17 +28,15 @@ pub(crate) struct Segment<C, I: IntNumber, D = ()> {
     pub(crate) data: D,
 }
 
-impl<C: WindingCount, I: IntNumber> Segment<C, I> {
-    #[inline(always)]
-    #[allow(dead_code)]
-    pub(crate) fn create_and_validate(a: IntPoint<I>, b: IntPoint<I>, count: C) -> Self {
-        Self::create_and_validate_with_data(a, b, count, ())
-    }
-}
-
 impl<C: WindingCount, I: IntNumber, D: OverlayEdgeData<C>> Segment<C, I, D> {
     #[inline(always)]
-    pub(crate) fn create_and_validate_with_data(a: IntPoint<I>, b: IntPoint<I>, count: C, data: D) -> Self {
+    pub(crate) fn create_and_validate_with_data(
+        a: IntPoint<I>,
+        b: IntPoint<I>,
+        count: C,
+        data: D,
+        store: &mut D::Store,
+    ) -> Self {
         if a < b {
             Self {
                 x_segment: XSegment { a, b },
@@ -49,7 +47,7 @@ impl<C: WindingCount, I: IntNumber, D: OverlayEdgeData<C>> Segment<C, I, D> {
             Self {
                 x_segment: XSegment { a: b, b: a },
                 count: count.invert(),
-                data: data.reversed(),
+                data: data.reversed(store),
             }
         }
     }

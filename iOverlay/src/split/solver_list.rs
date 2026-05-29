@@ -18,6 +18,7 @@ where
         snap_radius: SnapRadius,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) -> bool {
         let mut need_to_fix = true;
 
@@ -53,13 +54,13 @@ where
                 return any_intersection;
             }
             any_intersection = true;
-            self.apply(segments, &mut reusable_buffer, solver);
+            self.apply(segments, &mut reusable_buffer, solver, store);
 
             snap_radius.increment();
 
             if need_to_fix && !solver.is_list_split(segments) {
                 // finish with tree solver if edges is become large
-                self.tree_split(snap_radius, segments, solver);
+                self.tree_split(snap_radius, segments, solver, store);
                 return true;
             }
         }

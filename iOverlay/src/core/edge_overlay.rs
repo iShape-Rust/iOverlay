@@ -28,6 +28,7 @@ pub struct EdgeOverlay<I: IntNumber + Expiration, D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions<I::WideUInt>,
     pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
+    data_store: D::Store,
     segments: Vec<Segment<ShapeCountBoolean, I, D>>,
     split_solver: SplitSolver<I>,
     graph_builder: GraphBuilder<ShapeCountBoolean, OverlayNode, I, D>,
@@ -43,6 +44,7 @@ where
             solver: Default::default(),
             options: IntOverlayOptions::keep_output_points(),
             boolean_buffer: None,
+            data_store: Default::default(),
             segments: Vec::with_capacity(capacity),
             split_solver: SplitSolver::new(),
             graph_builder: GraphBuilder::<ShapeCountBoolean, OverlayNode, I, D>::new(),
@@ -56,7 +58,12 @@ where
 
         let (direct, invert) = ShapeCountBoolean::with_shape_type(shape_type);
         self.segments.push(Segment::with_ab_and_data(
-            edge.a, edge.b, direct, invert, edge.data,
+            edge.a,
+            edge.b,
+            direct,
+            invert,
+            edge.data,
+            &mut self.data_store,
         ));
     }
 
@@ -69,12 +76,25 @@ where
         }
     }
 
+    pub fn data_store(&self) -> &D::Store {
+        &self.data_store
+    }
+
+    pub fn data_store_mut(&mut self) -> &mut D::Store {
+        &mut self.data_store
+    }
+
+    pub fn into_data_store(self) -> D::Store {
+        self.data_store
+    }
+
     pub fn build_vectors(
         &mut self,
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
     ) -> Vec<DataVectorEdge<I, D>> {
-        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        self.split_solver
+            .split_segments_with_store(&mut self.segments, &self.solver, &mut self.data_store);
         if self.segments.is_empty() {
             return Vec::new();
         }
@@ -87,7 +107,7 @@ where
                 &self.solver,
                 &self.segments,
             )
-            .extract_vectors()
+            .extract_vectors_with_store(&mut self.data_store)
     }
 
     pub fn build_vector_shapes(
@@ -95,7 +115,8 @@ where
         overlay_rule: OverlayRule,
         fill_rule: FillRule,
     ) -> Vec<DataVectorShape<I, D>> {
-        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        self.split_solver
+            .split_segments_with_store(&mut self.segments, &self.solver, &mut self.data_store);
         if self.segments.is_empty() {
             return Vec::new();
         }
@@ -111,7 +132,7 @@ where
                 &self.solver,
                 &self.segments,
             )
-            .extract_vector_shapes(overlay_rule, &mut buffer);
+            .extract_vector_shapes_with_store(overlay_rule, &mut buffer, &mut self.data_store);
 
         self.boolean_buffer = Some(buffer);
 

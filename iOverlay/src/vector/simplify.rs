@@ -279,7 +279,9 @@ mod tests {
     where
         C: Copy + Send + Sync,
     {
-        fn merge(ctx: EdgeDataMerge<C, Self>) -> Self {
+        type Store = ();
+
+        fn merge(ctx: EdgeDataMerge<C, Self>, _: &mut Self::Store) -> Self {
             if ctx.lhs_data == ctx.rhs_data {
                 ctx.lhs_data
             } else {

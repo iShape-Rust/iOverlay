@@ -148,7 +148,14 @@ impl<I: IntNumber, C: Send> Segment<C, I> {
 
 impl<I: IntNumber, C: Send, D: OverlayEdgeData<C>> Segment<C, I, D> {
     #[inline]
-    pub(crate) fn with_ab_and_data(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C, data: D) -> Self {
+    pub(crate) fn with_ab_and_data(
+        p0: IntPoint<I>,
+        p1: IntPoint<I>,
+        direct: C,
+        invert: C,
+        data: D,
+        store: &mut D::Store,
+    ) -> Self {
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },
@@ -159,7 +166,7 @@ impl<I: IntNumber, C: Send, D: OverlayEdgeData<C>> Segment<C, I, D> {
             Self {
                 x_segment: XSegment { a: p1, b: p0 },
                 count: invert,
-                data: data.reversed(),
+                data: data.reversed(store),
             }
         }
     }

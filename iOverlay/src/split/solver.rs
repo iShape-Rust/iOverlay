@@ -33,17 +33,28 @@ where
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
     ) -> bool {
+        let mut store = D::Store::default();
+        self.split_segments_with_store(segments, solver, &mut store)
+    }
+
+    #[inline]
+    pub(crate) fn split_segments_with_store<C: WindingCount, D: OverlayEdgeData<C>>(
+        &mut self,
+        segments: &mut Vec<Segment<C, I, D>>,
+        solver: &Solver,
+        store: &mut D::Store,
+    ) -> bool {
         if segments.is_empty() {
             return false;
         }
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
-        let any_merged = segments.merge_if_needed();
+        let any_merged = segments.merge_if_needed_with_store(store);
         if segments.is_empty() {
             return true;
         }
 
-        let any_intersection = self.split(segments, solver);
+        let any_intersection = self.split(segments, solver, store);
         any_merged | any_intersection
     }
 
@@ -52,19 +63,20 @@ where
         &mut self,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) -> bool {
         let is_list = solver.is_list_split(segments);
         let snap_radius = solver.snap_radius();
         if is_list {
-            return self.list_split(snap_radius, segments, solver);
+            return self.list_split(snap_radius, segments, solver, store);
         }
 
         let is_fragmentation = solver.is_fragmentation_required(segments);
 
         if is_fragmentation {
-            self.fragment_split(snap_radius, segments, solver)
+            self.fragment_split(snap_radius, segments, solver, store)
         } else {
-            self.tree_split(snap_radius, segments, solver)
+            self.tree_split(snap_radius, segments, solver, store)
         }
     }
 
@@ -149,6 +161,7 @@ where
         segments: &mut Vec<Segment<C, I, D>>,
         reusable_buffer: &mut Vec<LineMark<I>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) {
         self.marks
             .sort_by_index_and_point(solver.is_parallel_sort_allowed(), reusable_buffer);
@@ -181,13 +194,16 @@ where
 
             if start + 1 == i {
                 // single split
-                let (d0, d1) = data.split(EdgeDataSplit {
-                    a: x_seg.a,
-                    p: m0.point,
-                    b: x_seg.b,
-                });
-                *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0);
-                let s1 = Segment::create_and_validate_with_data(m0.point, x_seg.b, count, d1);
+                let (d0, d1) = data.split(
+                    EdgeDataSplit {
+                        a: x_seg.a,
+                        p: m0.point,
+                        b: x_seg.b,
+                    },
+                    store,
+                );
+                *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0, store);
+                let s1 = Segment::create_and_validate_with_data(m0.point, x_seg.b, count, d1, store);
                 segments.push(s1);
 
                 continue;
@@ -198,33 +214,41 @@ where
             Self::sort_sub_marks(sub_marks, x_seg);
 
             let m0 = sub_marks[0];
-            let (d0, mut rest_data) = data.split(EdgeDataSplit {
-                a: x_seg.a,
-                p: m0.point,
-                b: x_seg.b,
-            });
-            *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0);
+            let (d0, mut rest_data) = data.split(
+                EdgeDataSplit {
+                    a: x_seg.a,
+                    p: m0.point,
+                    b: x_seg.b,
+                },
+                store,
+            );
+            *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0, store);
 
             let mut p0 = m0.point;
 
             for mi in sub_marks.iter().skip(1) {
-                let (di, next_data) = rest_data.split(EdgeDataSplit {
-                    a: p0,
-                    p: mi.point,
-                    b: x_seg.b,
-                });
-                segments.push(Segment::create_and_validate_with_data(p0, mi.point, count, di));
+                let (di, next_data) = rest_data.split(
+                    EdgeDataSplit {
+                        a: p0,
+                        p: mi.point,
+                        b: x_seg.b,
+                    },
+                    store,
+                );
+                segments.push(Segment::create_and_validate_with_data(
+                    p0, mi.point, count, di, store,
+                ));
                 rest_data = next_data;
                 p0 = mi.point;
             }
 
             segments.push(Segment::create_and_validate_with_data(
-                p0, x_seg.b, count, rest_data,
+                p0, x_seg.b, count, rest_data, store,
             ));
         }
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
-        segments.merge_if_needed();
+        segments.merge_if_needed_with_store(store);
     }
 
     #[inline]

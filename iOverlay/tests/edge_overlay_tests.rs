@@ -25,7 +25,9 @@ mod tests {
     }
 
     impl OverlayEdgeData for EdgeColor {
-        fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>) -> Self {
+        type Store = ();
+
+        fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>, _: &mut Self::Store) -> Self {
             let subj = if ctx.lhs_data.subj == ctx.rhs_data.subj {
                 ctx.lhs_data.subj
             } else if ctx.rhs_count.subj == 0 || ctx.lhs_count.subj == 0 {
