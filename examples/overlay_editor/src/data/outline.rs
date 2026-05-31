@@ -1,7 +1,7 @@
+use i_triangle::i_overlay::i_shape::base::data::Paths;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use serde::Deserialize;
-use i_triangle::i_overlay::i_shape::base::data::Paths;
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct OutlineTest {
@@ -16,9 +16,7 @@ impl OutlineTest {
         path_buf.push(file_name);
 
         let data = match std::fs::read_to_string(path_buf.as_path()) {
-            Ok(data) => {
-                data
-            }
+            Ok(data) => data,
             Err(e) => {
                 eprintln!("{:?}", e);
                 return None;
@@ -38,20 +36,18 @@ impl OutlineTest {
     fn tests_count(folder: &str) -> usize {
         let folder_path = PathBuf::from(folder);
         match std::fs::read_dir(folder_path) {
-            Ok(entries) => {
-                entries
-                    .filter_map(|entry| {
-                        entry.ok().and_then(|e| {
-                            let path = e.path();
-                            if path.extension()?.to_str()? == "json" {
-                                Some(())
-                            } else {
-                                None
-                            }
-                        })
+            Ok(entries) => entries
+                .filter_map(|entry| {
+                    entry.ok().and_then(|e| {
+                        let path = e.path();
+                        if path.extension()?.to_str()? == "json" {
+                            Some(())
+                        } else {
+                            None
+                        }
                     })
-                    .count()
-            }
+                })
+                .count(),
             Err(e) => {
                 eprintln!("Failed to read directory: {}", e);
                 0
@@ -63,15 +59,18 @@ impl OutlineTest {
 pub(crate) struct OutlineResource {
     folder: Option<String>,
     pub(crate) count: usize,
-    pub(crate) tests: HashMap<usize, OutlineTest>
+    pub(crate) tests: HashMap<usize, OutlineTest>,
 }
 
 impl OutlineResource {
-
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn with_path(folder: &str) -> Self {
         let count = OutlineTest::tests_count(folder);
-        Self { count, folder: Some(folder.to_string()), tests: Default::default() }
+        Self {
+            count,
+            folder: Some(folder.to_string()),
+            tests: Default::default(),
+        }
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -99,10 +98,14 @@ impl OutlineResource {
             return None;
         }
         if let Some(test) = self.tests.get(&index) {
-            return Some(test.clone())
+            return Some(test.clone());
         }
 
-        let folder = if let Some(folder) = &self.folder { folder } else { return None; };
+        let folder = if let Some(folder) = &self.folder {
+            folder
+        } else {
+            return None;
+        };
         let test = OutlineTest::load(index, folder.as_str())?;
 
         self.tests.insert(index, test.clone());

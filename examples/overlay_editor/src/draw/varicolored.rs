@@ -1,23 +1,26 @@
+use crate::geom::camera::Camera;
+use crate::geom::vector::VectorExt;
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
 use i_triangle::float::builder::TriangulationBuilder;
 use i_triangle::float::triangulation::Triangulation;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::IntPaths;
-use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
+use i_triangle::i_overlay::i_shape::int::path::IntPaths as RawIntPaths;
+use i_triangle::i_overlay::i_shape::int::shape::IntShapes as RawIntShapes;
 use i_triangle::int::triangulatable::IntTriangulatable;
 use i_triangle::int::triangulation::IntTriangulation;
+use iced::advanced::graphics::color::pack;
+use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
+use iced::advanced::graphics::Mesh;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
-use iced::{mouse, Color, Vector, Transformation};
+use iced::{mouse, Color, Transformation, Vector};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
-use iced::advanced::graphics::color::pack;
-use iced::advanced::graphics::Mesh;
-use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
-use crate::geom::camera::Camera;
-use crate::geom::vector::VectorExt;
+
+type IntPaths = RawIntPaths<i32>;
+type IntShapes = RawIntShapes<i32>;
 
 pub(crate) struct VaricoloredWidget {
     fill: Vec<Mesh>,
@@ -26,18 +29,18 @@ pub(crate) struct VaricoloredWidget {
 
 impl VaricoloredWidget {
     const SHAPE_COLOR_STORE: [[u8; 3]; 12] = [
-        [255, 149, 0],    // Orange
-        [88, 86, 214],    // Purple
-        [255, 45, 85],    // Pink
-        [90, 200, 250],   // Blue
-        [76, 217, 100],   // Green
-        [255, 204, 0],    // Yellow
-        [142, 142, 147],  // Gray
-        [255, 59, 48],    // Red
-        [52, 199, 89],    // Green
-        [0, 122, 255],    // Blue
-        [175, 82, 222],   // Indigo
-        [255, 214, 10],   // Teal
+        [255, 149, 0],   // Orange
+        [88, 86, 214],   // Purple
+        [255, 45, 85],   // Pink
+        [90, 200, 250],  // Blue
+        [76, 217, 100],  // Green
+        [255, 204, 0],   // Yellow
+        [142, 142, 147], // Gray
+        [255, 59, 48],   // Red
+        [52, 199, 89],   // Green
+        [0, 122, 255],   // Blue
+        [175, 82, 222],  // Indigo
+        [255, 214, 10],  // Teal
     ];
 
     pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_width: f32) -> Self {
@@ -49,21 +52,27 @@ impl VaricoloredWidget {
             let data = Self::SHAPE_COLOR_STORE[index % Self::SHAPE_COLOR_STORE.len()];
             let color = Color::from_rgb8(data[0], data[1], data[2]);
 
-            if let Some(mesh) = Self::fill_mesh_for_paths(shape, camera, offset, color.scale_alpha(0.2)) {
+            if let Some(mesh) =
+                Self::fill_mesh_for_paths(shape, camera, offset, color.scale_alpha(0.2))
+            {
                 fill.push(mesh);
             }
-            if let Some(mesh) = Self::stroke_mesh_for_paths(shape, camera, offset, color, stroke_width) {
+            if let Some(mesh) =
+                Self::stroke_mesh_for_paths(shape, camera, offset, color, stroke_width)
+            {
                 stroke.push(mesh);
             }
         }
 
-        Self {
-            fill,
-            stroke,
-        }
+        Self { fill, stroke }
     }
 
-    fn fill_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn fill_mesh_for_paths(
+        paths: &IntPaths,
+        camera: Camera,
+        offset: Vector<f32>,
+        color: Color,
+    ) -> Option<Mesh> {
         if paths.is_empty() {
             return None;
         }
@@ -72,15 +81,27 @@ impl VaricoloredWidget {
         Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
     }
 
-    fn fill_mesh_for_triangulation(triangulation: IntTriangulation<usize>, camera: Camera, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn fill_mesh_for_triangulation(
+        triangulation: IntTriangulation<i32, usize>,
+        camera: Camera,
+        offset: Vector<f32>,
+        color: Color,
+    ) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }
         let color_pack = pack(color);
-        let vertices = triangulation.points.iter().map(|&p| {
-            let v = camera.int_world_to_view(p);
-            SolidVertex2D { position: [v.x - offset.x, v.y - offset.y], color: color_pack }
-        }).collect();
+        let vertices = triangulation
+            .points
+            .iter()
+            .map(|&p| {
+                let v = camera.int_world_to_view(p);
+                SolidVertex2D {
+                    position: [v.x - offset.x, v.y - offset.y],
+                    color: color_pack,
+                }
+            })
+            .collect();
 
         let indices = triangulation.indices.iter().map(|&i| i as u32).collect();
 
@@ -91,7 +112,13 @@ impl VaricoloredWidget {
         })
     }
 
-    fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color, width: f32) -> Option<Mesh> {
+    fn stroke_mesh_for_paths(
+        paths: &IntPaths,
+        camera: Camera,
+        offset: Vector<f32>,
+        color: Color,
+        width: f32,
+    ) -> Option<Mesh> {
         if paths.is_empty() {
             return None;
         }
@@ -100,12 +127,16 @@ impl VaricoloredWidget {
         let mut builder = TriangulationBuilder::default();
 
         for path in paths.iter() {
-            let world_path: Vec<_> = path.iter().map(|&p| {
-                let v = camera.int_world_to_view(p);
-                FloatPoint::new(v.x, v.y)
-            }).collect();
+            let world_path: Vec<_> = path
+                .iter()
+                .map(|&p| {
+                    let v = camera.int_world_to_view(p);
+                    FloatPoint::new(v.x, v.y)
+                })
+                .collect();
 
-            let sub_triangulation: Triangulation<FloatPoint<f32>, usize> = stroke_builder.build_closed_path_mesh(&world_path);
+            let sub_triangulation: Triangulation<FloatPoint<f32>, usize> =
+                stroke_builder.build_closed_path_mesh(&world_path);
 
             builder.append(sub_triangulation);
         }
@@ -118,14 +149,23 @@ impl VaricoloredWidget {
         Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>, usize>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn stroke_mesh_for_triangulation(
+        triangulation: Triangulation<FloatPoint<f32>, usize>,
+        offset: Vector<f32>,
+        color: Color,
+    ) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }
         let color_pack = pack(color);
-        let vertices = triangulation.points.iter().map(|&p| {
-            SolidVertex2D { position: [p.x - offset.x, p.y - offset.y], color: color_pack }
-        }).collect();
+        let vertices = triangulation
+            .points
+            .iter()
+            .map(|&p| SolidVertex2D {
+                position: [p.x - offset.x, p.y - offset.y],
+                color: color_pack,
+            })
+            .collect();
 
         let indices = triangulation.indices.iter().map(|&i| i as u32).collect();
 

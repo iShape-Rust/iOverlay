@@ -161,11 +161,13 @@ impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> Builder<J, P, 
         let vp = s0.b - s0.a;
 
         let cross = vi.cross_product(vp);
-        debug_assert!(
-            cross != I::Wide::ZERO,
-            "not possible! UniqueSegmentsIter guarantee it"
-        );
-        let outer_corner = (cross > I::Wide::ZERO) == self.extend;
+
+        let outer_corner = if cross != I::Wide::ZERO {
+            (cross > I::Wide::ZERO) == self.extend
+        } else {
+            vi.dot_product(vp) < I::Wide::ZERO
+        };
+
         if outer_corner {
             if s0.b_top != s1.a_top {
                 self.join_builder.add_join(s0, s1, adapter, segments);

@@ -1,20 +1,24 @@
-use std::f32::consts::PI;
+use crate::geom::camera::Camera;
+use crate::geom::vector::VectorExt;
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
 use i_triangle::float::triangulation::Triangulation;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::vector::edge::{SideFill, SUBJ_LEFT, SUBJ_RIGHT, CLIP_LEFT, CLIP_RIGHT, VectorEdge};
+use i_triangle::i_overlay::vector::edge::{
+    DataVectorEdge, SideFill, CLIP_LEFT, CLIP_RIGHT, SUBJ_LEFT, SUBJ_RIGHT,
+};
+use iced::advanced::graphics::color::pack;
+use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
+use iced::advanced::graphics::{color, Mesh};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
-use iced::{mouse, Color, Vector, Transformation};
+use iced::{mouse, Color, Transformation, Vector};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
-use iced::advanced::graphics::color::pack;
-use iced::advanced::graphics::{color, Mesh};
-use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
-use crate::geom::camera::Camera;
-use crate::geom::vector::VectorExt;
+use std::f32::consts::PI;
+
+type VectorEdge = DataVectorEdge<i32>;
 
 struct ColorSchema {
     subj: color::Packed,
@@ -49,19 +53,35 @@ impl ColorSchema {
     }
 
     fn subj_right(&self, fill: SideFill) -> color::Packed {
-        if fill & SUBJ_RIGHT != 0 { self.subj } else { self.subj_none }
+        if fill & SUBJ_RIGHT != 0 {
+            self.subj
+        } else {
+            self.subj_none
+        }
     }
 
     fn subj_left(&self, fill: SideFill) -> color::Packed {
-        if fill & SUBJ_LEFT != 0 { self.subj } else { self.subj_none }
+        if fill & SUBJ_LEFT != 0 {
+            self.subj
+        } else {
+            self.subj_none
+        }
     }
 
     fn clip_right(&self, fill: SideFill) -> color::Packed {
-        if fill & CLIP_RIGHT != 0 { self.clip } else { self.clip_none }
+        if fill & CLIP_RIGHT != 0 {
+            self.clip
+        } else {
+            self.clip_none
+        }
     }
 
     fn clip_left(&self, fill: SideFill) -> color::Packed {
-        if fill & CLIP_LEFT != 0 { self.clip } else { self.clip_none }
+        if fill & CLIP_LEFT != 0 {
+            self.clip
+        } else {
+            self.clip_none
+        }
     }
 }
 
@@ -70,16 +90,27 @@ pub(crate) struct VectorsWidget {
 }
 
 impl VectorsWidget {
-    pub(crate) fn with_vectors(vectors: &[VectorEdge], camera: Camera, subj: Color, clip: Color, both: Color, stroke_width: f32) -> Self {
+    pub(crate) fn with_vectors(
+        vectors: &[VectorEdge],
+        camera: Camera,
+        subj: Color,
+        clip: Color,
+        both: Color,
+        stroke_width: f32,
+    ) -> Self {
         let schema = ColorSchema::new(subj, clip, both);
         let offset = Self::offset_for_vectors(vectors, camera);
         let stroke = Self::stroke_mesh_for_paths(vectors, camera, offset, schema, stroke_width);
-        Self {
-            stroke,
-        }
+        Self { stroke }
     }
 
-    fn stroke_mesh_for_paths(vectors: &[VectorEdge], camera: Camera, offset: Vector<f32>, schema: ColorSchema, width: f32) -> Option<Mesh> {
+    fn stroke_mesh_for_paths(
+        vectors: &[VectorEdge],
+        camera: Camera,
+        offset: Vector<f32>,
+        schema: ColorSchema,
+        width: f32,
+    ) -> Option<Mesh> {
         if vectors.is_empty() {
             return None;
         }
@@ -120,13 +151,23 @@ impl VectorsWidget {
         camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 
-    fn append_vector(builder: &mut MeshBuilder, camera: Camera, vector: &VectorEdge, offset: Vector<f32>, schema: &ColorSchema, width: f32) {
+    fn append_vector(
+        builder: &mut MeshBuilder,
+        camera: Camera,
+        vector: &VectorEdge,
+        offset: Vector<f32>,
+        schema: &ColorSchema,
+        width: f32,
+    ) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let path = [vector.a, vector.b];
-        let screen_path: Vec<_> = path.iter().map(|&p| {
-            let v = camera.int_world_to_view(p);
-            FloatPoint::new(v.x - offset.x, v.y - offset.y)
-        }).collect();
+        let screen_path: Vec<_> = path
+            .iter()
+            .map(|&p| {
+                let v = camera.int_world_to_view(p);
+                FloatPoint::new(v.x - offset.x, v.y - offset.y)
+            })
+            .collect();
 
         let segment_color = schema.color(vector.fill);
 
@@ -166,10 +207,14 @@ impl VectorsWidget {
 
         let arrow_triangulation = stroke_builder.build_open_path_mesh(&[v0, b, v1]);
         builder.append(arrow_triangulation, segment_color);
-
     }
 
-    fn append_circle(builder: &mut MeshBuilder, pos: FloatPoint<f32>, color: color::Packed, radius: f32) {
+    fn append_circle(
+        builder: &mut MeshBuilder,
+        pos: FloatPoint<f32>,
+        color: color::Packed,
+        radius: f32,
+    ) {
         let n = 8;
         let da = 2.0 * PI / n as f32;
         let mut a = 0.0f32;
@@ -182,7 +227,7 @@ impl VectorsWidget {
             points.push(FloatPoint::new(x, y));
             indices.extend(&[n, i, (i + 1) % n]);
             a += da;
-        };
+        }
 
         points.push(pos);
 
@@ -224,9 +269,7 @@ impl<Message> Widget<Message, Theme, Renderer> for VectorsWidget {
         renderer.with_layer(bounds, |renderer| {
             let offset = Vector::point(layout.position());
             if let Some(mesh) = &self.stroke {
-                renderer.with_translation(offset, |renderer| {
-                    renderer.draw_mesh(mesh.clone())
-                });
+                renderer.with_translation(offset, |renderer| renderer.draw_mesh(mesh.clone()));
             }
         });
     }
@@ -251,17 +294,20 @@ impl MeshBuilder {
         }
     }
 
-    fn append(&mut self, triangulation: Triangulation<FloatPoint<f32>, usize>, color: color::Packed) -> &mut Self {
+    fn append(
+        &mut self,
+        triangulation: Triangulation<FloatPoint<f32>, usize>,
+        color: color::Packed,
+    ) -> &mut Self {
         let offset = self.vertices.len();
         for p in triangulation.points.iter() {
-            self.vertices.push(SolidVertex2D { position: [p.x, p.y], color });
+            self.vertices.push(SolidVertex2D {
+                position: [p.x, p.y],
+                color,
+            });
         }
-        self.indices.extend(
-            triangulation
-                .indices
-                .iter()
-                .map(|&i| (i + offset) as u32),
-        );
+        self.indices
+            .extend(triangulation.indices.iter().map(|&i| (i + offset) as u32));
         self
     }
 

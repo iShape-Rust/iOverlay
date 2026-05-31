@@ -13,7 +13,12 @@ pub(crate) enum CapOption {
 }
 
 impl CapOption {
-    const ALL: [CapOption; 4] = [CapOption::Butt, CapOption::Round, CapOption::Square, CapOption::Arrow];
+    const ALL: [CapOption; 4] = [
+        CapOption::Butt,
+        CapOption::Round,
+        CapOption::Square,
+        CapOption::Arrow,
+    ];
 }
 
 impl std::fmt::Display for CapOption {
@@ -68,11 +73,12 @@ impl EditorApp {
             )
             .push(
                 Container::new(
-                    slider(0.1f32..=10.0f32, self.state.stroke.width, on_update_width).step(0.01f32)
+                    slider(0.1f32..=10.0f32, self.state.stroke.width, on_update_width)
+                        .step(0.01f32),
                 )
-                    .width(160)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
+                .width(160)
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
             )
             .height(Length::Fixed(40.0));
 
@@ -98,9 +104,13 @@ impl EditorApp {
             .height(Length::Fixed(40.0));
 
         if self.state.stroke.start_cap == CapOption::Round {
-            let slider = slider(1..=100, self.state.stroke.start_cap_value, on_update_start_cap_value)
-                .default(50)
-                .shift_step(5);
+            let slider = slider(
+                1..=100,
+                self.state.stroke.start_cap_value,
+                on_update_start_cap_value,
+            )
+            .default(50)
+            .shift_step(5);
 
             start_cap_pick_list = start_cap_pick_list.push(
                 Container::new(slider)
@@ -125,17 +135,21 @@ impl EditorApp {
                         Some(self.state.stroke.end_cap),
                         on_select_end_cap,
                     )
-                        .width(Length::Fixed(160.0)),
+                    .width(Length::Fixed(160.0)),
                 )
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
             )
             .height(Length::Fixed(40.0));
 
         if self.state.stroke.end_cap == CapOption::Round {
-            let slider = slider(1..=100, self.state.stroke.end_cap_value, on_update_end_cap_value)
-                .default(50)
-                .shift_step(5);
+            let slider = slider(
+                1..=100,
+                self.state.stroke.end_cap_value,
+                on_update_end_cap_value,
+            )
+            .default(50)
+            .shift_step(5);
 
             end_cap_pick_list = end_cap_pick_list.push(
                 Container::new(slider)
@@ -178,7 +192,6 @@ impl EditorApp {
                     .width(250)
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
-
             );
         }
 

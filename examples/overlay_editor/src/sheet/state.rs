@@ -1,6 +1,6 @@
-use iced::{Size, Vector};
-use iced::mouse::ScrollDelta;
 use crate::geom::camera::Camera;
+use iced::mouse::ScrollDelta;
+use iced::{Size, Vector};
 
 struct Drag {
     start_screen: Vector<f32>,
@@ -18,14 +18,21 @@ pub(super) struct SheetState {
 
 impl SheetState {
     pub(super) fn mouse_press(&mut self, camera: Camera, view_cursor: Vector<f32>) {
-        self.drag_state = DragState::Drag(Drag { start_screen: view_cursor, start_world: camera.pos });
+        self.drag_state = DragState::Drag(Drag {
+            start_screen: view_cursor,
+            start_world: camera.pos,
+        });
     }
 
     pub(super) fn mouse_release(&mut self) {
         self.drag_state = DragState::None;
     }
 
-    pub(super) fn mouse_move(&mut self, camera: Camera, view_cursor: Vector<f32>) -> Option<Vector<f32>> {
+    pub(super) fn mouse_move(
+        &mut self,
+        camera: Camera,
+        view_cursor: Vector<f32>,
+    ) -> Option<Vector<f32>> {
         if let DragState::Drag(drag) = &self.drag_state {
             let translate = drag.start_screen - view_cursor;
             let world_dist = camera.view_distance_to_world(translate);
@@ -39,9 +46,14 @@ impl SheetState {
         }
     }
 
-    pub(super) fn mouse_wheel_scrolled(&mut self, camera: Camera, viewport_size: Size, delta: ScrollDelta, view_cursor: Vector<f32>) -> Option<Camera> {
-        if let ScrollDelta::Pixels { x: _ , y } = delta {
-
+    pub(super) fn mouse_wheel_scrolled(
+        &mut self,
+        camera: Camera,
+        viewport_size: Size,
+        delta: ScrollDelta,
+        view_cursor: Vector<f32>,
+    ) -> Option<Camera> {
+        if let ScrollDelta::Pixels { x: _, y } = delta {
             let s = 1.0 + y / viewport_size.height;
             let mut new_camera = camera;
             new_camera.set_scale(s * camera.scale);
@@ -68,4 +80,3 @@ impl Default for SheetState {
         }
     }
 }
-
