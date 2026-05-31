@@ -4,6 +4,8 @@ use crate::segm::winding::WindingCount;
 use core::cmp::Ordering;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use crate::core::overlay::ShapeType;
+use crate::segm::boolean::ShapeCountBoolean;
 
 pub type SegmentFill = u8;
 
@@ -49,6 +51,35 @@ impl<C: WindingCount, I: IntNumber, D: OverlayEdgeData<C>> Segment<C, I, D> {
                 count: count.invert(),
                 data: data.reversed(store),
             }
+        }
+    }
+}
+
+impl<I: IntNumber, D: OverlayEdgeData<ShapeCountBoolean>> Segment<ShapeCountBoolean, I, D> {
+    #[inline]
+    pub(crate) fn try_ab_and_data(
+        a: IntPoint<I>,
+        b: IntPoint<I>,
+        shape_type: ShapeType,
+        data: D,
+        store: &mut D::Store,
+    ) -> Option<Self> {
+        match a.cmp(&b) {
+            Ordering::Equal => None,
+            Ordering::Less => Some(
+                Self {
+                    x_segment: XSegment { a, b },
+                    count: ShapeCountBoolean::direct_count(shape_type),
+                    data,
+                }
+            ),
+            Ordering::Greater => Some(
+                Self {
+                    x_segment: XSegment { a: b, b: a },
+                    count: ShapeCountBoolean::invert_count(shape_type),
+                    data: data.reversed(store),
+                }
+            )
         }
     }
 }

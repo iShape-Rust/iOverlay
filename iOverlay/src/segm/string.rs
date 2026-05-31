@@ -46,6 +46,26 @@ impl WindingCount for ShapeCountString {
         }
     }
 
+    fn direct_count(shape_type: ShapeType) -> Self {
+        match shape_type {
+            ShapeType::Subject => Self { subj: 1, clip: 0 },
+            ShapeType::Clip => Self {
+                subj: 0,
+                clip: STRING_FORWARD_CLIP,
+            },
+        }
+    }
+
+    fn invert_count(shape_type: ShapeType) -> Self {
+        match shape_type {
+            ShapeType::Subject => Self { subj: -1, clip: 0 },
+            ShapeType::Clip => Self {
+                subj: 0,
+                clip: STRING_BACK_CLIP,
+            },
+        }
+    }
+
     #[inline(always)]
     fn add(self, count: Self) -> Self {
         let subj = self.subj + count.subj;

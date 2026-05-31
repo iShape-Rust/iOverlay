@@ -1,4 +1,3 @@
-use crate::core::edge_data::OverlayEdgeData;
 use crate::core::overlay::ShapeType;
 use crate::geom::x_segment::XSegment;
 use crate::segm::segment::Segment;
@@ -141,32 +140,6 @@ impl<I: IntNumber, C: Send> Segment<C, I> {
                 x_segment: XSegment { a: p1, b: p0 },
                 count: invert,
                 data: (),
-            }
-        }
-    }
-}
-
-impl<I: IntNumber, C: Send, D: OverlayEdgeData<C>> Segment<C, I, D> {
-    #[inline]
-    pub(crate) fn with_ab_and_data(
-        p0: IntPoint<I>,
-        p1: IntPoint<I>,
-        direct: C,
-        invert: C,
-        data: D,
-        store: &mut D::Store,
-    ) -> Self {
-        if p0 < p1 {
-            Self {
-                x_segment: XSegment { a: p0, b: p1 },
-                count: direct,
-                data,
-            }
-        } else {
-            Self {
-                x_segment: XSegment { a: p1, b: p0 },
-                count: invert,
-                data: data.reversed(store),
             }
         }
     }

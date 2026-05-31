@@ -461,7 +461,7 @@ where
 
     fn apply_scale(&mut self, scale: f64) -> Result<(), FixedScaleOverlayError> {
         let s = P::Scalar::from_float(scale);
-        self.adapter = FloatPointAdapter::try_with_scale(self.adapter.rect().clone(), s)?;
+        self.adapter = FloatPointAdapter::try_with_scale(*self.adapter.rect(), s)?;
         Ok(())
     }
 

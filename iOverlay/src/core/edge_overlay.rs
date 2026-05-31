@@ -8,7 +8,6 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
-use crate::segm::winding::WindingCount;
 use crate::split::solver::SplitSolver;
 use crate::vector::edge::{DataVectorEdge, DataVectorShape};
 use alloc::vec::Vec;
@@ -52,19 +51,15 @@ where
     }
 
     pub fn add_edge(&mut self, edge: InputEdge<I, D>, shape_type: ShapeType) {
-        if edge.a == edge.b {
-            return;
-        }
-
-        let (direct, invert) = ShapeCountBoolean::with_shape_type(shape_type);
-        self.segments.push(Segment::with_ab_and_data(
+        if let Some(segment) = Segment::try_ab_and_data(
             edge.a,
             edge.b,
-            direct,
-            invert,
+            shape_type,
             edge.data,
             &mut self.data_store,
-        ));
+        ) {
+            self.segments.push(segment);
+        }
     }
 
     pub fn add_edges<It>(&mut self, edges: It, shape_type: ShapeType)
@@ -137,5 +132,15 @@ where
         self.boolean_buffer = Some(buffer);
 
         shapes
+    }
+}
+
+impl<I, D> EdgeOverlay<I, D>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    D: OverlayEdgeData,
+{
+    pub fn edges(&self) -> impl Iterator<Item = [IntPoint<I>; 2]> + '_ {
+        self.segments.iter().map(|e| [e.x_segment.a, e.x_segment.b])
     }
 }
