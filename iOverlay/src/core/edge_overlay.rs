@@ -51,13 +51,9 @@ where
     }
 
     pub fn add_edge(&mut self, edge: InputEdge<I, D>, shape_type: ShapeType) {
-        if let Some(segment) = Segment::try_ab_and_data(
-            edge.a,
-            edge.b,
-            shape_type,
-            edge.data,
-            &mut self.data_store,
-        ) {
+        if let Some(segment) =
+            Segment::try_ab_and_data(edge.a, edge.b, shape_type, edge.data, &mut self.data_store)
+        {
             self.segments.push(segment);
         }
     }

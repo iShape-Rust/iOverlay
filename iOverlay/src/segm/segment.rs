@@ -1,11 +1,11 @@
 use crate::core::edge_data::OverlayEdgeData;
+use crate::core::overlay::ShapeType;
 use crate::geom::x_segment::XSegment;
+use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::winding::WindingCount;
 use core::cmp::Ordering;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use crate::core::overlay::ShapeType;
-use crate::segm::boolean::ShapeCountBoolean;
 
 pub type SegmentFill = u8;
 
@@ -66,20 +66,16 @@ impl<I: IntNumber, D: OverlayEdgeData<ShapeCountBoolean>> Segment<ShapeCountBool
     ) -> Option<Self> {
         match a.cmp(&b) {
             Ordering::Equal => None,
-            Ordering::Less => Some(
-                Self {
-                    x_segment: XSegment { a, b },
-                    count: ShapeCountBoolean::direct_count(shape_type),
-                    data,
-                }
-            ),
-            Ordering::Greater => Some(
-                Self {
-                    x_segment: XSegment { a: b, b: a },
-                    count: ShapeCountBoolean::invert_count(shape_type),
-                    data: data.reversed(store),
-                }
-            )
+            Ordering::Less => Some(Self {
+                x_segment: XSegment { a, b },
+                count: ShapeCountBoolean::direct_count(shape_type),
+                data,
+            }),
+            Ordering::Greater => Some(Self {
+                x_segment: XSegment { a: b, b: a },
+                count: ShapeCountBoolean::invert_count(shape_type),
+                data: data.reversed(store),
+            }),
         }
     }
 }
