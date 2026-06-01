@@ -9,16 +9,22 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::VSegment;
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::util::reserve::Reserve;
+use i_tree::Expiration;
 
-impl OverlayGraph<'_> {
+impl<I> OverlayGraph<'_, I>
+where
+    I: IntNumber + Expiration + SortKey,
+{
     pub(crate) fn extract_ogc(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> IntShapes<I> {
         let is_main_dir_cw = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut contour_visited = if let Some(mut visited) = buffer.contour_visited.take() {
@@ -161,14 +167,14 @@ impl OverlayGraph<'_> {
                     }
                 };
 
-                debug_assert_eq!(v_segment, contour.left_bottom_segment());
+                debug_assert!(v_segment == contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id_data, v_segment));
                 holes.push(contour);
             }
 
             if !anchors_already_sorted {
-                anchors.sort_unstable_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
+                anchors.sort_unstable_by_key(|s0| s0.v_segment.a);
             }
 
             shapes.join_sorted_holes(holes, anchors, is_main_dir_cw);
@@ -181,7 +187,7 @@ impl OverlayGraph<'_> {
 
     fn skip_contour(
         &self,
-        start_data: &StartPathData,
+        start_data: &StartPathData<I>,
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
@@ -214,12 +220,12 @@ impl OverlayGraph<'_> {
 
     fn collect_shape(
         &self,
-        start_data: &StartPathData,
+        start_data: &StartPathData<I>,
         clockwise: bool,
         global_visited: &mut [VisitState],
         contour_visited: &mut [VisitState],
-        points: &mut Vec<IntPoint>,
-    ) -> Option<IntShape> {
+        points: &mut Vec<IntPoint<I>>,
+    ) -> Option<IntShape<I>> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;

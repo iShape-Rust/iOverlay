@@ -8,12 +8,12 @@ pub(crate) trait VectorExt {
 
 impl VectorExt for Vector<f32> {
     fn round(&self) -> IntPoint {
-        IntPoint::new(
-            self.x.round() as i32,
-            self.y.round() as i32,
-        )
+        IntPoint::new(self.x.round() as i32, self.y.round() as i32)
     }
     fn point(point: Point<f32>) -> Self {
-        Self { x: point.x, y: point.y }
+        Self {
+            x: point.x,
+            y: point.y,
+        }
     }
 }

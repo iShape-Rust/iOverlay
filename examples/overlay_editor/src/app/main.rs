@@ -98,17 +98,17 @@ impl EditorApp {
             AppMessage::Stroke(msg) => self.stroke_update(msg),
             AppMessage::Outline(msg) => self.outline_update(msg),
             AppMessage::NextTest => match self.state.selected_action {
-                    MainAction::Boolean => self.boolean_next_test(),
-                    MainAction::String => self.string_next_test(),
-                    MainAction::Stroke => self.stroke_next_test(),
-                    MainAction::Outline => self.outline_next_test(),
-                },
+                MainAction::Boolean => self.boolean_next_test(),
+                MainAction::String => self.string_next_test(),
+                MainAction::Stroke => self.stroke_next_test(),
+                MainAction::Outline => self.outline_next_test(),
+            },
             AppMessage::PrevTest => match self.state.selected_action {
                 MainAction::Boolean => self.boolean_prev_test(),
                 MainAction::String => self.string_prev_test(),
                 MainAction::Stroke => self.stroke_prev_test(),
                 MainAction::Outline => self.outline_prev_test(),
-            }
+            },
         }
 
         Task::none()
@@ -167,11 +167,7 @@ impl EditorApp {
 
     fn main_navigation(&self) -> Column<'_, AppMessage> {
         self.main_actions.iter().fold(
-            Column::new().push(
-                Space::new()
-                    .width(Length::Fill)
-                    .height(Length::Fixed(2.0)),
-            ),
+            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0))),
             |column, item| {
                 let is_selected = self.state.selected_action.eq(item);
                 column.push(

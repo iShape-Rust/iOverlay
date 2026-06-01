@@ -1,17 +1,18 @@
-use i_triangle::i_overlay::core::fill_rule::FillRule;
+use crate::app::design::{style_sheet_background, Design};
+use crate::app::main::{AppMessage, EditorApp};
+use crate::app::outline::content::OutlineMessage;
 use crate::draw::shape::ShapeWidget;
 use crate::geom::camera::Camera;
-use crate::sheet::widget::SheetWidget;
 use crate::point_editor::point::EditorPoint;
 use crate::point_editor::widget::{PointEditUpdate, PointsEditorWidget};
-use crate::app::design::{style_sheet_background, Design};
-use crate::app::main::{EditorApp, AppMessage};
-use crate::app::outline::content::OutlineMessage;
-use i_triangle::i_overlay::i_shape::int::path::IntPaths;
-use iced::widget::Stack;
+use crate::sheet::widget::SheetWidget;
+use i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_triangle::i_overlay::i_shape::int::path::IntPaths as RawIntPaths;
 use iced::widget::Container;
+use iced::widget::Stack;
 use iced::{Length, Padding, Size, Vector};
 
+type IntPaths = RawIntPaths<i32>;
 
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
@@ -33,8 +34,8 @@ impl EditorApp {
                     on_update_zoom,
                     on_update_drag,
                 ))
-                    .width(Length::Fill)
-                    .height(Length::Fill)
+                .width(Length::Fill)
+                .height(Length::Fill),
             );
 
             if self.state.outline.workspace.camera.is_not_empty() {
@@ -47,8 +48,8 @@ impl EditorApp {
                         Some(Design::solution_color()),
                         2.0,
                     ))
-                        .width(Length::Fill)
-                        .height(Length::Fill)
+                    .width(Length::Fill)
+                    .height(Length::Fill),
                 );
                 stack = stack.push(
                     Container::new(ShapeWidget::with_paths(
@@ -59,19 +60,21 @@ impl EditorApp {
                         Some(Design::subject_color()),
                         1.0,
                     ))
-                        .width(Length::Fill)
-                        .height(Length::Fill)
+                    .width(Length::Fill)
+                    .height(Length::Fill),
                 );
                 stack = stack.push(
-                    Container::new(PointsEditorWidget::new(
-                        &self.state.outline.workspace.points,
-                        self.state.outline.workspace.camera,
-                        on_update_point)
+                    Container::new(
+                        PointsEditorWidget::new(
+                            &self.state.outline.workspace.points,
+                            self.state.outline.workspace.camera,
+                            on_update_point,
+                        )
                         .set_drag_color(Design::accent_color())
-                        .set_hover_color(Design::negative_color())
+                        .set_hover_color(Design::negative_color()),
                     )
-                        .width(Length::Fill)
-                        .height(Length::Fill)
+                    .width(Length::Fill)
+                    .height(Length::Fill),
                 );
             }
 
@@ -79,10 +82,10 @@ impl EditorApp {
                 Container::new(self.outline_control())
                     .width(Length::Shrink)
                     .height(Length::Shrink)
-                    .padding(Padding::new(8.0))
+                    .padding(Padding::new(8.0)),
             )
         })
-            .style(style_sheet_background)
+        .style(style_sheet_background)
     }
 
     pub(super) fn outline_update_point(&mut self, update: PointEditUpdate) {
@@ -116,6 +119,12 @@ fn on_update_drag(drag: Vector<f32>) -> AppMessage {
 
 impl Default for WorkspaceState {
     fn default() -> Self {
-        WorkspaceState { scale: 1.0, camera: Camera::empty(), outline_input: vec![], outline_output: vec![], points: vec![] }
+        WorkspaceState {
+            scale: 1.0,
+            camera: Camera::empty(),
+            outline_input: vec![],
+            outline_output: vec![],
+            points: vec![],
+        }
     }
 }

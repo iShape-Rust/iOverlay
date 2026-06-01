@@ -1,3 +1,3 @@
-pub(crate) mod widget;
-pub(crate) mod state;
 pub(crate) mod point;
+pub(crate) mod state;
+pub(crate) mod widget;

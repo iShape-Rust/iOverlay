@@ -1,35 +1,50 @@
+use crate::geom::camera::Camera;
+use crate::geom::vector::VectorExt;
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
 use i_triangle::float::builder::TriangulationBuilder;
 use i_triangle::float::triangulation::Triangulation;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
+use i_triangle::i_overlay::i_shape::int::path::{IntPath as RawIntPath, IntPaths as RawIntPaths};
+use iced::advanced::graphics::color::pack;
+use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
+use iced::advanced::graphics::Mesh;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
-use iced::{mouse, Color, Vector, Transformation};
+use iced::{mouse, Color, Transformation, Vector};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
-use iced::advanced::graphics::color::pack;
-use iced::advanced::graphics::Mesh;
-use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
-use crate::geom::camera::Camera;
-use crate::geom::vector::VectorExt;
+
+type IntPath = RawIntPath<i32>;
+type IntPaths = RawIntPaths<i32>;
 
 pub(crate) struct PathWidget {
     stroke: Option<Mesh>,
 }
 
 impl PathWidget {
-    pub(crate) fn with_paths(paths: &IntPaths, camera: Camera, stroke_color: Color, stroke_width: f32, arrows: bool) -> Self {
+    pub(crate) fn with_paths(
+        paths: &IntPaths,
+        camera: Camera,
+        stroke_color: Color,
+        stroke_width: f32,
+        arrows: bool,
+    ) -> Self {
         let offset = Self::offset_for_paths(paths, camera);
-        let stroke = Self::stroke_mesh_for_paths(paths, camera, offset, stroke_color, stroke_width, arrows);
-        Self {
-            stroke,
-        }
+        let stroke =
+            Self::stroke_mesh_for_paths(paths, camera, offset, stroke_color, stroke_width, arrows);
+        Self { stroke }
     }
 
-    fn stroke_mesh_for_paths(paths: &IntPaths, camera: Camera, offset: Vector<f32>, color: Color, width: f32, arrows: bool) -> Option<Mesh> {
+    fn stroke_mesh_for_paths(
+        paths: &IntPaths,
+        camera: Camera,
+        offset: Vector<f32>,
+        color: Color,
+        width: f32,
+        arrows: bool,
+    ) -> Option<Mesh> {
         if paths.is_empty() {
             return None;
         }
@@ -40,11 +55,7 @@ impl PathWidget {
             Self::append_path(&mut builder, camera, path, width, arrows);
         }
 
-        let s = if arrows {
-            2.5 * width
-        } else {
-            0.5 * width
-        };
+        let s = if arrows { 2.5 * width } else { 0.5 * width };
 
         let offset = Vector::new(offset.x - s, offset.y - s);
 
@@ -53,14 +64,23 @@ impl PathWidget {
         Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>, usize>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn stroke_mesh_for_triangulation(
+        triangulation: Triangulation<FloatPoint<f32>, usize>,
+        offset: Vector<f32>,
+        color: Color,
+    ) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }
         let color_pack = pack(color);
-        let vertices = triangulation.points.iter().map(|&p| {
-            SolidVertex2D { position: [p.x - offset.x, p.y - offset.y], color: color_pack }
-        }).collect();
+        let vertices = triangulation
+            .points
+            .iter()
+            .map(|&p| SolidVertex2D {
+                position: [p.x - offset.x, p.y - offset.y],
+                color: color_pack,
+            })
+            .collect();
 
         let indices = triangulation.indices.iter().map(|&i| i as u32).collect();
 
@@ -87,12 +107,21 @@ impl PathWidget {
         camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 
-    fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>, usize>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
+    fn append_path(
+        builder: &mut TriangulationBuilder<FloatPoint<f32>, usize>,
+        camera: Camera,
+        path: &IntPath,
+        width: f32,
+        arrows: bool,
+    ) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
-        let screen_path: Vec<_> = path.iter().map(|&p| {
-            let v = camera.int_world_to_view(p);
-            FloatPoint::new(v.x, v.y)
-        }).collect();
+        let screen_path: Vec<_> = path
+            .iter()
+            .map(|&p| {
+                let v = camera.int_world_to_view(p);
+                FloatPoint::new(v.x, v.y)
+            })
+            .collect();
 
         let sub_triangulation = stroke_builder.build_open_path_mesh::<usize>(&screen_path);
         builder.append(sub_triangulation);
@@ -111,7 +140,8 @@ impl PathWidget {
                 let v0 = m0 + t0;
                 let v1 = m0 + t1;
 
-                let arrow_triangulation = stroke_builder.build_open_path_mesh::<usize>(&[v0, m, v1]);
+                let arrow_triangulation =
+                    stroke_builder.build_open_path_mesh::<usize>(&[v0, m, v1]);
                 builder.append(arrow_triangulation);
 
                 a = b;
@@ -154,9 +184,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PathWidget {
         renderer.with_layer(bounds, |renderer| {
             let offset = Vector::point(layout.position());
             if let Some(mesh) = &self.stroke {
-                renderer.with_translation(offset, |renderer| {
-                    renderer.draw_mesh(mesh.clone())
-                });
+                renderer.with_translation(offset, |renderer| renderer.draw_mesh(mesh.clone()));
             }
         });
     }

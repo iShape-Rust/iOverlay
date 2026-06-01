@@ -1,20 +1,47 @@
-use std::f64::consts::PI;
+use i_key_sort::sort::key::SortKey;
 use i_overlay::i_float::float::point::FloatPoint;
+use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::base::data::Contour;
 use i_overlay::i_shape::int::path::IntPath;
+use i_tree::{Expiration, LayoutNumber};
+use std::f64::consts::PI;
 
 pub(super) struct Util;
 
-impl Util {
+pub(crate) trait OverlayInt: IntNumber + Expiration + LayoutNumber + SortKey {}
 
-    pub(super) fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {
+impl<I> OverlayInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
+
+impl Util {
+    pub(super) fn skip_if_out_of_range<I: IntNumber>(n: usize, max_abs_coord: usize) -> bool {
+        let max = I::MAX.to_usize();
+        if max_abs_coord <= max {
+            return false;
+        }
+
+        println!(
+            "{}     - skipped (requires coordinate {}, i{} max {})",
+            n,
+            max_abs_coord,
+            I::BITS,
+            max
+        );
+        true
+    }
+
+    pub(super) fn many_squares<I: IntNumber>(
+        start: IntPoint<I>,
+        size: I,
+        offset: I,
+        n: usize,
+    ) -> Vec<IntPath<I>> {
         let mut result = Vec::with_capacity(n * n);
         let mut y = start.y;
         for _ in 0..n {
             let mut x = start.x;
             for _ in 0..n {
-                let path: IntPath = vec![
+                let path: IntPath<I> = vec![
                     IntPoint::new(x, y),
                     IntPoint::new(x, y + size),
                     IntPoint::new(x + size, y + size),
@@ -29,17 +56,22 @@ impl Util {
         result
     }
 
-
-    pub(super) fn many_windows(start: IntPoint, a: i32, b: i32, offset: i32, n: usize) -> (Vec<IntPath>, Vec<IntPath>) {
+    pub(super) fn many_windows<I: IntNumber>(
+        start: IntPoint<I>,
+        a: I,
+        b: I,
+        offset: I,
+        n: usize,
+    ) -> (Vec<IntPath<I>>, Vec<IntPath<I>>) {
         let mut boundaries = Vec::with_capacity(n * n);
         let mut holes = Vec::with_capacity(n * n);
         let mut y = start.y;
-        let c = (a - b) / 2;
+        let c = (a - b) / I::TWO;
         let d = b + c;
         for _ in 0..n {
             let mut x = start.x;
             for _ in 0..n {
-                let boundary: IntPath = vec![
+                let boundary: IntPath<I> = vec![
                     IntPoint::new(x, y),
                     IntPoint::new(x, y + a),
                     IntPoint::new(x + a, y + a),
@@ -47,7 +79,7 @@ impl Util {
                 ];
                 boundaries.push(boundary);
 
-                let hole: IntPath = vec![
+                let hole: IntPath<I> = vec![
                     IntPoint::new(x + c, y + c),
                     IntPoint::new(x + c, y + d),
                     IntPoint::new(x + d, y + d),
@@ -63,19 +95,22 @@ impl Util {
         (boundaries, holes)
     }
 
-    pub(super) fn concentric_squares(a: i32, n: usize) -> (Vec<IntPath>, Vec<IntPath>) {
+    pub(super) fn concentric_squares<I: IntNumber>(
+        a: I,
+        n: usize,
+    ) -> (Vec<IntPath<I>>, Vec<IntPath<I>>) {
         let mut vert = Vec::with_capacity(2 * n);
         let mut horz = Vec::with_capacity(2 * n);
-        let s = 2 * a;
+        let s = I::TWO * a;
         let mut r = s;
         for _ in 0..n {
-            let hz_top: IntPath = vec![
+            let hz_top: IntPath<I> = vec![
                 IntPoint::new(-r, r - a),
                 IntPoint::new(-r, r),
                 IntPoint::new(r, r),
                 IntPoint::new(r, r - a),
             ];
-            let hz_bot: IntPath = vec![
+            let hz_bot: IntPath<I> = vec![
                 IntPoint::new(-r, -r),
                 IntPoint::new(-r, -r + a),
                 IntPoint::new(r, -r + a),
@@ -84,13 +119,13 @@ impl Util {
             horz.push(hz_top);
             horz.push(hz_bot);
 
-            let vt_left: IntPath = vec![
+            let vt_left: IntPath<I> = vec![
                 IntPoint::new(-r, -r),
                 IntPoint::new(-r, r),
                 IntPoint::new(-r + a, r),
                 IntPoint::new(-r + a, -r),
             ];
-            let vt_right: IntPath = vec![
+            let vt_right: IntPath<I> = vec![
                 IntPoint::new(r - a, -r),
                 IntPoint::new(r - a, r),
                 IntPoint::new(r, r),
@@ -105,13 +140,13 @@ impl Util {
         (vert, horz)
     }
 
-    pub(super) fn many_lines_x(a: i32, n: usize) -> Vec<IntPath> {
-        let w = a / 2;
-        let s = a * (n as i32) / 2;
-        let mut x = -s + w / 2;
+    pub(super) fn many_lines_x<I: IntNumber>(a: I, n: usize) -> Vec<IntPath<I>> {
+        let w = a / I::TWO;
+        let s = a * I::from_usize(n) / I::TWO;
+        let mut x = -s + w / I::TWO;
         let mut result = Vec::with_capacity(n);
         for _ in 0..n {
-            let path: IntPath = vec![
+            let path: IntPath<I> = vec![
                 IntPoint::new(x, -s),
                 IntPoint::new(x, s),
                 IntPoint::new(x + w, s),
@@ -124,13 +159,13 @@ impl Util {
         result
     }
 
-    pub(super) fn many_lines_y(a: i32, n: usize) -> Vec<IntPath> {
-        let h = a / 2;
-        let s = a * (n as i32) / 2;
-        let mut y = -s + h / 2;
+    pub(super) fn many_lines_y<I: IntNumber>(a: I, n: usize) -> Vec<IntPath<I>> {
+        let h = a / I::TWO;
+        let s = a * I::from_usize(n) / I::TWO;
+        let mut y = -s + h / I::TWO;
         let mut result = Vec::with_capacity(n);
         for _ in 0..n {
-            let path: IntPath = vec![
+            let path: IntPath<I> = vec![
                 IntPoint::new(-s, y),
                 IntPoint::new(s, y),
                 IntPoint::new(s, y - h),
@@ -163,9 +198,15 @@ impl Util {
                 r - 0.2 * radius
             };
 
-            let p = FloatPoint { x: rr * sx, y: rr * sy };
+            let p = FloatPoint {
+                x: rr * sx,
+                y: rr * sy,
+            };
             let n = (p - p0).normalize();
-            let t = FloatPoint { x: w * -n.y, y: w * n.x };
+            let t = FloatPoint {
+                x: w * -n.y,
+                y: w * n.x,
+            };
 
             a_path.push(p0 + t);
             a_path.push(p + t);

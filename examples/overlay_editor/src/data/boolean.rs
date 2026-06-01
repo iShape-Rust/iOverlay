@@ -1,7 +1,9 @@
+use i_triangle::i_overlay::i_shape::int::path::IntPath as RawIntPath;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use i_triangle::i_overlay::i_shape::int::path::IntPath;
-use serde::Deserialize;
+
+type IntPath = RawIntPath<i32>;
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct BooleanTest {
@@ -18,9 +20,7 @@ impl BooleanTest {
         path_buf.push(file_name);
 
         let data = match std::fs::read_to_string(path_buf.as_path()) {
-            Ok(data) => {
-                data
-            }
+            Ok(data) => data,
             Err(e) => {
                 eprintln!("{:?}", e);
                 return None;
@@ -40,20 +40,18 @@ impl BooleanTest {
     fn tests_count(folder: &str) -> usize {
         let folder_path = PathBuf::from(folder);
         match std::fs::read_dir(folder_path) {
-            Ok(entries) => {
-                entries
-                    .filter_map(|entry| {
-                        entry.ok().and_then(|e| {
-                            let path = e.path();
-                            if path.extension()?.to_str()? == "json" {
-                                Some(())
-                            } else {
-                                None
-                            }
-                        })
+            Ok(entries) => entries
+                .filter_map(|entry| {
+                    entry.ok().and_then(|e| {
+                        let path = e.path();
+                        if path.extension()?.to_str()? == "json" {
+                            Some(())
+                        } else {
+                            None
+                        }
                     })
-                    .count()
-            }
+                })
+                .count(),
             Err(e) => {
                 eprintln!("Failed to read directory: {}", e);
                 0
@@ -65,15 +63,18 @@ impl BooleanTest {
 pub(crate) struct BooleanResource {
     folder: Option<String>,
     pub(crate) count: usize,
-    pub(crate) tests: HashMap<usize, BooleanTest>
+    pub(crate) tests: HashMap<usize, BooleanTest>,
 }
 
 impl BooleanResource {
-
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn with_path(folder: &str) -> Self {
         let count = BooleanTest::tests_count(folder);
-        Self { count, folder: Some(folder.to_string()), tests: Default::default() }
+        Self {
+            count,
+            folder: Some(folder.to_string()),
+            tests: Default::default(),
+        }
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -101,10 +102,14 @@ impl BooleanResource {
             return None;
         }
         if let Some(test) = self.tests.get(&index) {
-            return Some(test.clone())
+            return Some(test.clone());
         }
 
-        let folder = if let Some(folder) = &self.folder { folder } else { return None; };
+        let folder = if let Some(folder) = &self.folder {
+            folder
+        } else {
+            return None;
+        };
         let test = BooleanTest::load(index, folder.as_str())?;
 
         self.tests.insert(index, test.clone());

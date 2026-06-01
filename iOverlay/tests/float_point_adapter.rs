@@ -18,8 +18,8 @@ mod tests {
             [s * 1.0, s * 0.0],
         ]];
 
-        let adapter_100 = FloatPointAdapter::new(FloatRect::new(-100.0, 100.0, -100.0, 100.0));
-        let adapter_1000 = FloatPointAdapter::new(FloatRect::new(-1000.0, 1000.0, -1000.0, 1000.0));
+        let adapter_100 = FloatPointAdapter::<_, i32>::new(FloatRect::new(-100.0, 100.0, -100.0, 100.0));
+        let adapter_1000 = FloatPointAdapter::<_, i32>::new(FloatRect::new(-1000.0, 1000.0, -1000.0, 1000.0));
 
         let subj_100 = FloatOverlay::with_adapter(adapter_100, shape.len())
             .unsafe_add_source(&shape, ShapeType::Subject)
@@ -58,8 +58,8 @@ mod tests {
             rect.max_y + 0.1,
         );
 
-        let adapter_100 = FloatPointAdapter::with_scale(buffer_rect.clone(), 100.0);
-        let adapter_1000 = FloatPointAdapter::with_scale(buffer_rect, 1000.0);
+        let adapter_100 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect.clone(), 100.0);
+        let adapter_1000 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect, 1000.0);
 
         let subj_100 = FloatOverlay::with_adapter(adapter_100, shape.len())
             .unsafe_add_source(&shape, ShapeType::Subject)

@@ -1,21 +1,21 @@
-use std::collections::HashMap;
-use i_triangle::i_overlay::i_shape::int::count::PointsCount;
+use crate::app::design;
+use crate::app::fill_option::FillOption;
+use crate::app::main::{AppMessage, EditorApp};
+use crate::app::solver_option::SolverOption;
+use crate::app::string::control::ModeOption;
+use crate::app::string::workspace::{Solution, WorkspaceState};
+use crate::data::string::StringResource;
+use crate::geom::camera::Camera;
+use crate::point_editor::point::PathsToEditorPoints;
+use crate::point_editor::widget::PointEditUpdate;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::i_shape::int::count::PointsCount;
 use i_triangle::i_overlay::string::clip::{ClipRule, IntClip};
 use i_triangle::i_overlay::string::slice::IntSlice;
 use iced::widget::scrollable;
-use iced::{Alignment, Length, Padding, Size, Vector};
 use iced::widget::{Button, Column, Container, Row, Space, Text};
-use crate::app::design;
-use crate::app::string::control::ModeOption;
-use crate::app::string::workspace::{Solution, WorkspaceState};
-use crate::app::fill_option::FillOption;
-use crate::app::main::{EditorApp, AppMessage};
-use crate::app::solver_option::SolverOption;
-use crate::geom::camera::Camera;
-use crate::data::string::StringResource;
-use crate::point_editor::point::PathsToEditorPoints;
-use crate::point_editor::widget::PointEditUpdate;
+use iced::{Alignment, Length, Padding, Size, Vector};
+use std::collections::HashMap;
 
 pub(crate) struct StringState {
     pub(crate) test: usize,
@@ -42,24 +42,30 @@ pub(crate) enum StringMessage {
 impl EditorApp {
     fn string_sidebar(&self) -> Column<'_, AppMessage> {
         let count = self.app_resource.string.count;
-        let mut column = Column::new().push(
-            Space::new()
-                .width(Length::Fill)
-                .height(Length::Fixed(2.0)),
-        );
+        let mut column =
+            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0)));
         for index in 0..count {
             let is_selected = self.state.string.test == index;
             column = column.push(
                 Container::new(
                     Button::new(
                         Text::new(format!("test_{}", index))
-                            .style(if is_selected { design::style_sidebar_text_selected } else { design::style_sidebar_text })
-                            .size(14)
+                            .style(if is_selected {
+                                design::style_sidebar_text_selected
+                            } else {
+                                design::style_sidebar_text
+                            })
+                            .size(14),
                     )
-                        .width(Length::Fill)
-                        .on_press(AppMessage::String(StringMessage::TestSelected(index)))
-                        .style(if is_selected { design::style_sidebar_button_selected } else { design::style_sidebar_button })
-                ).padding(self.design.action_padding())
+                    .width(Length::Fill)
+                    .on_press(AppMessage::String(StringMessage::TestSelected(index)))
+                    .style(if is_selected {
+                        design::style_sidebar_button_selected
+                    } else {
+                        design::style_sidebar_button
+                    }),
+                )
+                .padding(self.design.action_padding()),
             );
         }
 
@@ -75,14 +81,15 @@ impl EditorApp {
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
                         .padding(Padding::new(0.0).right(8))
-                        .style(design::style_sidebar_background)
-                ).direction(scrollable::Direction::Vertical(
+                        .style(design::style_sidebar_background),
+                )
+                .direction(scrollable::Direction::Vertical(
                     scrollable::Scrollbar::new()
                         .width(4)
                         .margin(0)
                         .scroller_width(4)
                         .anchor(scrollable::Anchor::Start),
-                ))
+                )),
             )
             .push(self.string_workspace())
     }
@@ -101,7 +108,9 @@ impl EditorApp {
     }
 
     fn string_set_test(&mut self, index: usize) {
-        self.state.string.set_test(index, &mut self.app_resource.string);
+        self.state
+            .string
+            .set_test(index, &mut self.app_resource.string);
         self.state.string.update_solution();
     }
 
@@ -215,11 +224,25 @@ impl StringState {
                 self.workspace.solution = Solution::Shapes(slice);
             }
             ModeOption::ClipDirect => {
-                let clip = body.clip_paths(string, fill_rule, ClipRule { invert: false, boundary_included: false });
+                let clip = body.clip_paths(
+                    string,
+                    fill_rule,
+                    ClipRule {
+                        invert: false,
+                        boundary_included: false,
+                    },
+                );
                 self.workspace.solution = Solution::Paths(clip);
             }
             ModeOption::ClipInvert => {
-                let clip = body.clip_paths(string, fill_rule, ClipRule { invert: true, boundary_included: false });
+                let clip = body.clip_paths(
+                    string,
+                    fill_rule,
+                    ClipRule {
+                        invert: true,
+                        boundary_included: false,
+                    },
+                );
                 self.workspace.solution = Solution::Paths(clip);
             }
         }

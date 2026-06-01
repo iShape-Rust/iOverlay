@@ -1,3 +1,4 @@
+use crate::core::edge_data::OverlayEdgeData;
 use crate::core::solver::Solver;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
@@ -6,35 +7,46 @@ use crate::segm::winding::WindingCount;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_tree::ExpiredVal;
 use i_tree::seg::exp::{SegExpCollection, SegRange};
 use i_tree::seg::tree::SegExpTree;
+use i_tree::{Expiration, LayoutNumber};
 
-#[derive(Debug, Clone, Copy)]
-struct IdSegment {
+#[derive(Clone, Copy)]
+struct IdSegment<I: IntNumber> {
     id: usize,
-    x_segment: XSegment,
+    x_segment: XSegment<I>,
 }
 
-impl ExpiredVal<i32> for IdSegment {
+impl<I: IntNumber + Expiration> ExpiredVal<I> for IdSegment<I> {
     #[inline]
-    fn expiration(&self) -> i32 {
+    fn expiration(&self) -> I {
         self.x_segment.b.x
     }
 }
 
-impl SplitSolver {
-    pub(super) fn tree_split<C: WindingCount>(
+impl<I> SplitSolver<I>
+where
+    I: IntNumber + Expiration + LayoutNumber + SortKey,
+{
+    pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
         snap_radius: SnapRadius,
-        segments: &mut Vec<Segment<C>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) -> bool {
-        let range: SegRange<i32> = segments.ver_range().into();
-        let mut tree: SegExpTree<i32, i32, IdSegment> = if let Some(tree) = SegExpTree::new(range) {
+        let range: SegRange<I> = if let Some(range) = segments.ver_range() {
+            range.into()
+        } else {
+            return false;
+        };
+        let mut tree: SegExpTree<I, I, IdSegment<I>> = if let Some(tree) = SegExpTree::new(range) {
             tree
         } else {
-            return self.list_split(snap_radius, segments, solver);
+            return self.list_split(snap_radius, segments, solver, store);
         };
 
         let mut reusable_buffer = Vec::new();
@@ -48,7 +60,7 @@ impl SplitSolver {
             need_to_fix = false;
             self.marks.clear();
 
-            let radius = snap_radius.radius();
+            let radius = snap_radius.radius::<I>();
 
             for (i, si) in segments.iter().enumerate() {
                 let time = si.x_segment.a.x;
@@ -60,8 +72,7 @@ impl SplitSolver {
                         (sj.id, i, &sj.x_segment, &si.x_segment)
                     };
 
-                    let is_round =
-                        SplitSolver::cross(this_index, scan_index, this, scan, &mut self.marks, radius);
+                    let is_round = Self::cross(this_index, scan_index, this, scan, &mut self.marks, radius);
 
                     need_to_fix = is_round || need_to_fix;
                 }
@@ -76,7 +87,7 @@ impl SplitSolver {
             any_intersection = true;
             tree.clear();
 
-            self.apply(segments, &mut reusable_buffer, solver);
+            self.apply(segments, &mut reusable_buffer, solver, store);
 
             snap_radius.increment();
         }
@@ -85,9 +96,9 @@ impl SplitSolver {
     }
 }
 
-impl From<LineRange> for SegRange<i32> {
+impl<I: IntNumber> From<LineRange<I>> for SegRange<I> {
     #[inline]
-    fn from(value: LineRange) -> Self {
+    fn from(value: LineRange<I>) -> Self {
         Self {
             min: value.min,
             max: value.max,
@@ -96,12 +107,16 @@ impl From<LineRange> for SegRange<i32> {
 }
 
 trait VerticalRange {
-    fn ver_range(&self) -> LineRange;
+    type Int: IntNumber;
+
+    fn ver_range(&self) -> Option<LineRange<Self::Int>>;
 }
 
-impl<C: Send> VerticalRange for Vec<Segment<C>> {
-    fn ver_range(&self) -> LineRange {
-        let mut min_y = self[0].x_segment.a.y;
+impl<I: IntNumber, C: Send, D: Send> VerticalRange for Vec<Segment<C, I, D>> {
+    type Int = I;
+
+    fn ver_range(&self) -> Option<LineRange<I>> {
+        let mut min_y = self.first()?.x_segment.a.y;
         let mut max_y = min_y;
 
         for edge in self.iter() {
@@ -111,16 +126,16 @@ impl<C: Send> VerticalRange for Vec<Segment<C>> {
             max_y = max_y.max(edge.x_segment.b.y);
         }
 
-        LineRange {
+        Some(LineRange {
             min: min_y,
             max: max_y,
-        }
+        })
     }
 }
 
-impl<C: Send> Segment<C> {
+impl<I: IntNumber, C: Send, D: Send> Segment<C, I, D> {
     #[inline]
-    fn id_segment(&self, id: usize) -> IdSegment {
+    fn id_segment(&self, id: usize) -> IdSegment<I> {
         IdSegment {
             id,
             x_segment: self.x_segment,

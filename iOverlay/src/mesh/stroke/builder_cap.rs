@@ -11,8 +11,8 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
+use i_float::int::number::int::IntNumber;
 
-#[derive(Debug, Clone)]
 pub(super) struct CapBuilder<P> {
     points: Option<Vec<P>>,
 }
@@ -66,11 +66,11 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
         scaled
     }
 
-    pub(super) fn add_to_start(
+    pub(super) fn add_to_start<I: IntNumber>(
         &self,
         section: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let mut a = adapter.float_to_int(&section.a_top);
         if let Some(points) = &self.points {
@@ -88,11 +88,11 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
         segments.push(Segment::subject(a, last));
     }
 
-    pub(super) fn add_to_end(
+    pub(super) fn add_to_end<I: IntNumber>(
         &self,
         section: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let mut a = adapter.float_to_int(&section.b_bot);
         if let Some(points) = &self.points {

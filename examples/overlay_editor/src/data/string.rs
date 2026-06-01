@@ -1,8 +1,11 @@
+use i_triangle::i_overlay::i_shape::int::path::IntPath as RawIntPath;
+use i_triangle::i_overlay::i_shape::int::shape::IntContour as RawIntContour;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use i_triangle::i_overlay::i_shape::int::path::IntPath;
-use i_triangle::i_overlay::i_shape::int::shape::IntContour;
-use serde::Deserialize;
+
+type IntContour = RawIntContour<i32>;
+type IntPath = RawIntPath<i32>;
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct StringTest {
@@ -19,9 +22,7 @@ impl StringTest {
         path_buf.push(file_name);
 
         let data = match std::fs::read_to_string(path_buf.as_path()) {
-            Ok(data) => {
-                data
-            }
+            Ok(data) => data,
             Err(e) => {
                 eprintln!("{:?}", e);
                 return None;
@@ -41,20 +42,18 @@ impl StringTest {
     fn tests_count(folder: &str) -> usize {
         let folder_path = PathBuf::from(folder);
         match std::fs::read_dir(folder_path) {
-            Ok(entries) => {
-                entries
-                    .filter_map(|entry| {
-                        entry.ok().and_then(|e| {
-                            let path = e.path();
-                            if path.extension()?.to_str()? == "json" {
-                                Some(())
-                            } else {
-                                None
-                            }
-                        })
+            Ok(entries) => entries
+                .filter_map(|entry| {
+                    entry.ok().and_then(|e| {
+                        let path = e.path();
+                        if path.extension()?.to_str()? == "json" {
+                            Some(())
+                        } else {
+                            None
+                        }
                     })
-                    .count()
-            }
+                })
+                .count(),
             Err(e) => {
                 eprintln!("Failed to read directory: {}", e);
                 0
@@ -66,15 +65,18 @@ impl StringTest {
 pub(crate) struct StringResource {
     folder: Option<String>,
     pub(crate) count: usize,
-    pub(crate) tests: HashMap<usize, StringTest>
+    pub(crate) tests: HashMap<usize, StringTest>,
 }
 
 impl StringResource {
-
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn with_path(folder: &str) -> Self {
         let count = StringTest::tests_count(folder);
-        Self { count, folder: Some(folder.to_string()), tests: Default::default() }
+        Self {
+            count,
+            folder: Some(folder.to_string()),
+            tests: Default::default(),
+        }
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -102,10 +104,14 @@ impl StringResource {
             return None;
         }
         if let Some(test) = self.tests.get(&index) {
-            return Some(test.clone())
+            return Some(test.clone());
         }
 
-        let folder = if let Some(folder) = &self.folder { folder } else { return None; };
+        let folder = if let Some(folder) = &self.folder {
+            folder
+        } else {
+            return None;
+        };
         let test = StringTest::load(index, folder.as_str())?;
 
         self.tests.insert(index, test.clone());

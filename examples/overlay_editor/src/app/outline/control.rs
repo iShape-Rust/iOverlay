@@ -40,11 +40,16 @@ impl EditorApp {
             )
             .push(
                 Container::new(
-                    slider(-50.0f32..=50.0f32, self.state.outline.outer_offset, on_update_outer_offset).step(0.01f32)
+                    slider(
+                        -50.0f32..=50.0f32,
+                        self.state.outline.outer_offset,
+                        on_update_outer_offset,
+                    )
+                    .step(0.01f32),
                 )
-                    .width(410)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
+                .width(410)
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
             )
             .height(Length::Fixed(40.0));
         let inner_offset_list = Row::new()
@@ -56,11 +61,16 @@ impl EditorApp {
             )
             .push(
                 Container::new(
-                    slider(-50.0f32..=50.0f32, self.state.outline.inner_offset, on_update_inner_offset).step(0.01f32)
+                    slider(
+                        -50.0f32..=50.0f32,
+                        self.state.outline.inner_offset,
+                        on_update_inner_offset,
+                    )
+                    .step(0.01f32),
                 )
-                    .width(410)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
+                .width(410)
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
             )
             .height(Length::Fixed(40.0));
 
@@ -96,7 +106,6 @@ impl EditorApp {
                     .width(250)
                     .height(Length::Fill)
                     .align_y(Alignment::Center),
-
             );
         }
 

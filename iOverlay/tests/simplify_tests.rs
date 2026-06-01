@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::field_reassign_with_default, clippy::useless_vec)]
+
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
@@ -23,7 +25,7 @@ mod tests {
             preserve_input_collinear: true,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -51,7 +53,7 @@ mod tests {
             preserve_input_collinear: true,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -79,7 +81,7 @@ mod tests {
             preserve_input_collinear: true,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -142,7 +144,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: true,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -164,7 +166,7 @@ mod tests {
         .to_vec()
     }
 
-    fn square_shape(pos: IntPoint) -> IntShape {
+    fn square_shape(pos: IntPoint) -> IntShape<i32> {
         [square(pos)].to_vec()
     }
 }

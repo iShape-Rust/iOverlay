@@ -1,15 +1,15 @@
 use crate::geom::camera::Camera;
 use crate::sheet::state::SheetState;
-use iced::{Color, Point, Transformation};
-use iced::advanced::widget::tree;
-use iced::advanced::layout::{self, Layout};
-use iced::advanced::{Clipboard, renderer, Shell};
-use iced::advanced::widget::{Tree, Widget};
-use iced::{Event, mouse};
-use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
 use iced::advanced::graphics::color::pack;
+use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
 use iced::advanced::graphics::Mesh;
-use iced::advanced::graphics::mesh::{SolidVertex2D, Indexed};
+use iced::advanced::layout::{self, Layout};
+use iced::advanced::widget::tree;
+use iced::advanced::widget::{Tree, Widget};
+use iced::advanced::{renderer, Clipboard, Shell};
+use iced::{mouse, Event};
+use iced::{Color, Point, Transformation};
+use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
 
 pub(crate) struct SheetWidget<'a, Message> {
     camera: Camera,
@@ -47,10 +47,22 @@ impl<'a, Message: 'a> SheetWidget<'a, Message> {
         let mut vertices = Vec::with_capacity(4);
         let mut indices = Vec::with_capacity(6);
 
-        vertices.push(SolidVertex2D { position: [min_x, min_y], color: color_pack });
-        vertices.push(SolidVertex2D { position: [min_x, max_y], color: color_pack });
-        vertices.push(SolidVertex2D { position: [max_x, max_y], color: color_pack });
-        vertices.push(SolidVertex2D { position: [max_x, min_y], color: color_pack });
+        vertices.push(SolidVertex2D {
+            position: [min_x, min_y],
+            color: color_pack,
+        });
+        vertices.push(SolidVertex2D {
+            position: [min_x, max_y],
+            color: color_pack,
+        });
+        vertices.push(SolidVertex2D {
+            position: [max_x, max_y],
+            color: color_pack,
+        });
+        vertices.push(SolidVertex2D {
+            position: [max_x, min_y],
+            color: color_pack,
+        });
 
         indices.push(0);
         indices.push(1);
@@ -145,7 +157,9 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
                 let position = cursor.position().unwrap_or(Point::ORIGIN);
                 if bounds.contains(position) {
                     let cursor = position - bounds.position();
-                    if let Some(scale) = state.mouse_wheel_scrolled(self.camera, bounds.size(), *delta, cursor) {
+                    if let Some(scale) =
+                        state.mouse_wheel_scrolled(self.camera, bounds.size(), *delta, cursor)
+                    {
                         shell.publish((self.on_zoom)(scale));
                         shell.capture_event();
                         return;
@@ -198,8 +212,12 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
             let round_world_max_x = world_max.x.trunc();
             let round_world_max_y = world_max.y.trunc();
 
-            let nfx = (round_world_max_x - round_world_min_x + 0.001).round().abs();
-            let nfy = (round_world_max_y - round_world_min_y + 0.001).round().abs();
+            let nfx = (round_world_max_x - round_world_min_x + 0.001)
+                .round()
+                .abs();
+            let nfy = (round_world_max_y - round_world_min_y + 0.001)
+                .round()
+                .abs();
 
             let nx = nfx as usize;
             let ny = nfy as usize;
@@ -219,17 +237,13 @@ impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
 
             let mut position = Vector::new(round_view_min.x + rect.x, view_min.y + rect.y);
             for _ in 0..=nx {
-                renderer.with_translation(position, |renderer| {
-                    renderer.draw_mesh(vr_mesh.clone())
-                });
+                renderer.with_translation(position, |renderer| renderer.draw_mesh(vr_mesh.clone()));
                 position.x += dx;
             }
 
             let mut position = Vector::new(view_min.x + rect.x, round_view_min.y + rect.y);
             for _ in 0..=ny {
-                renderer.with_translation(position, |renderer| {
-                    renderer.draw_mesh(hz_mesh.clone())
-                });
+                renderer.with_translation(position, |renderer| renderer.draw_mesh(hz_mesh.clone()));
                 position.y += dy;
             }
         });

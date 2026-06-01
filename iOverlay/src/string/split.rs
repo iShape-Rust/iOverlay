@@ -1,26 +1,29 @@
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::IntContour;
 use i_shape::util::reserve::Reserve;
 
-pub(super) trait Split {
+pub(super) trait Split<I: IntNumber> {
     fn split_loops(
         self,
-        min_area: u64,
-        contour_buffer: &mut IntContour,
-        bin_store: &mut BinStore,
+        min_area: I::WideUInt,
+        contour_buffer: &mut IntContour<I>,
+        bin_store: &mut BinStore<I>,
     ) -> Vec<Self>
     where
         Self: Sized;
 }
 
-impl Split for IntContour {
+impl<I: IntNumber> Split<I> for IntContour<I> {
     fn split_loops(
         self,
-        min_area: u64,
-        contour_buffer: &mut IntContour,
-        bin_store: &mut BinStore,
+        min_area: I::WideUInt,
+        contour_buffer: &mut IntContour<I>,
+        bin_store: &mut BinStore<I>,
     ) -> Vec<Self> {
         if self.is_empty() {
             return Vec::new();
@@ -30,7 +33,7 @@ impl Split for IntContour {
 
         bin_store.init(&self);
 
-        let mut result: Vec<IntContour> = Vec::with_capacity(16);
+        let mut result: Vec<IntContour<I>> = Vec::with_capacity(16);
 
         for point in self {
             let next_pos = contour_buffer.len() + 1;
@@ -61,25 +64,25 @@ impl Split for IntContour {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-struct PointItem {
-    point: IntPoint,
+#[derive(Clone)]
+struct PointItem<I: IntNumber> {
+    point: IntPoint<I>,
     pos: usize,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 struct Bin {
     offset: usize,
     data: usize,
 }
 
-pub(super) struct BinStore {
+pub(super) struct BinStore<I: IntNumber> {
     mask: u32,
     bins: Vec<Bin>,
-    items: Vec<PointItem>,
+    items: Vec<PointItem<I>>,
 }
 
-impl BinStore {
+impl<I: IntNumber> BinStore<I> {
     pub(super) fn new() -> Self {
         Self {
             mask: 0,
@@ -88,7 +91,7 @@ impl BinStore {
         }
     }
 
-    fn init(&mut self, contour: &IntContour) {
+    fn init(&mut self, contour: &IntContour<I>) {
         let log = contour.len().ilog2().saturating_sub(4).clamp(1, 30);
         let bins_count = (1 << log) as usize;
 
@@ -123,7 +126,7 @@ impl BinStore {
     }
 
     #[inline]
-    fn insert_if_not_exist(&mut self, point: IntPoint, pos: usize) -> usize {
+    fn insert_if_not_exist(&mut self, point: IntPoint<I>, pos: usize) -> usize {
         let index = self.bin_index(point);
         let bin = unsafe {
             // SAFETY: insert_if_not_exist only touches bins within the pre-sized array; bin_index shares the same invariant.
@@ -150,22 +153,22 @@ impl BinStore {
     }
 
     #[inline]
-    fn bin_index(&self, p: IntPoint) -> usize {
-        let x = p.x.unsigned_abs();
-        let y = p.y.unsigned_abs();
-        let hash = x.wrapping_mul(31) ^ y.wrapping_mul(17);
-        (hash & self.mask) as usize
+    fn bin_index(&self, p: IntPoint<I>) -> usize {
+        let x = p.x.wide().wrapping_mul(I::Wide::from_usize(31));
+        let y = p.y.wide().wrapping_mul(I::Wide::from_usize(17));
+        let hash = x.wrapping_add(y);
+        (hash & I::Wide::from_usize(self.mask as usize)).to_usize()
     }
 }
 
-trait ValidateArea {
-    fn validate_area(&self, min_area: u64) -> bool;
+trait ValidateArea<I: IntNumber> {
+    fn validate_area(&self, min_area: I::WideUInt) -> bool;
 }
 
-impl ValidateArea for IntContour {
+impl<I: IntNumber> ValidateArea<I> for IntContour<I> {
     #[inline]
-    fn validate_area(&self, min_area: u64) -> bool {
-        if min_area == 0 {
+    fn validate_area(&self, min_area: I::WideUInt) -> bool {
+        if min_area == I::WideUInt::ZERO {
             return true;
         }
         let abs_area = self.unsafe_area().unsigned_abs() >> 1;
@@ -181,17 +184,17 @@ mod tests {
 
     #[test]
     fn test_empty_path() {
-        let path: IntPath = vec![];
-        let mut contour: IntContour = Vec::new();
+        let path: IntPath<i32> = vec![];
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
-        assert_eq!(result, vec![] as Vec<IntPath>);
+        assert_eq!(result, vec![] as Vec<IntPath<i32>>);
     }
 
     #[test]
     fn test_single_point() {
         let path = vec![IntPoint::new(0, 0)];
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert!(result.is_empty());
@@ -200,7 +203,7 @@ mod tests {
     #[test]
     fn test_two_points() {
         let path = vec![IntPoint::new(0, 0), IntPoint::new(1, 1)];
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert!(result.is_empty());
@@ -215,7 +218,7 @@ mod tests {
             IntPoint::new(1, 0),
         ];
 
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.clone().split_loops(0, &mut contour, &mut bin_store);
         assert_eq!(result, vec![path]);
@@ -234,7 +237,7 @@ mod tests {
             IntPoint::new(1, -1),
         ];
 
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert_eq!(result.len(), 2);
@@ -272,7 +275,7 @@ mod tests {
             IntPoint::new(1, -1),
         ];
 
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert_eq!(result.len(), 2);
@@ -309,7 +312,7 @@ mod tests {
             IntPoint::new(0, 0),
         ];
 
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert_eq!(result.len(), 2);
@@ -344,7 +347,7 @@ mod tests {
             IntPoint::new(0, 0), // same point, forms a loop
         ];
 
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert_eq!(result.len(), 1);
@@ -371,7 +374,7 @@ mod tests {
             IntPoint::new(0, 0), // same point, forms a loop
         ];
 
-        let mut contour: IntContour = Vec::new();
+        let mut contour: IntContour<i32> = Vec::new();
         let mut bin_store = BinStore::new();
         let result = path.split_loops(0, &mut contour, &mut bin_store);
         assert_eq!(result.len(), 4);

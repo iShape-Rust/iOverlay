@@ -1,7 +1,11 @@
-use crate::vector::edge::{VectorEdge, VectorPath, VectorShape};
+use crate::core::edge_data::OverlayEdgeData;
+use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
+use i_float::int::vector::IntVector;
 
 /// Simplifies vector contours by removing collinear points when possible.
 pub(super) trait VectorSimplify {
@@ -12,16 +16,20 @@ pub(super) trait VectorSimplify {
 }
 
 pub(super) trait VectorSimpleContour {
+    type Int: IntNumber;
+    type Data: OverlayEdgeData;
     fn is_simple(&self) -> bool;
-    fn simplified(&self) -> Option<VectorPath>;
+    fn simplified(&self) -> Option<DataVectorPath<Self::Int, Self::Data>>;
 }
 
 pub(super) trait VectorSimpleShape {
+    type Int: IntNumber;
+    type Data: OverlayEdgeData;
     fn is_simple(&self) -> bool;
-    fn simplified(&self) -> Option<VectorShape>;
+    fn simplified(&self) -> Option<DataVectorShape<Self::Int, Self::Data>>;
 }
 
-impl VectorSimplify for VectorPath {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimplify for DataVectorPath<I, D> {
     #[inline]
     fn simplify_contour(&mut self) -> bool {
         if self.is_simple() {
@@ -36,7 +44,7 @@ impl VectorSimplify for VectorPath {
     }
 }
 
-impl VectorSimplify for VectorShape {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimplify for DataVectorShape<I, D> {
     #[inline]
     fn simplify_contour(&mut self) -> bool {
         let mut any_simplified = false;
@@ -67,7 +75,7 @@ impl VectorSimplify for VectorShape {
     }
 }
 
-impl VectorSimplify for Vec<VectorShape> {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimplify for Vec<DataVectorShape<I, D>> {
     #[inline]
     fn simplify_contour(&mut self) -> bool {
         let mut any_simplified = false;
@@ -94,7 +102,10 @@ impl VectorSimplify for Vec<VectorShape> {
     }
 }
 
-impl VectorSimpleContour for [VectorEdge] {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<I, D>] {
+    type Int = I;
+    type Data = D;
+
     #[inline]
     fn is_simple(&self) -> bool {
         let count = self.len();
@@ -102,19 +113,19 @@ impl VectorSimpleContour for [VectorEdge] {
             return false;
         }
 
-        let mut prev = direction(&self[count - 1]);
+        let mut prev = &self[count - 1];
         for edge in self.iter() {
             let curr = direction(edge);
-            if curr.cross_product(prev) == 0 {
+            if curr.cross_product(direction(prev)) == I::Wide::ZERO && edge.data == prev.data {
                 return false;
             }
-            prev = curr;
+            prev = edge;
         }
 
         true
     }
 
-    fn simplified(&self) -> Option<VectorPath> {
+    fn simplified(&self) -> Option<DataVectorPath<I, D>> {
         if self.len() < 3 {
             return None;
         }
@@ -155,7 +166,9 @@ impl VectorSimpleContour for [VectorEdge] {
             let p1 = self[node.index].b;
             let p2 = self[node.next].b;
 
-            if p1.subtract(p0).cross_product(p2.subtract(p1)) == 0 {
+            if (p1 - p0).cross_product(p2 - p1) == I::Wide::ZERO
+                && self[node.index].data == self[node.next].data
+            {
                 n -= 1;
                 if n < 3 {
                     return None;
@@ -192,7 +205,7 @@ impl VectorSimpleContour for [VectorEdge] {
             }
         }
 
-        let mut buffer = vec![VectorEdge::new(0, IntPoint::ZERO, IntPoint::ZERO); n];
+        let mut buffer = vec![DataVectorEdge::new(0, IntPoint::ZERO, IntPoint::ZERO, self[0].data); n];
         node = nodes[first];
 
         let mut e0 = &self[node.index];
@@ -202,6 +215,7 @@ impl VectorSimpleContour for [VectorEdge] {
             item.a = e0.b;
             item.b = e1.b;
             item.fill = e1.fill;
+            item.data = e1.data;
 
             e0 = e1;
         }
@@ -217,13 +231,16 @@ struct Node {
     prev: usize,
 }
 
-impl VectorSimpleShape for [VectorPath] {
+impl<I: IntNumber, D: OverlayEdgeData> VectorSimpleShape for [DataVectorPath<I, D>] {
+    type Int = I;
+    type Data = D;
+
     #[inline]
     fn is_simple(&self) -> bool {
         self.iter().all(|contour| contour.is_simple())
     }
 
-    fn simplified(&self) -> Option<VectorShape> {
+    fn simplified(&self) -> Option<DataVectorShape<I, D>> {
         let mut contours = Vec::with_capacity(self.len());
         for (i, contour) in self.iter().enumerate() {
             if contour.is_simple() {
@@ -240,27 +257,49 @@ impl VectorSimpleShape for [VectorPath] {
 }
 
 #[inline]
-fn direction(edge: &VectorEdge) -> IntPoint {
+fn direction<I: IntNumber, D>(edge: &DataVectorEdge<I, D>) -> IntVector<I> {
     edge.b - edge.a
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::vector::edge::VectorEdge;
+    use crate::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
+    use crate::vector::edge::DataVectorEdge;
     use crate::vector::simplify::{IntPoint, VectorSimplify};
     use alloc::vec;
     use i_float::int_pnt;
+
+    #[derive(Clone, Copy, PartialEq)]
+    enum TestData {
+        A,
+        B,
+    }
+
+    impl<C> OverlayEdgeData<C> for TestData
+    where
+        C: Copy + Send + Sync,
+    {
+        type Store = ();
+
+        fn merge(ctx: EdgeDataMerge<C, Self>, _: &mut Self::Store) -> Self {
+            if ctx.lhs_data == ctx.rhs_data {
+                ctx.lhs_data
+            } else {
+                TestData::B
+            }
+        }
+    }
 
     #[test]
     fn test_0() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(0, -1), int_pnt!(0, -3)),
-            VectorEdge::new(2, int_pnt!(0, -3), int_pnt!(1, -3)),
-            VectorEdge::new(3, int_pnt!(1, -3), int_pnt!(3, -3)),
-            VectorEdge::new(4, int_pnt!(3, -3), int_pnt!(3,  0)),
-            VectorEdge::new(5, int_pnt!(3,  0), int_pnt!(0,  0)),
-            VectorEdge::new(6, int_pnt!(0,  0), int_pnt!(0, -1)),
+            DataVectorEdge::new(1, int_pnt!(0, -1), int_pnt!(0, -3), ()),
+            DataVectorEdge::new(2, int_pnt!(0, -3), int_pnt!(1, -3), ()),
+            DataVectorEdge::new(3, int_pnt!(1, -3), int_pnt!(3, -3), ()),
+            DataVectorEdge::new(4, int_pnt!(3, -3), int_pnt!(3,  0), ()),
+            DataVectorEdge::new(5, int_pnt!(3,  0), int_pnt!(0,  0), ()),
+            DataVectorEdge::new(6, int_pnt!(0,  0), int_pnt!(0, -1), ()),
         ];
 
         let result = contour.simplify_contour();
@@ -273,16 +312,16 @@ mod tests {
     fn test_duplicate_points() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(-1, 3), int_pnt!(-1, 1)),
-            VectorEdge::new(2, int_pnt!(-1, 1), int_pnt!(-1, 1)),
-            VectorEdge::new(3, int_pnt!(-1, 1), int_pnt!(-3, 1)),
-            VectorEdge::new(4, int_pnt!(-3, 1), int_pnt!(-3, -2)),
-            VectorEdge::new(5, int_pnt!(-3, -2), int_pnt!(3, -2)),
-            VectorEdge::new(6, int_pnt!(3, -2), int_pnt!(3, 1)),
-            VectorEdge::new(7, int_pnt!(3, 1), int_pnt!(3, 1)),
-            VectorEdge::new(8, int_pnt!(3, 1), int_pnt!(1, 1)),
-            VectorEdge::new(9, int_pnt!(1, 1), int_pnt!(1, 3)),
-            VectorEdge::new(10, int_pnt!(1, 3), int_pnt!(-1, 3)),
+            DataVectorEdge::new(1, int_pnt!(-1, 3), int_pnt!(-1, 1), ()),
+            DataVectorEdge::new(2, int_pnt!(-1, 1), int_pnt!(-1, 1), ()),
+            DataVectorEdge::new(3, int_pnt!(-1, 1), int_pnt!(-3, 1), ()),
+            DataVectorEdge::new(4, int_pnt!(-3, 1), int_pnt!(-3, -2), ()),
+            DataVectorEdge::new(5, int_pnt!(-3, -2), int_pnt!(3, -2), ()),
+            DataVectorEdge::new(6, int_pnt!(3, -2), int_pnt!(3, 1), ()),
+            DataVectorEdge::new(7, int_pnt!(3, 1), int_pnt!(3, 1), ()),
+            DataVectorEdge::new(8, int_pnt!(3, 1), int_pnt!(1, 1), ()),
+            DataVectorEdge::new(9, int_pnt!(1, 1), int_pnt!(1, 3), ()),
+            DataVectorEdge::new(10, int_pnt!(1, 3), int_pnt!(-1, 3), ()),
         ];
 
         let result = contour.simplify_contour();
@@ -295,12 +334,12 @@ mod tests {
     fn test_tiny_segments() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(0, 2), int_pnt!(-1, 1)),
-            VectorEdge::new(2, int_pnt!(-1, 1), int_pnt!(-2, 0)),
-            VectorEdge::new(3, int_pnt!(-2, 0), int_pnt!(0, -1)),
-            VectorEdge::new(4, int_pnt!(0, -1), int_pnt!(2, 0)),
-            VectorEdge::new(5, int_pnt!(2, 0), int_pnt!(1, 1)),
-            VectorEdge::new(6, int_pnt!(1, 1), int_pnt!(0, 2)),
+            DataVectorEdge::new(1, int_pnt!(0, 2), int_pnt!(-1, 1), ()),
+            DataVectorEdge::new(2, int_pnt!(-1, 1), int_pnt!(-2, 0), ()),
+            DataVectorEdge::new(3, int_pnt!(-2, 0), int_pnt!(0, -1), ()),
+            DataVectorEdge::new(4, int_pnt!(0, -1), int_pnt!(2, 0), ()),
+            DataVectorEdge::new(5, int_pnt!(2, 0), int_pnt!(1, 1), ()),
+            DataVectorEdge::new(6, int_pnt!(1, 1), int_pnt!(0, 2), ()),
         ];
 
         let result = contour.simplify_contour();
@@ -313,14 +352,14 @@ mod tests {
     fn test_collinear_runs() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(-2, -2), int_pnt!(0, -2)),
-            VectorEdge::new(2, int_pnt!(0, -2), int_pnt!(2, -2)),
-            VectorEdge::new(3, int_pnt!(2, -2), int_pnt!(2, 0)),
-            VectorEdge::new(4, int_pnt!(2, 0), int_pnt!(2, 2)),
-            VectorEdge::new(5, int_pnt!(2, 2), int_pnt!(0, 2)),
-            VectorEdge::new(6, int_pnt!(0, 2), int_pnt!(-2, 2)),
-            VectorEdge::new(7, int_pnt!(-2, 2), int_pnt!(-2, 0)),
-            VectorEdge::new(8, int_pnt!(-2, 0), int_pnt!(-2, -2)),
+            DataVectorEdge::new(1, int_pnt!(-2, -2), int_pnt!(0, -2), ()),
+            DataVectorEdge::new(2, int_pnt!(0, -2), int_pnt!(2, -2), ()),
+            DataVectorEdge::new(3, int_pnt!(2, -2), int_pnt!(2, 0), ()),
+            DataVectorEdge::new(4, int_pnt!(2, 0), int_pnt!(2, 2), ()),
+            DataVectorEdge::new(5, int_pnt!(2, 2), int_pnt!(0, 2), ()),
+            DataVectorEdge::new(6, int_pnt!(0, 2), int_pnt!(-2, 2), ()),
+            DataVectorEdge::new(7, int_pnt!(-2, 2), int_pnt!(-2, 0), ()),
+            DataVectorEdge::new(8, int_pnt!(-2, 0), int_pnt!(-2, -2), ()),
         ];
 
         let result = contour.simplify_contour();
@@ -330,12 +369,46 @@ mod tests {
     }
 
     #[test]
+    fn test_collinear_same_data() {
+        #[rustfmt::skip]
+        let mut contour = vec![
+            DataVectorEdge::new(1, int_pnt!(0, 0), int_pnt!(2, 0), TestData::A),
+            DataVectorEdge::new(2, int_pnt!(2, 0), int_pnt!(4, 0), TestData::A),
+            DataVectorEdge::new(3, int_pnt!(4, 0), int_pnt!(4, 4), TestData::A),
+            DataVectorEdge::new(4, int_pnt!(4, 4), int_pnt!(0, 4), TestData::A),
+            DataVectorEdge::new(5, int_pnt!(0, 4), int_pnt!(0, 0), TestData::A),
+        ];
+
+        let result = contour.simplify_contour();
+
+        debug_assert!(result);
+        debug_assert!(contour.len() == 4);
+    }
+
+    #[test]
+    fn test_collinear_different_data() {
+        #[rustfmt::skip]
+        let mut contour = vec![
+            DataVectorEdge::new(1, int_pnt!(0, 0), int_pnt!(2, 0), TestData::A),
+            DataVectorEdge::new(2, int_pnt!(2, 0), int_pnt!(4, 0), TestData::B),
+            DataVectorEdge::new(3, int_pnt!(4, 0), int_pnt!(4, 4), TestData::A),
+            DataVectorEdge::new(4, int_pnt!(4, 4), int_pnt!(0, 4), TestData::A),
+            DataVectorEdge::new(5, int_pnt!(0, 4), int_pnt!(0, 0), TestData::A),
+        ];
+
+        let result = contour.simplify_contour();
+
+        debug_assert!(!result);
+        debug_assert!(contour.len() == 5);
+    }
+
+    #[test]
     fn test_zero_area_path() {
         #[rustfmt::skip]
         let mut contour = vec![
-            VectorEdge::new(1, int_pnt!(-3, 0), int_pnt!(0, 0)),
-            VectorEdge::new(2, int_pnt!(0, 0), int_pnt!(3, 0)),
-            VectorEdge::new(3, int_pnt!(3, 0), int_pnt!(-3, 0)),
+            DataVectorEdge::new(1, int_pnt!(-3, 0), int_pnt!(0, 0), ()),
+            DataVectorEdge::new(2, int_pnt!(0, 0), int_pnt!(3, 0), ()),
+            DataVectorEdge::new(3, int_pnt!(3, 0), int_pnt!(-3, 0), ()),
         ];
 
         let result = contour.simplify_contour();

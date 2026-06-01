@@ -2,6 +2,7 @@ use crate::build::builder::{GraphBuilder, InclusionFilterStrategy};
 use crate::build::sweep::{
     EvenOddStrategy, FillStrategy, NegativeStrategy, NonZeroStrategy, PositiveStrategy,
 };
+use crate::core::edge_data::OverlayEdgeData;
 use crate::core::extract::VisitState;
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayGraph;
@@ -18,17 +19,24 @@ use crate::segm::segment::{
 };
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::util::reserve::Reserve;
+use i_tree::Expiration;
 
-impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
+impl<I, D> GraphBuilder<ShapeCountBoolean, OverlayNode, I, D>
+where
+    I: IntNumber + Expiration + SortKey,
+    D: OverlayEdgeData,
+{
     #[inline]
     pub(crate) fn build_boolean_all(
         &mut self,
         fill_rule: FillRule,
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<I::WideUInt>,
         solver: &Solver,
-        segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph<'_> {
+        segments: &[Segment<ShapeCountBoolean, I, D>],
+    ) -> OverlayGraph<'_, I, D> {
         self.build_boolean_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
         self.boolean_graph(options, solver)
@@ -39,10 +47,10 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
         &mut self,
         fill_rule: FillRule,
         overlay_rule: OverlayRule,
-        options: IntOverlayOptions,
+        options: IntOverlayOptions<I::WideUInt>,
         solver: &Solver,
-        segments: &[Segment<ShapeCountBoolean>],
-    ) -> OverlayGraph<'_> {
+        segments: &[Segment<ShapeCountBoolean, I, D>],
+    ) -> OverlayGraph<'_, I, D> {
         self.build_boolean_fills(fill_rule, solver, segments);
         match overlay_rule {
             OverlayRule::Subject => self.build_links_by_filter::<SubjectFilter>(segments),
@@ -61,7 +69,7 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountBoolean>],
+        segments: &[Segment<ShapeCountBoolean, I, D>],
     ) {
         match fill_rule {
             FillRule::EvenOdd => self.build_fills_with_strategy::<EvenOddStrategy>(solver, segments),
@@ -72,7 +80,11 @@ impl GraphBuilder<ShapeCountBoolean, OverlayNode> {
     }
 
     #[inline]
-    fn boolean_graph(&mut self, options: IntOverlayOptions, solver: &Solver) -> OverlayGraph<'_> {
+    fn boolean_graph(
+        &mut self,
+        options: IntOverlayOptions<I::WideUInt>,
+        solver: &Solver,
+    ) -> OverlayGraph<'_, I, D> {
         self.build_nodes_and_connect_links(solver);
         OverlayGraph {
             nodes: &self.nodes,
@@ -273,7 +285,7 @@ impl BooleanFillFilter for SegmentFill {
     }
 }
 
-impl OverlayLinkFilter for [OverlayLink] {
+impl<I: IntNumber, D> OverlayLinkFilter for [OverlayLink<I, D>] {
     #[inline]
     fn filter_by_overlay_into(&self, overlay_rule: OverlayRule, buffer: &mut Vec<VisitState>) {
         match overlay_rule {
@@ -289,7 +301,7 @@ impl OverlayLinkFilter for [OverlayLink] {
 }
 
 #[inline]
-fn filter_subject_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_subject_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {
@@ -298,7 +310,7 @@ fn filter_subject_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
 }
 
 #[inline]
-fn filter_clip_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_clip_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {
@@ -307,7 +319,7 @@ fn filter_clip_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
 }
 
 #[inline]
-fn filter_intersect_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_intersect_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {
@@ -316,7 +328,7 @@ fn filter_intersect_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
 }
 
 #[inline]
-fn filter_union_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_union_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {
@@ -325,7 +337,7 @@ fn filter_union_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
 }
 
 #[inline]
-fn filter_difference_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_difference_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {
@@ -334,7 +346,10 @@ fn filter_difference_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
 }
 
 #[inline]
-fn filter_inverse_difference_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_inverse_difference_into<I: IntNumber, D>(
+    links: &[OverlayLink<I, D>],
+    buffer: &mut Vec<VisitState>,
+) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {
@@ -343,7 +358,7 @@ fn filter_inverse_difference_into(links: &[OverlayLink], buffer: &mut Vec<VisitS
 }
 
 #[inline]
-fn filter_xor_into(links: &[OverlayLink], buffer: &mut Vec<VisitState>) {
+fn filter_xor_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
     buffer.reserve_capacity(links.len());
     for link in links.iter() {

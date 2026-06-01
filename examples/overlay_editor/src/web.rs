@@ -2,7 +2,6 @@ use std::panic;
 use std::sync::Once;
 use wasm_bindgen::prelude::*;
 
-
 #[wasm_bindgen]
 pub struct WebApp {}
 
@@ -12,7 +11,9 @@ static INIT_LOGGER: Once = Once::new();
 #[wasm_bindgen]
 impl WebApp {
     #[wasm_bindgen(constructor)]
-    pub fn create() -> Self { Self {} }
+    pub fn create() -> Self {
+        Self {}
+    }
 
     #[wasm_bindgen]
     pub fn start(
@@ -22,8 +23,8 @@ impl WebApp {
         stroke_data: String,
         outline_data: String,
     ) {
-        use log::info;
         use iced::application;
+        use log::info;
 
         use crate::app::main::EditorApp;
         use crate::data::resource::AppResource;
@@ -37,12 +38,8 @@ impl WebApp {
 
         let app_initializer = move || {
             info!("wasm init");
-            let app_resource = AppResource::with_content(
-                &boolean_data,
-                &string_data,
-                &stroke_data,
-                &outline_data,
-            );
+            let app_resource =
+                AppResource::with_content(&boolean_data, &string_data, &stroke_data, &outline_data);
             let app = EditorApp::with_resource(app_resource);
 
             (app, iced::Task::none())

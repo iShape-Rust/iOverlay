@@ -13,6 +13,10 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
+use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
@@ -21,7 +25,26 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::resource::ShapeResource;
+use i_tree::{Expiration, LayoutNumber};
 
+/// Trait for offsetting float contours and shapes.
+///
+/// Default methods use the `i32` integer engine. Use the `*_as::<I>` methods when you need to
+/// select `i16`, `i32`, or `i64` explicitly.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::mesh::outline::offset::OutlineOffset;
+/// use i_overlay::mesh::style::OutlineStyle;
+///
+/// let path = [[0.0, 0.0], [10.0, 0.0], [0.0, 10.0]];
+/// let style = OutlineStyle::new(1.0);
+///
+/// let result = path.outline_as::<i64>(&style);
+///
+/// assert_eq!(result.len(), 1);
+/// ```
 pub trait OutlineOffset<P: FloatPointCompatible> {
     /// Generates an outline shapes for contours, or shapes.
     ///
@@ -119,6 +142,74 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>;
+
+    /// Same as [`Self::outline`], but with an explicit integer engine.
+    fn outline_as<I>(&self, style: &OutlineStyle<P::Scalar>) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_into`], but with an explicit integer engine.
+    fn outline_into_as<I>(&self, style: &OutlineStyle<P::Scalar>, output: &mut FloatFlatContoursBuffer<P>)
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_custom`], but with an explicit integer engine.
+    fn outline_custom_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+    ) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_custom_into`], but with an explicit integer engine.
+    fn outline_custom_into_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_fixed_scale`], but with an explicit integer engine.
+    fn outline_fixed_scale_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_fixed_scale_into`], but with an explicit integer engine.
+    fn outline_fixed_scale_into_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_custom_fixed_scale`], but with an explicit integer engine.
+    fn outline_custom_fixed_scale_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+
+    /// Same as [`Self::outline_custom_fixed_scale_into`], but with an explicit integer engine.
+    fn outline_custom_fixed_scale_into_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
 }
 
 impl<S, P> OutlineOffset<P> for S
@@ -139,7 +230,7 @@ where
         style: &OutlineStyle<P::Scalar>,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        match OutlineSolver::prepare(self, style) {
+        match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver.build(self, options),
             None => vec![],
         }
@@ -151,7 +242,7 @@ where
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        match OutlineSolver::prepare(self, style) {
+        match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver.build_into(self, options, output),
             None => output.clear_and_reserve(0, 0),
         }
@@ -181,7 +272,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::prepare(self, style) {
+        let mut solver = match OutlineSolver::<P, i32>::prepare(self, style) {
             Some(solver) => solver,
             None => return Ok(vec![]),
         };
@@ -197,7 +288,113 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::prepare(self, style) {
+        let mut solver = match OutlineSolver::<P, i32>::prepare(self, style) {
+            Some(solver) => solver,
+            None => {
+                output.clear_and_reserve(0, 0);
+                return Ok(());
+            }
+        };
+        solver.apply_scale(s)?;
+        solver.build_into(self, options, output);
+        Ok(())
+    }
+
+    fn outline_as<I>(&self, style: &OutlineStyle<P::Scalar>) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.outline_custom_as::<I>(style, Default::default())
+    }
+
+    fn outline_into_as<I>(&self, style: &OutlineStyle<P::Scalar>, output: &mut FloatFlatContoursBuffer<P>)
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.outline_custom_into_as::<I>(style, Default::default(), output)
+    }
+
+    fn outline_custom_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+    ) -> Shapes<P>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        match OutlineSolver::<P, I>::prepare(self, style) {
+            Some(solver) => solver.build(self, options),
+            None => vec![],
+        }
+    }
+
+    fn outline_custom_into_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        match OutlineSolver::<P, I>::prepare(self, style) {
+            Some(solver) => solver.build_into(self, options, output),
+            None => output.clear_and_reserve(0, 0),
+        }
+    }
+
+    fn outline_fixed_scale_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.outline_custom_fixed_scale_as::<I>(style, Default::default(), scale)
+    }
+
+    fn outline_fixed_scale_into_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        self.outline_custom_fixed_scale_into_as::<I>(style, Default::default(), scale, output)
+    }
+
+    fn outline_custom_fixed_scale_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match OutlineSolver::<P, I>::prepare(self, style) {
+            Some(solver) => solver,
+            None => return Ok(vec![]),
+        };
+        solver.apply_scale(s)?;
+        Ok(solver.build(self, options))
+    }
+
+    fn outline_custom_fixed_scale_into_as<I>(
+        &self,
+        style: &OutlineStyle<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError>
+    where
+        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    {
+        let s = FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match OutlineSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -210,14 +407,18 @@ where
     }
 }
 
-struct OutlineSolver<P: FloatPointCompatible> {
-    outer_builder: OutlineBuilder<P>,
-    inner_builder: OutlineBuilder<P>,
-    adapter: FloatPointAdapter<P>,
+struct OutlineSolver<P: FloatPointCompatible, I: IntNumber> {
+    outer_builder: OutlineBuilder<P, I>,
+    inner_builder: OutlineBuilder<P, I>,
+    adapter: FloatPointAdapter<P, I>,
     points_count: usize,
 }
 
-impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
+impl<P, I> OutlineSolver<P, I>
+where
+    P: FloatPointCompatible + 'static,
+    I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+{
     fn prepare<S: ShapeResource<P>>(source: &S, style: &OutlineStyle<P::Scalar>) -> Option<Self> {
         let (points_count, paths_count) = {
             let mut points_count = 0;
@@ -234,8 +435,8 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         }
 
         let join = style.join.clone().normalize();
-        let outer_builder: OutlineBuilder<P> = OutlineBuilder::new(-style.outer_offset, &join);
-        let inner_builder: OutlineBuilder<P> = OutlineBuilder::new(-style.inner_offset, &join);
+        let outer_builder: OutlineBuilder<P, I> = OutlineBuilder::new(-style.outer_offset, &join);
+        let inner_builder: OutlineBuilder<P, I> = OutlineBuilder::new(-style.inner_offset, &join);
 
         let outer_radius = style.outer_offset;
         let inner_radius = style.inner_offset;
@@ -248,7 +449,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(additional_offset);
 
-        let adapter = FloatPointAdapter::new(rect);
+        let adapter = FloatPointAdapter::<P, I>::new(rect);
 
         Some(Self {
             outer_builder,
@@ -260,17 +461,15 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
 
     fn apply_scale(&mut self, scale: f64) -> Result<(), FixedScaleOverlayError> {
         let s = P::Scalar::from_float(scale);
-        if self.adapter.dir_scale < s {
-            return Err(FixedScaleOverlayError::ScaleTooLarge);
-        }
-
-        self.adapter.dir_scale = s;
-        self.adapter.inv_scale = P::Scalar::from_float(1.0 / scale);
-
+        self.adapter = FloatPointAdapter::try_with_scale(*self.adapter.rect(), s)?;
         Ok(())
     }
 
-    fn build_overlay<S: ShapeResource<P>>(&self, source: &S, options: OverlayOptions<P::Scalar>) -> Overlay {
+    fn build_overlay<S: ShapeResource<P>>(
+        &self,
+        source: &S,
+        options: OverlayOptions<P::Scalar, I>,
+    ) -> Overlay<I> {
         let total_capacity = self.outer_builder.capacity(self.points_count);
         let mut overlay = Overlay::new_custom(
             total_capacity,
@@ -283,11 +482,11 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
 
         let mut segments = Vec::new();
         let mut bool_buffer = BooleanExtractionBuffer::default();
-        let mut flat_buffer = FlatContoursBuffer::default();
+        let mut flat_buffer = FlatContoursBuffer::<I>::with_capacity(0);
 
         for path in source.iter_paths() {
             let area = path.unsafe_int_area(&self.adapter);
-            if area.abs() <= 1 {
+            if area.unsigned_abs() <= <I::WideUInt as UIntNumber>::from_u64(1) {
                 // ignore degenerate paths
                 continue;
             }
@@ -295,7 +494,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
             offset_overlay.clear();
             segments.clear();
 
-            let contour_fill_rule = if area < 0 {
+            let contour_fill_rule = if area > I::Wide::ZERO {
                 offset_overlay.options.output_direction = ContourDirection::CounterClockwise;
                 segments.reserve(self.outer_builder.capacity(path.len()));
                 self.outer_builder.build(path, &self.adapter, &mut segments);
@@ -320,7 +519,7 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
         overlay
     }
 
-    fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar>) -> Shapes<P> {
+    fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar, I>) -> Shapes<P> {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
         let mut overlay = self.build_overlay(source, options);
@@ -342,14 +541,14 @@ impl<P: FloatPointCompatible + 'static> OutlineSolver<P> {
     fn build_into<S: ShapeResource<P>>(
         self,
         source: &S,
-        options: OverlayOptions<P::Scalar>,
+        options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
         let mut overlay = self.build_overlay(source, options);
 
-        let mut int_output = FlatContoursBuffer::default();
+        let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
         overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);
@@ -425,6 +624,16 @@ mod tests {
 
         let shape = shapes.first().unwrap();
         assert_eq!(shape.len(), 1);
+    }
+
+    #[test]
+    fn test_triangle_round_corner_as() {
+        let path = [[0.0, 0.0f32], [10.0, 0.0f32], [0.0, 10.0f32]];
+
+        let style = OutlineStyle::new(5.0).line_join(LineJoin::Round(0.25 * PI));
+        let shapes = path.outline_as::<i64>(&style);
+
+        assert_eq!(shapes.len(), 1);
     }
 
     #[test]
@@ -1189,25 +1398,25 @@ mod tests {
     #[test]
     fn test_real_case_0_simplified() {
         let main = vec![
-            [410_000.0, 5847_000.0],
-            [413_000.0, 5847_000.0],
-            [413_000.0, 5850_000.0],
-            [410_000.0, 5850_000.0],
+            [410_000.0, 5_847_000.0],
+            [413_000.0, 5_847_000.0],
+            [413_000.0, 5_850_000.0],
+            [410_000.0, 5_850_000.0],
         ];
 
         let hole = vec![
-            [411_294.2500422625, 5848_072.3189725485],
-            [411_373.9180110125, 5848_124.016970595],
-            [411_377.22904616874, 5848_118.990969619],
-            [411_393.0859797625, 5848_020.979983291],
-            [411_394.7030451922, 5848_005.639040908],
-            [411_397.4359553484, 5848_003.376955947],
-            [411_431.1029475359, 5847_937.537966689],
-            [411_431.2639582781, 5847_933.187991103],
-            [411_314.8390315203, 5848_005.308962783],
-            [411_314.5590022234, 5848_009.708010634],
-            [411_309.3459895281, 5848_009.447024306],
-            [411_305.3719905047, 5848_010.244997939],
+            [411_294.2500422625, 5_848_072.318_972_548_5],
+            [411_373.9180110125, 5_848_124.016_970_595],
+            [411_377.22904616874, 5_848_118.990_969_619],
+            [411_393.0859797625, 5_848_020.979_983_291],
+            [411_394.7030451922, 5_848_005.639_040_908],
+            [411_397.4359553484, 5_848_003.376_955_947],
+            [411_431.1029475359, 5_847_937.537_966_689],
+            [411_431.2639582781, 5_847_933.187_991_103],
+            [411_314.8390315203, 5_848_005.308_962_783],
+            [411_314.5590022234, 5_848_009.708_010_634],
+            [411_309.3459895281, 5_848_009.447_024_306],
+            [411_305.3719905047, 5_848_010.244_997_939],
         ];
 
         let shape = vec![main, hole];

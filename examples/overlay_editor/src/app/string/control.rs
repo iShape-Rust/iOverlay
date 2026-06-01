@@ -1,65 +1,74 @@
-use crate::app::string::content::StringMessage;
 use crate::app::fill_option::FillOption;
-use crate::app::main::{EditorApp, AppMessage};
+use crate::app::main::{AppMessage, EditorApp};
 use crate::app::solver_option::SolverOption;
+use crate::app::string::content::StringMessage;
+use iced::widget::{pick_list, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length};
-use iced::widget::{Column, Container, pick_list, Row, Space, Text};
 
 impl EditorApp {
     pub(crate) fn string_control(&self) -> Column<'_, AppMessage> {
-        let solver_pick_list =
-            Row::new()
-                .push(Text::new("Solver:")
+        let solver_pick_list = Row::new()
+            .push(
+                Text::new("Solver:")
                     .width(Length::Fixed(90.0))
                     .height(Length::Fill)
-                    .align_y(Alignment::Center))
-                .push(
-                    Container::new(
-                        pick_list(
-                            &SolverOption::ALL[..],
-                            Some(self.state.string.solver),
-                            on_select_solver,
-                        ).width(Length::Fixed(160.0))
+                    .align_y(Alignment::Center),
+            )
+            .push(
+                Container::new(
+                    pick_list(
+                        &SolverOption::ALL[..],
+                        Some(self.state.string.solver),
+                        on_select_solver,
                     )
-                        .height(Length::Fill)
-                        .align_y(Alignment::Center)
-                ).height(Length::Fixed(40.0));
+                    .width(Length::Fixed(160.0)),
+                )
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
+            )
+            .height(Length::Fixed(40.0));
 
-        let fill_pick_list =
-            Row::new()
-                .push(Text::new("Fill Rule:")
+        let fill_pick_list = Row::new()
+            .push(
+                Text::new("Fill Rule:")
                     .width(Length::Fixed(90.0))
                     .height(Length::Fill)
-                    .align_y(Alignment::Center))
-                .push(
-                    Container::new(
-                        pick_list(
-                            &FillOption::ALL[..],
-                            Some(self.state.string.fill),
-                            on_select_fill,
-                        ).width(Length::Fixed(160.0))
+                    .align_y(Alignment::Center),
+            )
+            .push(
+                Container::new(
+                    pick_list(
+                        &FillOption::ALL[..],
+                        Some(self.state.string.fill),
+                        on_select_fill,
                     )
-                        .height(Length::Fill)
-                        .align_y(Alignment::Center)
-                ).height(Length::Fixed(40.0));
+                    .width(Length::Fixed(160.0)),
+                )
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
+            )
+            .height(Length::Fixed(40.0));
 
-        let mode_pick_list =
-            Row::new()
-                .push(Text::new("Mode:")
+        let mode_pick_list = Row::new()
+            .push(
+                Text::new("Mode:")
                     .width(Length::Fixed(90.0))
                     .height(Length::Fill)
-                    .align_y(Alignment::Center))
-                .push(
-                    Container::new(
-                        pick_list(
-                            &ModeOption::ALL[..],
-                            Some(self.state.string.mode),
-                            on_select_mode,
-                        ).width(Length::Fixed(160.0))
+                    .align_y(Alignment::Center),
+            )
+            .push(
+                Container::new(
+                    pick_list(
+                        &ModeOption::ALL[..],
+                        Some(self.state.string.mode),
+                        on_select_mode,
                     )
-                        .height(Length::Fill)
-                        .align_y(Alignment::Center)
-                ).height(Length::Fixed(40.0));
+                    .width(Length::Fixed(160.0)),
+                )
+                .height(Length::Fill)
+                .align_y(Alignment::Center),
+            )
+            .height(Length::Fixed(40.0));
 
         Column::new()
             .push(solver_pick_list)

@@ -1,12 +1,13 @@
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 #[derive(Clone, Copy)]
-pub(crate) struct End {
+pub(crate) struct End<I: IntNumber> {
     pub(crate) index: usize,
-    pub(crate) point: IntPoint,
+    pub(crate) point: IntPoint<I>,
 }
 
-impl Default for End {
+impl<I: IntNumber> Default for End<I> {
     #[inline(always)]
     fn default() -> Self {
         Self {

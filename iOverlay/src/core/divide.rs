@@ -1,18 +1,19 @@
 use crate::geom::id_point::IdPoint;
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::IntContour;
 
-struct SubPath {
+struct SubPath<I: IntNumber> {
     last: usize,
-    node: IntPoint,
-    path: IntPath,
+    node: IntPoint<I>,
+    path: IntPath<I>,
 }
 
-impl SubPath {
-    fn start(point: IdPoint) -> Self {
+impl<I: IntNumber> SubPath<I> {
+    fn start(point: IdPoint<I>) -> Self {
         Self {
             last: point.id + 1,
             node: point.point,
@@ -20,22 +21,22 @@ impl SubPath {
         }
     }
 
-    fn join(&mut self, point: IdPoint, source: &IntContour) {
+    fn join(&mut self, point: IdPoint<I>, source: &IntContour<I>) {
         self.path.extend_from_slice(&source[self.last..point.id]);
         self.last = point.id;
     }
 
-    fn shift(&mut self, point: IdPoint) {
+    fn shift(&mut self, point: IdPoint<I>) {
         self.last = point.id;
     }
 }
 
-pub trait ContourDecomposition {
-    fn decompose_contours(&self) -> Option<Vec<IntContour>>;
+pub trait ContourDecomposition<I: IntNumber> {
+    fn decompose_contours(&self) -> Option<Vec<IntContour<I>>>;
 }
 
-impl ContourDecomposition for IntContour {
-    fn decompose_contours(&self) -> Option<Vec<IntContour>> {
+impl<I: IntNumber> ContourDecomposition<I> for IntContour<I> {
+    fn decompose_contours(&self) -> Option<Vec<IntContour<I>>> {
         if self.len() < 3 {
             return None;
         }
@@ -68,7 +69,7 @@ impl ContourDecomposition for IntContour {
             return None;
         }
 
-        anchors.sort_by(|p0, p1| p0.id.cmp(&p1.id));
+        anchors.sort_by_key(|p0| p0.id);
 
         let mut contours = Vec::with_capacity((anchors.len() >> 1) + 1);
 
@@ -77,10 +78,10 @@ impl ContourDecomposition for IntContour {
         let mut i = 0;
         while i < anchors.len() {
             let a = anchors[i];
-            let mut sub_path: SubPath = if let Some(sub_path) = queue.pop() {
+            let mut sub_path: SubPath<I> = if let Some(sub_path) = queue.pop() {
                 sub_path
             } else {
-                queue.push(SubPath::start(a));
+                queue.push(SubPath::<I>::start(a));
                 i += 1;
                 continue;
             };
@@ -91,17 +92,17 @@ impl ContourDecomposition for IntContour {
                 if let Some(prev) = queue.last_mut() {
                     prev.shift(a);
                 } else {
-                    queue.push(SubPath::start(a));
+                    queue.push(SubPath::<I>::start(a));
                 }
             } else {
                 sub_path.join(a, self);
                 queue.push(sub_path);
-                queue.push(SubPath::start(a));
+                queue.push(SubPath::<I>::start(a));
             }
             i += 1;
         }
 
-        let mut sub_path: SubPath = queue.pop().unwrap();
+        let mut sub_path: SubPath<I> = queue.pop().unwrap();
 
         if sub_path.last < self.len() {
             sub_path.path.extend_from_slice(&self[sub_path.last..]);
@@ -276,7 +277,7 @@ mod tests {
         }
     }
 
-    fn rotate(contour: &IntContour, s: usize) -> IntContour {
+    fn rotate(contour: &IntContour<i32>, s: usize) -> IntContour<i32> {
         contour
             .iter()
             .cycle()

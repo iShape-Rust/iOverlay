@@ -2,8 +2,7 @@ use iced::widget::button;
 use iced::widget::container;
 use iced::widget::rule;
 use iced::widget::text;
-use iced::{Background, border, Color, Padding, Theme};
-
+use iced::{border, Background, Color, Padding, Theme};
 
 pub(super) struct Design {
     pub(super) action_separator: f32,
@@ -40,7 +39,7 @@ impl Design {
 
     pub(super) fn new() -> Self {
         Self {
-            action_separator: 3.0
+            action_separator: 3.0,
         }
     }
 
@@ -77,7 +76,10 @@ pub(super) fn style_sidebar_button(theme: &Theme, status: button::Status) -> but
     }
 }
 
-pub(super) fn style_sidebar_button_selected(theme: &Theme, status: button::Status) -> button::Style {
+pub(super) fn style_sidebar_button_selected(
+    theme: &Theme,
+    status: button::Status,
+) -> button::Style {
     let palette = theme.extended_palette();
     let base = button::Style {
         background: Some(Background::Color(palette.primary.strong.color)),
@@ -102,19 +104,26 @@ pub(super) fn style_sidebar_button_selected(theme: &Theme, status: button::Statu
 pub(super) fn style_sidebar_text(theme: &Theme) -> text::Style {
     let palette = theme.palette();
     text::Style {
-        color: Some(palette.text.scale_alpha(0.7))
+        color: Some(palette.text.scale_alpha(0.7)),
     }
 }
 
 pub(super) fn style_sidebar_text_selected(theme: &Theme) -> text::Style {
     let palette = theme.palette();
     text::Style {
-        color: Some(palette.text)
+        color: Some(palette.text),
     }
 }
 
 pub(super) fn style_sidebar_background(theme: &Theme) -> container::Style {
-    container::Style::default().background(theme.extended_palette().background.weak.color.scale_alpha(0.1))
+    container::Style::default().background(
+        theme
+            .extended_palette()
+            .background
+            .weak
+            .color
+            .scale_alpha(0.1),
+    )
 }
 
 pub(super) fn style_separator(theme: &Theme) -> rule::Style {
