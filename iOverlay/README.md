@@ -77,7 +77,7 @@ iOverlay supports:
 
 <img src="readme/average_relative_time.svg" alt="Average relative time for iOverlay Rust solvers" style="max-width:860px;width:100%;">
 
-For bigger data sets, the math engine and multithreading mode have a larger impact on runtime. Results below were measured on Apple M4, 24 GB.
+For bigger data sets, the math engine and multithreading mode have a larger impact on runtime.
 
 See the detailed reports: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html) and [Rust Solver Benchmarks](https://ishape-rust.github.io/iShape-js/overlay/performance/rust_i_overlay.html)
 
