@@ -87,7 +87,7 @@ See the detailed reports: [Performance Comparison](https://ishape-rust.github.io
 Add the following to your Cargo.toml:
 ```toml
 [dependencies]
-i_overlay = "^6.0"
+i_overlay = "^7.0"
 ```
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/doc.html)
