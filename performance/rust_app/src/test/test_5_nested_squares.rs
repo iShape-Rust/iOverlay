@@ -24,8 +24,8 @@ i16
 256     - 0.000698
 512     - 0.002015
 1024     - 0.005271
-2048     - 0.007070
-4096     - 0.058529
+2048     - 0.009466
+4096     - 0.019593
 
 // multithreading off
 4     - 0.000004
@@ -37,8 +37,8 @@ i16
 256     - 0.000651
 512     - 0.002065
 1024     - 0.005356
-2048     - 0.009238
-4096     - 0.057300
+2048     - 0.009589
+4096     - 0.019098
 
 i32
 
@@ -127,7 +127,7 @@ impl CrossTest {
             return;
         }
 
-        let (subj_paths, clip_paths) = Util::concentric_squares(I::from_usize(4), n);
+        let (subj_paths, clip_paths) = Util::concentric_squares(I::from_usize(2), n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
         let sq_it_count = it_count * it_count;
