@@ -2,9 +2,11 @@
 mod tests {
     #![allow(clippy::explicit_counter_loop)]
 
+    use i_float::adapter::FloatPointAdapter;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
+    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_shape::{int_path, int_shape};
 
     #[test]
@@ -576,5 +578,22 @@ mod tests {
         let main = &result[main_polygon_index.unwrap()];
 
         assert_eq!(main.len(), 6);
+    }
+
+    #[test]
+    fn test_crash() {
+        // Reduced from contours produced by non-OGC extraction of the original crash case.
+        let subj_paths = int_shape![
+            [[0, 0], [-6, 2], [-2, -6]],
+            [[-3, 0], [0, 0], [-3, -1]],
+            [[0, 0], [4, -6], [4, 6]],
+        ];
+
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
+
+        let result = overlay.overlay(OverlayRule::Union, FillRule::NonZero);
+        let main_polygon_index = result.iter().position(|shape| shape.len() > 1);
+        assert!(main_polygon_index.is_some());
     }
 }
