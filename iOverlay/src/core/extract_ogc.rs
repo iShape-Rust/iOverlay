@@ -124,9 +124,22 @@ where
                     self.links.get_unchecked(left_top_link)
                 };
 
-                debug_assert!(overlay_rule.is_fill_top(link.fill));
-
                 let start_data = StartPathData::new(is_main_dir_cw, link, left_top_link);
+                if !overlay_rule.is_fill_top(link.fill) {
+                    // The first pass skips hole contours in the opposite traversal direction.
+                    // A self-touching hole can therefore leave non-hole remnants marked for
+                    // the second pass after the actual hole contour is extracted.
+                    self.find_contour(
+                        &start_data,
+                        is_main_dir_cw,
+                        VisitState::HullVisited,
+                        &mut buffer.visited,
+                        &mut buffer.points,
+                    );
+                    link_index += 1;
+                    continue;
+                }
+                debug_assert!(overlay_rule.is_fill_top(link.fill));
 
                 self.find_contour(
                     &start_data,
