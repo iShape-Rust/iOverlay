@@ -94,6 +94,20 @@ impl ShapeBinder {
             }
 
             let target_id = scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
+            let child_index = anchor.contour_index.index();
+
+            if target_id.is_empty() {
+                // No containing contour found to the left of this hole's anchor.
+                // This happens for a degenerate hole whose leftmost edge is
+                // coincident with a shell edge (the strict `first_less` cannot
+                // see an equal-x segment), so it has no real parent shell. Mark
+                // it orphaned and skip it during binding instead of indexing
+                // `parent_for_child`/`children_count_for_parent` with the EMPTY
+                // sentinel (`usize::MAX`), which panicked.
+                parent_for_child[child_index] = usize::MAX;
+                continue;
+            }
+
             let parent_index = if target_id.is_hole() {
                 // index is a hole index
                 // at this moment this hole parent is known
@@ -102,10 +116,10 @@ impl ShapeBinder {
                 target_id.index()
             };
 
-            let child_index = anchor.contour_index.index();
-
             parent_for_child[child_index] = parent_index;
-            children_count_for_parent[parent_index] += 1;
+            if parent_index != usize::MAX {
+                children_count_for_parent[parent_index] += 1;
+            }
         }
 
         BindSolution {
@@ -191,6 +205,11 @@ impl<I: IntNumber + Expiration + SortKey> JoinHoles<I> for Vec<IntShape<I>> {
 
         for (hole_index, hole) in holes.into_iter().enumerate() {
             let shape_index = solution.parent_for_child[hole_index];
+            if shape_index == usize::MAX {
+                // Orphan hole with no containing shell (see ShapeBinder::bind);
+                // dropping it keeps a degenerate sliver from corrupting output.
+                continue;
+            }
             self[shape_index].push(hole);
         }
     }
