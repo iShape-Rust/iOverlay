@@ -297,7 +297,8 @@ impl<I: IntNumber + SortKey> SortByAngle for [IdSegment<I>] {
 
 #[cfg(test)]
 mod tests {
-    use crate::bind::solver::JoinHoles;
+    use crate::bind::segment::{ContourIndex, IdSegment};
+    use crate::bind::solver::{JoinHoles, ShapeBinder};
     use crate::geom::v_segment::VSegment;
     use alloc::vec;
     use core::cmp::Ordering;
@@ -358,5 +359,35 @@ mod tests {
 
         assert_eq!(short_result, long_result);
         assert_eq!(Ordering::Less, long_result);
+    }
+
+    #[test]
+    fn orphan_hole_without_parent_shell_is_dropped_not_panicking() {
+        // Regression: a hole whose left-bottom anchor has no shell segment
+        // strictly to its left makes `first_less` return `ContourIndex::EMPTY`.
+        // Before the fix, binding indexed `parent_for_child[EMPTY.index()]`
+        // (== usize::MAX >> 1) and panicked with "index out of bounds".
+        let anchor = IdSegment::with_segment(
+            ContourIndex::new_hole(0),
+            VSegment {
+                a: IntPoint::new(0, 5),
+                b: IntPoint::new(1, 6),
+            },
+        );
+        // The only shell edge lies entirely to the right of the hole, so the
+        // sweep never inserts it before the anchor: the hole has no parent shell.
+        let shell_edge = IdSegment::with_segment(
+            ContourIndex::new_shape(0),
+            VSegment {
+                a: IntPoint::new(10, 0),
+                b: IntPoint::new(20, 0),
+            },
+        );
+
+        let solution = ShapeBinder::bind::<i32>(2, vec![anchor], vec![shell_edge]);
+
+        // The orphan hole is marked (usize::MAX) and skipped by the join loop,
+        // instead of crashing.
+        assert_eq!(solution.parent_for_child[0], usize::MAX);
     }
 }
