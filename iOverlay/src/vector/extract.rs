@@ -152,8 +152,11 @@ where
             store,
         ));
 
+        let last_link_id =
+            GraphUtil::next_link(self.links, self.nodes, link_id, last_node_id, !clockwise, visited);
+
         // Find a closed tour
-        while node_id != last_node_id {
+        while link_id != last_link_id {
             link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
@@ -531,5 +534,33 @@ mod tests {
             .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
 
         debug_assert!(shapes.len() == 2);
+    }
+
+    #[test]
+    fn test_self_touching_contour_closes_by_edge() {
+        #[rustfmt::skip]
+        let subj = int_shape![
+            [[-5, 0], [0, 0], [0, 5]],
+            [[-3, 2], [-1, 2], [-1, 1]],
+        ];
+
+        let mut buffer = Default::default();
+        let mut overlay = Overlay::with_contours(&subj, &[]);
+        overlay.options = IntOverlayOptions {
+            preserve_input_collinear: false,
+            output_direction: ContourDirection::CounterClockwise,
+            preserve_output_collinear: true,
+            min_output_area: 0u64,
+            ogc: false,
+        };
+
+        let shapes = overlay
+            .build_graph_view(FillRule::NonZero)
+            .unwrap()
+            .extract_vector_shapes(OverlayRule::Subject, &mut buffer);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 7);
     }
 }

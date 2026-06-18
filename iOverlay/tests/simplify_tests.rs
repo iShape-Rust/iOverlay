@@ -151,9 +151,8 @@ mod tests {
         let simple = paths.simplify(FillRule::NonZero, op);
 
         assert_eq!(simple.len(), 1);
-        assert_eq!(simple[0].len(), 2);
-        assert_eq!(simple[0][0].len(), 4);
-        assert_eq!(simple[0][1].len(), 3);
+        assert_eq!(simple[0].len(), 1);
+        assert_eq!(simple[0][0].len(), 7);
     }
 
     fn square(pos: IntPoint) -> Vec<IntPoint> {
