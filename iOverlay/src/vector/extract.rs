@@ -152,8 +152,11 @@ where
             store,
         ));
 
+        let last_link_id =
+            GraphUtil::next_link(self.links, self.nodes, link_id, last_node_id, !clockwise, visited);
+
         // Find a closed tour
-        while node_id != last_node_id {
+        while link_id != last_link_id {
             link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {

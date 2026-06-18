@@ -198,8 +198,11 @@ where
 
         visited.visit_edge(link_id, visited_state);
 
+        let last_link_id =
+            GraphUtil::next_link(self.links, self.nodes, link_id, last_node_id, !clockwise, visited);
+
         // Find a closed tour
-        while node_id != last_node_id {
+        while link_id != last_link_id {
             link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
@@ -237,10 +240,19 @@ where
         global_visited.visit_edge(link_id, VisitState::HullVisited);
         contour_visited.visit_edge(link_id, VisitState::Unvisited);
 
+        let last_link_id = GraphUtil::next_link(
+            self.links,
+            self.nodes,
+            link_id,
+            last_node_id,
+            !clockwise,
+            global_visited,
+        );
+
         let mut original_contour_len = 1;
 
         // Find a closed tour
-        while node_id != last_node_id {
+        while link_id != last_link_id {
             link_id = GraphUtil::next_link(
                 self.links,
                 self.nodes,
