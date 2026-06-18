@@ -2,12 +2,10 @@
 mod tests {
     #![allow(clippy::explicit_counter_loop)]
 
-    use i_float::adapter::FloatPointAdapter;
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
+    use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
     use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_shape::int::area::Area;
     use i_shape::{int_path, int_shape};
     use std::f64::consts::PI;
@@ -441,6 +439,45 @@ mod tests {
         assert_eq!(result[1].len(), 2);
         assert_eq!(result[1][0].len(), 4);
         assert_eq!(result[1][1].len(), 3);
+    }
+
+    #[test]
+    fn test_10() {
+        let subj_paths = int_shape![
+            [[0, 0], [-6, 2], [-2, -6]],
+            [[-3, 0], [0, 0], [-3, -1]],
+            [[0, 0], [4, -6], [4, 6]],
+        ];
+
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
+
+        let shapes = overlay.overlay(OverlayRule::Union, FillRule::NonZero);
+        assert_eq!(shapes[0].len(), 2);
+        assert_eq!(shapes[1].len(), 1);
+    }
+
+    #[test]
+    fn test_11() {
+        let subj_paths = int_shape![
+            [
+                [-5, 5], [-4, 1], [0, 0], [-4, -1], [-5, -5], [0, 0], [5, -5], [4, -1], [0, 0], [4, 1], [5, 5], [0, 0]
+            ],
+            [
+                [-3, -2], [-3, -1], [0, 0], [-3, 1], [-3, 2], [0, 0], [3, 2], [3, 1], [0, 0], [3, -1], [3, -2], [0, 0]
+            ],
+        ];
+
+        let mut overlay =
+            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
+
+        let shapes = overlay.overlay(OverlayRule::Union, FillRule::NonZero);
+        assert_eq!(shapes.len(), 4);
+        for shape in shapes.iter() {
+            assert_eq!(shape.len(), 2);
+            assert_eq!(shape[0].len(), 3);
+            assert_eq!(shape[1].len(), 3);
+        }
     }
 
     #[test]
@@ -917,22 +954,5 @@ mod tests {
             return message.clone();
         }
         "non-string panic payload".to_string()
-    }
-
-    #[test]
-    fn test_crash() {
-        // Reduced from contours produced by non-OGC extraction of the original crash case.
-        let subj_paths = int_shape![
-            [[0, 0], [-6, 2], [-2, -6]],
-            [[-3, 0], [0, 0], [-3, -1]],
-            [[0, 0], [4, -6], [4, 6]],
-        ];
-
-        let mut overlay =
-            Overlay::with_contours_custom(&subj_paths, &[], IntOverlayOptions::ogc(), Default::default());
-
-        let result = overlay.overlay(OverlayRule::Union, FillRule::NonZero);
-        let main_polygon_index = result.iter().position(|shape| shape.len() > 1);
-        assert!(main_polygon_index.is_some());
     }
 }
