@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use i_float::adapter::FloatPointAdapter;
     use i_float::int::number::int::IntNumber;
     use i_float::int::point::IntPoint;
     use i_key_sort::sort::key::SortKey;
@@ -7,7 +8,7 @@ mod tests {
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::{Precision, Solver, Strategy};
-    use i_overlay::float::overlay::FloatOverlay;
+    use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_shape::base::data::{Path, Shape};
     use i_shape::{int_path, int_shape};
     use i_tree::{Expiration, LayoutNumber};
@@ -139,5 +140,43 @@ mod tests {
             graph.validate();
             let _ = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
         }
+    }
+
+    #[test]
+    fn test_05() {
+        let subj = vec![
+            vec![
+                [24902.9222201258, 11129.9683052215],
+                [24821.9592401258, 11107.1269052215],
+                [24902.9218201258, 11129.9681852215],
+                [24898.9601001258, 11128.8505052215],
+            ],
+            vec![
+                [20094.9253001258, 12125.6660652215],
+                [20094.9253001258, 12125.6647652215],
+                [29795.5156201258, 10942.5275852215],
+            ],
+            vec![
+                [24902.2200401258, 11129.7702052215],
+                [24902.3098801258, 11129.7955452215],
+                [24902.4788601258, 11129.8432252215],
+            ],
+            vec![
+                [24902.4819801258, 11129.8441052215],
+                [24902.4832001258, 11129.8444452215],
+                [24902.4821401258, 11129.8441452215],
+            ],
+        ];
+        let points = subj.iter().flatten().collect::<Vec<_>>();
+        let adapter =
+            FloatPointAdapter::<_, i64>::with_iter_and_scale_checked(points.into_iter(), 50_000.0).unwrap();
+        let mut options = OverlayOptions::default();
+        options.clean_result = true;
+        options.ogc = true;
+        options.preserve_output_collinear = true;
+        let mut overlay = FloatOverlay::new_custom(adapter, options, Default::default(), 13)
+            .unsafe_add_source(&subj, ShapeType::Subject);
+
+        let _ = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
     }
 }
