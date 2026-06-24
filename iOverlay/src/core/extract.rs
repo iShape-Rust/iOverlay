@@ -6,7 +6,6 @@ use crate::core::link::OverlayLink;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::ContourDirection;
-use crate::geom::v_segment::VSegment;
 use crate::i_shape::flat::buffer::FlatContoursBuffer;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -158,17 +157,9 @@ where
             let contour = buffer.points.as_slice().to_vec();
 
             if is_hole {
-                let mut v_segment = if clockwise {
-                    VSegment {
-                        a: contour[1],
-                        b: contour[2],
-                    }
-                } else {
-                    VSegment {
-                        a: contour[0],
-                        b: contour[contour.len() - 1],
-                    }
-                };
+                let left_bottom = if clockwise { contour[1] } else { contour[0] };
+                let mut v_segment = contour.left_bottom_segment_from(left_bottom);
+
                 if is_modified {
                     let most_left = contour.left_bottom_segment();
                     if most_left != v_segment {

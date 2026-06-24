@@ -50,6 +50,23 @@ impl<I: IntNumber> VSegment<I> {
     }
 }
 
+pub(crate) trait BottomSegment<I: IntNumber> {
+    fn update_if_under(&mut self, segment: VSegment<I>);
+}
+
+impl<I: IntNumber> BottomSegment<I> for Option<VSegment<I>> {
+    #[inline(always)]
+    fn update_if_under(&mut self, segment: VSegment<I>) {
+        if let Some(best) = self {
+            if segment.is_under_segment(&best) {
+                *best = segment
+            }
+        } else {
+            *self = Some(segment);
+        }
+    }
+}
+
 impl<I: IntNumber> From<XSegment<I>> for VSegment<I> {
     #[inline(always)]
     fn from(seg: XSegment<I>) -> Self {

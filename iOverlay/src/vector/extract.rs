@@ -6,7 +6,7 @@ use crate::core::graph::OverlayGraph;
 use crate::core::link::{OverlayLink, OverlayLinkFilter};
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
-use crate::geom::v_segment::VSegment;
+use crate::geom::v_segment::{BottomSegment, VSegment};
 use crate::segm::segment::SegmentFill;
 use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
 use crate::vector::simplify::VectorSimplify;
@@ -92,17 +92,9 @@ where
             }
 
             if is_hole {
-                let mut v_segment = if clockwise {
-                    VSegment {
-                        a: contour[1].a,
-                        b: contour[2].a,
-                    }
-                } else {
-                    VSegment {
-                        a: contour[0].a,
-                        b: contour[contour.len() - 1].a,
-                    }
-                };
+                let left_bottom = if clockwise { contour[1].a } else { contour[0].a };
+                let mut v_segment = most_left_bottom_from(&contour, left_bottom);
+
                 if is_modified {
                     let most_left = most_left_bottom(&contour);
                     if most_left != v_segment {
@@ -308,22 +300,35 @@ where
 
 #[inline]
 fn most_left_bottom<I: IntNumber, D>(path: &DataVectorPath<I, D>) -> VSegment<I> {
-    let mut index = 0;
     let mut a = path[0].a;
-    for (i, e) in path.iter().enumerate().skip(1) {
+    for e in path.iter().skip(1) {
         if e.a < a {
             a = e.a;
-            index = i;
         }
     }
+
+    most_left_bottom_from(path, a)
+}
+
+#[inline]
+fn most_left_bottom_from<I: IntNumber, D>(path: &DataVectorPath<I, D>, a: IntPoint<I>) -> VSegment<I> {
     let n = path.len();
-    let b0 = path[index].b;
-    let b1 = path[(index + n - 1) % n].a;
+    let mut result: Option<VSegment<I>> = None;
 
-    let s0 = VSegment { a, b: b0 };
-    let s1 = VSegment { a, b: b1 };
+    for (i, edge) in path.iter().enumerate() {
+        if edge.a != a {
+            continue;
+        }
 
-    if s0.is_under_segment(&s1) { s0 } else { s1 }
+        // Self-touching contours can visit the left-bottom point several times.
+        // Check every incident edge at that point and keep the lowest anchor edge.
+        let b0 = edge.b;
+        let b1 = path[(i + n - 1) % n].a;
+        result.update_if_under(VSegment { a, b: b0 });
+        result.update_if_under(VSegment { a, b: b1 });
+    }
+
+    result.unwrap_or(VSegment { a, b: a })
 }
 
 #[inline]
