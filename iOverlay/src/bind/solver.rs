@@ -1,10 +1,11 @@
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
-use crate::geom::v_segment::VSegment;
+use crate::geom::v_segment::{BottomSegment, VSegment};
 use crate::util::log::Int;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use i_float::int::number::int::IntNumber;
+use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use i_shape::int::path::IntPath;
@@ -198,26 +199,39 @@ impl<I: IntNumber + Expiration + SortKey> JoinHoles<I> for Vec<IntShape<I>> {
 
 pub(crate) trait LeftBottomSegment<I: IntNumber> {
     fn left_bottom_segment(&self) -> VSegment<I>;
+    fn left_bottom_segment_from(&self, a: IntPoint<I>) -> VSegment<I>;
 }
 
 impl<I: IntNumber> LeftBottomSegment<I> for IntContour<I> {
     fn left_bottom_segment(&self) -> VSegment<I> {
-        let mut index = 0;
         let mut a = *self.first().unwrap();
-        for (i, &p) in self.iter().enumerate().skip(1) {
+        for &p in self.iter().skip(1) {
             if p < a {
                 a = p;
-                index = i;
             }
         }
+
+        self.left_bottom_segment_from(a)
+    }
+
+    fn left_bottom_segment_from(&self, a: IntPoint<I>) -> VSegment<I> {
         let n = self.len();
-        let b0 = self[(index + 1) % n];
-        let b1 = self[(index + n - 1) % n];
+        let mut result: Option<VSegment<I>> = None;
 
-        let s0 = VSegment { a, b: b0 };
-        let s1 = VSegment { a, b: b1 };
+        for (i, &p) in self.iter().enumerate() {
+            if p != a {
+                continue;
+            }
 
-        if s0.is_under_segment(&s1) { s0 } else { s1 }
+            // Self-touching contours can visit the left-bottom point several times.
+            // Check every incident edge at that point and keep the lowest anchor edge.
+            let b0 = self[(i + 1) % n];
+            let b1 = self[(i + n - 1) % n];
+            result.update_if_under(VSegment { a, b: b0 });
+            result.update_if_under(VSegment { a, b: b1 });
+        }
+
+        result.unwrap_or(VSegment { a, b: a })
     }
 }
 

@@ -5,8 +5,9 @@ mod tests {
     use i_float::int::point::IntPoint;
     use i_key_sort::sort::key::SortKey;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::{Overlay, ShapeType};
+    use i_overlay::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::core::simplify::Simplify;
     use i_overlay::core::solver::{Precision, Solver, Strategy};
     use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_shape::base::data::{Path, Shape};
@@ -178,5 +179,18 @@ mod tests {
             .unsafe_add_source(&subj, ShapeType::Subject);
 
         let _ = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+    }
+
+    #[test]
+    fn test_06() {
+        let shape = int_shape![
+            [[0, 0], [8, 0], [8, 8], [0, 8]],
+            [[2, 2], [2, 6], [6, 6], [6, 2], [2, 2], [5, 3], [3, 5]],
+            [[10, 0], [12, 0], [12, 2], [10, 2]],
+        ];
+
+        let result = shape.simplify(FillRule::NonZero, IntOverlayOptions::default());
+
+        assert_eq!(result.len(), 2);
     }
 }

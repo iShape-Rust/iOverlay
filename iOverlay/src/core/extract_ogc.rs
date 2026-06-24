@@ -6,7 +6,6 @@ use crate::core::extract::{
 use crate::core::graph::OverlayGraph;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
-use crate::geom::v_segment::VSegment;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
@@ -147,17 +146,8 @@ where
                 }
                 let contour = buffer.points.as_slice().to_vec();
 
-                let mut v_segment = if is_main_dir_cw {
-                    VSegment {
-                        a: contour[1],
-                        b: contour[2],
-                    }
-                } else {
-                    VSegment {
-                        a: contour[0],
-                        b: contour[contour.len() - 1],
-                    }
-                };
+                let left_bottom = if is_main_dir_cw { contour[1] } else { contour[0] };
+                let mut v_segment = contour.left_bottom_segment_from(left_bottom);
 
                 if is_modified {
                     let most_left = contour.left_bottom_segment();
