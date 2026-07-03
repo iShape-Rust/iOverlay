@@ -112,7 +112,7 @@ impl<I: IntNumber> FragmentBuffer<I> {
         let is_inc = s.a.y <= s.b.y;
 
         let width = (s.b.x - s.a.x).to_uint();
-        let height = (s.b.y.wide() - s.a.y.wide()).unsigned_abs();
+        let height = (s.b.y.to_wide() - s.a.y.to_wide()).unsigned_abs();
 
         let log = (width * height).ilog2();
         let p = I::WideUInt::LAST_BIT_INDEX - log;
@@ -257,7 +257,7 @@ pub(super) struct GridLayout<I: IntNumber> {
 impl<I: IntNumber> GridLayout<I> {
     #[inline]
     pub(super) fn index(&self, x: I) -> usize {
-        ((x.wide() - self.min_x.wide()) >> self.power).to_usize()
+        ((x.to_wide() - self.min_x.to_wide()) >> self.power).to_usize()
     }
 
     #[inline]
@@ -285,7 +285,7 @@ impl<I: IntNumber> GridLayout<I> {
     }
 
     fn with_min_max(min_x: I, max_x: I, max_power: u32) -> Option<Self> {
-        let dx = max_x.wide() - min_x.wide();
+        let dx = max_x.to_wide() - min_x.to_wide();
         if dx < I::Wide::FOUR {
             return None;
         }

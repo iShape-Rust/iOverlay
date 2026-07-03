@@ -154,8 +154,8 @@ impl<I: IntNumber> BinStore<I> {
 
     #[inline]
     fn bin_index(&self, p: IntPoint<I>) -> usize {
-        let x = p.x.wide().wrapping_mul(I::Wide::from_usize(31));
-        let y = p.y.wide().wrapping_mul(I::Wide::from_usize(17));
+        let x = p.x.to_wide().wrapping_mul(I::Wide::from_usize(31));
+        let y = p.y.to_wide().wrapping_mul(I::Wide::from_usize(17));
         let hash = x.wrapping_add(y);
         (hash & I::Wide::from_usize(self.mask as usize)).to_usize()
     }

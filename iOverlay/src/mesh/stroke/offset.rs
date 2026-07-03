@@ -507,7 +507,7 @@ where
         is_closed_path: bool,
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P> {
-        let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
+        let ir = self.adapter.round_len_to_int(self.r).to_wide().unsigned_abs();
         if ir <= I::WideUInt::ONE {
             // offset is too small
             return vec![];
@@ -548,7 +548,7 @@ where
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        let ir = self.adapter.round_len_to_int(self.r).wide().unsigned_abs();
+        let ir = self.adapter.round_len_to_int(self.r).to_wide().unsigned_abs();
         if ir <= I::WideUInt::ONE {
             // offset is too small
             output.clear_and_reserve(0, 0);
