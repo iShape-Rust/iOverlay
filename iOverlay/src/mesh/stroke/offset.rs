@@ -2,6 +2,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
+use crate::float::overlay::{contour_has_non_finite, is_finite_point_ref};
 use crate::float::scale::FixedScaleOverlayError;
 use crate::i_shape::source::resource::ShapeResource;
 use crate::mesh::stroke::builder::StrokeBuilder;
@@ -483,7 +484,8 @@ where
         let builder = StrokeBuilder::<P, I>::new(style);
         let a = builder.additional_offset(r);
 
-        let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
+        let mut rect = FloatRect::with_iter(source.iter_paths().flatten().filter(is_finite_point_ref))
+            .unwrap_or(FloatRect::zero());
         rect.add_offset(a);
         let adapter = FloatPointAdapter::<P, I>::new(rect);
 
@@ -519,6 +521,9 @@ where
         let mut segments = Vec::with_capacity(capacity);
 
         for path in source.iter_paths() {
+            if contour_has_non_finite(path) {
+                continue;
+            }
             self.builder
                 .build(path, is_closed_path, &self.adapter, &mut segments);
         }
@@ -561,6 +566,9 @@ where
         let mut segments = Vec::with_capacity(capacity);
 
         for path in source.iter_paths() {
+            if contour_has_non_finite(path) {
+                continue;
+            }
             self.builder
                 .build(path, is_closed_path, &self.adapter, &mut segments);
         }

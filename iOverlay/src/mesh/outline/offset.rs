@@ -4,6 +4,7 @@ use crate::core::overlay::ShapeType::Subject;
 use crate::core::overlay::{ContourDirection, Overlay};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
+use crate::float::overlay::{contour_has_non_finite, is_finite_point_ref};
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::outline::builder::OutlineBuilder;
 use crate::mesh::style::OutlineStyle;
@@ -446,7 +447,8 @@ where
 
         let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
 
-        let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
+        let mut rect = FloatRect::with_iter(source.iter_paths().flatten().filter(is_finite_point_ref))
+            .unwrap_or(FloatRect::zero());
         rect.add_offset(additional_offset);
 
         let adapter = FloatPointAdapter::<P, I>::new(rect);
@@ -485,6 +487,9 @@ where
         let mut flat_buffer = FlatContoursBuffer::<I>::with_capacity(0);
 
         for path in source.iter_paths() {
+            if contour_has_non_finite(path) {
+                continue;
+            }
             let area = path.unsafe_int_area(&self.adapter);
             if area.unsigned_abs() <= <I::WideUInt as UIntNumber>::from_u64(1) {
                 // ignore degenerate paths

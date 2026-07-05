@@ -2,7 +2,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
-use crate::float::overlay::{FloatOverlay, OverlayOptions};
+use crate::float::overlay::{FloatOverlay, OverlayOptions, is_finite_point_ref};
 use crate::float::relate::FloatPredicateOverlay;
 use i_float::adapter::{FloatPointAdapter, FloatPointAdapterScaleError};
 use i_float::float::compatible::FloatPointCompatible;
@@ -178,7 +178,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
@@ -214,7 +218,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
@@ -287,7 +295,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
@@ -319,7 +331,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());

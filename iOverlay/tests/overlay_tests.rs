@@ -101,7 +101,7 @@ mod tests {
         let graph = overlay.build_graph_view(fill_rule).unwrap();
         let result = graph.extract_shapes(overlay_rule, &mut Default::default());
 
-        println!("{}: {}", &overlay_rule, result.json_print());
+        println!("{}: {}", overlay_rule, result.json_print());
         match overlay_rule {
             OverlayRule::Subject => {
                 assert_eq!(true, overlay::is_group_of_shapes_one_of(&result, &test.subject))

@@ -2,6 +2,7 @@ use crate::core::fill_rule::FillRule;
 use crate::core::overlay::ShapeType;
 use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
+use crate::float::overlay::{contour_has_non_finite, is_finite_point_ref};
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::int::number::int::IntNumber;
@@ -82,7 +83,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -107,7 +112,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -129,6 +138,9 @@ where
     /// * `shape_type` - Whether to add as `Subject` or `Clip`.
     pub fn add_source<R: ShapeResource<P> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
         for contour in resource.iter_paths() {
+            if contour_has_non_finite(contour) {
+                continue;
+            }
             self.overlay
                 .add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         }

@@ -51,6 +51,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::excessive_precision)]
     #[test]
     fn test_01() {
         let subj = [

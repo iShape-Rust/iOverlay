@@ -25,6 +25,24 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use i_tree::{Expiration, LayoutNumber};
 
+/// Returns true when both coordinates of the point are finite (not NaN or infinite).
+#[inline(always)]
+pub(crate) fn is_finite_point<P: FloatPointCompatible>(point: &P) -> bool {
+    point.x().to_f64().is_finite() && point.y().to_f64().is_finite()
+}
+
+/// Returns true if the contour contains any non-finite point.
+#[inline(always)]
+pub(crate) fn contour_has_non_finite<P: FloatPointCompatible>(contour: &[P]) -> bool {
+    contour.iter().any(|p| !is_finite_point(p))
+}
+
+/// Checks finiteness for `&&P` (used with iterator adapters that double-reference).
+#[inline(always)]
+pub(crate) fn is_finite_point_ref<P: FloatPointCompatible>(point: &&P) -> bool {
+    is_finite_point(*point)
+}
+
 /// Options for float overlay extraction.
 ///
 /// `F` is the floating-point scalar type (`f32` or `f64`). `I` is the integer engine
@@ -149,7 +167,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -178,7 +200,11 @@ where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -198,7 +224,7 @@ where
     where
         R: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().flatten();
+        let iter = subj.iter_paths().flatten().filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -217,7 +243,7 @@ where
     where
         R: ShapeResource<P> + ?Sized,
     {
-        let iter = subj.iter_paths().flatten();
+        let iter = subj.iter_paths().flatten().filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -260,6 +286,9 @@ where
     #[inline]
     fn add_source<R: ShapeResource<P> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
         for contour in resource.iter_paths() {
+            if contour_has_non_finite(contour) {
+                continue;
+            }
             self.overlay
                 .add_path_iter(contour.iter().map(|p| self.adapter.float_to_int(p)), shape_type);
         }
@@ -279,7 +308,11 @@ where
     {
         self.clear();
 
-        let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
+        let iter = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         self.adapter = FloatPointAdapter::with_iter(iter);
         self.add_source(subj, ShapeType::Subject);
         self.add_source(clip, ShapeType::Clip);
@@ -297,7 +330,7 @@ where
     {
         self.clear();
 
-        let iter = subj.iter_paths().flatten();
+        let iter = subj.iter_paths().flatten().filter(is_finite_point_ref);
         self.adapter = FloatPointAdapter::with_iter(iter);
         self.add_source(subj, ShapeType::Subject);
     }

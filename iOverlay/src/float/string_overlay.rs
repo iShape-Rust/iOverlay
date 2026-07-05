@@ -1,5 +1,6 @@
 use crate::core::fill_rule::FillRule;
 use crate::core::solver::Solver;
+use crate::float::overlay::{contour_has_non_finite, is_finite_point_ref};
 use crate::float::scale::FixedScaleOverlayError;
 use crate::float::string_graph::FloatStringGraph;
 use crate::string::clip::ClipRule;
@@ -64,7 +65,11 @@ where
         R0: ShapeResource<P>,
         R1: ShapeResource<P>,
     {
-        let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
+        let iter = shape
+            .iter_paths()
+            .chain(string.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter(iter);
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
@@ -87,7 +92,11 @@ where
         R0: ShapeResource<P>,
         R1: ShapeResource<P>,
     {
-        let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
+        let iter = shape
+            .iter_paths()
+            .chain(string.iter_paths())
+            .flatten()
+            .filter(is_finite_point_ref);
         let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
 
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
@@ -108,6 +117,9 @@ where
     #[inline]
     pub fn unsafe_add_shapes<S: ShapeResource<P>>(mut self, source: &S) -> Self {
         for contour in source.iter_paths() {
+            if contour_has_non_finite(contour) {
+                continue;
+            }
             self = self.unsafe_add_shape_contour(contour);
         }
         self
@@ -122,6 +134,9 @@ where
     #[inline]
     pub fn unsafe_add_string_lines<S: ShapeResource<P>>(mut self, resource: &S) -> Self {
         for path in resource.iter_paths() {
+            if contour_has_non_finite(path) {
+                continue;
+            }
             self = self.unsafe_add_string_line(path);
         }
         self
