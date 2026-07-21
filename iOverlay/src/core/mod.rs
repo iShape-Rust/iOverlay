@@ -13,3 +13,4 @@ pub mod predicate;
 pub mod relate;
 pub mod simplify;
 pub mod solver;
+pub mod v_segment;
