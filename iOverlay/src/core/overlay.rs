@@ -5,6 +5,7 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::i_shape::flat::buffer::FlatContoursBuffer;
@@ -14,13 +15,10 @@ use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use crate::vector::edge::{DataVectorEdge, VectorShape};
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
 
 use super::graph::{OverlayGraph, OverlayNode};
 
@@ -65,7 +63,7 @@ pub enum ContourDirection {
 }
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
-pub struct Overlay<I: IntNumber + Expiration> {
+pub struct Overlay<I: OverlayInt> {
     pub solver: Solver,
     pub options: IntOverlayOptions<I::WideUInt>,
     pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
@@ -76,7 +74,7 @@ pub struct Overlay<I: IntNumber + Expiration> {
 
 impl<I> Overlay<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     /// Constructs a new `Overlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.

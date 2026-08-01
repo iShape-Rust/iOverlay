@@ -1,4 +1,5 @@
 use crate::core::edge_data::OverlayEdgeData;
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
@@ -9,13 +10,10 @@ use crate::split::line_mark::LineMark;
 use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
-use i_tree::{Expiration, LayoutNumber};
 
 impl<I> SplitSolver<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     pub(super) fn fragment_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,

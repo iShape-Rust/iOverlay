@@ -1,4 +1,5 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::float::string_graph::FloatStringGraph;
@@ -6,12 +7,9 @@ use crate::string::clip::ClipRule;
 use crate::string::overlay::StringOverlay;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::ShapeToFloat;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// The `FloatStringOverlay` struct is a builder for overlaying geometric shapes by converting
 /// floating-point geometry to integer space. It provides methods for adding paths and shapes,
@@ -19,7 +17,7 @@ use i_tree::{Expiration, LayoutNumber};
 ///
 /// The float-to-integer conversion is controlled by the `FloatPointAdapter` scale:
 /// `x_int = (x_float - offset_x) * scale`. Use a fixed scale if you need predictable precision.
-pub struct FloatStringOverlay<P: FloatPointCompatible, I: IntNumber + Expiration = i32> {
+pub struct FloatStringOverlay<P: FloatPointCompatible, I: OverlayInt = i32> {
     pub(super) overlay: StringOverlay<I>,
     pub(super) adapter: FloatPointAdapter<P, I>,
 }
@@ -27,7 +25,7 @@ pub struct FloatStringOverlay<P: FloatPointCompatible, I: IntNumber + Expiration
 impl<P, I> FloatStringOverlay<P, I>
 where
     P: FloatPointCompatible,
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     /// Constructs a new `FloatStringOverlay`, a builder for overlaying geometric shapes
     /// by converting float-based geometry to integer space, using a pre-configured adapter.

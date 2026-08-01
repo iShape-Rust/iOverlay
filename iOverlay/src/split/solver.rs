@@ -1,4 +1,5 @@
 use crate::core::edge_data::{EdgeDataSplit, OverlayEdgeData};
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
@@ -9,8 +10,6 @@ use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::line_mark::{LineMark, SortMarkByIndexAndPoint};
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
-use i_tree::{Expiration, LayoutNumber};
 
 pub(crate) struct SplitSolver<I: IntNumber> {
     pub(super) marks: Vec<LineMark<I>>,
@@ -25,7 +24,7 @@ impl<I: IntNumber> SplitSolver<I> {
 
 impl<I> SplitSolver<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     pub(crate) fn split_segments<C: WindingCount, D: OverlayEdgeData<C>>(

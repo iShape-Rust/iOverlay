@@ -1,13 +1,11 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ShapeType;
 use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Float-coordinate wrapper for spatial predicate evaluation.
 ///
@@ -29,7 +27,7 @@ use i_tree::{Expiration, LayoutNumber};
 ///
 /// For a more ergonomic API, see the [`FloatRelate`] trait which provides
 /// methods directly on shape types.
-pub struct FloatPredicateOverlay<P: FloatPointCompatible, I: IntNumber + Expiration = i32> {
+pub struct FloatPredicateOverlay<P: FloatPointCompatible, I: OverlayInt = i32> {
     pub(crate) overlay: PredicateOverlay<I>,
     pub(crate) adapter: FloatPointAdapter<P, I>,
 }
@@ -37,7 +35,7 @@ pub struct FloatPredicateOverlay<P: FloatPointCompatible, I: IntNumber + Expirat
 impl<P, I> FloatPredicateOverlay<P, I>
 where
     P: FloatPointCompatible,
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     /// Creates a new predicate overlay with a pre-configured adapter.
     ///
@@ -259,7 +257,7 @@ where
     /// Same as [`Self::intersects`], but with an explicit integer engine.
     fn intersects_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Returns `true` if the interiors of this shape and another overlap.
     ///
@@ -270,7 +268,7 @@ where
     /// Same as [`Self::interiors_intersect`], but with an explicit integer engine.
     fn interiors_intersect_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Returns `true` if this shape touches another (boundaries intersect but interiors don't).
     ///
@@ -280,7 +278,7 @@ where
     /// Same as [`Self::touches`], but with an explicit integer engine.
     fn touches_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Returns `true` if this shape intersects another by point coincidence only.
     fn point_intersects(&self, other: &R1) -> bool;
@@ -288,7 +286,7 @@ where
     /// Same as [`Self::point_intersects`], but with an explicit integer engine.
     fn point_intersects_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Returns `true` if this shape is completely within another.
     ///
@@ -299,7 +297,7 @@ where
     /// Same as [`Self::within`], but with an explicit integer engine.
     fn within_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Returns `true` if this shape does not intersect with another (no shared points).
     ///
@@ -309,7 +307,7 @@ where
     /// Same as [`Self::disjoint`], but with an explicit integer engine.
     fn disjoint_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Returns `true` if this shape completely covers another.
     ///
@@ -319,7 +317,7 @@ where
     /// Same as [`Self::covers`], but with an explicit integer engine.
     fn covers_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 }
 
 impl<R0, R1, P> FloatRelate<R1, P> for R0
@@ -336,7 +334,7 @@ where
     #[inline]
     fn intersects_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).intersects()
     }
@@ -349,7 +347,7 @@ where
     #[inline]
     fn interiors_intersect_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).interiors_intersect()
     }
@@ -362,7 +360,7 @@ where
     #[inline]
     fn touches_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).touches()
     }
@@ -375,7 +373,7 @@ where
     #[inline]
     fn point_intersects_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).point_intersects()
     }
@@ -388,7 +386,7 @@ where
     #[inline]
     fn within_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).within()
     }
@@ -401,7 +399,7 @@ where
     #[inline]
     fn disjoint_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         !self.intersects_as::<I>(other)
     }
@@ -414,7 +412,7 @@ where
     #[inline]
     fn covers_as<I>(&self, other: &R1) -> bool
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         other.within_as::<I>(self)
     }

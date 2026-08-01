@@ -1,14 +1,13 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::graph::OverlayNode;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::Overlay;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
-use i_tree::Expiration;
 
-impl<I: IntNumber + Expiration> Overlay<I> {
+impl<I: OverlayInt> Overlay<I> {
     #[inline]
     pub(crate) fn add_segments(&mut self, segments: &[Segment<ShapeCountBoolean, I>]) {
         self.segments.extend_from_slice(segments);

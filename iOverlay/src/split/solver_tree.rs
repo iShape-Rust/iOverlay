@@ -1,4 +1,5 @@
 use crate::core::edge_data::OverlayEdgeData;
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::geom::line_range::LineRange;
 use crate::geom::x_segment::XSegment;
@@ -8,11 +9,10 @@ use crate::split::snap_radius::SnapRadius;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
+use i_tree::Expiration;
 use i_tree::ExpiredVal;
 use i_tree::seg::exp::{SegExpCollection, SegRange};
 use i_tree::seg::tree::SegExpTree;
-use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Clone, Copy)]
 struct IdSegment<I: IntNumber> {
@@ -29,7 +29,7 @@ impl<I: IntNumber + Expiration> ExpiredVal<I> for IdSegment<I> {
 
 impl<I> SplitSolver<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,

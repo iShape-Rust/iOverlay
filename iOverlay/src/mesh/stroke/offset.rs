@@ -1,4 +1,5 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
@@ -15,14 +16,12 @@ use i_float::float::rect::FloatRect;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Trait for generating stroke outlines from float paths.
 ///
@@ -166,7 +165,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
     /// Same as [`Self::stroke`], but with an explicit integer engine.
     fn stroke_as<I>(&self, style: StrokeStyle<P>, is_closed_path: bool) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_into`], but with an explicit integer engine.
     fn stroke_into_as<I>(
@@ -175,7 +174,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         is_closed_path: bool,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_custom`], but with an explicit integer engine.
     fn stroke_custom_as<I>(
@@ -185,7 +184,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_custom_into`], but with an explicit integer engine.
     fn stroke_custom_into_as<I>(
@@ -195,7 +194,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_fixed_scale`], but with an explicit integer engine.
     fn stroke_fixed_scale_as<I>(
@@ -205,7 +204,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_fixed_scale_into`], but with an explicit integer engine.
     fn stroke_fixed_scale_into_as<I>(
@@ -216,7 +215,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_custom_fixed_scale`], but with an explicit integer engine.
     fn stroke_custom_fixed_scale_as<I>(
@@ -227,7 +226,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::stroke_custom_fixed_scale_into`], but with an explicit integer engine.
     fn stroke_custom_fixed_scale_into_as<I>(
@@ -239,7 +238,7 @@ pub trait StrokeOffset<P: FloatPointCompatible> {
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 }
 
 impl<S, P> StrokeOffset<P> for S
@@ -341,7 +340,7 @@ where
 
     fn stroke_as<I>(&self, style: StrokeStyle<P>, is_closed_path: bool) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.stroke_custom_as::<I>(style, is_closed_path, Default::default())
     }
@@ -352,7 +351,7 @@ where
         is_closed_path: bool,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.stroke_custom_into_as::<I>(style, is_closed_path, Default::default(), output)
     }
@@ -364,7 +363,7 @@ where
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         match StrokeSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver.build(self, is_closed_path, options),
@@ -379,7 +378,7 @@ where
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         match StrokeSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver.build_into(self, is_closed_path, options, output),
@@ -394,7 +393,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.stroke_custom_fixed_scale_as::<I>(style, is_closed_path, Default::default(), scale)
     }
@@ -407,7 +406,7 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.stroke_custom_fixed_scale_into_as::<I>(style, is_closed_path, Default::default(), scale, output)
     }
@@ -420,7 +419,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         let mut solver = match StrokeSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver,
@@ -439,7 +438,7 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         let mut solver = match StrokeSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver,
@@ -465,7 +464,7 @@ struct StrokeSolver<P: FloatPointCompatible, I: IntNumber> {
 impl<P, I> StrokeSolver<P, I>
 where
     P: 'static + FloatPointCompatible,
-    I: 'static + IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt + 'static,
 {
     fn prepare<S: ShapeResource<P>>(source: &S, style: StrokeStyle<P>) -> Option<Self> {
         let mut paths_count = 0;

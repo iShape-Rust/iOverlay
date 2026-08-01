@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "7.0.2"
+version = "8.0.0"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 rust-version = "1.88"
@@ -15,7 +15,7 @@ categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 #i_float = { version = "^3.0.0" }
 #i_shape = { version = "^3.0.0" }
 i_tree = { version = "^0.19.0" }
-i_key_sort = { version = "^0.10.3" }
+i_key_sort = { version = "^0.11.0" }
 
 i_float = { path = "../../iFloat"}
 i_shape = { path = "../../iShape"}

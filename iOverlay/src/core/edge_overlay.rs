@@ -3,6 +3,7 @@ use crate::core::edge_data::OverlayEdgeData;
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
 use crate::core::graph::OverlayNode;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::{IntOverlayOptions, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
@@ -13,8 +14,6 @@ use crate::vector::edge::{DataVectorEdge, DataVectorShape};
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
-use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InputEdge<I: IntNumber, D> {
@@ -23,7 +22,7 @@ pub struct InputEdge<I: IntNumber, D> {
     pub data: D,
 }
 
-pub struct EdgeOverlay<I: IntNumber + Expiration, D: OverlayEdgeData> {
+pub struct EdgeOverlay<I: OverlayInt, D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions<I::WideUInt>,
     pub boolean_buffer: Option<BooleanExtractionBuffer<I>>,
@@ -35,7 +34,7 @@ pub struct EdgeOverlay<I: IntNumber + Expiration, D: OverlayEdgeData> {
 
 impl<I, D> EdgeOverlay<I, D>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     D: OverlayEdgeData,
 {
     pub fn new(capacity: usize) -> Self {
@@ -133,7 +132,7 @@ where
 
 impl<I, D> EdgeOverlay<I, D>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     D: OverlayEdgeData,
 {
     pub fn edges(&self) -> impl Iterator<Item = [IntPoint<I>; 2]> + '_ {

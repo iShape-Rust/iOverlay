@@ -2,6 +2,7 @@ use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::graph::{OverlayGraph, OverlayNode};
+use crate::core::integer::OverlayInt;
 use crate::core::link::OverlayLink;
 use crate::core::link::OverlayLinkFilter;
 use crate::core::nearest_vector::NearestVector;
@@ -14,12 +15,10 @@ use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
 use i_shape::util::reserve::Reserve;
-use i_tree::Expiration;
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Default)]
@@ -49,7 +48,7 @@ impl<I: IntNumber> Default for BooleanExtractionBuffer<I> {
 
 impl<I> OverlayGraph<'_, I>
 where
-    I: IntNumber + Expiration + SortKey,
+    I: OverlayInt,
 {
     /// Extracts shapes from the overlay graph based on the specified overlay rule. This method is used to retrieve the final geometric shapes after boolean operations have been applied. It's suitable for most use cases where the minimum area of shapes is not a concern.
     /// - `overlay_rule`: The boolean operation rule to apply when extracting shapes from the graph, such as union or intersection.

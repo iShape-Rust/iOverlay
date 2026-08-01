@@ -4,20 +4,18 @@ use crate::core::extract::{
     BooleanExtractionBuffer, GraphContour, GraphUtil, StartPathData, Visit, VisitState,
 };
 use crate::core::graph::OverlayGraph;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use alloc::vec;
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::shape::{IntShape, IntShapes};
 use i_shape::util::reserve::Reserve;
-use i_tree::Expiration;
 
 impl<I> OverlayGraph<'_, I>
 where
-    I: IntNumber + Expiration + SortKey,
+    I: OverlayInt,
 {
     pub(crate) fn extract_ogc(
         &self,

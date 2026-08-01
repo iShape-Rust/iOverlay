@@ -2,8 +2,8 @@
 mod tests {
     use i_float::int::number::int::IntNumber;
     use i_float::int::point::IntPoint;
-    use i_key_sort::sort::key::SortKey;
     use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::integer::OverlayInt;
     use i_overlay::core::overlay::{Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::solver::Solver;
@@ -11,15 +11,14 @@ mod tests {
     use i_shape::base::data::Path;
     use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntShape;
-    use i_tree::{Expiration, LayoutNumber};
     use rand::RngExt;
     use std::f64::consts::PI;
 
     const SOLVERS: [Solver; 4] = [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO];
 
-    trait TestInt: IntNumber + Expiration + LayoutNumber + SortKey {}
+    trait TestInt: OverlayInt {}
 
-    impl<I> TestInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
+    impl<I: OverlayInt> TestInt for I {}
 
     #[test]
     fn test_0() {

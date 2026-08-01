@@ -3,8 +3,8 @@ mod tests {
     use i_float::adapter::FloatPointAdapter;
     use i_float::int::number::int::IntNumber;
     use i_float::int::point::IntPoint;
-    use i_key_sort::sort::key::SortKey;
     use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::integer::OverlayInt;
     use i_overlay::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::core::simplify::Simplify;
@@ -12,10 +12,9 @@ mod tests {
     use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_shape::base::data::{Path, Shape};
     use i_shape::{int_path, int_shape};
-    use i_tree::{Expiration, LayoutNumber};
 
-    trait TestInt: IntNumber + Expiration + LayoutNumber + SortKey {}
-    impl<I> TestInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
+    trait TestInt: OverlayInt {}
+    impl<I: OverlayInt> TestInt for I {}
     const SOLVERS: [Solver; 4] = [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO];
 
     fn point<I: IntNumber>(x: i32, y: i32) -> IntPoint<I> {

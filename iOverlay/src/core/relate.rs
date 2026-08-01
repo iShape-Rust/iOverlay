@@ -1,5 +1,6 @@
 use crate::build::sweep::{FillHandler, SweepRunner};
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ShapeType;
 use crate::core::predicate::{
     InteriorsIntersectHandler, IntersectsHandler, PointIntersectsHandler, TouchesHandler, WithinHandler,
@@ -10,11 +11,8 @@ use crate::segm::build::BuildSegments;
 use crate::segm::segment::Segment;
 use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::shape::{IntContour, IntShape};
-use i_tree::{Expiration, LayoutNumber};
 
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
@@ -36,7 +34,7 @@ use i_tree::{Expiration, LayoutNumber};
 ///
 /// For float coordinates, prefer using [`FloatPredicateOverlay`](crate::float::relate::FloatPredicateOverlay)
 /// or the [`FloatRelate`](crate::float::relate::FloatRelate) trait.
-pub struct PredicateOverlay<I: IntNumber + Expiration> {
+pub struct PredicateOverlay<I: OverlayInt> {
     /// Solver configuration for segment operations.
     pub solver: Solver,
     /// Fill rule for determining polygon interiors.
@@ -48,7 +46,7 @@ pub struct PredicateOverlay<I: IntNumber + Expiration> {
 
 impl<I> PredicateOverlay<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     pub fn new(capacity: usize) -> Self {

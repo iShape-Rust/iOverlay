@@ -1,5 +1,6 @@
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ShapeType::Subject;
 use crate::core::overlay::{ContourDirection, Overlay};
 use crate::core::overlay_rule::OverlayRule;
@@ -16,7 +17,6 @@ use i_float::float::rect::FloatRect;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
@@ -25,7 +25,6 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Trait for offsetting float contours and shapes.
 ///
@@ -146,12 +145,12 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
     /// Same as [`Self::outline`], but with an explicit integer engine.
     fn outline_as<I>(&self, style: &OutlineStyle<P::Scalar>) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_into`], but with an explicit integer engine.
     fn outline_into_as<I>(&self, style: &OutlineStyle<P::Scalar>, output: &mut FloatFlatContoursBuffer<P>)
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_custom`], but with an explicit integer engine.
     fn outline_custom_as<I>(
@@ -160,7 +159,7 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_custom_into`], but with an explicit integer engine.
     fn outline_custom_into_as<I>(
@@ -169,7 +168,7 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_fixed_scale`], but with an explicit integer engine.
     fn outline_fixed_scale_as<I>(
@@ -178,7 +177,7 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_fixed_scale_into`], but with an explicit integer engine.
     fn outline_fixed_scale_into_as<I>(
@@ -188,7 +187,7 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_custom_fixed_scale`], but with an explicit integer engine.
     fn outline_custom_fixed_scale_as<I>(
@@ -198,7 +197,7 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 
     /// Same as [`Self::outline_custom_fixed_scale_into`], but with an explicit integer engine.
     fn outline_custom_fixed_scale_into_as<I>(
@@ -209,7 +208,7 @@ pub trait OutlineOffset<P: FloatPointCompatible> {
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static;
+        I: OverlayInt + 'static;
 }
 
 impl<S, P> OutlineOffset<P> for S
@@ -302,14 +301,14 @@ where
 
     fn outline_as<I>(&self, style: &OutlineStyle<P::Scalar>) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.outline_custom_as::<I>(style, Default::default())
     }
 
     fn outline_into_as<I>(&self, style: &OutlineStyle<P::Scalar>, output: &mut FloatFlatContoursBuffer<P>)
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.outline_custom_into_as::<I>(style, Default::default(), output)
     }
@@ -320,7 +319,7 @@ where
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         match OutlineSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver.build(self, options),
@@ -334,7 +333,7 @@ where
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         match OutlineSolver::<P, I>::prepare(self, style) {
             Some(solver) => solver.build_into(self, options, output),
@@ -348,7 +347,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.outline_custom_fixed_scale_as::<I>(style, Default::default(), scale)
     }
@@ -360,7 +359,7 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         self.outline_custom_fixed_scale_into_as::<I>(style, Default::default(), scale, output)
     }
@@ -372,7 +371,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
         let mut solver = match OutlineSolver::<P, I>::prepare(self, style) {
@@ -391,7 +390,7 @@ where
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+        I: OverlayInt + 'static,
     {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
         let mut solver = match OutlineSolver::<P, I>::prepare(self, style) {
@@ -417,7 +416,7 @@ struct OutlineSolver<P: FloatPointCompatible, I: IntNumber> {
 impl<P, I> OutlineSolver<P, I>
 where
     P: FloatPointCompatible + 'static,
-    I: IntNumber + Expiration + LayoutNumber + SortKey + 'static,
+    I: OverlayInt + 'static,
 {
     fn prepare<S: ShapeResource<P>>(source: &S, style: &OutlineStyle<P::Scalar>) -> Option<Self> {
         let (points_count, paths_count) = {

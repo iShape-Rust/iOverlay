@@ -1,12 +1,10 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::FloatOverlay;
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and build rules.
@@ -49,7 +47,7 @@ where
     /// Same as [`Self::overlay`], but with an explicit integer engine.
     fn overlay_as<I>(&self, source: &R1, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 }
 
 impl<R0, R1, P> SingleFloatOverlay<R0, R1, P> for R0
@@ -66,7 +64,7 @@ where
     #[inline]
     fn overlay_as<I>(&self, resource: &R1, overlay_rule: OverlayRule, fill_rule: FillRule) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatOverlay::<P, I>::from_subj_and_clip(self, resource).overlay(overlay_rule, fill_rule)
     }
