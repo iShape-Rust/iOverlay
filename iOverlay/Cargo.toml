@@ -15,9 +15,11 @@ categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 i_tree = { version = "^0.19.0" }
 i_key_sort = { version = "^0.11.0" }
 
-i_float = { version = "^4.0.0", path = "../../iFloat"}
-i_shape = { version = "^4.0.0", path = "../../iShape"}
+i_float = { version = "^4.0.0"}
+i_shape = { version = "^4.0.0"}
 
+#i_float = { path = "../../iFloat"}
+#i_shape = { path = "../../iShape"}
 #i_tree = { path = "../../iTree" }
 #i_key_sort = { path = "../../iKeySort" }
 
@@ -35,5 +37,7 @@ allow_multithreading = ["dep:rayon", "i_key_sort/allow_multithreading"]
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 rand = { version = "~0.10", features = ["alloc"] }
-i_float = { version = "^4.0.0", path = "../../iFloat", features = ["serde"] }
-i_shape = { version = "^4.0.0", path = "../../iShape", features = ["serde"] }
+i_float = { version = "^4.0.0", features = ["serde"] }
+i_shape = { version = "^4.0.0", features = ["serde"] }
+#i_float = { path = "../../iFloat", features = ["serde"] }
+#i_shape = { path = "../../iShape", features = ["serde"] }
