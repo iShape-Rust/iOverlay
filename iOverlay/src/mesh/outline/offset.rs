@@ -662,6 +662,55 @@ mod tests {
     }
 
     #[test]
+    fn test_near_zero_offset_preserves_geometry_at_fixed_scale() {
+        let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let zero_style = OutlineStyle::new(0.0);
+        let near_zero_style = OutlineStyle::new(0.01);
+
+        let expected = path.outline_fixed_scale(&zero_style, 10.0).unwrap();
+        let shapes = path.outline_fixed_scale(&near_zero_style, 10.0).unwrap();
+
+        assert_eq!(shapes, expected);
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_repeated_points_preserve_zero_offset_geometry() {
+        let path = [
+            [-5.0, -5.0f32],
+            [-5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, -5.0],
+            [5.0, 5.0],
+            [-5.0, 5.0],
+            [-5.0, 5.0],
+            [-5.0, -5.0],
+        ];
+        let expected_path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+        let style = OutlineStyle::new(0.0);
+
+        let shapes = path.outline_fixed_scale(&style, 10.0).unwrap();
+        let expected = expected_path.outline_fixed_scale(&style, 10.0).unwrap();
+
+        assert_eq!(shapes, expected);
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
+    fn test_degenerate_contours_return_empty_geometry() {
+        let repeated_point = [[1.0, 1.0f32], [1.0, 1.0], [1.0, 1.0]];
+        let collinear = [[0.0, 0.0f32], [5.0, 0.0], [10.0, 0.0]];
+        let style = OutlineStyle::new(1.0);
+
+        assert!(repeated_point.outline(&style).is_empty());
+        assert!(collinear.outline(&style).is_empty());
+    }
+
+    #[test]
     fn test_outline_into_ok() {
         let path = [[-5.0, -5.0f32], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
         let style = OutlineStyle::new(1.0);

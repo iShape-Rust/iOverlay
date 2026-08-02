@@ -771,6 +771,41 @@ mod tests {
     }
 
     #[test]
+    fn test_zero_width_returns_empty_geometry() {
+        let path = [[0.0, 0.0], [10.0, 0.0]];
+
+        let shapes = path.stroke(StrokeStyle::new(0.0), false);
+
+        assert!(shapes.is_empty());
+    }
+
+    #[test]
+    fn test_near_zero_width_returns_empty_geometry_at_fixed_scale() {
+        let path = [[0.0, 0.0], [10.0, 0.0]];
+
+        let shapes = path
+            .stroke_fixed_scale(StrokeStyle::new(0.1), false, 10.0)
+            .unwrap();
+
+        assert!(shapes.is_empty());
+    }
+
+    #[test]
+    fn test_repeated_points_do_not_change_stroke_geometry() {
+        let path = [[0.0, 0.0], [0.0, 0.0], [10.0, 0.0], [10.0, 0.0]];
+        let expected_path = [[0.0, 0.0], [10.0, 0.0]];
+        let style = StrokeStyle::new(2.0);
+
+        let shapes = path.stroke_fixed_scale(style.clone(), false, 10.0).unwrap();
+        let expected = expected_path.stroke_fixed_scale(style, false, 10.0).unwrap();
+
+        assert_eq!(shapes, expected);
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
+    #[test]
     fn test_many_paths() {
         let paths = [vec![[0.0, 0.0], [5.0, 0.0]], vec![[0.0, 0.0], [5.0, -5.0]]];
 
