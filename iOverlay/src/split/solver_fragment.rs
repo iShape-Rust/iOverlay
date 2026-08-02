@@ -109,7 +109,7 @@ where
         use rayon::iter::IntoParallelRefMutIterator;
         use rayon::iter::ParallelIterator;
 
-        struct TaskResult<I: IntNumber> {
+        struct TaskResult<I: OverlayInt> {
             any_round: bool,
             marks: Vec<LineMark<I>>,
         }
