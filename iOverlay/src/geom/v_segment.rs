@@ -7,17 +7,12 @@ use i_float::triangle::Triangle;
 use i_tree::{Expiration, ExpiredKey};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VSegment<I: IntNumber> {
-    pub a: IntPoint<I>,
-    pub b: IntPoint<I>,
+pub(crate) struct VSegment<I: IntNumber> {
+    pub(crate) a: IntPoint<I>,
+    pub(crate) b: IntPoint<I>,
 }
 
 impl<I: IntNumber> VSegment<I> {
-    #[inline(always)]
-    pub const fn new(a: IntPoint<I>, b: IntPoint<I>) -> Self {
-        Self { a, b }
-    }
-
     #[inline(always)]
     fn is_under_segment_order(&self, other: &VSegment<I>) -> Ordering {
         match self.a.cmp(&other.a) {
@@ -45,7 +40,7 @@ impl<I: IntNumber> VSegment<I> {
     }
 
     #[inline(always)]
-    pub fn cmp_by_angle(&self, other: &Self) -> Ordering {
+    pub(crate) fn cmp_by_angle(&self, other: &Self) -> Ordering {
         // sort angles counterclockwise
         // debug_assert!(self.a == other.a);
         let v0 = self.b - self.a;
