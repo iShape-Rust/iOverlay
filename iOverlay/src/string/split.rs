@@ -5,7 +5,6 @@ use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::IntContour;
-use i_shape::util::reserve::Reserve;
 
 pub(super) trait Split<I: IntNumber> {
     fn split_loops(
@@ -28,8 +27,8 @@ impl<I: IntNumber> Split<I> for IntContour<I> {
         if self.is_empty() {
             return Vec::new();
         }
-        contour_buffer.reserve_capacity(self.len());
         contour_buffer.clear();
+        contour_buffer.reserve(self.len());
 
         bin_store.init(&self);
 

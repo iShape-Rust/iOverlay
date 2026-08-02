@@ -21,7 +21,6 @@ use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_key_sort::sort::key::SortKey;
-use i_shape::util::reserve::Reserve;
 use i_tree::Expiration;
 
 impl<I, D> GraphBuilder<ShapeCountBoolean, OverlayNode, I, D>
@@ -303,7 +302,7 @@ impl<I: IntNumber, D> OverlayLinkFilter for [OverlayLink<I, D>] {
 #[inline]
 fn filter_subject_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_subject()));
     }
@@ -312,7 +311,7 @@ fn filter_subject_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mu
 #[inline]
 fn filter_clip_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_clip()));
     }
@@ -321,7 +320,7 @@ fn filter_clip_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut V
 #[inline]
 fn filter_intersect_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_intersect()));
     }
@@ -330,7 +329,7 @@ fn filter_intersect_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &
 #[inline]
 fn filter_union_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_union()));
     }
@@ -339,7 +338,7 @@ fn filter_union_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut 
 #[inline]
 fn filter_difference_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_difference()));
     }
@@ -351,7 +350,7 @@ fn filter_inverse_difference_into<I: IntNumber, D>(
     buffer: &mut Vec<VisitState>,
 ) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_inverse_difference()));
     }
@@ -360,7 +359,7 @@ fn filter_inverse_difference_into<I: IntNumber, D>(
 #[inline]
 fn filter_xor_into<I: IntNumber, D>(links: &[OverlayLink<I, D>], buffer: &mut Vec<VisitState>) {
     buffer.clear();
-    buffer.reserve_capacity(links.len());
+    buffer.reserve(links.len());
     for link in links.iter() {
         buffer.push(VisitState::new(!link.fill.is_xor()));
     }

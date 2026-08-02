@@ -11,7 +11,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntShape, IntShapes};
-use i_shape::util::reserve::Reserve;
 
 impl<I> OverlayGraph<'_, I>
 where
@@ -37,7 +36,9 @@ where
 
         let mut shapes = Vec::new();
 
-        buffer.points.reserve_capacity(buffer.visited.len());
+        buffer
+            .points
+            .reserve(buffer.visited.len().saturating_sub(buffer.points.len()));
         let mut hole_count_hint = 0;
 
         let mut link_index = 0;
@@ -237,7 +238,7 @@ where
             global_visited,
         );
 
-        let mut original_contour_len = 1;
+        let mut original_contour_len: usize = 1;
 
         // Find a closed tour
         while link_id != last_link_id {
@@ -270,7 +271,7 @@ where
         // Revisit the contour in reverse;
         // all links escape current contour are skipped in `contour_visited`.
 
-        points.reserve_capacity(original_contour_len);
+        points.reserve(original_contour_len.saturating_sub(points.len()));
         self.find_contour(
             start_data,
             !clockwise,

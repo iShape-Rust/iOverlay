@@ -18,7 +18,6 @@ use i_float::triangle::Triangle;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
-use i_shape::util::reserve::Reserve;
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Default)]
@@ -110,7 +109,9 @@ where
         let mut holes = Vec::new();
         let mut anchors = Vec::new();
 
-        buffer.points.reserve_capacity(buffer.visited.len());
+        buffer
+            .points
+            .reserve(buffer.visited.len().saturating_sub(buffer.points.len()));
 
         let mut link_index = 0;
         let mut anchors_already_sorted = true;
@@ -227,7 +228,7 @@ where
     ) {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
         let len = buffer.visited.len();
-        buffer.points.reserve_capacity(len);
+        buffer.points.reserve(len.saturating_sub(buffer.points.len()));
         output.clear_and_reserve(len, 4);
 
         let mut link_index = 0;
