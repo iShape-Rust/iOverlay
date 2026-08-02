@@ -1,4 +1,5 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::link::OverlayLink;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
@@ -9,10 +10,8 @@ use crate::string::overlay::StringOverlay;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClipRule {
@@ -162,7 +161,7 @@ pub trait IntClip<I: IntNumber> {
 
 impl<I> IntClip<I> for IntShapes<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
@@ -195,7 +194,7 @@ where
 
 impl<I> IntClip<I> for IntShape<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
@@ -228,7 +227,7 @@ where
 
 impl<I> IntClip<I> for [IntPoint<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn clip_line(&self, line: IntLine<I>, fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {

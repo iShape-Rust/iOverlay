@@ -3,6 +3,7 @@ use crate::bind::solver::{ShapeBinder, SortByAngle};
 use crate::core::edge_data::OverlayEdgeData;
 use crate::core::extract::{BooleanExtractionBuffer, GraphUtil, Visit, VisitState};
 use crate::core::graph::OverlayGraph;
+use crate::core::integer::OverlayInt;
 use crate::core::link::{OverlayLink, OverlayLinkFilter};
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
@@ -21,7 +22,7 @@ use i_tree::Expiration;
 
 impl<I, D> OverlayGraph<'_, I, D>
 where
-    I: IntNumber + Expiration + SortKey,
+    I: OverlayInt,
     D: OverlayEdgeData,
 {
     pub fn extract_separate_vectors(&self) -> Vec<DataVectorEdge<I>> {

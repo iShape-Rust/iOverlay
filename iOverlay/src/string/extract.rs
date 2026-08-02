@@ -1,4 +1,5 @@
 use crate::bind::solver::JoinHoles;
+use crate::core::integer::OverlayInt;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions};
 use crate::segm::segment::SUBJ_TOP;
@@ -7,13 +8,10 @@ use crate::string::rule::StringRule;
 use crate::string::split::{BinStore, Split};
 use alloc::vec;
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
-use i_tree::Expiration;
 
-impl<I: IntNumber + Expiration + SortKey> StringGraph<'_, I> {
+impl<I: OverlayInt> StringGraph<'_, I> {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// # Shape Representation

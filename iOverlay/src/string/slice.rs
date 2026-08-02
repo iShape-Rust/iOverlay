@@ -1,13 +1,12 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::string::line::IntLine;
 use crate::string::overlay::StringOverlay;
 use crate::string::rule::StringRule;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
 
 pub trait IntSlice<I: IntNumber> {
     fn slice_by_line(&self, line: IntLine<I>, fill_rule: FillRule) -> IntShapes<I>;
@@ -18,7 +17,7 @@ pub trait IntSlice<I: IntNumber> {
 
 impl<I> IntSlice<I> for IntShapes<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn slice_by_line(&self, line: IntLine<I>, fill_rule: FillRule) -> IntShapes<I> {
@@ -63,7 +62,7 @@ where
 
 impl<I> IntSlice<I> for IntShape<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn slice_by_line(&self, line: IntLine<I>, fill_rule: FillRule) -> IntShapes<I> {
@@ -108,7 +107,7 @@ where
 
 impl<I> IntSlice<I> for [IntPoint<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn slice_by_line(&self, line: IntLine<I>, fill_rule: FillRule) -> IntShapes<I> {

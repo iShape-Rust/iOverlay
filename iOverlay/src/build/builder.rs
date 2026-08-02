@@ -9,7 +9,6 @@ use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
 use core::ops::ControlFlow;
 use i_float::int::number::int::IntNumber;
-use i_shape::util::reserve::Reserve;
 use i_tree::Expiration;
 
 pub(super) trait InclusionFilterStrategy {
@@ -89,7 +88,7 @@ where
         segments: &[Segment<C, I, D>],
     ) {
         self.links.clear();
-        self.links.reserve_capacity(segments.len());
+        self.links.reserve(segments.len());
 
         for (segment, &fill) in segments.iter().zip(&self.fills) {
             if !F::is_included(fill) {
@@ -107,7 +106,7 @@ where
     #[inline]
     pub(super) fn build_links_all(&mut self, segments: &[Segment<C, I, D>]) {
         self.links.clear();
-        self.links.reserve_capacity(segments.len());
+        self.links.reserve(segments.len());
 
         for (segment, &fill) in segments.iter().zip(&self.fills) {
             self.links.push(OverlayLink::new_with_data(

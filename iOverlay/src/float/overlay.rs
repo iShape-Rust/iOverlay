@@ -3,6 +3,7 @@
 //! manage subject and clip polygons and convert them into graphs for further operations.
 
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
@@ -16,14 +17,12 @@ use i_float::float::rect::FloatRect;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Options for float overlay extraction.
 ///
@@ -55,7 +54,7 @@ pub struct OverlayOptions<F: FloatNumber, I: IntNumber = i32> {
 }
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `FloatOverlay`. It prepares the necessary data for boolean operations.
-pub struct FloatOverlay<P: FloatPointCompatible, I: IntNumber + Expiration = i32> {
+pub struct FloatOverlay<P: FloatPointCompatible, I: OverlayInt = i32> {
     pub(super) overlay: Overlay<I>,
     pub(super) clean_result: bool,
     pub(super) adapter: FloatPointAdapter<P, I>,
@@ -64,7 +63,7 @@ pub struct FloatOverlay<P: FloatPointCompatible, I: IntNumber + Expiration = i32
 impl<P, I> FloatOverlay<P, I>
 where
     P: FloatPointCompatible,
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     /// Constructs a new `FloatOverlay`, a builder for overlaying geometric shapes
     /// by converting float-based geometry to integer space, using a pre-configured adapter.

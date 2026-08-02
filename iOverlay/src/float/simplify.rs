@@ -1,13 +1,11 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::overlay::{FloatOverlay, OverlayOptions};
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
 /// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
@@ -39,7 +37,7 @@ pub trait SimplifyShape<P: FloatPointCompatible> {
     /// Same as [`Self::simplify_shape`], but with an explicit integer engine.
     fn simplify_shape_as<I>(&self, fill_rule: FillRule) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     /// - `options`: Adjust custom behavior.
@@ -62,7 +60,7 @@ pub trait SimplifyShape<P: FloatPointCompatible> {
         solver: Solver,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 }
 
 impl<S, P> SimplifyShape<P> for S
@@ -79,7 +77,7 @@ where
     #[inline]
     fn simplify_shape_as<I>(&self, fill_rule: FillRule) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatOverlay::<P, I>::from_subj_custom(self, Default::default(), Default::default())
             .overlay(OverlayRule::Subject, fill_rule)
@@ -103,7 +101,7 @@ where
         solver: Solver,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatOverlay::<P, I>::from_subj_custom(self, options, solver).overlay(OverlayRule::Subject, fill_rule)
     }

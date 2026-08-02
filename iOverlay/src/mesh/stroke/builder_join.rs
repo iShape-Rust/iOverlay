@@ -300,3 +300,91 @@ impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for RoundJoinBuild
         P::Scalar::from_float(1.1) * radius
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
+    use crate::mesh::stroke::section::Section;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use crate::segm::segment::Segment;
+    use alloc::vec::Vec;
+    use core::f64::consts::PI;
+    use i_float::adapter::FloatPointAdapter;
+    use i_float::float::rect::FloatRect;
+
+    type TestSegment = Segment<ShapeCountBoolean, i32>;
+
+    fn build_join<J: JoinBuilder<[f64; 2], i32>>(
+        builder: &J,
+        radius: f64,
+        a: [f64; 2],
+        b: [f64; 2],
+        c: [f64; 2],
+        scale: f64,
+    ) -> Vec<TestSegment> {
+        let rect = FloatRect::new(-20.0, 20.0, -20.0, 20.0);
+        let adapter = FloatPointAdapter::try_with_scale(rect, scale).unwrap();
+        let s0 = Section::new(radius, &a, &b);
+        let s1 = Section::new(radius, &b, &c);
+        let mut segments = Vec::new();
+
+        builder.add_join(&s0, &s1, &adapter, &mut segments);
+
+        segments
+    }
+
+    #[test]
+    fn acute_angle_uses_each_requested_join_type() {
+        let radius = 1.0;
+        let a = [-10.0, 0.0];
+        let b = [0.0, 0.0];
+        let c = [-10.0, 0.1];
+        let scale = 1_000.0;
+
+        let bevel = build_join(&BevelJoinBuilder, radius, a, b, c, scale);
+        let miter = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        let round = build_join(&RoundJoinBuilder::new(PI / 12.0, radius), radius, a, b, c, scale);
+
+        assert_eq!(bevel.len(), 2);
+        assert_eq!(miter.len(), 4);
+        assert!(round.len() > miter.len());
+        assert_ne!(miter, bevel);
+        assert_ne!(round, bevel);
+    }
+
+    #[test]
+    fn near_collinear_segments_fall_back_to_stable_bevel_join() {
+        let radius = 1.0;
+        let a = [-10.0, 0.0];
+        let b = [0.0, 0.0];
+        let c = [10.0, 0.000_01];
+        let scale = 1_000_000.0;
+
+        let bevel = build_join(&BevelJoinBuilder, radius, a, b, c, scale);
+        let miter = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        let round = build_join(&RoundJoinBuilder::new(PI / 12.0, radius), radius, a, b, c, scale);
+
+        assert_eq!(miter, bevel);
+        assert_eq!(round, bevel);
+
+        let repeated = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        assert_eq!(repeated, miter);
+    }
+
+    #[test]
+    fn tiny_offset_does_not_create_degenerate_join_segments() {
+        let radius = 0.01;
+        let a = [-10.0, 0.0];
+        let b = [0.0, 0.0];
+        let c = [0.0, 10.0];
+        let scale = 10.0;
+
+        let bevel = build_join(&BevelJoinBuilder, radius, a, b, c, scale);
+        let miter = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        let round = build_join(&RoundJoinBuilder::new(PI / 12.0, radius), radius, a, b, c, scale);
+
+        assert!(bevel.is_empty());
+        assert!(miter.is_empty());
+        assert!(round.is_empty());
+    }
+}

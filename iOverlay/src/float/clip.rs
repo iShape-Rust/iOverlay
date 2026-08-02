@@ -1,14 +1,12 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::clip::ClipRule;
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Paths;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// Trait for clipping float string paths by float shapes.
 ///
@@ -51,7 +49,7 @@ where
     /// Same as [`Self::clip_by`], but with an explicit integer engine.
     fn clip_by_as<I>(&self, source: &R, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Clips paths according to the specified build and clip rules using a fixed float-to-integer scale.
     /// - `resource`: A clipping shape.
@@ -82,7 +80,7 @@ where
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Clips paths according to the specified build and clip rules.
     /// - `resource`: A clipping shape.
@@ -113,7 +111,7 @@ where
         solver: Solver,
     ) -> Paths<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Clips paths according to the specified build and clip rules using a fixed float-to-integer scale.
     /// - `resource`: A clipping shape.
@@ -147,7 +145,7 @@ where
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 }
 
 #[cfg(test)]
@@ -227,7 +225,7 @@ where
     #[inline]
     fn clip_by_as<I>(&self, resource: &R0, fill_rule: FillRule, clip_rule: ClipRule) -> Paths<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         self.clip_by_with_solver_as::<I>(resource, fill_rule, clip_rule, Default::default())
     }
@@ -253,7 +251,7 @@ where
         solver: Solver,
     ) -> Paths<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatStringOverlay::<P, I>::from_shape_and_string(resource, self)
             .clip_string_lines_with_solver(fill_rule, clip_rule, solver)
@@ -279,7 +277,7 @@ where
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         self.clip_by_fixed_scale_with_solver_as::<I>(
             resource,
@@ -315,7 +313,7 @@ where
         scale: P::Scalar,
     ) -> Result<Paths<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         Ok(
             FloatStringOverlay::<P, I>::from_shape_and_string_fixed_scale(resource, self, scale)?

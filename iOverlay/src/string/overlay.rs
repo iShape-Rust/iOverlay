@@ -1,5 +1,6 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::{IntOverlayOptions, ShapeType};
 use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
@@ -14,15 +15,12 @@ use crate::string::graph::StringGraph;
 use crate::string::line::IntLine;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
-use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
-use i_tree::{Expiration, LayoutNumber};
 
-pub struct StringOverlay<I: IntNumber + Expiration> {
+pub struct StringOverlay<I: OverlayInt> {
     pub options: IntOverlayOptions<I::WideUInt>,
     pub(super) segments: Vec<Segment<ShapeCountString, I>>,
     pub(crate) split_solver: SplitSolver<I>,
@@ -31,7 +29,7 @@ pub struct StringOverlay<I: IntNumber + Expiration> {
 
 impl<I> StringOverlay<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     /// Constructs a new `StringOverlay` instance, initializing it with a capacity that should closely match the total count of edges from all shapes being processed.
     /// This pre-allocation helps in optimizing memory usage and performance.

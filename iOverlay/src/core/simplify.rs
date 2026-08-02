@@ -2,6 +2,7 @@
 //! (e.g., removing small artifacts or shapes below a certain area threshold) based on a build rule.
 
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay::ContourDirection::Clockwise;
 use crate::core::overlay::{IntOverlayOptions, Overlay, ShapeType};
@@ -9,14 +10,12 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::i_float::int::number::int::IntNumber;
 use crate::i_float::int::point::IntPoint;
 use alloc::vec;
-use i_key_sort::sort::key::SortKey;
 use i_shape::flat::buffer::FlatContoursBuffer;
 
 use crate::segm::build::BuildSegments;
 use i_shape::int::count::PointsCount;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
 /// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
@@ -38,7 +37,7 @@ pub trait Simplify<I: IntNumber> {
 
 impl<I> Simplify<I> for [IntPoint<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
@@ -51,7 +50,7 @@ where
 
 impl<I> Simplify<I> for [IntContour<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
@@ -64,7 +63,7 @@ where
 
 impl<I> Simplify<I> for [IntShape<I>]
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
@@ -80,7 +79,7 @@ enum ContourFillDirection {
 
 impl<I> Overlay<I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     /// Fast-path simplification for a single contour.
     ///

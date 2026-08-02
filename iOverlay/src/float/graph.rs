@@ -4,16 +4,15 @@
 
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::graph::OverlayGraph;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay_rule::OverlayRule;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
-use i_tree::{Expiration, LayoutNumber};
 
 /// The `FloatOverlayGraph` struct represents an overlay graph with floating point precision,
 /// providing methods to extract geometric shapes from the graph after applying boolean operations.
@@ -27,7 +26,7 @@ pub struct FloatOverlayGraph<'a, P: FloatPointCompatible, I: IntNumber = i32> {
 impl<'a, P, I> FloatOverlayGraph<'a, P, I>
 where
     P: FloatPointCompatible,
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     #[inline]
     pub(crate) fn new(

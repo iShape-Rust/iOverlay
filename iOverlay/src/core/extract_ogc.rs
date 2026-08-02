@@ -4,20 +4,17 @@ use crate::core::extract::{
     BooleanExtractionBuffer, GraphContour, GraphUtil, StartPathData, Visit, VisitState,
 };
 use crate::core::graph::OverlayGraph;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
 use alloc::vec;
 use alloc::vec::Vec;
-use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
-use i_key_sort::sort::key::SortKey;
 use i_shape::int::shape::{IntShape, IntShapes};
-use i_shape::util::reserve::Reserve;
-use i_tree::Expiration;
 
 impl<I> OverlayGraph<'_, I>
 where
-    I: IntNumber + Expiration + SortKey,
+    I: OverlayInt,
 {
     pub(crate) fn extract_ogc(
         &self,
@@ -39,7 +36,9 @@ where
 
         let mut shapes = Vec::new();
 
-        buffer.points.reserve_capacity(buffer.visited.len());
+        buffer
+            .points
+            .reserve(buffer.visited.len().saturating_sub(buffer.points.len()));
         let mut hole_count_hint = 0;
 
         let mut link_index = 0;
@@ -239,7 +238,7 @@ where
             global_visited,
         );
 
-        let mut original_contour_len = 1;
+        let mut original_contour_len: usize = 1;
 
         // Find a closed tour
         while link_id != last_link_id {
@@ -272,7 +271,7 @@ where
         // Revisit the contour in reverse;
         // all links escape current contour are skipped in `contour_visited`.
 
-        points.reserve_capacity(original_contour_len);
+        points.reserve(original_contour_len.saturating_sub(points.len()));
         self.find_contour(
             start_data,
             !clockwise,

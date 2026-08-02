@@ -1,15 +1,13 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::rule::StringRule;
 use i_float::float::compatible::FloatPointCompatible;
-use i_float::int::number::int::IntNumber;
-use i_key_sort::sort::key::SortKey;
 use i_shape::base::data::Shapes;
 use i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
 /// allowing for boolean operations based on the specified build rule.
@@ -52,7 +50,7 @@ where
     /// Same as [`Self::slice_by`], but with an explicit integer engine.
     fn slice_by_as<I>(&self, resource: &R, fill_rule: FillRule) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Slices the current shapes by string lines with a fixed float-to-integer scale.
     ///
@@ -82,7 +80,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Slices the current shapes by string lines.
     ///
@@ -114,7 +112,7 @@ where
         solver: Solver,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Slices the current shapes by string lines with a fixed float-to-integer scale.
     ///
@@ -149,7 +147,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 }
 
 impl<R0, R1, P> FloatSlice<R0, P> for R1
@@ -169,7 +167,7 @@ where
     #[inline]
     fn slice_by_as<I>(&self, resource: &R0, fill_rule: FillRule) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatStringOverlay::<P, I>::from_shape_and_string(self, resource)
             .build_graph_view(fill_rule)
@@ -200,7 +198,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         Ok(
             FloatStringOverlay::<P, I>::from_shape_and_string_fixed_scale(self, resource, scale)?
@@ -233,7 +231,7 @@ where
         solver: Solver,
     ) -> Shapes<P>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         FloatStringOverlay::<P, I>::from_shape_and_string(self, resource)
             .build_graph_view_with_solver(fill_rule, solver)
@@ -268,7 +266,7 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         Ok(
             FloatStringOverlay::<P, I>::from_shape_and_string_fixed_scale(self, resource, scale)?
