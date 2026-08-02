@@ -30,8 +30,8 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
   - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
   - [Clipping a Polyline by a Polygon](#clipping-a-polyline-by-a-polygon)
 - [Buffering](#buffering)
-  - [Offseting a Path](#offseting-a-path)
-  - [Offseting a Polygon](#offseting-a-polygon)
+  - [Offsetting a Path](#offsetting-a-path)
+  - [Offsetting a Polygon](#offsetting-a-polygon)
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
 - [FAQ](#faq)
@@ -56,7 +56,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Buffering**: offsets paths and polygons.
 - **Fill Rules**: even-odd, non-zero, positive and negative.
-- **Data Types**: Supports `i16`/`i32`/`i64` integer APIs and `f32`/`f64` floating-point APIs.
+- **Data Types**: supports `i16`/`i32`/`i64` integer APIs and `f32`/`f64` floating-point APIs.
 
 &nbsp;
 ## Demo
@@ -72,8 +72,13 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 
 iOverlay supports:
 
-- `i16`/`i32`/`i64` math solvers
-- `on`/`off` multithreading feature
+- `i16`/`i32`/`i64` integer engines
+- Optional multithreading for large inputs through the `allow_multithreading` Cargo feature
+
+```toml
+[dependencies]
+i_overlay = { version = "^8.0", features = ["allow_multithreading"] }
+```
 
 <img src="readme/average_relative_time.svg" alt="Average relative time for iOverlay Rust solvers" style="max-width:860px;width:100%;">
 
@@ -175,13 +180,13 @@ The result is a vec of shapes:
 ```
 &nbsp;
 
-The `overlay` function returns a `Vec<Shapes>`:
+The `overlay` function returns `Shapes<P>`, which is an alias for `Vec<Shape<P>>`:
 
-- `Vec<Shape>`: A collection of shapes.
-- `Shape`: Represents a shape made up of:
-  - `Vec<Contour>`: A list of contours.
+- `Shapes<P>`: a collection of shapes.
+- `Shape<P>`: a shape made up of:
+  - `Vec<Contour<P>>`: a list of contours.
   - The first contour is the outer boundary (counterclockwise), and subsequent contours represent holes (clockwise).
-- `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
+- `Contour<P>`: a sequence of points (`Vec<P>`) forming a closed contour, where `P` implements `FloatPointCompatible`.
 
 **Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
@@ -216,7 +221,9 @@ enum EdgeKind {
 }
 
 impl OverlayEdgeData for EdgeKind {
-    fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>) -> Self {
+    type Store = ();
+
+    fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>, _store: &mut Self::Store) -> Self {
         match (ctx.lhs_data, ctx.rhs_data) {
             (EdgeKind::Red, EdgeKind::Red) => EdgeKind::Red,
             (EdgeKind::Green, EdgeKind::Green) => EdgeKind::Green,
