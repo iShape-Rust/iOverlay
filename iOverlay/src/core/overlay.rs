@@ -389,6 +389,7 @@ where
     ) {
         self.split_solver.split_segments(&mut self.segments, &self.solver);
         if self.segments.is_empty() {
+            output.clear_and_reserve(0, 0);
             return;
         }
         let mut buffer = self.boolean_buffer.take().unwrap_or_default();
@@ -454,6 +455,7 @@ mod tests {
     use crate::core::overlay_rule::OverlayRule;
     use alloc::vec;
     use i_float::int::point::IntPoint;
+    use i_shape::flat::buffer::FlatContoursBuffer;
     use i_shape::int::area::Area;
     use i_shape::int::shape::IntContour;
 
@@ -857,5 +859,17 @@ mod tests {
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn test_overlay_into_clears_output_for_empty_input() {
+        let mut output = FlatContoursBuffer::default();
+        output.set_with_contour(&[IntPoint::new(0, 0), IntPoint::new(10, 0), IntPoint::new(0, 10)]);
+
+        let mut overlay = Overlay::<i32>::new(0);
+        overlay.overlay_into(OverlayRule::Subject, FillRule::NonZero, &mut output);
+
+        assert!(output.points.is_empty());
+        assert!(output.ranges.is_empty());
     }
 }
