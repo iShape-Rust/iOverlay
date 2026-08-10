@@ -28,107 +28,98 @@ pub trait VariableStrokeOffset<P>: VariableStrokeSource<P>
 where
     P: FloatPointCompatible + 'static,
 {
-    fn variable_stroke(&self, style: VariableStrokeStyle<P::Scalar>, is_closed: bool) -> Shapes<P> {
-        self.variable_stroke_custom(style, is_closed, Default::default())
+    fn variable_stroke(&self, style: VariableStrokeStyle<P::Scalar>) -> Shapes<P> {
+        self.variable_stroke_custom(style, Default::default())
     }
 
     fn variable_stroke_into(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        self.variable_stroke_custom_into(style, is_closed, Default::default(), output)
+        self.variable_stroke_custom_into(style, Default::default(), output)
     }
 
     fn variable_stroke_custom(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        self.variable_stroke_custom_as::<i32>(style, is_closed, options)
+        self.variable_stroke_custom_as::<i32>(style, options)
     }
 
     fn variable_stroke_custom_into(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        self.variable_stroke_custom_into_as::<i32>(style, is_closed, options, output)
+        self.variable_stroke_custom_into_as::<i32>(style, options, output)
     }
 
     fn variable_stroke_fixed_scale(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        self.variable_stroke_custom_fixed_scale(style, is_closed, Default::default(), scale)
+        self.variable_stroke_custom_fixed_scale(style, Default::default(), scale)
     }
 
     fn variable_stroke_fixed_scale_into(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
-        self.variable_stroke_custom_fixed_scale_into(style, is_closed, Default::default(), scale, output)
+        self.variable_stroke_custom_fixed_scale_into(style, Default::default(), scale, output)
     }
 
     fn variable_stroke_custom_fixed_scale(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar>,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        self.variable_stroke_custom_fixed_scale_as::<i32>(style, is_closed, options, scale)
+        self.variable_stroke_custom_fixed_scale_as::<i32>(style, options, scale)
     }
 
     fn variable_stroke_custom_fixed_scale_into(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar>,
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
-        self.variable_stroke_custom_fixed_scale_into_as::<i32>(style, is_closed, options, scale, output)
+        self.variable_stroke_custom_fixed_scale_into_as::<i32>(style, options, scale, output)
     }
 
-    fn variable_stroke_as<I>(&self, style: VariableStrokeStyle<P::Scalar>, is_closed: bool) -> Shapes<P>
+    fn variable_stroke_as<I>(&self, style: VariableStrokeStyle<P::Scalar>) -> Shapes<P>
     where
         I: OverlayInt + 'static,
     {
-        self.variable_stroke_custom_as::<I>(style, is_closed, Default::default())
+        self.variable_stroke_custom_as::<I>(style, Default::default())
     }
 
     fn variable_stroke_into_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
         I: OverlayInt + 'static,
     {
-        self.variable_stroke_custom_into_as::<I>(style, is_closed, Default::default(), output)
+        self.variable_stroke_custom_into_as::<I>(style, Default::default(), output)
     }
 
     fn variable_stroke_custom_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P>
     where
         I: OverlayInt + 'static,
     {
         match VariableStrokeSolver::<P, I>::prepare(self, style) {
-            Some(solver) => solver.build(self, is_closed, options),
+            Some(solver) => solver.build(self, options),
             None => vec![],
         }
     }
@@ -136,14 +127,13 @@ where
     fn variable_stroke_custom_into_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) where
         I: OverlayInt + 'static,
     {
         match VariableStrokeSolver::<P, I>::prepare(self, style) {
-            Some(solver) => solver.build_into(self, is_closed, options, output),
+            Some(solver) => solver.build_into(self, options, output),
             None => output.clear_and_reserve(0, 0),
         }
     }
@@ -151,38 +141,29 @@ where
     fn variable_stroke_fixed_scale_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
     where
         I: OverlayInt + 'static,
     {
-        self.variable_stroke_custom_fixed_scale_as::<I>(style, is_closed, Default::default(), scale)
+        self.variable_stroke_custom_fixed_scale_as::<I>(style, Default::default(), scale)
     }
 
     fn variable_stroke_fixed_scale_into_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError>
     where
         I: OverlayInt + 'static,
     {
-        self.variable_stroke_custom_fixed_scale_into_as::<I>(
-            style,
-            is_closed,
-            Default::default(),
-            scale,
-            output,
-        )
+        self.variable_stroke_custom_fixed_scale_into_as::<I>(style, Default::default(), scale, output)
     }
 
     fn variable_stroke_custom_fixed_scale_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar, I>,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>
@@ -194,13 +175,12 @@ where
             None => return Ok(vec![]),
         };
         solver.apply_scale(scale)?;
-        Ok(solver.build(self, is_closed, options))
+        Ok(solver.build(self, options))
     }
 
     fn variable_stroke_custom_fixed_scale_into_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar, I>,
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
@@ -216,7 +196,7 @@ where
             }
         };
         solver.apply_scale(scale)?;
-        solver.build_into(self, is_closed, options, output);
+        solver.build_into(self, options, output);
         Ok(())
     }
 }
@@ -257,10 +237,6 @@ where
             paths_count += 1;
             points_count += path.len();
             for vertex in path {
-                if !vertex.point.x().is_finite() || !vertex.point.y().is_finite() || !vertex.width.is_finite()
-                {
-                    continue;
-                }
                 max_radius = max_radius.max(vertex.radius());
                 if let Some(rect) = rect.as_mut() {
                     rect.add_point(&vertex.point);
@@ -296,20 +272,15 @@ where
     fn build<S: VariableStrokeSource<P> + ?Sized>(
         self,
         source: &S,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar, I>,
     ) -> Shapes<P> {
         if self.radius_is_too_small() {
             return vec![];
         }
 
-        let mut segments = Vec::with_capacity(self.builder.capacity(
-            self.paths_count,
-            self.points_count,
-            is_closed,
-        ));
+        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
         for path in source.iter_variable_paths() {
-            self.builder.build(path, is_closed, &self.adapter, &mut segments);
+            self.builder.build(path, &self.adapter, &mut segments);
         }
 
         let mut overlay = Overlay::with_segments(segments);
@@ -330,7 +301,6 @@ where
     fn build_into<S: VariableStrokeSource<P> + ?Sized>(
         self,
         source: &S,
-        is_closed: bool,
         options: OverlayOptions<P::Scalar, I>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
@@ -339,13 +309,9 @@ where
             return;
         }
 
-        let mut segments = Vec::with_capacity(self.builder.capacity(
-            self.paths_count,
-            self.points_count,
-            is_closed,
-        ));
+        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
         for path in source.iter_variable_paths() {
-            self.builder.build(path, is_closed, &self.adapter, &mut segments);
+            self.builder.build(path, &self.adapter, &mut segments);
         }
 
         let mut overlay = Overlay::with_segments(segments);
@@ -393,7 +359,7 @@ mod tests {
             StrokeVertex::new([0.0, 0.0], 4.0),
             StrokeVertex::new([10.0, 0.0], 4.0),
         ];
-        let shapes = path.variable_stroke(VariableStrokeStyle::new(), false);
+        let shapes = path.variable_stroke(VariableStrokeStyle::new());
         assert_eq!(shapes.len(), 1);
         assert_eq!(shapes[0].len(), 1);
     }
@@ -404,17 +370,7 @@ mod tests {
             StrokeVertex::new([0.0, 0.0], 2.0),
             StrokeVertex::new([10.0, 0.0], 6.0),
         ];
-        let shapes = path.variable_stroke_as::<i64>(VariableStrokeStyle::new(), false);
-        assert!(!shapes.is_empty());
-    }
-
-    #[test]
-    fn covered_section_does_not_panic() {
-        let path = [
-            StrokeVertex::new([0.0, 0.0], 2.0),
-            StrokeVertex::new([2.0, 0.0], 8.0),
-        ];
-        let shapes = path.variable_stroke(VariableStrokeStyle::new(), false);
+        let shapes = path.variable_stroke_as::<i64>(VariableStrokeStyle::new());
         assert!(!shapes.is_empty());
     }
 
@@ -424,7 +380,7 @@ mod tests {
             StrokeVertex::new([0.0, 0.0], 0.0),
             StrokeVertex::new([10.0, 0.0], 0.0),
         ];
-        let shapes = path.variable_stroke(VariableStrokeStyle::new(), false);
+        let shapes = path.variable_stroke(VariableStrokeStyle::new());
         assert!(shapes.is_empty());
     }
 
@@ -434,7 +390,7 @@ mod tests {
         let path = points.map(|point| StrokeVertex::new(point, 4.0));
         let angle = 0.1;
         let actual = path
-            .variable_stroke_fixed_scale(VariableStrokeStyle::new().round_angle(angle), false, 1_000.0)
+            .variable_stroke_fixed_scale(VariableStrokeStyle::new().round_angle(angle), 1_000.0)
             .unwrap();
         let expected = points
             .stroke_fixed_scale(
@@ -452,22 +408,6 @@ mod tests {
     }
 
     #[test]
-    fn covered_edge_adds_cap_not_full_circle() {
-        let path = [
-            StrokeVertex::new([0.0f64, 0.0], 2.0),
-            StrokeVertex::new([2.0, 0.0], 8.0),
-        ];
-        let shapes = path
-            .variable_stroke_fixed_scale(VariableStrokeStyle::new(), false, 1_000.0)
-            .unwrap();
-        let area = shapes.area();
-        let full_circle = core::f64::consts::PI * 16.0;
-
-        assert!(area > 0.0);
-        assert!(area < 0.6 * full_circle, "unexpected full-circle area: {area}");
-    }
-
-    #[test]
     fn reversing_regular_path_preserves_area() {
         let path = vec![
             StrokeVertex::new([0.0f64, 0.0], 2.0),
@@ -477,30 +417,14 @@ mod tests {
         let mut reversed = path.clone();
         reversed.reverse();
         let style = VariableStrokeStyle::new().round_angle(0.08);
-        let forward = path.variable_stroke_fixed_scale(style, false, 10_000.0).unwrap();
-        let backward = reversed
-            .variable_stroke_fixed_scale(style, false, 10_000.0)
-            .unwrap();
+        let forward = path.variable_stroke_fixed_scale(style, 10_000.0).unwrap();
+        let backward = reversed.variable_stroke_fixed_scale(style, 10_000.0).unwrap();
 
         assert!((forward.area() - backward.area()).abs() < 0.01);
     }
 
     #[test]
-    fn reverse_covered_edge_breaks_from_remaining_chain() {
-        let paths = vec![vec![
-            StrokeVertex::new([1.41_f32, 5.16_f32], 80.0_f32),
-            StrokeVertex::new([27.369_999_f32, 4.11_f32], 6.0_f32),
-            StrokeVertex::new([65.0_f32, -20.0_f32], 18.0_f32),
-            StrokeVertex::new([105.0_f32, 0.0_f32], 8.0_f32),
-        ]];
-        let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = paths.variable_stroke(style, false);
-
-        assert_eq!(result.len(), 2);
-    }
-
-    #[test]
-    fn variable_tangent_join_does_not_leave_center_notch() {
+    fn variable_tangent_outline_does_not_leave_center_notch() {
         let paths = vec![vec![
             StrokeVertex::new([0.0_f32, 0.0_f32], 6.0_f32),
             StrokeVertex::new([46.829_998_f32, 14.88_f32], 18.0_f32),
@@ -509,7 +433,7 @@ mod tests {
             StrokeVertex::new([140.0_f32, 15.0_f32], 30.0_f32),
         ]];
         let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = paths.variable_stroke(style, false);
+        let result = paths.variable_stroke(style);
         let join = paths[0][1].point;
         let has_center_notch = result
             .iter()
@@ -521,7 +445,7 @@ mod tests {
     }
 
     #[test]
-    fn reversed_tangent_order_builds_local_join_fan() {
+    fn reversed_tangent_order_builds_outline() {
         let paths = vec![vec![
             StrokeVertex::new([0.0_f32, 0.0_f32], 4.5_f32),
             StrokeVertex::new([45.32_f32, 9.559_999_f32], 13.5_f32),
@@ -530,7 +454,7 @@ mod tests {
             StrokeVertex::new([140.0_f32, 15.0_f32], 22.5_f32),
         ]];
         let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = paths.variable_stroke(style, false);
+        let result = paths.variable_stroke(style);
 
         assert_eq!(result.len(), 1);
     }
@@ -545,9 +469,34 @@ mod tests {
             StrokeVertex::new([140.0_f32, 15.0_f32], 30.0_f32),
         ]];
         let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = paths.variable_stroke(style, false);
+        let result = paths.variable_stroke(style);
 
         assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn u_turn_keeps_round_outline_at_reversal_vertex() {
+        let paths = vec![vec![
+            StrokeVertex::new([0.0_f32, 0.0_f32], 8.0_f32),
+            StrokeVertex::new([60.0_f32, 0.0_f32], 20.0_f32),
+            StrokeVertex::new([12.309_999_f32, 5.91_f32], 10.0_f32),
+            StrokeVertex::new([65.0_f32, 20.0_f32], 16.0_f32),
+        ]];
+        let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
+        let result = paths.variable_stroke(style);
+        let min_y_near_reversal = result
+            .iter()
+            .flatten()
+            .flatten()
+            .filter(|point| point[0] > 50.0)
+            .map(|point| point[1])
+            .fold(f32::MAX, f32::min);
+
+        assert_eq!(result.len(), 1);
+        assert!(
+            min_y_near_reversal < -9.5,
+            "round outline at the reversal vertex was lost: y={min_y_near_reversal}"
+        );
     }
 
     #[test]
@@ -560,47 +509,28 @@ mod tests {
             StrokeVertex::new([156.72_f32, -34.079_998_f32], 30.0_f32),
         ]];
         let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = paths.variable_stroke(style, false);
+        let result = paths.variable_stroke(style);
 
         assert_eq!(result.len(), 1);
     }
 
     #[test]
-    fn covered_edge_breaks_from_regular_chain() {
-        let path = vec![
-            StrokeVertex::new([-20.0_f32, 0.0_f32], 2.0_f32),
-            StrokeVertex::new([0.0_f32, 0.0_f32], 10.0_f32),
-            StrokeVertex::new([2.0_f32, 0.0_f32], 20.0_f32),
-        ];
-        let result = path.variable_stroke(VariableStrokeStyle::new(), false);
-        assert_eq!(result.len(), 2);
-    }
-
-    #[test]
-    fn covered_last_edge_builds_only_larger_cap() {
+    fn covered_open_taper_uses_larger_vertex_as_round_start() {
         let paths = vec![vec![
-            StrokeVertex::new([-55.78_f32, 25.289_999_f32], 6.0_f32),
-            StrokeVertex::new([-16.39_f32, 28.369_999_f32], 18.0_f32),
-            StrokeVertex::new([36.82_f32, 30.15_f32], 42.0_f32),
-            StrokeVertex::new([105.0_f32, 25.0_f32], 15.0_f32),
-            StrokeVertex::new([109.49_f32, 24.859_999_f32], 30.0_f32),
+            StrokeVertex::new([0.0_f32, 0.0_f32], 6.0_f32),
+            StrokeVertex::new([3.86_f32, 0.28_f32], 18.0_f32),
+            StrokeVertex::new([75.06_f32, 40.12_f32], 42.0_f32),
+            StrokeVertex::new([145.72_f32, 11.719_999_f32], 15.0_f32),
+            StrokeVertex::new([159.519_99_f32, 60.34_f32], 30.0_f32),
         ]];
         let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = paths.variable_stroke(style, false);
+        let result = paths.variable_stroke(style);
 
-        assert_eq!(result.len(), 2);
-    }
+        assert_eq!(result.len(), 1);
 
-    #[test]
-    fn covered_two_point_edge_caps_outside_larger_end() {
-        let path = vec![
-            StrokeVertex::new([0.0_f32, 0.0_f32], 3.48_f32),
-            StrokeVertex::new([14.849_999_f32, 0.06_f32], 38.28_f32),
-        ];
-        let style = VariableStrokeStyle::new().round_angle(0.179_999_99_f32);
-        let result = path.variable_stroke(style, false);
-        let center = path[1].point;
-        let vector = [center[0] - path[0].point[0], center[1] - path[0].point[1]];
+        let center = paths[0][1].point;
+        let next = paths[0][2].point;
+        let vector = [next[0] - center[0], next[1] - center[1]];
         let length = (vector[0] * vector[0] + vector[1] * vector[1]).sqrt();
         let direction = [vector[0] / length, vector[1] / length];
         let min_projection = result
@@ -611,8 +541,8 @@ mod tests {
             .fold(f32::MAX, f32::min);
 
         assert!(
-            min_projection >= -0.01,
-            "covered cap points into the broken edge: projection={min_projection}"
+            min_projection < -8.5,
+            "round start does not cover the larger circle: projection={min_projection}"
         );
     }
 }

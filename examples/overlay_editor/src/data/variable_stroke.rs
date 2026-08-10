@@ -1,0 +1,110 @@
+use serde::Deserialize;
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct VariableStrokeVertex {
+    pub(crate) point: [f32; 2],
+    pub(crate) width: f32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct VariableStrokeTest {
+    pub(crate) scale: f32,
+    pub(crate) stroke: Vec<Vec<VariableStrokeVertex>>,
+}
+
+impl VariableStrokeTest {
+    fn load(index: usize, folder: &str) -> Option<Self> {
+        let file_name = format!("test_{}.json", index);
+        let mut path_buf = PathBuf::from(folder);
+        path_buf.push(file_name);
+
+        let data = match std::fs::read_to_string(path_buf.as_path()) {
+            Ok(data) => data,
+            Err(e) => {
+                eprintln!("{:?}", e);
+                return None;
+            }
+        };
+
+        match serde_json::from_str(&data) {
+            Ok(test) => Some(test),
+            Err(e) => {
+                eprintln!("Failed to parse JSON: {}", e);
+                None
+            }
+        }
+    }
+
+    fn tests_count(folder: &str) -> usize {
+        let folder_path = PathBuf::from(folder);
+        match std::fs::read_dir(folder_path) {
+            Ok(entries) => entries
+                .filter_map(|entry| {
+                    entry.ok().and_then(|e| {
+                        let path = e.path();
+                        if path.extension()?.to_str()? == "json" {
+                            Some(())
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .count(),
+            Err(e) => {
+                eprintln!("Failed to read directory: {}", e);
+                0
+            }
+        }
+    }
+}
+
+pub(crate) struct VariableStrokeResource {
+    folder: Option<String>,
+    pub(crate) count: usize,
+    pub(crate) tests: HashMap<usize, VariableStrokeTest>,
+}
+
+impl VariableStrokeResource {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn with_path(folder: &str) -> Self {
+        let count = VariableStrokeTest::tests_count(folder);
+        Self {
+            count,
+            folder: Some(folder.to_string()),
+            tests: Default::default(),
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn with_content(content: &String) -> Self {
+        let tests_vec: Vec<VariableStrokeTest> =
+            serde_json::from_str(content).unwrap_or_else(|e| {
+                eprintln!("Failed to parse JSON content: {}", e);
+                vec![]
+            });
+
+        let tests: HashMap<usize, VariableStrokeTest> = tests_vec.into_iter().enumerate().collect();
+        let count = tests.len();
+        Self {
+            count,
+            folder: None,
+            tests,
+        }
+    }
+
+    pub(crate) fn load(&mut self, index: usize) -> Option<VariableStrokeTest> {
+        if self.count <= index {
+            return None;
+        }
+        if let Some(test) = self.tests.get(&index) {
+            return Some(test.clone());
+        }
+
+        let folder = self.folder.as_ref()?;
+        let test = VariableStrokeTest::load(index, folder)?;
+        self.tests.insert(index, test.clone());
+        Some(test)
+    }
+}

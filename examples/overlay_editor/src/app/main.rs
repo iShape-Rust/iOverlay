@@ -87,7 +87,7 @@ impl EditorApp {
                 boolean: BooleanState::new(&mut app_resource.boolean),
                 string: StringState::new(&mut app_resource.string),
                 stroke: StrokeState::new(&mut app_resource.stroke),
-                variable_stroke: VariableStrokeState::new(),
+                variable_stroke: VariableStrokeState::new(&mut app_resource.variable_stroke),
                 outline: OutlineState::new(&mut app_resource.outline),
             },
             app_resource,
