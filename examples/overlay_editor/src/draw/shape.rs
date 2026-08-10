@@ -8,8 +8,8 @@ use i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_shape::int::count::PointsCount;
-use i_triangle::i_overlay::i_shape::int::path::IntPaths;
-use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
+use i_triangle::i_overlay::i_shape::int::path::IntPaths as RawIntPaths;
+use i_triangle::i_overlay::i_shape::int::shape::IntShapes as RawIntShapes;
 use i_triangle::int::triangulation::IntTriangulation;
 use i_triangle::int::triangulator::IntTriangulator;
 use i_triangle::int::validation::Validation;
@@ -21,6 +21,9 @@ use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
 use iced::{mouse, Color, Transformation, Vector};
 use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
+
+type IntPaths = RawIntPaths<i32>;
+type IntShapes = RawIntShapes<i32>;
 
 pub(crate) struct ShapeWidget {
     fill: Option<Mesh>,
@@ -99,7 +102,7 @@ impl ShapeWidget {
     }
 
     fn fill_mesh_for_triangulation(
-        triangulation: IntTriangulation<usize>,
+        triangulation: IntTriangulation<i32, usize>,
         camera: Camera,
         offset: Vector<f32>,
         color: Color,
@@ -154,8 +157,7 @@ impl ShapeWidget {
                     })
                     .collect();
 
-                let sub_triangulation =
-                    stroke_builder.build_closed_path_mesh::<usize>(&world_path);
+                let sub_triangulation = stroke_builder.build_closed_path_mesh::<usize>(&world_path);
                 builder.append(sub_triangulation);
             }
         }
@@ -191,8 +193,7 @@ impl ShapeWidget {
                 })
                 .collect();
 
-            let sub_triangulation =
-                stroke_builder.build_closed_path_mesh::<usize>(&world_path);
+            let sub_triangulation = stroke_builder.build_closed_path_mesh::<usize>(&world_path);
             builder.append(sub_triangulation);
         }
 

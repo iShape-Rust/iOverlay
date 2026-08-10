@@ -1,4 +1,5 @@
 use crate::bind::solver::JoinHoles;
+use crate::core::integer::OverlayInt;
 use crate::core::nearest_vector::NearestVector;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions};
 use crate::segm::segment::SUBJ_TOP;
@@ -10,18 +11,18 @@ use alloc::vec::Vec;
 use i_shape::int::path::{ContourExtension, IntPath};
 use i_shape::int::shape::IntShapes;
 
-impl StringGraph<'_> {
+impl<I: OverlayInt> StringGraph<'_, I> {
     /// Extracts shapes from the graph based on the specified `StringRule`.
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     #[inline(always)]
-    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes {
+    pub fn extract_shapes(&self, string_rule: StringRule) -> IntShapes<I> {
         self.extract_shapes_custom(string_rule, Default::default())
     }
 
@@ -29,15 +30,19 @@ impl StringGraph<'_> {
     /// - `string_rule`: The rule used to determine how shapes are extracted.
     /// - `main_direction`: Winding direction for the **output** main (outer) contour. All hole contours will automatically use the opposite direction. Impact on **output** only!
     /// - `min_area`: The minimum area that a shape must have to be included in the results. Shapes smaller than this will be excluded.
-    /// - Returns: A vector of `IntShape`, representing the geometric result of the applied overlay rule.
+    /// - Returns: A vector of `IntShape<I>`, representing the geometric result of the applied overlay rule.
     /// # Shape Representation
-    /// The output is a `IntShapes`, where:
-    /// - The outer `Vec<IntShape>` represents a set of shapes.
-    /// - Each shape `Vec<IntContour>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
+    /// The output is a `IntShapes<I>`, where:
+    /// - The outer `Vec<IntShape<I>>` represents a set of shapes.
+    /// - Each shape `Vec<IntContour<I>>` represents a collection of contours, where the first contour is the outer boundary, and all subsequent contours are holes in this boundary.
     /// - Each path `Vec<IntPoint>` is a sequence of points, forming a closed path.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
-    pub fn extract_shapes_custom(&self, string_rule: StringRule, options: IntOverlayOptions) -> IntShapes {
+    pub fn extract_shapes_custom(
+        &self,
+        string_rule: StringRule,
+        options: IntOverlayOptions<I::WideUInt>,
+    ) -> IntShapes<I> {
         let clockwise = options.output_direction == ContourDirection::Clockwise;
         let mut fills = self.filter(string_rule);
         let mut shapes = Vec::new();
@@ -85,7 +90,7 @@ impl StringGraph<'_> {
     }
 
     #[inline]
-    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath {
+    fn get_paths(&self, start_index: usize, clockwise: bool, fills: &mut [u8]) -> IntPath<I> {
         let start_link = unsafe {
             // SAFETY: start_index originates from iterating the fills array, which mirrors links.
             self.links.get_unchecked(start_index)
@@ -95,7 +100,7 @@ impl StringGraph<'_> {
         let mut node_id = start_link.b.id;
         let last_node_id = start_link.a.id;
 
-        let mut path = IntPath::new();
+        let mut path = IntPath::<I>::new();
         path.push(start_link.a.point);
 
         fills[start_index] = start_link.visit_fill(fills[start_index], start_link.a.id, clockwise);
@@ -251,6 +256,31 @@ mod tests {
         ];
 
         let mut overlay = StringOverlay::with_shape(&paths);
+        overlay.add_string_contour(&window);
+        let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
+
+        let r = graph.extract_shapes_custom(StringRule::Slice, Default::default());
+
+        assert_eq!(r.len(), 2);
+    }
+
+    #[test]
+    fn test_i64_overlay() {
+        let paths = vec![vec![
+            IntPoint::<i64>::new(-10, 10),
+            IntPoint::new(-10, -10),
+            IntPoint::new(10, -10),
+            IntPoint::new(10, 10),
+        ]];
+
+        let window = vec![
+            IntPoint::new(-5, -5),
+            IntPoint::new(-5, 5),
+            IntPoint::new(5, 5),
+            IntPoint::new(5, -5),
+        ];
+
+        let mut overlay = StringOverlay::<i64>::with_shape(&paths);
         overlay.add_string_contour(&window);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
 

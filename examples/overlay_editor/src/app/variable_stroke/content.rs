@@ -1,23 +1,21 @@
 use crate::app::design;
 use crate::app::main::{AppMessage, EditorApp};
-use crate::app::stroke::control::{CapOption, JoinOption};
 use crate::app::variable_stroke::workspace::WorkspaceState;
 use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
-use i_triangle::i_overlay::mesh::style::{LineCap, LineJoin};
 use i_triangle::i_overlay::mesh::variable_stroke::offset::VariableStrokeOffset;
 use i_triangle::i_overlay::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
 use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::fmt::Write;
 
 #[derive(Debug, Clone)]
 pub(crate) struct VariableStrokePoint {
-    pub(crate) pos: IntPoint,
+    pub(crate) pos: IntPoint<i32>,
     pub(crate) width: f32,
 }
 
@@ -32,12 +30,7 @@ struct VariableStrokeExample {
 pub(crate) struct VariableStrokeState {
     pub(crate) test: usize,
     pub(crate) width_scale: f32,
-    pub(crate) start_cap: CapOption,
-    pub(crate) start_cap_value: u8,
-    pub(crate) end_cap: CapOption,
-    pub(crate) end_cap_value: u8,
-    pub(crate) join: JoinOption,
-    pub(crate) join_value: u8,
+    pub(crate) round_angle: u8,
     pub(crate) is_closed: bool,
     pub(crate) workspace: WorkspaceState,
     pub(crate) size: Size,
@@ -49,12 +42,7 @@ pub(crate) struct VariableStrokeState {
 pub(crate) enum VariableStrokeMessage {
     TestSelected(usize),
     WidthScaleUpdated(f32),
-    StartCapSelected(CapOption),
-    StartCapValueUpdated(u8),
-    EndCapSelected(CapOption),
-    EndCapValueUpdated(u8),
-    JoinSelected(JoinOption),
-    JoinValueUpdated(u8),
+    RoundAngleUpdated(u8),
     IsClosedUpdated(bool),
     PointEdited(PointEditUpdate),
     WorkspaceSized(Size),
@@ -124,19 +112,8 @@ impl EditorApp {
             VariableStrokeMessage::WidthScaleUpdated(value) => {
                 self.variable_stroke_update_width_scale(value)
             }
-            VariableStrokeMessage::StartCapSelected(cap) => {
-                self.variable_stroke_update_start_cap(cap)
-            }
-            VariableStrokeMessage::StartCapValueUpdated(value) => {
-                self.variable_stroke_update_start_cap_value(value)
-            }
-            VariableStrokeMessage::EndCapSelected(cap) => self.variable_stroke_update_end_cap(cap),
-            VariableStrokeMessage::EndCapValueUpdated(value) => {
-                self.variable_stroke_update_end_cap_value(value)
-            }
-            VariableStrokeMessage::JoinSelected(join) => self.variable_stroke_update_join(join),
-            VariableStrokeMessage::JoinValueUpdated(value) => {
-                self.variable_stroke_update_join_value(value)
+            VariableStrokeMessage::RoundAngleUpdated(value) => {
+                self.variable_stroke_update_round_angle(value)
             }
             VariableStrokeMessage::IsClosedUpdated(is_closed) => {
                 self.variable_stroke_update_is_closed(is_closed)
@@ -189,33 +166,8 @@ impl EditorApp {
         self.state.variable_stroke.update_solution();
     }
 
-    fn variable_stroke_update_start_cap(&mut self, cap: CapOption) {
-        self.state.variable_stroke.start_cap = cap;
-        self.state.variable_stroke.update_solution();
-    }
-
-    fn variable_stroke_update_start_cap_value(&mut self, cap_value: u8) {
-        self.state.variable_stroke.start_cap_value = cap_value;
-        self.state.variable_stroke.update_solution();
-    }
-
-    fn variable_stroke_update_end_cap(&mut self, cap: CapOption) {
-        self.state.variable_stroke.end_cap = cap;
-        self.state.variable_stroke.update_solution();
-    }
-
-    fn variable_stroke_update_end_cap_value(&mut self, cap_value: u8) {
-        self.state.variable_stroke.end_cap_value = cap_value;
-        self.state.variable_stroke.update_solution();
-    }
-
-    fn variable_stroke_update_join(&mut self, join: JoinOption) {
-        self.state.variable_stroke.join = join;
-        self.state.variable_stroke.update_solution();
-    }
-
-    fn variable_stroke_update_join_value(&mut self, value: u8) {
-        self.state.variable_stroke.join_value = value;
+    fn variable_stroke_update_round_angle(&mut self, value: u8) {
+        self.state.variable_stroke.round_angle = value;
         self.state.variable_stroke.update_solution();
     }
 
@@ -231,12 +183,7 @@ impl VariableStrokeState {
         let mut state = VariableStrokeState {
             test: usize::MAX,
             width_scale: 1.0,
-            start_cap: CapOption::Round,
-            start_cap_value: 50,
-            end_cap: CapOption::Round,
-            end_cap_value: 50,
-            join: JoinOption::Round,
-            join_value: 50,
+            round_angle: 12,
             is_closed: false,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(examples.len()),
@@ -308,45 +255,10 @@ impl VariableStrokeState {
             float_paths.push(float_path);
         }
 
-        let mut style = VariableStrokeStyle::new();
+        let round_angle = 0.015 * self.round_angle as f32;
+        self.print_repro(&float_paths, round_angle);
 
-        match self.start_cap {
-            CapOption::Butt => style = style.start_cap(LineCap::Butt),
-            CapOption::Round => {
-                let ratio = 0.015 * self.start_cap_value as f32;
-                style = style.start_cap(LineCap::Round(ratio))
-            }
-            CapOption::Square => style = style.start_cap(LineCap::Square),
-            CapOption::Arrow => {
-                let points = vec![[-1.0, -2.0], [3.0, 0.0], [-1.0, 2.0]];
-                style = style.start_cap(LineCap::Custom(Rc::from(points)))
-            }
-        }
-
-        match self.end_cap {
-            CapOption::Butt => style = style.end_cap(LineCap::Butt),
-            CapOption::Round => {
-                let ratio = 0.015 * self.end_cap_value as f32;
-                style = style.end_cap(LineCap::Round(ratio))
-            }
-            CapOption::Square => style = style.end_cap(LineCap::Square),
-            CapOption::Arrow => {
-                let points = vec![[-1.0, -2.0], [3.0, 0.0], [-1.0, 2.0]];
-                style = style.end_cap(LineCap::Custom(Rc::from(points)))
-            }
-        }
-
-        match self.join {
-            JoinOption::Bevel => style = style.line_join(LineJoin::Bevel),
-            JoinOption::Miter => {
-                let ratio = 0.03 * self.join_value as f32;
-                style = style.line_join(LineJoin::Miter(ratio))
-            }
-            JoinOption::Round => {
-                let ratio = 0.015 * self.join_value as f32;
-                style = style.line_join(LineJoin::Round(ratio))
-            }
-        }
+        let style = VariableStrokeStyle::new().round_angle(round_angle);
 
         let float_shapes = float_paths.variable_stroke(style, self.is_closed);
 
@@ -367,6 +279,48 @@ impl VariableStrokeState {
         self.workspace.stroke_output = int_paths
     }
 
+    fn print_repro(&self, paths: &[Vec<StrokeVertex<[f32; 2]>>], round_angle: f32) {
+        let title = self
+            .examples
+            .get(self.test)
+            .map(|example| example.title)
+            .unwrap_or("Custom");
+        let mut dump = String::new();
+        let _ = writeln!(
+            dump,
+            "\n// Dynamic Width repro: test={} title={title:?} width_scale={:?}",
+            self.test, self.width_scale
+        );
+        let _ = writeln!(dump, "let paths = vec![");
+        for path in paths {
+            let _ = writeln!(dump, "    vec![");
+            for vertex in path {
+                let _ = writeln!(
+                    dump,
+                    "        StrokeVertex::new([{:?}_f32, {:?}_f32], {:?}_f32),",
+                    vertex.point[0], vertex.point[1], vertex.width
+                );
+            }
+            let _ = writeln!(dump, "    ],");
+        }
+        let _ = writeln!(dump, "];");
+        let _ = writeln!(
+            dump,
+            "let style = VariableStrokeStyle::new().round_angle({round_angle:?}_f32);"
+        );
+        let _ = writeln!(
+            dump,
+            "let result = paths.variable_stroke(style, {});",
+            self.is_closed
+        );
+
+        #[cfg(not(target_arch = "wasm32"))]
+        println!("{dump}");
+
+        #[cfg(target_arch = "wasm32")]
+        log::info!("{dump}");
+    }
+
     pub(super) fn variable_stroke_update_point(&mut self, update: PointEditUpdate) {
         self.workspace.points[update.index] = update.point.clone();
         let m_index = update.point.index;
@@ -379,6 +333,17 @@ impl VariableStrokeState {
 
 fn examples() -> Vec<VariableStrokeExample> {
     vec![
+        VariableStrokeExample {
+            title: "Equal width",
+            scale: 100.0,
+            is_closed: false,
+            paths: vec![vec![
+                ([0.0, 0.0], 12.0),
+                ([45.0, -15.0], 12.0),
+                ([85.0, 20.0], 12.0),
+                ([130.0, 0.0], 12.0),
+            ]],
+        },
         VariableStrokeExample {
             title: "Open taper",
             scale: 100.0,
@@ -433,6 +398,56 @@ fn examples() -> Vec<VariableStrokeExample> {
                     ([110.0, 20.0], 4.0),
                 ],
             ],
+        },
+        VariableStrokeExample {
+            title: "Coverage at limit",
+            scale: 100.0,
+            is_closed: false,
+            paths: vec![vec![([0.0, 0.0], 4.0), ([20.0, 0.0], 44.0)]],
+        },
+        VariableStrokeExample {
+            title: "Coverage beyond limit",
+            scale: 100.0,
+            is_closed: false,
+            paths: vec![vec![
+                ([0.0, 0.0], 6.0),
+                ([30.0, 0.0], 80.0),
+                ([65.0, 20.0], 12.0),
+                ([105.0, 0.0], 24.0),
+            ]],
+        },
+        VariableStrokeExample {
+            title: "Reverse coverage",
+            scale: 100.0,
+            is_closed: false,
+            paths: vec![vec![
+                ([0.0, 0.0], 80.0),
+                ([30.0, 0.0], 6.0),
+                ([65.0, -20.0], 18.0),
+                ([105.0, 0.0], 8.0),
+            ]],
+        },
+        VariableStrokeExample {
+            title: "Zero tip",
+            scale: 100.0,
+            is_closed: false,
+            paths: vec![vec![
+                ([0.0, 0.0], 0.0),
+                ([45.0, -10.0], 18.0),
+                ([90.0, 15.0], 4.0),
+                ([135.0, 0.0], 0.0),
+            ]],
+        },
+        VariableStrokeExample {
+            title: "U-turn break",
+            scale: 100.0,
+            is_closed: false,
+            paths: vec![vec![
+                ([0.0, 0.0], 8.0),
+                ([60.0, 0.0], 20.0),
+                ([5.0, 0.0], 10.0),
+                ([65.0, 20.0], 16.0),
+            ]],
         },
     ]
 }

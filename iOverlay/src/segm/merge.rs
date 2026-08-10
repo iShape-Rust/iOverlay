@@ -1,13 +1,29 @@
+use crate::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
 use crate::segm::segment::Segment;
 use crate::segm::winding::WindingCount;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 
-pub(crate) trait ShapeSegmentsMerge {
+pub(crate) trait ShapeSegmentsMerge<C, D>
+where
+    C: WindingCount,
+    D: OverlayEdgeData<C>,
+{
+    #[cfg(test)]
     fn merge_if_needed(&mut self) -> bool;
+    fn merge_if_needed_with_store(&mut self, store: &mut D::Store) -> bool;
 }
 
-impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
+impl<I: IntNumber, C: WindingCount, D: OverlayEdgeData<C>> ShapeSegmentsMerge<C, D>
+    for Vec<Segment<C, I, D>>
+{
+    #[cfg(test)]
     fn merge_if_needed(&mut self) -> bool {
+        let mut store = D::Store::default();
+        self.merge_if_needed_with_store(&mut store)
+    }
+
+    fn merge_if_needed_with_store(&mut self, store: &mut D::Store) -> bool {
         if self.len() < 2 {
             return false;
         }
@@ -16,7 +32,7 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
         for i in 1..self.len() {
             let this = &self[i].x_segment;
             if prev.eq(this) {
-                let new_len = merge(self, i);
+                let new_len = merge(self, i, store);
                 self.truncate(new_len);
                 return true;
             }
@@ -27,14 +43,31 @@ impl<C: WindingCount> ShapeSegmentsMerge for Vec<Segment<C>> {
     }
 }
 
-fn merge<C: WindingCount>(segments: &mut [Segment<C>], after: usize) -> usize {
+fn merge<I: IntNumber, C: WindingCount, D: OverlayEdgeData<C>>(
+    segments: &mut [Segment<C, I, D>],
+    after: usize,
+    store: &mut D::Store,
+) -> usize {
     let mut i = after;
     let mut j = i - 1;
     let mut prev = segments[j];
 
     while i < segments.len() {
         if prev.x_segment.eq(&segments[i].x_segment) {
-            prev.count.apply(segments[i].count);
+            let lhs_count = prev.count;
+            let rhs_count = segments[i].count;
+            let out_count = lhs_count.add(rhs_count);
+            prev.data = D::merge(
+                EdgeDataMerge {
+                    lhs_data: prev.data,
+                    lhs_count,
+                    rhs_data: segments[i].data,
+                    rhs_count,
+                    out_count,
+                },
+                store,
+            );
+            prev.count = out_count;
         } else {
             if prev.count.is_not_empty() {
                 segments[j] = prev;
@@ -60,9 +93,16 @@ mod tests {
     use alloc::vec;
     use i_float::int::point::IntPoint;
 
+    impl<C: WindingCount, I: IntNumber> Segment<C, I> {
+        fn create_and_validate(a: IntPoint<I>, b: IntPoint<I>, count: C) -> Self {
+            let mut store = ();
+            Self::create_and_validate_with_data(a, b, count, (), &mut store)
+        }
+    }
+
     #[test]
     fn test_merge_if_needed_empty() {
-        let mut segments: Vec<Segment<ShapeCountBoolean>> = Vec::new();
+        let mut segments: Vec<Segment<ShapeCountBoolean, i32>> = Vec::new();
         segments.merge_if_needed();
         assert!(
             segments.is_empty(),

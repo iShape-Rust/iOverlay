@@ -1,150 +1,239 @@
 use crate::mesh::rotator::Rotator;
-use crate::mesh::style::LineCap;
-use crate::mesh::variable_stroke::section::Section;
-use crate::segm::boolean::ShapeCountBoolean;
-use crate::segm::segment::Segment;
-use alloc::vec::Vec;
+use crate::mesh::variable_stroke::builder::PolygonBuilder;
+use crate::mesh::variable_stroke::section::{CoveredSection, Section};
 use core::f64::consts::PI;
-use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
-use i_float::int::point::IntPoint;
+use i_float::int::number::int::IntNumber;
 
-#[derive(Clone)]
-pub(super) struct CapBuilder<P: FloatPointCompatible> {
-    cap: LineCap<P>,
+#[derive(Clone, Copy)]
+pub(super) struct RoundFanBuilder<T: FloatNumber> {
+    angle: T,
 }
 
-impl<P: FloatPointCompatible> CapBuilder<P> {
+impl<T: FloatNumber> RoundFanBuilder<T> {
     #[inline]
-    pub(super) fn new(cap: LineCap<P>) -> Self {
-        Self { cap }
-    }
-
-    pub(super) fn add_to_start(
-        &self,
-        section: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let mut a = adapter.float_to_int(&section.a_top);
-        let dir = P::from_xy(-section.dir.x(), -section.dir.y());
-        let rotator = Rotator::with_vector(&dir);
-        self.add_points(section.a_radius, &rotator, &section.a, &mut a, adapter, segments);
-        Self::add_segment(a, adapter.float_to_int(&section.a_bot), segments);
-    }
-
-    pub(super) fn add_to_end(
-        &self,
-        section: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let mut a = adapter.float_to_int(&section.b_bot);
-        let rotator = Rotator::with_vector(&section.dir);
-        self.add_points(section.b_radius, &rotator, &section.b, &mut a, adapter, segments);
-        Self::add_segment(a, adapter.float_to_int(&section.b_top), segments);
-    }
-
-    fn add_points(
-        &self,
-        radius: P::Scalar,
-        rotator: &Rotator<P::Scalar>,
-        center: &P,
-        a: &mut IntPoint,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        if radius <= P::Scalar::from_float(0.0) {
-            return;
-        }
-
-        match &self.cap {
-            LineCap::Butt => {}
-            LineCap::Round(angle) => {
-                let n = Self::round_count(*angle);
-                let fixed_angle = P::Scalar::from_float(PI / n as f64);
-                let round_rotator = Rotator::with_angle(fixed_angle);
-                let mut v = P::from_xy(P::Scalar::from_float(0.0), -radius);
-                for _ in 1..n {
-                    v = round_rotator.rotate(&v);
-                    self.add_local_point(&v, rotator, center, a, adapter, segments);
-                }
-            }
-            LineCap::Square => {
-                let p0 = P::from_xy(radius, -radius);
-                self.add_local_point(&p0, rotator, center, a, adapter, segments);
-                let p1 = P::from_xy(radius, radius);
-                self.add_local_point(&p1, rotator, center, a, adapter, segments);
-            }
-            LineCap::Custom(points) => {
-                for p in points.iter() {
-                    let scaled = FloatPointMath::scale(p, radius);
-                    self.add_local_point(&scaled, rotator, center, a, adapter, segments);
-                }
-            }
-        }
-    }
-
-    #[inline]
-    fn add_local_point(
-        &self,
-        p: &P,
-        rotator: &Rotator<P::Scalar>,
-        center: &P,
-        a: &mut IntPoint,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let r = rotator.rotate(p);
-        let q = FloatPointMath::add(&r, center);
-        let b = adapter.float_to_int(&q);
-        Self::add_segment(*a, b, segments);
-        *a = b;
-    }
-
-    #[inline]
-    fn add_segment(a: IntPoint, b: IntPoint, segments: &mut Vec<Segment<ShapeCountBoolean>>) {
-        if a != b {
-            segments.push(Segment::subject(a, b));
-        }
+    pub(super) fn new(angle: T) -> Self {
+        Self { angle }
     }
 
     #[inline]
     pub(super) fn capacity(&self) -> usize {
-        match &self.cap {
-            LineCap::Butt => 1,
-            LineCap::Round(angle) => Self::round_count(*angle),
-            LineCap::Square => 3,
-            LineCap::Custom(points) => 1 + points.len(),
+        (T::from_float(2.0 * PI) / self.angle)
+            .to_usize()
+            .saturating_add(1)
+            * 3
+    }
+
+    pub(super) fn add_start_cap<P, I>(&self, section: &Section<P>, output: &mut PolygonBuilder<P, I>)
+    where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        let through = P::from_xy(-section.direction.x(), -section.direction.y());
+        self.add_round_fan(
+            section.a,
+            section.a_radius,
+            section.a_right,
+            section.a_left,
+            through,
+            output,
+        );
+    }
+
+    pub(super) fn add_end_cap<P, I>(&self, section: &Section<P>, output: &mut PolygonBuilder<P, I>)
+    where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        self.add_round_fan(
+            section.b,
+            section.b_radius,
+            section.b_left,
+            section.b_right,
+            section.direction,
+            output,
+        );
+    }
+
+    pub(super) fn add_covered_cap<P, I>(&self, section: &CoveredSection<P>, output: &mut PolygonBuilder<P, I>)
+    where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        if section.radius <= T::ZERO {
+            return;
+        }
+        let normal = P::from_xy(-section.outward.y(), section.outward.x());
+        let from = FloatPointMath::add(&section.center, &FloatPointMath::scale(&normal, section.radius));
+        let to = FloatPointMath::sub(&section.center, &FloatPointMath::scale(&normal, section.radius));
+        self.add_round_fan(section.center, section.radius, from, to, section.outward, output);
+    }
+
+    pub(super) fn add_round_fan<P, I>(
+        &self,
+        center: P,
+        radius: T,
+        from: P,
+        to: P,
+        through: P,
+        output: &mut PolygonBuilder<P, I>,
+    ) where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        if radius <= T::ZERO {
+            return;
+        }
+
+        let from_vector = FloatPointMath::sub(&from, &center);
+        let to_vector = FloatPointMath::sub(&to, &center);
+        if FloatPointMath::sqr_length(&from_vector) <= T::ZERO
+            || FloatPointMath::sqr_length(&to_vector) <= T::ZERO
+        {
+            return;
+        }
+
+        let from_unit = FloatPointMath::normalize(&from_vector);
+        let to_unit = FloatPointMath::normalize(&to_vector);
+        let through_unit = FloatPointMath::normalize(&through);
+        let sweep = Self::sweep_through(&from_unit, &to_unit, &through_unit);
+        self.add_fan(center, from, to, from_vector, sweep, output);
+    }
+
+    pub(super) fn add_join_fan<P, I>(
+        &self,
+        center: P,
+        radius: T,
+        from: P,
+        to: P,
+        turn: T,
+        output: &mut PolygonBuilder<P, I>,
+    ) where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        if radius <= T::ZERO {
+            return;
+        }
+
+        let from_vector = FloatPointMath::sub(&from, &center);
+        let to_vector = FloatPointMath::sub(&to, &center);
+        if FloatPointMath::sqr_length(&from_vector) <= T::ZERO
+            || FloatPointMath::sqr_length(&to_vector) <= T::ZERO
+        {
+            return;
+        }
+
+        let from_unit = FloatPointMath::normalize(&from_vector);
+        let to_unit = FloatPointMath::normalize(&to_vector);
+        let sweep = Self::join_sweep(&from_unit, &to_unit, turn);
+        self.add_fan(center, from, to, from_vector, sweep, output);
+    }
+
+    fn add_fan<P, I>(
+        &self,
+        center: P,
+        from: P,
+        to: P,
+        from_vector: P,
+        sweep: T,
+        output: &mut PolygonBuilder<P, I>,
+    ) where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        let count = (sweep.abs() / self.angle)
+            .to_usize()
+            .saturating_add(1)
+            .clamp(1, 1024);
+        let delta = sweep / T::from_usize(count);
+        let rotator = Rotator::with_angle(delta);
+
+        let mut vector = from_vector;
+        let mut a = from;
+        for i in 1..=count {
+            let b = if i == count {
+                to
+            } else {
+                vector = rotator.rotate(&vector);
+                FloatPointMath::add(&center, &vector)
+            };
+            output.add_triangle(center, a, b);
+            a = b;
         }
     }
 
-    #[inline]
-    pub(super) fn additional_offset(&self, radius: P::Scalar) -> P::Scalar {
-        match &self.cap {
-            LineCap::Butt => P::Scalar::from_float(0.0),
-            LineCap::Round(_) | LineCap::Square => P::Scalar::from_float(2.0) * radius,
-            LineCap::Custom(points) => {
-                if let Some(rect) = FloatRect::with_iter(points.iter()) {
-                    radius * (rect.width() + rect.height())
-                } else {
-                    P::Scalar::from_float(0.0)
-                }
-            }
+    fn join_sweep<P: FloatPointCompatible<Scalar = T>>(from: &P, to: &P, turn: T) -> T {
+        let counterclockwise = Self::ccw_angle(from, to);
+        let full = T::from_float(2.0 * PI);
+        let epsilon = T::from_float(1.0e-6);
+        if counterclockwise <= epsilon {
+            return counterclockwise;
         }
-    }
 
-    #[inline]
-    fn round_count(angle: P::Scalar) -> usize {
-        let angle_f64 = angle.to_f64();
-        if angle_f64 > 0.0 {
-            (PI / angle_f64) as usize
+        let clockwise = counterclockwise - full;
+        if (counterclockwise - turn).abs() <= (clockwise - turn).abs() {
+            counterclockwise
         } else {
-            1024
+            clockwise
         }
-        .clamp(2, 1024)
+    }
+
+    fn sweep_through<P: FloatPointCompatible<Scalar = T>>(from: &P, to: &P, through: &P) -> T {
+        let full = T::from_float(2.0 * PI);
+        let total = Self::ccw_angle(from, to);
+        let via = Self::ccw_angle(from, through);
+        let epsilon = T::from_float(1.0e-6);
+        if via <= total + epsilon {
+            total
+        } else {
+            total - full
+        }
+    }
+
+    fn ccw_angle<P: FloatPointCompatible<Scalar = T>>(a: &P, b: &P) -> T {
+        let dot = FloatPointMath::dot_product(a, b)
+            .max(T::from_float(-1.0))
+            .min(T::ONE);
+        let angle = dot.acos();
+        if FloatPointMath::cross_product(a, b) >= T::ZERO {
+            angle
+        } else {
+            T::from_float(2.0 * PI) - angle
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RoundFanBuilder;
+
+    #[test]
+    fn join_uses_complement_when_it_is_closer_to_centerline_turn() {
+        let from_angle = -48.871_721_f64.to_radians();
+        let to_angle = -72.717_667_f64.to_radians();
+        let from = [from_angle.cos(), from_angle.sin()];
+        let to = [to_angle.cos(), to_angle.sin()];
+        let turn = 41.208_797_f64.to_radians();
+        let sweep = RoundFanBuilder::<f64>::join_sweep(&from, &to, turn);
+
+        assert!(sweep < 0.0);
+        assert!(sweep.abs() < core::f64::consts::PI);
+        assert!((sweep.to_degrees() + 23.845_946).abs() < 0.000_1);
+    }
+
+    #[test]
+    fn join_follows_centerline_turn_beyond_half_circle() {
+        let from_angle = 131.658_745_f64.to_radians();
+        let to_angle = -36.261_842_f64.to_radians();
+        let from = [from_angle.cos(), from_angle.sin()];
+        let to = [to_angle.cos(), to_angle.sin()];
+        let turn = 169.324_035_f64.to_radians();
+        let sweep = RoundFanBuilder::<f64>::join_sweep(&from, &to, turn);
+
+        assert!(sweep > core::f64::consts::PI);
+        assert!((sweep.to_degrees() - 192.079_413).abs() < 0.000_1);
     }
 }

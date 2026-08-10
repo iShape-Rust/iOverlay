@@ -1,9 +1,9 @@
-pub mod main;
-mod design;
 mod boolean;
-mod string;
+mod design;
 mod fill_option;
-mod solver_option;
-mod stroke;
+pub mod main;
 mod outline;
+mod solver_option;
+mod string;
+mod stroke;
 mod variable_stroke;

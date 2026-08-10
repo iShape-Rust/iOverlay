@@ -3,24 +3,26 @@ use crate::geom::x_segment::XSegment;
 use crate::split::fragment::Fragment;
 use alloc::vec;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::rect::IntRect;
 
-#[derive(Debug, Clone)]
-pub(super) struct BorderVSegment {
+pub(super) struct BorderVSegment<I: IntNumber> {
     pub(super) id: usize,
-    pub(super) x: i32,
-    pub(super) y_range: LineRange,
+    pub(super) x: I,
+    pub(super) y_range: LineRange<I>,
 }
 
-pub(super) struct FragmentBuffer {
-    pub(super) layout: GridLayout,
-    pub(super) groups: Vec<Vec<Fragment>>,
-    pub(super) on_border: Vec<BorderVSegment>,
+pub(super) struct FragmentBuffer<I: IntNumber> {
+    pub(super) layout: GridLayout<I>,
+    pub(super) groups: Vec<Vec<Fragment<I>>>,
+    pub(super) on_border: Vec<BorderVSegment<I>>,
 }
 
-impl FragmentBuffer {
+impl<I: IntNumber> FragmentBuffer<I> {
     #[inline]
-    pub(super) fn new(layout: GridLayout) -> Self {
+    pub(super) fn new(layout: GridLayout<I>) -> Self {
         let n = layout.index(layout.max_x) + 1;
         Self {
             layout,
@@ -29,15 +31,15 @@ impl FragmentBuffer {
         }
     }
 
-    pub(super) fn init_fragment_buffer<I>(&mut self, iter: I)
+    pub(super) fn init_fragment_buffer<It>(&mut self, iter: It)
     where
-        I: Iterator<Item = XSegment>,
+        It: Iterator<Item = XSegment<I>>,
     {
         let mut counts = vec![0; self.groups.len()];
         for s in iter {
             let i0 = self.layout.index(s.a.x);
             if s.a.x < s.b.x {
-                let i1 = self.layout.index(s.b.x - 1);
+                let i1 = self.layout.index(s.b.x - I::ONE);
                 for count in counts.iter_mut().take(i1).skip(i0) {
                     *count += 1;
                 }
@@ -52,7 +54,7 @@ impl FragmentBuffer {
     }
 
     #[inline]
-    fn insert(&mut self, fragment: Fragment, bin_index: usize) {
+    fn insert(&mut self, fragment: Fragment<I>, bin_index: usize) {
         debug_assert!(bin_index < self.groups.len());
         // SAFETY: `bin_index` is produced by GridLayout::index(...) on coordinates clamped to
         // [min_x, max_x]. We sized `groups` to `index(max_x) + 1` in `new`, so
@@ -62,7 +64,7 @@ impl FragmentBuffer {
     }
 
     #[inline]
-    fn insert_vertical(&mut self, fragment: Fragment, bin_index: usize) {
+    fn insert_vertical(&mut self, fragment: Fragment<I>, bin_index: usize) {
         let x = fragment.x_segment.a.x;
         if bin_index > 0 && x == self.layout.pos(bin_index) {
             self.on_border.push(BorderVSegment {
@@ -83,7 +85,7 @@ impl FragmentBuffer {
     }
 
     #[inline]
-    pub(super) fn add_segment(&mut self, segment_index: usize, s: XSegment) {
+    pub(super) fn add_segment(&mut self, segment_index: usize, s: XSegment<I>) {
         if s.a.y == s.b.y {
             self.add_horizontal(segment_index, s);
             return;
@@ -95,7 +97,7 @@ impl FragmentBuffer {
             return;
         }
 
-        let i1 = self.layout.index(s.b.x - 1);
+        let i1 = self.layout.index(s.b.x - I::ONE);
         if i0 >= i1 {
             self.insert(Fragment::with_index_and_segment(segment_index, s), i0);
             return;
@@ -109,44 +111,46 @@ impl FragmentBuffer {
 
         let is_inc = s.a.y <= s.b.y;
 
-        let width = (s.b.x - s.a.x) as u64;
-        let height = (s.b.y - s.a.y).unsigned_abs() as u64;
+        let width = (s.b.x - s.a.x).to_uint();
+        let height = (s.b.y.to_wide() - s.a.y.to_wide()).unsigned_abs();
 
         let log = (width * height).ilog2();
-        let p = 63 - log;
+        let p = I::WideUInt::LAST_BIT_INDEX - log;
         let k = (height << p) / width;
 
-        let mut w = (self.layout.pos(i0 + 1) - s.a.x) as u64;
-        let dw = 1 << self.layout.power;
+        let mut w = (self.layout.pos(i0 + 1) - s.a.x).to_uint();
+        let dw = I::WideUInt::ONE << self.layout.power;
 
         for i in i0..i1 {
             let h_min = (w * k) >> p;
             let mut h_max = h_min;
-            while h_max * width < height * w {
-                h_max += 1;
+
+            let hw = height * w;
+            if h_max * width < hw {
+                h_max = (hw + width - I::WideUInt::ONE) / width;
             }
 
-            let max_x = x0 + (w as i32);
+            let max_x = x0 + I::from_uint(w);
 
             let rect = if is_inc {
-                let max_y = y0 + h_max as i32;
+                let max_y = y0 + I::from_uint(h_max);
                 let rect = IntRect {
                     min_x: prev_x,
                     max_x,
                     min_y: prev_y,
                     max_y,
                 };
-                prev_y = y0 + h_min as i32;
+                prev_y = y0 + I::from_uint(h_min);
                 rect
             } else {
-                let min_y = y0 - h_max as i32;
+                let min_y = y0 - I::from_uint(h_max);
                 let rect = IntRect {
                     min_x: prev_x,
                     max_x,
                     min_y,
                     max_y: prev_y,
                 };
-                prev_y = y0 - h_min as i32;
+                prev_y = y0 - I::from_uint(h_min);
                 rect
             };
 
@@ -189,9 +193,9 @@ impl FragmentBuffer {
         );
     }
 
-    fn add_horizontal(&mut self, segment_index: usize, s: XSegment) {
+    fn add_horizontal(&mut self, segment_index: usize, s: XSegment<I>) {
         let i0 = self.layout.index(s.a.x);
-        let i1 = self.layout.index(s.b.x - 1);
+        let i1 = self.layout.index(s.b.x - I::ONE);
 
         let y = s.a.y;
         let mut x0 = s.a.x;
@@ -244,26 +248,26 @@ impl FragmentBuffer {
     }
 }
 
-pub(super) struct GridLayout {
-    min_x: i32,
-    max_x: i32,
+pub(super) struct GridLayout<I: IntNumber> {
+    min_x: I,
+    max_x: I,
     power: u32,
 }
 
-impl GridLayout {
+impl<I: IntNumber> GridLayout<I> {
     #[inline]
-    pub(super) fn index(&self, x: i32) -> usize {
-        ((x - self.min_x) >> self.power) as usize
+    pub(super) fn index(&self, x: I) -> usize {
+        ((x.to_wide() - self.min_x.to_wide()) >> self.power).to_usize()
     }
 
     #[inline]
-    pub(super) fn pos(&self, index: usize) -> i32 {
-        (index << self.power) as i32 + self.min_x
+    pub(super) fn pos(&self, index: usize) -> I {
+        I::from_usize(index << self.power) + self.min_x
     }
 
-    pub(super) fn new<I>(iter: I, count: usize) -> Option<Self>
+    pub(super) fn new<It>(iter: It, count: usize) -> Option<Self>
     where
-        I: Iterator<Item = XSegment>,
+        It: Iterator<Item = XSegment<I>>,
     {
         let mut iter = iter.peekable();
         let first = iter.peek()?;
@@ -280,9 +284,9 @@ impl GridLayout {
         Self::with_min_max(min_x, max_x, max_power)
     }
 
-    fn with_min_max(min_x: i32, max_x: i32, max_power: u32) -> Option<Self> {
-        let dx = max_x - min_x;
-        if dx < 4 {
+    fn with_min_max(min_x: I, max_x: I, max_power: u32) -> Option<Self> {
+        let dx = max_x.to_wide() - min_x.to_wide();
+        if dx < I::Wide::FOUR {
             return None;
         }
         let log = dx.ilog2();
@@ -294,6 +298,8 @@ impl GridLayout {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::useless_vec)]
+
     use crate::geom::x_segment::XSegment;
     use crate::split::grid_layout::vec;
     use crate::split::grid_layout::{FragmentBuffer, GridLayout};
@@ -1105,8 +1111,8 @@ mod tests {
     #[test]
     fn test_10() {
         let layout = GridLayout {
-            min_x: -1000_000,
-            max_x: 1000_000,
+            min_x: -1_000_000,
+            max_x: 1_000_000,
             power: 10,
         };
 
@@ -1134,10 +1140,10 @@ mod tests {
             let p2 = IntPoint::new(rect.min_x, rect.max_y);
             let p3 = IntPoint::new(rect.max_x, rect.max_y);
 
-            assert!(Triangle::is_cw_or_line_point(p0, segment.a, segment.b));
-            assert!(Triangle::is_cw_or_line_point(p1, segment.a, segment.b));
-            assert!(Triangle::is_cw_or_line_point(p2, segment.b, segment.a));
-            assert!(Triangle::is_cw_or_line_point(p3, segment.b, segment.a));
+            assert!(Triangle::is_cw_or_line(p0, segment.a, segment.b));
+            assert!(Triangle::is_cw_or_line(p1, segment.a, segment.b));
+            assert!(Triangle::is_cw_or_line(p2, segment.b, segment.a));
+            assert!(Triangle::is_cw_or_line(p3, segment.b, segment.a));
         }
     }
 
@@ -1537,7 +1543,7 @@ mod tests {
     }
 
     #[inline]
-    fn rect_compare(a: &IntRect, b: &IntRect) {
+    fn rect_compare(a: &IntRect<i32>, b: &IntRect<i32>) {
         assert_eq!(a.min_x, b.min_x);
         assert_eq!(a.max_x, b.max_x);
         assert_eq!(a.min_y, b.min_y);
@@ -1545,21 +1551,21 @@ mod tests {
     }
 
     #[inline]
-    fn validate_rect(segment: &XSegment, rect: &IntRect) {
+    fn validate_rect(segment: &XSegment<i32>, rect: &IntRect<i32>) {
         let p0 = IntPoint::new(rect.min_x, rect.min_y);
         let p1 = IntPoint::new(rect.max_x, rect.min_y);
         let p2 = IntPoint::new(rect.min_x, rect.max_y);
         let p3 = IntPoint::new(rect.max_x, rect.max_y);
 
-        let a0 = Triangle::area_two_point(p0, segment.a, segment.b);
-        let a1 = Triangle::area_two_point(p1, segment.a, segment.b);
-        let a2 = Triangle::area_two_point(p2, segment.b, segment.a);
-        let a3 = Triangle::area_two_point(p3, segment.b, segment.a);
+        let a0 = Triangle::area_two(p0, segment.a, segment.b);
+        let a1 = Triangle::area_two(p1, segment.a, segment.b);
+        let a2 = Triangle::area_two(p2, segment.b, segment.a);
+        let a3 = Triangle::area_two(p3, segment.b, segment.a);
 
-        assert!(a0 >= 0);
-        assert!(a1 >= 0);
-        assert!(a2 >= 0);
-        assert!(a3 >= 0);
+        assert!(a0 <= 0);
+        assert!(a1 <= 0);
+        assert!(a2 <= 0);
+        assert!(a3 <= 0);
     }
 
     #[inline]

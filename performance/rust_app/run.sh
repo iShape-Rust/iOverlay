@@ -1,3 +1,3 @@
 #!/bin/bash
 
-target/release/rust_app --multithreading false --complex true --test 0
+target/release/rust_app --multithreading false --complex true --test 0 --int all

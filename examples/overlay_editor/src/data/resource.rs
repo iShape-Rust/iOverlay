@@ -1,7 +1,7 @@
-use crate::data::string::StringResource;
 use crate::data::boolean::BooleanResource;
-use crate::data::stroke::StrokeResource;
 use crate::data::outline::OutlineResource;
+use crate::data::string::StringResource;
+use crate::data::stroke::StrokeResource;
 
 pub struct AppResource {
     pub(crate) boolean: BooleanResource,
@@ -22,7 +22,12 @@ impl AppResource {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn with_content(boolean: &String, string: &String, stroke: &String, outline: &String) -> Self {
+    pub fn with_content(
+        boolean: &String,
+        string: &String,
+        stroke: &String,
+        outline: &String,
+    ) -> Self {
         Self {
             boolean: BooleanResource::with_content(boolean),
             string: StringResource::with_content(string),

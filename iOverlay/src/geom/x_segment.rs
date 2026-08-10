@@ -1,16 +1,17 @@
 use crate::geom::line_range::LineRange;
 use core::cmp::Ordering;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct XSegment {
-    pub(crate) a: IntPoint,
-    pub(crate) b: IntPoint,
+pub(crate) struct XSegment<I: IntNumber> {
+    pub(crate) a: IntPoint<I>,
+    pub(crate) b: IntPoint<I>,
 }
 
-impl XSegment {
+impl<I: IntNumber> XSegment<I> {
     #[inline(always)]
-    pub(crate) fn y_range(&self) -> LineRange {
+    pub(crate) fn y_range(&self) -> LineRange<I> {
         if self.a.y < self.b.y {
             LineRange {
                 min: self.a.y,
@@ -30,19 +31,19 @@ impl XSegment {
     }
 
     #[inline(always)]
-    pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange) -> bool {
+    pub(crate) fn is_not_intersect_y_range(&self, range: &LineRange<I>) -> bool {
         range.min > self.a.y && range.min > self.b.y || range.max < self.a.y && range.max < self.b.y
     }
 }
 
-impl PartialOrd for XSegment {
+impl<I: IntNumber> PartialOrd for XSegment<I> {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for XSegment {
+impl<I: IntNumber> Ord for XSegment<I> {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         let a = self.a.cmp(&other.a);

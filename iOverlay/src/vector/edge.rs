@@ -1,10 +1,14 @@
+use crate::core::edge_data::OverlayEdgeData;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 
 pub type SideFill = u8;
-pub type VectorPath = Vec<VectorEdge>;
-pub type VectorShape = Vec<VectorPath>;
+pub type DataVectorPath<I, D = ()> = Vec<DataVectorEdge<I, D>>;
+pub type DataVectorShape<I, D = ()> = Vec<DataVectorPath<I, D>>;
+pub type VectorPath<I> = DataVectorPath<I>;
+pub type VectorShape<I> = DataVectorShape<I>;
 
 pub const SUBJ_LEFT: u8 = 0b0001;
 pub const SUBJ_RIGHT: u8 = 0b0010;
@@ -27,26 +31,42 @@ impl Reverse for SideFill {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VectorEdge {
-    pub a: IntPoint,
-    pub b: IntPoint,
+pub struct DataVectorEdge<I: IntNumber, D = ()> {
+    pub a: IntPoint<I>,
+    pub b: IntPoint<I>,
     pub fill: SideFill,
+    pub data: D,
 }
 
-impl VectorEdge {
-    pub(crate) fn new(fill: SideFill, a: IntPoint, b: IntPoint) -> Self {
-        let fill = if a < b { fill } else { fill.reverse() };
+impl<I: IntNumber, D: OverlayEdgeData> DataVectorEdge<I, D> {
+    pub(crate) fn new(fill: SideFill, a: IntPoint<I>, b: IntPoint<I>, data: D) -> Self {
+        let mut store = D::Store::default();
+        Self::new_with_store(fill, a, b, data, &mut store)
+    }
 
-        Self { a, b, fill }
+    pub(crate) fn new_with_store(
+        fill: SideFill,
+        a: IntPoint<I>,
+        b: IntPoint<I>,
+        data: D,
+        store: &mut D::Store,
+    ) -> Self {
+        let (fill, data) = if a < b {
+            (fill, data)
+        } else {
+            (fill.reverse(), data.reversed(store))
+        };
+
+        Self { a, b, fill, data }
     }
 }
 
-pub trait ToPath {
-    fn to_path(&self) -> IntPath;
+pub trait ToPath<I: IntNumber> {
+    fn to_path(&self) -> IntPath<I>;
 }
 
-impl ToPath for VectorPath {
-    fn to_path(&self) -> IntPath {
+impl<I: IntNumber> ToPath<I> for VectorPath<I> {
+    fn to_path(&self) -> IntPath<I> {
         self.iter().map(|e| e.a).collect()
     }
 }

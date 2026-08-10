@@ -1,6 +1,6 @@
 //! # iOverlay
 //!
-//! The `iOverlay` library provides high-performance boolean operations on polygons, including union, intersection, difference, and xor. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting both integer (i32) and floating-point (f32, f64) APIs, iOverlay offers flexibility and precision across diverse use cases.
+//! The `iOverlay` library provides high-performance boolean operations on polygons, including union, intersection, difference, and xor. It is designed for applications that require precise polygon operations, such as computer graphics, CAD systems, and geographical information systems (GIS). By supporting integer (`i16`, `i32`, `i64`) and floating-point (`f32`, `f64`) APIs, iOverlay offers flexibility and precision across diverse use cases.
 //!
 //! ## Features
 //! - **Boolean Operations**: union, intersection, difference, and exclusion.
@@ -8,7 +8,7 @@
 //! - **Polygons**: with holes, self-intersections, and multiple contours.
 //! - **Simplification**: removes degenerate vertices and merges collinear edges.
 //! - **Fill Rules**: even-odd, non-zero, positive and negative.
-//! - **Data Types**: Supports i32, f32, and f64 APIs.
+//! - **Data Types**: Supports `i16`/`i32`/`i64` integer APIs and `f32`/`f64` floating-point APIs.
 //!
 //! ## Simple Example
 //! ![Simple Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)

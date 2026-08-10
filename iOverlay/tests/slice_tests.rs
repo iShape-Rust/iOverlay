@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::len_zero, clippy::useless_vec)]
+
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::string::line::IntLine;
@@ -487,7 +489,7 @@ mod tests {
         }
     }
 
-    fn random_polygon(radius: i32, n: usize) -> IntPath {
+    fn random_polygon(radius: i32, n: usize) -> IntPath<i32> {
         let a = radius / 2;
         let range = -a..=a;
         let mut points = Vec::with_capacity(n);
@@ -501,7 +503,7 @@ mod tests {
         points
     }
 
-    fn random_lines(radius: i32, n: usize) -> Vec<IntLine> {
+    fn random_lines(radius: i32, n: usize) -> Vec<IntLine<i32>> {
         let a = radius / 2;
         let range = -a..=a;
         let mut lines = Vec::with_capacity(n);

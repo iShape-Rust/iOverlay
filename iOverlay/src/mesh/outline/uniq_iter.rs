@@ -1,26 +1,30 @@
 use core::iter::Chain;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 
-pub(super) struct UniqueSegment {
-    pub(super) a: IntPoint,
-    pub(super) b: IntPoint,
+pub(super) struct UniqueSegment<I: IntNumber> {
+    pub(super) a: IntPoint<I>,
+    pub(super) b: IntPoint<I>,
 }
 
-pub(super) struct UniqueSegmentsIter<I>
+pub(super) struct UniqueSegmentsIter<It, I>
 where
-    I: Iterator<Item = IntPoint>,
+    It: Iterator<Item = IntPoint<I>>,
+    I: IntNumber,
 {
-    iter: Chain<I, core::array::IntoIter<IntPoint, 2>>,
-    p0: IntPoint,
-    p1: IntPoint,
+    iter: Chain<It, core::array::IntoIter<IntPoint<I>, 2>>,
+    p0: IntPoint<I>,
+    p1: IntPoint<I>,
 }
 
-impl<I> UniqueSegmentsIter<I>
+impl<It, I> UniqueSegmentsIter<It, I>
 where
-    I: Iterator<Item = IntPoint>,
+    It: Iterator<Item = IntPoint<I>>,
+    I: IntNumber,
 {
     #[inline]
-    pub(super) fn new(iter: I) -> Option<Self> {
+    pub(super) fn new(iter: It) -> Option<Self> {
         let mut iter = iter;
 
         let mut p0 = iter.next()?;
@@ -49,11 +53,12 @@ where
     }
 }
 
-impl<I> Iterator for UniqueSegmentsIter<I>
+impl<It, I> Iterator for UniqueSegmentsIter<It, I>
 where
-    I: Iterator<Item = IntPoint>,
+    It: Iterator<Item = IntPoint<I>>,
+    I: IntNumber,
 {
-    type Item = UniqueSegment;
+    type Item = UniqueSegment<I>;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         for p2 in &mut self.iter {
@@ -87,17 +92,17 @@ where
 }
 
 #[inline]
-fn include_point(p0: IntPoint, p1: IntPoint, p2: IntPoint) -> bool {
-    let a = p1.subtract(p0);
-    let b = p1.subtract(p2);
+fn include_point<I: IntNumber>(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>) -> bool {
+    let a = p1 - p0;
+    let b = p1 - p2;
 
-    if a.cross_product(b) != 0 {
+    if a.cross_product(b) != I::Wide::ZERO {
         // not collinear
         return true;
     }
 
     // collinear – keep only if we keep going opposite direction
-    a.dot_product(b) > 0
+    a.dot_product(b) > I::Wide::ZERO
 }
 #[cfg(test)]
 mod tests {
@@ -108,7 +113,7 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let uniq_iter = UniqueSegmentsIter::new(core::iter::empty::<IntPoint>());
+        let uniq_iter = UniqueSegmentsIter::new(core::iter::empty::<IntPoint<i32>>());
         assert!(uniq_iter.is_none());
     }
 
@@ -169,7 +174,7 @@ mod tests {
         validate_case_all_rotations(&path, 4);
     }
 
-    fn validate_case_all_rotations(path: &[IntPoint], expected_segments_count: usize) {
+    fn validate_case_all_rotations(path: &[IntPoint<i32>], expected_segments_count: usize) {
         assert!(!path.is_empty(), "path must not be empty");
 
         for shift in 0..path.len() {
@@ -189,7 +194,7 @@ mod tests {
         }
     }
 
-    fn validate_segments(segments: &[UniqueSegment]) {
+    fn validate_segments(segments: &[UniqueSegment<i32>]) {
         assert!(!segments.is_empty(), "expected at least one segment");
 
         for (i, s) in segments.iter().enumerate() {
@@ -207,7 +212,7 @@ mod tests {
         validate_pair(&segments[last_i], &segments[0], last_i, 0);
     }
 
-    fn validate_pair(s0: &UniqueSegment, s1: &UniqueSegment, i: usize, j: usize) {
+    fn validate_pair(s0: &UniqueSegment<i32>, s1: &UniqueSegment<i32>, i: usize, j: usize) {
         assert_eq!(s0.b, s1.a, "segment {} end does not match segment {} start", i, j);
 
         let v0 = s0.a - s0.b;

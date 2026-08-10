@@ -7,15 +7,21 @@ use crate::segm::string::ShapeCountString;
 use crate::string::clip::ClipRule;
 use crate::string::graph::StringGraph;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
+use i_key_sort::sort::key::SortKey;
+use i_tree::Expiration;
 
-impl GraphBuilder<ShapeCountString, Vec<usize>> {
+impl<I> GraphBuilder<ShapeCountString, Vec<usize>, I>
+where
+    I: IntNumber + Expiration + SortKey,
+{
     #[inline]
     pub(crate) fn build_string_all(
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountString>],
-    ) -> StringGraph<'_> {
+        segments: &[Segment<ShapeCountString, I>],
+    ) -> StringGraph<'_, I> {
         self.build_string_fills(fill_rule, solver, segments);
         self.build_links_all(segments);
         self.string_graph(solver)
@@ -27,8 +33,8 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
         fill_rule: FillRule,
         clip_rule: ClipRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountString>],
-    ) -> StringGraph<'_> {
+        segments: &[Segment<ShapeCountString, I>],
+    ) -> StringGraph<'_, I> {
         self.build_string_fills(fill_rule, solver, segments);
         match clip_rule {
             ClipRule {
@@ -56,7 +62,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
         &mut self,
         fill_rule: FillRule,
         solver: &Solver,
-        segments: &[Segment<ShapeCountString>],
+        segments: &[Segment<ShapeCountString, I>],
     ) {
         match fill_rule {
             FillRule::EvenOdd => self.build_fills_with_strategy::<EvenOddStrategy>(solver, segments),
@@ -67,7 +73,7 @@ impl GraphBuilder<ShapeCountString, Vec<usize>> {
     }
 
     #[inline]
-    fn string_graph(&mut self, solver: &Solver) -> StringGraph<'_> {
+    fn string_graph(&mut self, solver: &Solver) -> StringGraph<'_, I> {
         self.build_nodes_and_connect_links(solver);
         StringGraph {
             nodes: &self.nodes,
@@ -219,6 +225,111 @@ impl StringFillFilter for SegmentFill {
             (fill & SUBJ_BOTH).count_ones() == 2
         } else {
             false
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::build::builder::GraphBuilder;
+    use crate::core::solver::Solver;
+    use crate::string::overlay::StringOverlay;
+    use alloc::vec;
+    use i_float::int::point::IntPoint;
+
+    fn clip_rule(invert: bool) -> ClipRule {
+        ClipRule {
+            invert,
+            boundary_included: false,
+        }
+    }
+
+    fn clip_path(shape: &[IntPoint<i32>], path: &[IntPoint<i32>], invert: bool) -> Vec<Vec<IntPoint<i32>>> {
+        let mut overlay = StringOverlay::with_shape_contour(shape);
+        overlay.add_string_path(path);
+        overlay.clip_string_lines(FillRule::NonZero, clip_rule(invert))
+    }
+
+    #[test]
+    fn empty_segment_set_builds_empty_graph_for_every_fill_rule() {
+        let solver = Solver::default();
+        let segments: Vec<Segment<ShapeCountString, i32>> = Vec::new();
+
+        for fill_rule in [
+            FillRule::EvenOdd,
+            FillRule::NonZero,
+            FillRule::Positive,
+            FillRule::Negative,
+        ] {
+            let mut builder = GraphBuilder::new();
+            let graph = builder.build_string_all(fill_rule, &solver, &segments);
+
+            assert!(graph.nodes.is_empty());
+            assert!(graph.links.is_empty());
+        }
+    }
+
+    #[test]
+    fn minimal_string_inputs_are_rejected() {
+        let point = IntPoint::new(1, 1);
+        let mut overlay = StringOverlay::<i32>::new(0);
+
+        overlay.add_string_path(&[]);
+        overlay.add_string_path(&[point]);
+        overlay.add_string_line([point, point]);
+        overlay.add_string_path(&[point, point, point]);
+        overlay.add_string_contour(&[point, point]);
+
+        assert!(overlay.build_graph_view(FillRule::NonZero).is_none());
+    }
+
+    #[test]
+    fn repeated_string_points_are_normalized_consistently() {
+        let shape = [
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+        ];
+        let clean = [IntPoint::new(-5, 5), IntPoint::new(5, 5), IntPoint::new(15, 5)];
+        let repeated = [
+            IntPoint::new(-5, 5),
+            IntPoint::new(-5, 5),
+            IntPoint::new(5, 5),
+            IntPoint::new(5, 5),
+            IntPoint::new(15, 5),
+            IntPoint::new(15, 5),
+        ];
+
+        let expected = clip_path(&shape, &clean, false);
+        let result = clip_path(&shape, &repeated, false);
+
+        assert_eq!(result, expected);
+        assert_eq!(
+            result,
+            vec![vec![
+                IntPoint::new(0, 5),
+                IntPoint::new(5, 5),
+                IntPoint::new(10, 5),
+            ]]
+        );
+    }
+
+    #[test]
+    fn zero_area_subject_contours_do_not_affect_clipping() {
+        let line = [IntPoint::new(-5, 0), IntPoint::new(15, 0)];
+        let expected_outside = vec![line.to_vec()];
+        let contours = [
+            vec![IntPoint::new(0, 0)],
+            vec![IntPoint::new(0, 0), IntPoint::new(0, 0)],
+            vec![IntPoint::new(0, 0), IntPoint::new(10, 0)],
+            vec![IntPoint::new(0, 0), IntPoint::new(5, 0), IntPoint::new(10, 0)],
+        ];
+
+        for contour in contours {
+            assert!(clip_path(&contour, &line, false).is_empty());
+            assert_eq!(clip_path(&contour, &line, true), expected_outside);
         }
     }
 }

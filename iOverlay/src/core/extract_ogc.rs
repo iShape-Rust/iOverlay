@@ -4,21 +4,23 @@ use crate::core::extract::{
     BooleanExtractionBuffer, GraphContour, GraphUtil, StartPathData, Visit, VisitState,
 };
 use crate::core::graph::OverlayGraph;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ContourDirection;
 use crate::core::overlay_rule::OverlayRule;
-use crate::geom::v_segment::VSegment;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntShape, IntShapes};
-use i_shape::util::reserve::Reserve;
 
-impl OverlayGraph<'_> {
+impl<I> OverlayGraph<'_, I>
+where
+    I: OverlayInt,
+{
     pub(crate) fn extract_ogc(
         &self,
         overlay_rule: OverlayRule,
-        buffer: &mut BooleanExtractionBuffer,
-    ) -> IntShapes {
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> IntShapes<I> {
         let is_main_dir_cw = self.options.output_direction == ContourDirection::Clockwise;
 
         let mut contour_visited = if let Some(mut visited) = buffer.contour_visited.take() {
@@ -34,7 +36,9 @@ impl OverlayGraph<'_> {
 
         let mut shapes = Vec::new();
 
-        buffer.points.reserve_capacity(buffer.visited.len());
+        buffer
+            .points
+            .reserve(buffer.visited.len().saturating_sub(buffer.points.len()));
         let mut hole_count_hint = 0;
 
         let mut link_index = 0;
@@ -141,17 +145,8 @@ impl OverlayGraph<'_> {
                 }
                 let contour = buffer.points.as_slice().to_vec();
 
-                let mut v_segment = if is_main_dir_cw {
-                    VSegment {
-                        a: contour[1],
-                        b: contour[2],
-                    }
-                } else {
-                    VSegment {
-                        a: contour[0],
-                        b: contour[contour.len() - 1],
-                    }
-                };
+                let left_bottom = if is_main_dir_cw { contour[1] } else { contour[0] };
+                let mut v_segment = contour.left_bottom_segment_from(left_bottom);
 
                 if is_modified {
                     let most_left = contour.left_bottom_segment();
@@ -161,14 +156,14 @@ impl OverlayGraph<'_> {
                     }
                 };
 
-                debug_assert_eq!(v_segment, contour.left_bottom_segment());
+                debug_assert!(v_segment == contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id_data, v_segment));
                 holes.push(contour);
             }
 
             if !anchors_already_sorted {
-                anchors.sort_unstable_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
+                anchors.sort_unstable_by_key(|s0| s0.v_segment.a);
             }
 
             shapes.join_sorted_holes(holes, anchors, is_main_dir_cw);
@@ -181,7 +176,7 @@ impl OverlayGraph<'_> {
 
     fn skip_contour(
         &self,
-        start_data: &StartPathData,
+        start_data: &StartPathData<I>,
         clockwise: bool,
         visited_state: VisitState,
         visited: &mut [VisitState],
@@ -192,8 +187,11 @@ impl OverlayGraph<'_> {
 
         visited.visit_edge(link_id, visited_state);
 
+        let last_link_id =
+            GraphUtil::next_link(self.links, self.nodes, link_id, last_node_id, !clockwise, visited);
+
         // Find a closed tour
-        while node_id != last_node_id {
+        while link_id != last_link_id {
             link_id = GraphUtil::next_link(self.links, self.nodes, link_id, node_id, clockwise, visited);
 
             let link = unsafe {
@@ -214,12 +212,12 @@ impl OverlayGraph<'_> {
 
     fn collect_shape(
         &self,
-        start_data: &StartPathData,
+        start_data: &StartPathData<I>,
         clockwise: bool,
         global_visited: &mut [VisitState],
         contour_visited: &mut [VisitState],
-        points: &mut Vec<IntPoint>,
-    ) -> Option<IntShape> {
+        points: &mut Vec<IntPoint<I>>,
+    ) -> Option<IntShape<I>> {
         let mut link_id = start_data.link_id;
         let mut node_id = start_data.node_id;
         let last_node_id = start_data.last_node_id;
@@ -231,10 +229,19 @@ impl OverlayGraph<'_> {
         global_visited.visit_edge(link_id, VisitState::HullVisited);
         contour_visited.visit_edge(link_id, VisitState::Unvisited);
 
-        let mut original_contour_len = 1;
+        let last_link_id = GraphUtil::next_link(
+            self.links,
+            self.nodes,
+            link_id,
+            last_node_id,
+            !clockwise,
+            global_visited,
+        );
+
+        let mut original_contour_len: usize = 1;
 
         // Find a closed tour
-        while node_id != last_node_id {
+        while link_id != last_link_id {
             link_id = GraphUtil::next_link(
                 self.links,
                 self.nodes,
@@ -264,7 +271,7 @@ impl OverlayGraph<'_> {
         // Revisit the contour in reverse;
         // all links escape current contour are skipped in `contour_visited`.
 
-        points.reserve_capacity(original_contour_len);
+        points.reserve(original_contour_len.saturating_sub(points.len()));
         self.find_contour(
             start_data,
             !clockwise,

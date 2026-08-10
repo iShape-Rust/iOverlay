@@ -23,14 +23,15 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - [Boolean Operations](#boolean-operations)
   - [Simple Example](#simple-example)
   - [Overlay Rules](#overlay-rules)
+  - [Edge Attributes and Provenance](#edge-attributes-and-provenance)
 - [Spatial Predicates](#spatial-predicates)
 - [Custom Point Type Support](#custom-point-type-support)
 - [Slicing & Clipping](#slicing--clipping)
   - [Slicing a Polygon with a Polyline](#slicing-a-polygon-with-a-polyline)
   - [Clipping a Polyline by a Polygon](#clipping-a-polyline-by-a-polygon)
 - [Buffering](#buffering)
-  - [Offseting a Path](#offseting-a-path)
-  - [Offseting a Polygon](#offseting-a-polygon)
+  - [Offsetting a Path](#offsetting-a-path)
+  - [Offsetting a Polygon](#offsetting-a-polygon)
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
 - [FAQ](#faq)
@@ -55,7 +56,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Buffering**: offsets paths and polygons.
 - **Fill Rules**: even-odd, non-zero, positive and negative.
-- **Data Types**: Supports i32, f32, and f64 APIs.
+- **Data Types**: supports `i16`/`i32`/`i64` integer APIs and `f32`/`f64` floating-point APIs.
 
 &nbsp;
 ## Demo
@@ -69,9 +70,21 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 &nbsp;
 ## Performance
 
-iOverlay is optimized for large and complex inputs while preserving robust geometry semantics. The benchmark report compares iOverlay to other polygon overlay engines with a focus on throughput and performance.
+iOverlay supports:
 
-See the detailed report: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html)
+- `i16`/`i32`/`i64` integer engines
+- Optional multithreading for large inputs through the `allow_multithreading` Cargo feature
+
+```toml
+[dependencies]
+i_overlay = { version = "^8.0", features = ["allow_multithreading"] }
+```
+
+<img src="readme/average_relative_time.svg" alt="Average relative time for iOverlay Rust solvers" style="max-width:860px;width:100%;">
+
+For bigger data sets, the math engine and multithreading mode have a larger impact on runtime.
+
+See the detailed reports: [Performance Comparison](https://ishape-rust.github.io/iShape-js/overlay/performance/performance.html) and [Rust Solver Benchmarks](https://ishape-rust.github.io/iShape-js/overlay/performance/rust_i_overlay.html)
 
 &nbsp;
 ## Getting Started
@@ -79,7 +92,7 @@ See the detailed report: [Performance Comparison](https://ishape-rust.github.io/
 Add the following to your Cargo.toml:
 ```toml
 [dependencies]
-i_overlay = "^6.0"
+i_overlay = "^8.0"
 ```
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/doc.html)
@@ -167,13 +180,13 @@ The result is a vec of shapes:
 ```
 &nbsp;
 
-The `overlay` function returns a `Vec<Shapes>`:
+The `overlay` function returns `Shapes<P>`, which is an alias for `Vec<Shape<P>>`:
 
-- `Vec<Shape>`: A collection of shapes.
-- `Shape`: Represents a shape made up of:
-  - `Vec<Contour>`: A list of contours.
+- `Shapes<P>`: a collection of shapes.
+- `Shape<P>`: a shape made up of:
+  - `Vec<Contour<P>>`: a list of contours.
   - The first contour is the outer boundary (counterclockwise), and subsequent contours represent holes (clockwise).
-- `Contour`: A sequence of points (`Vec<P: FloatPointCompatible>`) forming a closed contour.
+- `Contour<P>`: a sequence of points (`Vec<P>`) forming a closed contour, where `P` implements `FloatPointCompatible`.
 
 **Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
@@ -183,6 +196,80 @@ The `overlay` function returns a `Vec<Shapes>`:
 | A,B | A ∪ B | A ∩ B | A - B | B - A | A ⊕ B |
 |---------|---------------|----------------------|----------------|--------------------|----------------|
 | <img src="readme/ab.svg" alt="AB" style="width:100px;"> | <img src="readme/union.svg" alt="Union" style="width:100px;"> | <img src="readme/intersection.svg" alt="Intersection" style="width:100px;"> | <img src="readme/difference_ab.svg" alt="Difference" style="width:100px;"> | <img src="readme/difference_ba.svg" alt="Inverse Difference" style="width:100px;"> | <img src="readme/exclusion.svg" alt="Exclusion" style="width:100px;"> |
+
+&nbsp;
+### Edge Attributes and Provenance
+
+Use `EdgeOverlay` when the result boundary needs to keep data from the original input edges: source ids, layer ids, material ids, constraints, styles, or any other edge provenance. The regular `Overlay` API remains optimized for plain geometry; this API is opt-in and works with user-defined payloads.
+
+When an input edge is split by intersections, its data is copied by default. When coincident edges are merged, your `OverlayEdgeData` implementation decides what the resulting data means. A common policy is to keep identical values and mark conflicts as `Undefined`.
+
+```rust
+use i_overlay::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
+use i_overlay::core::edge_overlay::{EdgeOverlay, InputEdge};
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay::ShapeType;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::segm::boolean::ShapeCountBoolean;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum EdgeKind {
+    Red,
+    Green,
+    Undefined,
+}
+
+impl OverlayEdgeData for EdgeKind {
+    type Store = ();
+
+    fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>, _store: &mut Self::Store) -> Self {
+        match (ctx.lhs_data, ctx.rhs_data) {
+            (EdgeKind::Red, EdgeKind::Red) => EdgeKind::Red,
+            (EdgeKind::Green, EdgeKind::Green) => EdgeKind::Green,
+            _ => EdgeKind::Undefined,
+        }
+    }
+}
+
+let mut overlay = EdgeOverlay::new(8);
+
+let red_square = [
+    [0, 0], [4, 0], [4, 4], [0, 4],
+];
+let green_square = [
+    [2, 0], [6, 0], [6, 4], [2, 4],
+];
+
+for edge in red_square.windows(2).map(|w| (w[0], w[1]))
+    .chain([(red_square[3], red_square[0])])
+{
+    overlay.add_edge(InputEdge {
+        a: IntPoint::new(edge.0[0], edge.0[1]),
+        b: IntPoint::new(edge.1[0], edge.1[1]),
+        data: EdgeKind::Red,
+    }, ShapeType::Subject);
+}
+
+for edge in green_square.windows(2).map(|w| (w[0], w[1]))
+    .chain([(green_square[3], green_square[0])])
+{
+    overlay.add_edge(InputEdge {
+        a: IntPoint::new(edge.0[0], edge.0[1]),
+        b: IntPoint::new(edge.1[0], edge.1[1]),
+        data: EdgeKind::Green,
+    }, ShapeType::Clip);
+}
+
+let shapes = overlay.build_vector_shapes(OverlayRule::Union, FillRule::NonZero);
+
+// The result is grouped as shapes -> contours -> edges.
+// Each output edge contains geometry, fill, and the propagated user data.
+assert_eq!(shapes.len(), 1);
+assert!(shapes[0][0].iter().any(|edge| edge.data == EdgeKind::Undefined));
+```
+
+This API currently targets integer boolean operations and exports the result as vector shapes. It keeps the same contour structure as the regular polygon API, but each contour item is an edge with propagated data. Collinear edges are simplified only when their data is equal, so attribute boundaries are preserved.
 
 &nbsp;
 ## Spatial Predicates
@@ -534,7 +621,41 @@ If you need more control, use `FloatPointAdapter::with_scale` and `FloatOverlay:
 
 ---
 
-### 4. How do I enable OGC-valid output?
+### 4. How do I select the integer engine for float overlays?
+
+If you need control over the float-to-integer precision range, select the integer engine at
+compile time with the `from_*` constructors. The supported engines are `i16`, `i32`, and `i64`.
+The default engine is `i32`; use `i64` when the input bounds need a wider integer range.
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::overlay::FloatOverlay;
+
+let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+
+let mut overlay = FloatOverlay::<[f64; 2], i64>::from_subj_and_clip(&subj, &clip);
+let result = overlay.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+```
+
+The sugar traits also use `i32` by default. Use the `*_as::<I>` methods when you want to keep
+the shorthand API and still select the integer engine explicitly:
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::float::single::SingleFloatOverlay;
+
+let subj = vec![[0.0, 0.0], [0.0, 5.0], [5.0, 5.0], [5.0, 0.0]];
+let clip = vec![[2.0, 2.0], [2.0, 4.0], [4.0, 4.0], [4.0, 2.0]];
+
+let result = subj.overlay_as::<i64>(&clip, OverlayRule::Difference, FillRule::EvenOdd);
+```
+
+---
+
+### 5. How do I enable OGC-valid output?
 
 Set the `ogc` flag in `OverlayOptions`.
 

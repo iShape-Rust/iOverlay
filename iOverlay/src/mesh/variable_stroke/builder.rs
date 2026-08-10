@@ -1,205 +1,166 @@
-use crate::mesh::style::LineJoin;
-use crate::mesh::variable_stroke::builder_cap::CapBuilder;
-use crate::mesh::variable_stroke::builder_join::{
-    BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
-};
-use crate::mesh::variable_stroke::section::{Section, SectionToSegment};
+use crate::mesh::variable_stroke::builder_cap::RoundFanBuilder;
+use crate::mesh::variable_stroke::builder_join::RoundJoinBuilder;
+use crate::mesh::variable_stroke::section::{Section, SectionKind};
 use crate::mesh::variable_stroke::style::{StrokeVertex, VariableStrokeStyle};
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
-use alloc::boxed::Box;
 use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
+use i_shape::int::area::Area;
 
-trait VariableStrokeBuild<P: FloatPointCompatible> {
-    fn build(
-        &self,
-        path: &[StrokeVertex<P>],
-        is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    );
-
-    fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize;
-
-    fn additional_offset(&self, max_radius: P::Scalar) -> P::Scalar;
+pub(super) struct VariableStrokeBuilder<T: FloatNumber> {
+    fan: RoundFanBuilder<T>,
+    join: RoundJoinBuilder<T>,
 }
 
-pub(super) struct VariableStrokeBuilder<P: FloatPointCompatible> {
-    builder: Box<dyn VariableStrokeBuild<P>>,
-}
-
-struct Builder<J: JoinBuilder<P>, P: FloatPointCompatible> {
-    join_builder: J,
-    start_cap_builder: CapBuilder<P>,
-    end_cap_builder: CapBuilder<P>,
-}
-
-impl<P: FloatPointCompatible + 'static> VariableStrokeBuilder<P> {
-    pub(super) fn new(style: VariableStrokeStyle<P>) -> VariableStrokeBuilder<P> {
-        let start_cap_builder = CapBuilder::new(style.start_cap.normalize());
-        let end_cap_builder = CapBuilder::new(style.end_cap.normalize());
-
-        let builder: Box<dyn VariableStrokeBuild<P>> = match style.join.normalize() {
-            LineJoin::Miter(ratio) => Box::new(Builder {
-                join_builder: MiterJoinBuilder::new(ratio),
-                start_cap_builder,
-                end_cap_builder,
-            }),
-            LineJoin::Round(ratio) => Box::new(Builder {
-                join_builder: RoundJoinBuilder::new(ratio),
-                start_cap_builder,
-                end_cap_builder,
-            }),
-            LineJoin::Bevel => Box::new(Builder {
-                join_builder: BevelJoinBuilder,
-                start_cap_builder,
-                end_cap_builder,
-            }),
-        };
-
-        Self { builder }
-    }
-
-    #[inline]
-    pub(super) fn build(
-        &self,
-        path: &[StrokeVertex<P>],
-        is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        self.builder.build(path, is_closed_path, adapter, segments);
-    }
-
-    #[inline]
-    pub(super) fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize {
-        self.builder.capacity(paths_count, points_count, is_closed_path)
-    }
-
-    #[inline]
-    pub(super) fn additional_offset(&self, max_radius: P::Scalar) -> P::Scalar {
-        self.builder.additional_offset(max_radius)
-    }
-}
-
-impl<J: JoinBuilder<P>, P: FloatPointCompatible> VariableStrokeBuild<P> for Builder<J, P> {
-    fn build(
-        &self,
-        path: &[StrokeVertex<P>],
-        is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let path = Self::unique_path(path, is_closed_path, adapter);
-        if is_closed_path {
-            self.closed_segments(path.as_slice(), adapter, segments);
-        } else {
-            self.open_segments(path.as_slice(), adapter, segments);
+impl<T: FloatNumber> VariableStrokeBuilder<T> {
+    pub(super) fn new(style: VariableStrokeStyle<T>) -> Self {
+        let style = style.normalized();
+        Self {
+            fan: RoundFanBuilder::new(style.round_angle),
+            join: RoundJoinBuilder::new(style.round_angle),
         }
     }
 
-    #[inline]
-    fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize {
-        if is_closed_path {
-            self.join_builder.capacity() * points_count.saturating_sub(1)
-        } else {
-            self.join_builder.capacity() * points_count.saturating_sub(1)
-                + paths_count * (self.end_cap_builder.capacity() + self.start_cap_builder.capacity())
-        }
-    }
-
-    #[inline]
-    fn additional_offset(&self, max_radius: P::Scalar) -> P::Scalar {
-        let start_cap = self.start_cap_builder.additional_offset(max_radius);
-        let end_cap = self.end_cap_builder.additional_offset(max_radius);
-        let join = self.join_builder.additional_offset(max_radius);
-        join.max(start_cap.max(end_cap))
-    }
-}
-
-impl<J: JoinBuilder<P>, P: FloatPointCompatible> Builder<J, P> {
-    fn open_segments(
+    pub(super) fn build<P, I>(
         &self,
         path: &[StrokeVertex<P>],
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let n = path.len();
-        if n < 2 {
+        is_closed: bool,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
+    ) where
+        P: FloatPointCompatible<Scalar = T>,
+        I: IntNumber,
+    {
+        if path.len() < 2 {
             return;
         }
 
-        let mut s0 = Section::new(&path[0], &path[1]);
-        self.start_cap_builder.add_to_start(&s0, adapter, segments);
-        segments.add_section(&s0, adapter);
-
-        for i in 2..n {
-            let s1 = Section::new(&path[i - 1], &path[i]);
-            self.join_builder.add_join(&s0, &s1, adapter, segments);
-            segments.add_section(&s1, adapter);
-            s0 = s1;
+        let edge_count = if is_closed { path.len() } else { path.len() - 1 };
+        let mut sections = Vec::with_capacity(edge_count);
+        for i in 0..edge_count {
+            let j = if i + 1 == path.len() { 0 } else { i + 1 };
+            sections.push(Section::classify(&path[i], &path[j]));
         }
 
-        self.end_cap_builder.add_to_end(&s0, adapter, segments);
-    }
+        let mut output = PolygonBuilder { adapter, segments };
 
-    fn closed_segments(
-        &self,
-        path: &[StrokeVertex<P>],
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
-    ) {
-        let n = path.len();
-        if n < 2 {
-            return;
+        for section in sections.iter() {
+            match section {
+                SectionKind::Regular(section) => output.add_body(section),
+                SectionKind::Covered(section) => self.fan.add_covered_cap(section, &mut output),
+                SectionKind::Coincident | SectionKind::Empty => {}
+            }
         }
 
-        let start = Section::new(&path[n - 1], &path[0]);
-        let mut s0 = start.clone();
-        segments.add_section(&s0, adapter);
+        for i in 0..edge_count {
+            let SectionKind::Regular(section) = &sections[i] else {
+                continue;
+            };
 
-        for i in 1..n {
-            let s1 = Section::new(&path[i - 1], &path[i]);
-            self.join_builder.add_join(&s0, &s1, adapter, segments);
-            segments.add_section(&s1, adapter);
-            s0 = s1;
-        }
+            let previous = if i > 0 {
+                sections.get(i - 1)
+            } else if is_closed {
+                sections.last()
+            } else {
+                None
+            };
 
-        self.join_builder.add_join(&s0, &start, adapter, segments);
-    }
-
-    fn unique_path(
-        path: &[StrokeVertex<P>],
-        is_closed_path: bool,
-        adapter: &FloatPointAdapter<P>,
-    ) -> Vec<StrokeVertex<P>> {
-        let mut unique: Vec<StrokeVertex<P>> = Vec::with_capacity(path.len());
-
-        for vertex in path {
-            let ip = adapter.float_to_int(&vertex.point);
-            if let Some(last) = unique.last_mut() {
-                let last_ip = adapter.float_to_int(&last.point);
-                if last_ip == ip {
-                    *last = *vertex;
-                    continue;
+            match previous {
+                Some(SectionKind::Regular(previous)) => {
+                    self.join.add(previous, section, &self.fan, &mut output)
+                }
+                Some(SectionKind::Covered(_)) => {}
+                Some(SectionKind::Coincident | SectionKind::Empty) | None => {
+                    self.fan.add_start_cap(section, &mut output)
                 }
             }
-            unique.push(*vertex);
-        }
 
-        if is_closed_path && unique.len() > 1 {
-            let first_ip = adapter.float_to_int(&unique[0].point);
-            let last_index = unique.len() - 1;
-            let last_ip = adapter.float_to_int(&unique[last_index].point);
-            if first_ip == last_ip {
-                unique[0] = unique[last_index];
-                unique.pop();
+            let next = if i + 1 < edge_count {
+                sections.get(i + 1)
+            } else if is_closed {
+                sections.first()
+            } else {
+                None
+            };
+
+            match next {
+                Some(SectionKind::Regular(_) | SectionKind::Covered(_)) => {}
+                Some(SectionKind::Coincident | SectionKind::Empty) | None => {
+                    self.fan.add_end_cap(section, &mut output)
+                }
+            }
+        }
+    }
+
+    pub(super) fn capacity(&self, paths_count: usize, points_count: usize, is_closed: bool) -> usize {
+        let body = points_count.saturating_sub(paths_count) * 6;
+        let caps = if is_closed { 0 } else { 2 * paths_count };
+        body + self.fan.capacity() * (points_count + caps)
+    }
+
+    pub(super) fn additional_offset(&self, max_radius: T) -> T {
+        T::from_float(1.1) * max_radius
+    }
+}
+
+pub(super) struct PolygonBuilder<'a, P: FloatPointCompatible, I: IntNumber> {
+    adapter: &'a FloatPointAdapter<P, I>,
+    segments: &'a mut Vec<Segment<ShapeCountBoolean, I>>,
+}
+
+impl<P: FloatPointCompatible, I: IntNumber> PolygonBuilder<'_, P, I> {
+    #[inline]
+    pub(super) fn add_body(&mut self, section: &Section<P>) {
+        self.add_polygon(&[
+            section.a,
+            section.a_left,
+            section.b_left,
+            section.b,
+            section.b_right,
+            section.a_right,
+        ]);
+    }
+
+    #[inline]
+    pub(super) fn add_triangle(&mut self, center: P, a: P, b: P) {
+        self.add_polygon(&[center, a, b]);
+    }
+
+    pub(super) fn add_polygon(&mut self, points: &[P]) {
+        let mut contour = Vec::with_capacity(points.len());
+        for point in points {
+            let int_point = self.adapter.float_to_int(point);
+            if contour.last() != Some(&int_point) {
+                contour.push(int_point);
             }
         }
 
-        unique
+        if contour.len() > 1 && contour.first() == contour.last() {
+            contour.pop();
+        }
+        if contour.len() < 3 {
+            return;
+        }
+
+        let area = contour.as_slice().area_two();
+        if area == I::Wide::ZERO {
+            return;
+        }
+        if area < I::Wide::ZERO {
+            contour.reverse();
+        }
+
+        let mut a = *contour.last().unwrap();
+        for &b in contour.iter() {
+            if a != b {
+                self.segments.push(Segment::subject(a, b));
+            }
+            a = b;
+        }
     }
 }

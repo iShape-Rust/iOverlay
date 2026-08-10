@@ -1,20 +1,20 @@
-use std::collections::HashMap;
-use i_triangle::i_overlay::core::overlay::Overlay;
-use i_triangle::i_overlay::i_shape::int::count::PointsCount;
-use i_triangle::i_overlay::i_float::int::rect::IntRect;
-use iced::widget::scrollable;
-use iced::{Alignment, Length, Padding, Size, Vector};
-use iced::widget::{Button, Column, Container, Row, Space, Text};
-use crate::app::design;
 use crate::app::boolean::control::ModeOption;
 use crate::app::boolean::workspace::WorkspaceState;
+use crate::app::design;
 use crate::app::fill_option::FillOption;
-use crate::app::main::{EditorApp, AppMessage};
+use crate::app::main::{AppMessage, EditorApp};
 use crate::app::solver_option::SolverOption;
-use crate::geom::camera::Camera;
 use crate::data::boolean::BooleanResource;
+use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
+use i_triangle::i_overlay::core::overlay::Overlay;
+use i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::i_shape::int::count::PointsCount;
+use iced::widget::scrollable;
+use iced::widget::{Button, Column, Container, Row, Space, Text};
+use iced::{Alignment, Length, Padding, Size, Vector};
+use std::collections::HashMap;
 
 pub(crate) struct BooleanState {
     pub(crate) test: usize,
@@ -41,11 +41,8 @@ pub(crate) enum BooleanMessage {
 impl EditorApp {
     fn boolean_sidebar(&self) -> Column<'_, AppMessage> {
         let count = self.app_resource.boolean.count;
-        let mut column = Column::new().push(
-            Space::new()
-                .width(Length::Fill)
-                .height(Length::Fixed(2.0)),
-        );
+        let mut column =
+            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0)));
         for index in 0..count {
             let is_selected = self.state.boolean.test == index;
 
@@ -53,13 +50,22 @@ impl EditorApp {
                 Container::new(
                     Button::new(
                         Text::new(format!("test_{}", index))
-                            .style(if is_selected { design::style_sidebar_text_selected } else { design::style_sidebar_text })
-                            .size(14)
+                            .style(if is_selected {
+                                design::style_sidebar_text_selected
+                            } else {
+                                design::style_sidebar_text
+                            })
+                            .size(14),
                     )
-                        .width(Length::Fill)
-                        .on_press(AppMessage::Bool(BooleanMessage::TestSelected(index)))
-                        .style(if is_selected { design::style_sidebar_button_selected } else { design::style_sidebar_button })
-                ).padding(self.design.action_padding())
+                    .width(Length::Fill)
+                    .on_press(AppMessage::Bool(BooleanMessage::TestSelected(index)))
+                    .style(if is_selected {
+                        design::style_sidebar_button_selected
+                    } else {
+                        design::style_sidebar_button
+                    }),
+                )
+                .padding(self.design.action_padding()),
             );
         }
 
@@ -75,14 +81,15 @@ impl EditorApp {
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
                         .padding(Padding::new(0.0).right(8))
-                        .style(design::style_sidebar_background)
-                ).direction(scrollable::Direction::Vertical(
+                        .style(design::style_sidebar_background),
+                )
+                .direction(scrollable::Direction::Vertical(
                     scrollable::Scrollbar::new()
                         .width(4)
                         .margin(0)
                         .scroller_width(4)
                         .anchor(scrollable::Anchor::Start),
-                ))
+                )),
             )
             .push(self.boolean_workspace())
     }
@@ -101,7 +108,9 @@ impl EditorApp {
     }
 
     fn boolean_set_test(&mut self, index: usize) {
-        self.state.boolean.load_test(index, &mut self.app_resource.boolean);
+        self.state
+            .boolean
+            .load_test(index, &mut self.app_resource.boolean);
         self.state.boolean.update_solution();
     }
 
@@ -174,7 +183,8 @@ impl BooleanState {
             let editor_points = &mut self.workspace.points;
 
             if editor_points.is_empty() {
-                editor_points.reserve(test.clip_paths.points_count() + test.subj_paths.points_count())
+                editor_points
+                    .reserve(test.clip_paths.points_count() + test.subj_paths.points_count())
             } else {
                 editor_points.clear();
             }
@@ -204,10 +214,11 @@ impl BooleanState {
         let clip = &self.workspace.clip;
         let fill_rule = self.fill.fill_rule();
         match self.mode {
-            ModeOption::Edit => {},
+            ModeOption::Edit => {}
             ModeOption::Debug => {
-                self.workspace.vectors = Overlay::with_contours(subj, clip).build_separate_vectors(fill_rule);
-            },
+                self.workspace.vectors =
+                    Overlay::with_contours(subj, clip).build_separate_vectors(fill_rule);
+            }
             _ => {
                 let overlay_rule = self.mode.overlay_rule().unwrap();
                 let solution = Overlay::with_contours(subj, clip).overlay(overlay_rule, fill_rule);

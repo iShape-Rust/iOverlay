@@ -9,14 +9,15 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
+use i_float::int::number::int::IntNumber;
 
-pub(super) trait JoinBuilder<P: FloatPointCompatible> {
+pub(super) trait JoinBuilder<P: FloatPointCompatible, I: IntNumber> {
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     );
     fn capacity(&self) -> usize;
     fn additional_offset(&self, radius: P::Scalar) -> P::Scalar;
@@ -26,31 +27,31 @@ pub(super) struct BevelJoinBuilder;
 
 impl BevelJoinBuilder {
     #[inline]
-    fn join_top<P: FloatPointCompatible>(
+    fn join_top<P: FloatPointCompatible, I: IntNumber>(
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         Self::add_segment(&s0.b_top, &s1.a_top, adapter, segments);
     }
 
     #[inline]
-    fn join_bot<P: FloatPointCompatible>(
+    fn join_bot<P: FloatPointCompatible, I: IntNumber>(
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         Self::add_segment(&s1.a_bot, &s0.b_bot, adapter, segments);
     }
 
     #[inline]
-    fn add_segment<P: FloatPointCompatible>(
+    fn add_segment<P: FloatPointCompatible, I: IntNumber>(
         a: &P,
         b: &P,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let ia = adapter.float_to_int(a);
         let ib = adapter.float_to_int(b);
@@ -60,14 +61,14 @@ impl BevelJoinBuilder {
     }
 }
 
-impl<P: FloatPointCompatible> JoinBuilder<P> for BevelJoinBuilder {
+impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for BevelJoinBuilder {
     #[inline]
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         Self::join_top(s0, s1, adapter, segments);
         Self::join_bot(s0, s1, adapter, segments);
@@ -117,13 +118,13 @@ impl<T: FloatNumber> MiterJoinBuilder<T> {
     }
 }
 
-impl<P: FloatPointCompatible> JoinBuilder<P> for MiterJoinBuilder<P::Scalar> {
+impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for MiterJoinBuilder<P::Scalar> {
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let cross_product = FloatPointMath::cross_product(&s0.dir, &s1.dir);
         if cross_product.abs() < P::Scalar::from_float(0.0001) {
@@ -237,13 +238,13 @@ impl<T: FloatNumber> RoundJoinBuilder<T> {
         }
     }
 }
-impl<P: FloatPointCompatible> JoinBuilder<P> for RoundJoinBuilder<P::Scalar> {
+impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for RoundJoinBuilder<P::Scalar> {
     fn add_join(
         &self,
         s0: &Section<P>,
         s1: &Section<P>,
-        adapter: &FloatPointAdapter<P>,
-        segments: &mut Vec<Segment<ShapeCountBoolean>>,
+        adapter: &FloatPointAdapter<P, I>,
+        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         let dot_product = FloatPointMath::dot_product(&s0.dir, &s1.dir);
         if self.limit_dot_product < dot_product {
@@ -297,5 +298,93 @@ impl<P: FloatPointCompatible> JoinBuilder<P> for RoundJoinBuilder<P::Scalar> {
     fn additional_offset(&self, radius: P::Scalar) -> P::Scalar {
         // add extra 10% to avoid problems with floating point precision.
         P::Scalar::from_float(1.1) * radius
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
+    use crate::mesh::stroke::section::Section;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use crate::segm::segment::Segment;
+    use alloc::vec::Vec;
+    use core::f64::consts::PI;
+    use i_float::adapter::FloatPointAdapter;
+    use i_float::float::rect::FloatRect;
+
+    type TestSegment = Segment<ShapeCountBoolean, i32>;
+
+    fn build_join<J: JoinBuilder<[f64; 2], i32>>(
+        builder: &J,
+        radius: f64,
+        a: [f64; 2],
+        b: [f64; 2],
+        c: [f64; 2],
+        scale: f64,
+    ) -> Vec<TestSegment> {
+        let rect = FloatRect::new(-20.0, 20.0, -20.0, 20.0);
+        let adapter = FloatPointAdapter::try_with_scale(rect, scale).unwrap();
+        let s0 = Section::new(radius, &a, &b);
+        let s1 = Section::new(radius, &b, &c);
+        let mut segments = Vec::new();
+
+        builder.add_join(&s0, &s1, &adapter, &mut segments);
+
+        segments
+    }
+
+    #[test]
+    fn acute_angle_uses_each_requested_join_type() {
+        let radius = 1.0;
+        let a = [-10.0, 0.0];
+        let b = [0.0, 0.0];
+        let c = [-10.0, 0.1];
+        let scale = 1_000.0;
+
+        let bevel = build_join(&BevelJoinBuilder, radius, a, b, c, scale);
+        let miter = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        let round = build_join(&RoundJoinBuilder::new(PI / 12.0, radius), radius, a, b, c, scale);
+
+        assert_eq!(bevel.len(), 2);
+        assert_eq!(miter.len(), 4);
+        assert!(round.len() > miter.len());
+        assert_ne!(miter, bevel);
+        assert_ne!(round, bevel);
+    }
+
+    #[test]
+    fn near_collinear_segments_fall_back_to_stable_bevel_join() {
+        let radius = 1.0;
+        let a = [-10.0, 0.0];
+        let b = [0.0, 0.0];
+        let c = [10.0, 0.000_01];
+        let scale = 1_000_000.0;
+
+        let bevel = build_join(&BevelJoinBuilder, radius, a, b, c, scale);
+        let miter = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        let round = build_join(&RoundJoinBuilder::new(PI / 12.0, radius), radius, a, b, c, scale);
+
+        assert_eq!(miter, bevel);
+        assert_eq!(round, bevel);
+
+        let repeated = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        assert_eq!(repeated, miter);
+    }
+
+    #[test]
+    fn tiny_offset_does_not_create_degenerate_join_segments() {
+        let radius = 0.01;
+        let a = [-10.0, 0.0];
+        let b = [0.0, 0.0];
+        let c = [0.0, 10.0];
+        let scale = 10.0;
+
+        let bevel = build_join(&BevelJoinBuilder, radius, a, b, c, scale);
+        let miter = build_join(&MiterJoinBuilder::new(PI / 6.0, radius), radius, a, b, c, scale);
+        let round = build_join(&RoundJoinBuilder::new(PI / 12.0, radius), radius, a, b, c, scale);
+
+        assert!(bevel.is_empty());
+        assert!(miter.is_empty());
+        assert!(round.is_empty());
     }
 }

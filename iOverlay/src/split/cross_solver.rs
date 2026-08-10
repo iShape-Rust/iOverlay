@@ -1,8 +1,11 @@
 use crate::geom::x_segment::XSegment;
-use i_float::fix_vec::FixVec;
+use core::marker::PhantomData;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::product_uint::UIntProduct;
+use i_float::int::number::uint::UIntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_float::u128::UInt128;
 
 pub(super) type CollinearMask = u8;
 
@@ -52,8 +55,8 @@ impl EndMask for CollinearMask {
     }
 }
 
-pub(super) struct CrossResult {
-    pub(super) point: IntPoint,
+pub(super) struct CrossResult<I: IntNumber> {
+    pub(super) point: IntPoint<I>,
     pub(super) cross_type: CrossType,
     pub(super) is_round: bool,
 }
@@ -65,19 +68,28 @@ pub(super) enum CrossType {
     Overlay,
 }
 
-pub(super) struct CrossSolver {}
+pub(super) struct CrossSolver<I: IntNumber> {
+    phantom_data: PhantomData<I>,
+}
 
-impl CrossSolver {
-    pub(super) fn cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
-        let a0b0a1 = Triangle::clock_direction_point(target.a, target.b, other.a);
-        let a0b0b1 = Triangle::clock_direction_point(target.a, target.b, other.b);
+impl<I: IntNumber> CrossSolver<I> {
+    pub(super) fn cross(
+        target: &XSegment<I>,
+        other: &XSegment<I>,
+        radius: I::Wide,
+    ) -> Option<CrossResult<I>> {
+        let a0b0a1 = Triangle::clock_direction(target.a, target.b, other.a);
+        let a0b0b1 = Triangle::clock_direction(target.a, target.b, other.b);
 
-        let a1b1a0 = Triangle::clock_direction_point(other.a, other.b, target.a);
-        let a1b1b0 = Triangle::clock_direction_point(other.a, other.b, target.b);
+        let a1b1a0 = Triangle::clock_direction(other.a, other.b, target.a);
+        let a1b1b0 = Triangle::clock_direction(other.a, other.b, target.b);
 
-        let s = (1 & (a0b0a1 + 1)) + (1 & (a0b0b1 + 1)) + (1 & (a1b1a0 + 1)) + (1 & (a1b1b0 + 1));
+        let one = I::Wide::ONE;
 
-        if s == 4 {
+        let s =
+            (one & (a0b0a1 + one)) + (one & (a0b0b1 + one)) + (one & (a1b1a0 + one)) + (one & (a1b1b0 + one));
+
+        if s == I::Wide::FOUR {
             return Some(CrossResult {
                 point: IntPoint::ZERO,
                 cross_type: CrossType::Overlay,
@@ -87,24 +99,24 @@ impl CrossSolver {
 
         let is_not_cross = a0b0a1 == a0b0b1 || a1b1a0 == a1b1b0;
 
-        if s > 1 || is_not_cross {
+        if s > I::Wide::ONE || is_not_cross {
             return None;
         }
 
-        if s != 0 {
-            return if a0b0a1 == 0 {
+        if s != I::Wide::ZERO {
+            return if a0b0a1 == I::Wide::ZERO {
                 Some(CrossResult {
                     point: other.a,
                     cross_type: CrossType::OtherEnd,
                     is_round: false,
                 })
-            } else if a0b0b1 == 0 {
+            } else if a0b0b1 == I::Wide::ZERO {
                 Some(CrossResult {
                     point: other.b,
                     cross_type: CrossType::OtherEnd,
                     is_round: false,
                 })
-            } else if a1b1a0 == 0 {
+            } else if a1b1a0 == I::Wide::ZERO {
                 Some(CrossResult {
                     point: target.a,
                     cross_type: CrossType::TargetEnd,
@@ -122,11 +134,11 @@ impl CrossSolver {
         Self::middle_cross(target, other, radius)
     }
 
-    pub(super) fn collinear(target: &XSegment, other: &XSegment) -> CollinearMask {
-        let a0 = FixVec::new_point(target.a);
-        let b0 = FixVec::new_point(target.b);
-        let a1 = FixVec::new_point(other.a);
-        let b1 = FixVec::new_point(other.b);
+    pub(super) fn collinear(target: &XSegment<I>, other: &XSegment<I>) -> CollinearMask {
+        let a0 = target.a;
+        let b0 = target.b;
+        let a1 = other.a;
+        let b1 = other.b;
 
         let v1 = b1 - a1;
 
@@ -140,19 +152,19 @@ impl CrossSolver {
         let ba1 = -ab0;
         let bb1 = -bb0;
 
-        let is_target_a = aa0 == -ab0 && aa0 != 0;
-        let is_target_b = ba0 == -bb0 && ba0 != 0;
+        let is_target_a = aa0 == -ab0 && aa0 != I::Wide::ZERO;
+        let is_target_b = ba0 == -bb0 && ba0 != I::Wide::ZERO;
 
-        let is_other_a = aa1 == -ab1 && aa1 != 0;
-        let is_other_b = ba1 == -bb1 && ba1 != 0;
+        let is_other_a = aa1 == -ab1 && aa1 != I::Wide::ZERO;
+        let is_other_b = ba1 == -bb1 && ba1 != I::Wide::ZERO;
 
         CollinearMask::new(is_target_a, is_target_b, is_other_a, is_other_b)
     }
 
-    fn middle_cross(target: &XSegment, other: &XSegment, radius: i64) -> Option<CrossResult> {
+    fn middle_cross(target: &XSegment<I>, other: &XSegment<I>, radius: I::Wide) -> Option<CrossResult<I>> {
         let p = CrossSolver::cross_point(target, other);
 
-        if Triangle::is_line_point(target.a, p, target.b) && Triangle::is_line_point(other.a, p, other.b) {
+        if Triangle::is_line(target.a, p, target.b) && Triangle::is_line(other.a, p, other.b) {
             return Some(CrossResult {
                 point: p,
                 cross_type: CrossType::Pure,
@@ -176,7 +188,7 @@ impl CrossSolver {
             if r0 <= r1 {
                 let p = if ra0 < rb0 { target.a } else { target.b };
                 // ignore if it's a clean point
-                if Triangle::is_not_line_point(other.a, p, other.b) {
+                if Triangle::is_not_line(other.a, p, other.b) {
                     return Some(CrossResult {
                         point: p,
                         cross_type: CrossType::TargetEnd,
@@ -187,7 +199,7 @@ impl CrossSolver {
                 let p = if ra1 < rb1 { other.a } else { other.b };
 
                 // ignore if it's a clean point
-                if Triangle::is_not_line_point(target.a, p, target.b) {
+                if Triangle::is_not_line(target.a, p, target.b) {
                     return Some(CrossResult {
                         point: p,
                         cross_type: CrossType::OtherEnd,
@@ -204,7 +216,7 @@ impl CrossSolver {
         })
     }
 
-    fn cross_point(target: &XSegment, other: &XSegment) -> IntPoint {
+    fn cross_point(target: &XSegment<I>, other: &XSegment<I>) -> IntPoint<I> {
         // edges are not parallel
         // any abs(x) and abs(y) < 2^30
         // The result must be < 2^30
@@ -230,25 +242,25 @@ impl CrossSolver {
         // let x = kx / divider
         // let y = ky / divider
         //
-        // return FixVec(x, y)
+        // return IntPoint(x, y)
 
         // offset approach
         // move all picture by -a0. Point a0 will be equal (0, 0)
 
         // move a0.x to 0
         // move all by a0.x
-        let a0x = target.a.x as i64;
-        let a0y = target.a.y as i64;
+        let a0x = target.a.x.to_wide();
+        let a0y = target.a.y.to_wide();
 
-        let a1x = target.b.x as i64 - a0x;
-        let b0x = other.a.x as i64 - a0x;
-        let b1x = other.b.x as i64 - a0x;
+        let a1x = target.b.x.to_wide() - a0x;
+        let b0x = other.a.x.to_wide() - a0x;
+        let b1x = other.b.x.to_wide() - a0x;
 
         // move a0.y to 0
         // move all by a0.y
-        let a1y = target.b.y as i64 - a0y;
-        let b0y = other.a.y as i64 - a0y;
-        let b1y = other.b.y as i64 - a0y;
+        let a1y = target.b.y.to_wide() - a0y;
+        let b0y = other.a.y.to_wide() - a0y;
+        let b1y = other.b.y.to_wide() - a0y;
 
         let dy_b = b0y - b1y;
         let dx_b = b0x - b1x;
@@ -256,18 +268,18 @@ impl CrossSolver {
         // let xyA = 0
         let xy_b = b0x * b1y - b0y * b1x;
 
-        let x0: i64;
-        let y0: i64;
+        let x0: I::Wide;
+        let y0: I::Wide;
 
         // a1y and a1x cannot be zero simultaneously, because we will get edge a0<>a1 zero length and it is impossible
 
-        if a1x == 0 {
+        if a1x == I::Wide::ZERO {
             // dxB is not zero because it will be parallel case and it's impossible
-            x0 = 0;
+            x0 = I::Wide::ZERO;
             y0 = xy_b / dx_b;
-        } else if a1y == 0 {
+        } else if a1y == I::Wide::ZERO {
             // dyB is not zero because it will be parallel case and it's impossible
-            y0 = 0;
+            y0 = I::Wide::ZERO;
             x0 = -xy_b / dy_b;
         } else {
             // divider
@@ -282,68 +294,20 @@ impl CrossSolver {
             let uxy_b = xy_b.unsigned_abs();
             let udiv = div.unsigned_abs();
 
-            let kx = UInt128::multiply(a1x.unsigned_abs(), uxy_b);
-            let ky = UInt128::multiply(a1y.unsigned_abs(), uxy_b);
+            let kx = <I::WideUInt as UIntNumber>::Product::multiply(a1x.unsigned_abs(), uxy_b);
+            let ky = <I::WideUInt as UIntNumber>::Product::multiply(a1y.unsigned_abs(), uxy_b);
 
             let ux = kx.divide_with_rounding(udiv);
             let uy = ky.divide_with_rounding(udiv);
 
-            // get i64 bit result
-            x0 = sx * ux as i64;
-            y0 = sy * uy as i64;
+            x0 = sx * I::Wide::from_uint(ux);
+            y0 = sy * I::Wide::from_uint(uy);
         }
 
-        let x = (x0 + a0x) as i32;
-        let y = (y0 + a0y) as i32;
+        let x = I::from_wide(x0 + a0x);
+        let y = I::from_wide(y0 + a0y);
 
         IntPoint::new(x, y)
-    }
-}
-
-const LAST_BIT_INDEX: usize = 63;
-
-trait RoundDivide {
-    fn divide_with_rounding(&self, divisor: u64) -> u64;
-}
-
-impl RoundDivide for UInt128 {
-    fn divide_with_rounding(&self, divisor: u64) -> u64 {
-        if self.high == 0 {
-            let result = self.low / divisor;
-            let remainder = self.low - result * divisor;
-            return if remainder >= (divisor + 1) >> 1 {
-                result + 1
-            } else {
-                result
-            };
-        }
-
-        let dn = divisor.leading_zeros();
-        let norm_divisor = divisor << dn;
-        let mut norm_dividend_high = (self.high << dn) | (self.low >> (u64::BITS - dn));
-        let mut norm_dividend_low = self.low << dn;
-
-        let mut quotient = 0;
-        let one = 1 << LAST_BIT_INDEX;
-
-        for _ in 0..u64::BITS {
-            let bit = (norm_dividend_high & one) != 0;
-            norm_dividend_high = (norm_dividend_high << 1) | (norm_dividend_low >> LAST_BIT_INDEX);
-            norm_dividend_low <<= 1;
-            quotient <<= 1;
-            if norm_dividend_high >= norm_divisor || bit {
-                norm_dividend_high = norm_dividend_high.wrapping_sub(norm_divisor);
-                quotient |= 1;
-            }
-        }
-
-        // Check remainder for rounding
-        let remainder = (norm_dividend_high << (u64::BITS - dn)) | (norm_dividend_low >> dn);
-        if remainder >= (divisor + 1) >> 1 {
-            quotient += 1;
-        }
-
-        quotient
     }
 }
 
@@ -353,7 +317,7 @@ mod tests {
     use crate::split::cross_solver::{CrossSolver, CrossType};
     use i_float::int::point::IntPoint;
 
-    impl XSegment {
+    impl XSegment<i32> {
         fn new(a: IntPoint, b: IntPoint) -> Self {
             Self { a, b }
         }
@@ -380,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_big_cross_1() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(0, -s), IntPoint::new(0, s));
@@ -399,7 +363,7 @@ mod tests {
 
     #[test]
     fn test_big_cross_2() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(1024, -s), IntPoint::new(1024, s));
@@ -418,7 +382,7 @@ mod tests {
 
     #[test]
     fn test_big_cross_3() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
         let q: i32 = s / 2;
 
         let ea = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(s, s));
@@ -438,7 +402,7 @@ mod tests {
 
     #[test]
     fn test_left_end() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(-s, -s), IntPoint::new(-s, s));
@@ -457,7 +421,7 @@ mod tests {
 
     #[test]
     fn test_right_end() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, 0), IntPoint::new(s, 0));
         let eb = XSegment::new(IntPoint::new(s, -s), IntPoint::new(s, s));
@@ -476,7 +440,7 @@ mod tests {
 
     #[test]
     fn test_left_top() {
-        let s: i32 = 1024_000_000;
+        let s: i32 = 1_024_000_000;
 
         let ea = XSegment::new(IntPoint::new(-s, s), IntPoint::new(s, s));
         let eb = XSegment::new(IntPoint::new(-s, s), IntPoint::new(-s, -s));
@@ -509,7 +473,7 @@ mod tests {
 
         match result.cross_type {
             CrossType::Pure => {
-                assert_eq!(IntPoint::new(-1048691, -5244), result.point);
+                assert_eq!(IntPoint::new(-1048691, -5243), result.point);
             }
             _ => {
                 panic!("Fail cross result");

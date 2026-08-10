@@ -1,4 +1,6 @@
 use crate::core::solver::Solver;
+use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 
 pub(super) struct SnapRadius {
     current: usize,
@@ -10,8 +12,8 @@ impl SnapRadius {
         self.current = 60.min(self.current + self.step);
     }
 
-    pub(super) fn radius(&self) -> i64 {
-        1 << self.current
+    pub(super) fn radius<I: IntNumber>(&self) -> I::Wide {
+        I::Wide::ONE << self.current as u32
     }
 }
 

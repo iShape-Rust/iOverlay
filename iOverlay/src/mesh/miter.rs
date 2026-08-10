@@ -1,25 +1,26 @@
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
 pub(super) struct Miter;
 
-pub(super) enum SharpMiter {
+pub(super) enum SharpMiter<I: IntNumber> {
     Degenerate,
-    AB(IntPoint, IntPoint),
-    AcB(IntPoint, IntPoint, IntPoint),
+    AB(IntPoint<I>, IntPoint<I>),
+    AcB(IntPoint<I>, IntPoint<I>, IntPoint<I>),
 }
 
 impl Miter {
     #[inline]
-    pub(super) fn sharp<P: FloatPointCompatible>(
+    pub(super) fn sharp<P: FloatPointCompatible, I: IntNumber>(
         pa: P,
         pb: P,
         va: P,
         vb: P,
-        adapter: &FloatPointAdapter<P>,
-    ) -> SharpMiter {
+        adapter: &FloatPointAdapter<P, I>,
+    ) -> SharpMiter<I> {
         let ia = adapter.float_to_int(&pa);
         let ib = adapter.float_to_int(&pb);
 

@@ -1,6 +1,7 @@
 use crate::geom::v_segment::VSegment;
-use crate::vector::edge::{VectorEdge, VectorPath};
+use crate::vector::edge::{DataVectorEdge, DataVectorPath};
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 use i_shape::int::path::IntPath;
 
@@ -35,15 +36,15 @@ impl ContourIndex {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct IdSegment {
+#[derive(Clone, Copy)]
+pub(crate) struct IdSegment<I: IntNumber> {
     pub(crate) contour_index: ContourIndex,
-    pub(crate) v_segment: VSegment,
+    pub(crate) v_segment: VSegment<I>,
 }
 
-impl IdSegment {
+impl<I: IntNumber> IdSegment<I> {
     #[inline]
-    fn new(data: ContourIndex, a: IntPoint, b: IntPoint) -> Self {
+    fn new(data: ContourIndex, a: IntPoint<I>, b: IntPoint<I>) -> Self {
         Self {
             contour_index: data,
             v_segment: VSegment { a, b },
@@ -51,7 +52,7 @@ impl IdSegment {
     }
 
     #[inline]
-    pub(crate) fn with_segment(data: ContourIndex, v_segment: VSegment) -> Self {
+    pub(crate) fn with_segment(data: ContourIndex, v_segment: VSegment<I>) -> Self {
         Self {
             contour_index: data,
             v_segment,
@@ -59,45 +60,45 @@ impl IdSegment {
     }
 }
 
-pub(crate) trait IdSegments {
+pub(crate) trait IdSegments<I: IntNumber> {
     fn append_id_segments(
         &self,
-        buffer: &mut Vec<IdSegment>,
+        buffer: &mut Vec<IdSegment<I>>,
         id_data: ContourIndex,
-        x_min: i32,
-        x_max: i32,
+        x_min: I,
+        x_max: I,
         clockwise: bool,
     );
 }
 
-impl IdSegments for IntPath {
+impl<I: IntNumber> IdSegments<I> for IntPath<I> {
     #[inline]
     fn append_id_segments(
         &self,
-        buffer: &mut Vec<IdSegment>,
+        buffer: &mut Vec<IdSegment<I>>,
         id_data: ContourIndex,
-        x_min: i32,
-        x_max: i32,
+        x_min: I,
+        x_max: I,
         clockwise: bool,
     ) {
-        fn inner<I: Iterator<Item = IntPoint>>(
-            mut iter: I,
-            buffer: &mut Vec<IdSegment>,
+        fn inner<I: IntNumber, It: Iterator<Item = IntPoint<I>>>(
+            mut iter: It,
+            buffer: &mut Vec<IdSegment<I>>,
             id_data: ContourIndex,
-            x_min: i32,
-            x_max: i32,
+            x_min: I,
+            x_max: I,
         ) {
             let first = iter.next().unwrap();
             let mut b = first;
             for a in iter {
                 if a.x < b.x && x_min < b.x && a.x <= x_max {
-                    buffer.push(IdSegment::new(id_data, a, b));
+                    buffer.push(IdSegment::<I>::new(id_data, a, b));
                 }
                 b = a;
             }
             let a = first;
             if a.x < b.x && x_min < b.x && a.x <= x_max {
-                buffer.push(IdSegment::new(id_data, a, b));
+                buffer.push(IdSegment::<I>::new(id_data, a, b));
             }
         }
 
@@ -109,34 +110,34 @@ impl IdSegments for IntPath {
     }
 }
 
-impl IdSegments for VectorPath {
+impl<I: IntNumber, D> IdSegments<I> for DataVectorPath<I, D> {
     #[inline]
     fn append_id_segments(
         &self,
-        buffer: &mut Vec<IdSegment>,
+        buffer: &mut Vec<IdSegment<I>>,
         id_data: ContourIndex,
-        x_min: i32,
-        x_max: i32,
+        x_min: I,
+        x_max: I,
         clockwise: bool,
     ) {
-        fn inner<I: Iterator<Item = VectorEdge>>(
-            iter: I,
-            buffer: &mut Vec<IdSegment>,
+        fn inner<'a, D: 'a, I: IntNumber + 'a, It: Iterator<Item = &'a DataVectorEdge<I, D>>>(
+            iter: It,
+            buffer: &mut Vec<IdSegment<I>>,
             id_data: ContourIndex,
-            x_min: i32,
-            x_max: i32,
+            x_min: I,
+            x_max: I,
         ) {
             for vec in iter {
                 if vec.a.x < vec.b.x && x_min < vec.b.x && vec.a.x <= x_max {
-                    buffer.push(IdSegment::new(id_data, vec.a, vec.b));
+                    buffer.push(IdSegment::<I>::new(id_data, vec.a, vec.b));
                 }
             }
         }
 
         if clockwise {
-            inner(self.iter().copied(), buffer, id_data, x_min, x_max);
+            inner(self.iter(), buffer, id_data, x_min, x_max);
         } else {
-            inner(self.iter().rev().copied(), buffer, id_data, x_min, x_max);
+            inner(self.iter().rev(), buffer, id_data, x_min, x_max);
         }
     }
 }

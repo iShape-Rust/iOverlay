@@ -11,9 +11,13 @@ pub(crate) struct Camera {
 }
 
 impl Camera {
-
     pub(crate) fn empty() -> Self {
-        Self { scale: 0.0, i_scale: 0.0, size: Size::ZERO, pos: Vector::new(0.0 ,0.0)  }
+        Self {
+            scale: 0.0,
+            i_scale: 0.0,
+            size: Size::ZERO,
+            pos: Vector::new(0.0, 0.0),
+        }
     }
 
     pub(crate) fn is_empty(&self) -> bool {
@@ -30,8 +34,8 @@ impl Camera {
     }
 
     pub(crate) fn new(rect: IntRect, size: Size) -> Self {
-        let w_pow = rect.width().ilog2() as usize;
-        let h_pow = rect.height().ilog2() as usize;
+        let w_pow = rect.width().max(1).ilog2() as usize;
+        let h_pow = rect.height().max(1).ilog2() as usize;
 
         let width = (1 << w_pow) as f32;
         let height = (1 << h_pow) as f32;
@@ -44,13 +48,24 @@ impl Camera {
         let y = 0.5 * (rect.min_y + rect.max_y) as f32;
         let pos = Vector::new(x, y);
 
-        Camera { scale, i_scale, size, pos }
+        Camera {
+            scale,
+            i_scale,
+            size,
+            pos,
+        }
     }
 
     #[inline]
-    pub(crate) fn world_to_screen(&self, view_left_top: Vector<f32>, world: IntPoint) -> Vector<f32> {
-        let x = self.scale * (world.x as f32 - self.pos.x) + view_left_top.x + 0.5 * self.size.width;
-        let y = self.scale * (self.pos.y - world.y as f32) + view_left_top.y + 0.5 * self.size.height;
+    pub(crate) fn world_to_screen(
+        &self,
+        view_left_top: Vector<f32>,
+        world: IntPoint,
+    ) -> Vector<f32> {
+        let x =
+            self.scale * (world.x as f32 - self.pos.x) + view_left_top.x + 0.5 * self.size.width;
+        let y =
+            self.scale * (self.pos.y - world.y as f32) + view_left_top.y + 0.5 * self.size.height;
         Vector { x, y }
     }
 
@@ -78,5 +93,28 @@ impl Camera {
         let x = view_distance.x * self.i_scale;
         let y = -view_distance.y * self.i_scale;
         Vector { x, y }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Camera;
+    use i_triangle::i_overlay::i_float::int::rect::IntRect;
+    use iced::Size;
+
+    #[test]
+    fn camera_supports_degenerate_bounds() {
+        let rects = [
+            IntRect::new(0, 10_000, 0, 0),
+            IntRect::new(0, 0, -10_000, 10_000),
+            IntRect::new(42, 42, 24, 24),
+        ];
+
+        for rect in rects {
+            let camera = Camera::new(rect, Size::new(800.0, 600.0));
+            assert!(camera.scale.is_finite());
+            assert!(camera.scale > 0.0);
+            assert!(camera.i_scale.is_finite());
+        }
     }
 }

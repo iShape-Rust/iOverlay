@@ -1,4 +1,5 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::overlay::ShapeType;
 use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
@@ -26,12 +27,16 @@ use i_shape::source::resource::ShapeResource;
 ///
 /// For a more ergonomic API, see the [`FloatRelate`] trait which provides
 /// methods directly on shape types.
-pub struct FloatPredicateOverlay<P: FloatPointCompatible> {
-    pub(crate) overlay: PredicateOverlay,
-    pub(crate) adapter: FloatPointAdapter<P>,
+pub struct FloatPredicateOverlay<P: FloatPointCompatible, I: OverlayInt = i32> {
+    pub(crate) overlay: PredicateOverlay<I>,
+    pub(crate) adapter: FloatPointAdapter<P, I>,
 }
 
-impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
+impl<P, I> FloatPredicateOverlay<P, I>
+where
+    P: FloatPointCompatible,
+    I: OverlayInt,
+{
     /// Creates a new predicate overlay with a pre-configured adapter.
     ///
     /// Use this when you need fixed-scale precision via `FloatPointAdapter::with_scale()`.
@@ -40,7 +45,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     /// * `adapter` - A `FloatPointAdapter` instance for coordinate conversion.
     /// * `capacity` - Initial capacity for storing segments.
     #[inline]
-    pub fn with_adapter(adapter: FloatPointAdapter<P>, capacity: usize) -> Self {
+    pub fn with_adapter(adapter: FloatPointAdapter<P, I>, capacity: usize) -> Self {
         Self {
             overlay: PredicateOverlay::new(capacity),
             adapter,
@@ -58,7 +63,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     /// * `capacity` - Initial capacity for storing segments.
     #[inline]
     pub fn with_adapter_custom(
-        adapter: FloatPointAdapter<P>,
+        adapter: FloatPointAdapter<P, I>,
         fill_rule: FillRule,
         solver: Solver,
         capacity: usize,
@@ -70,13 +75,13 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     }
 
     /// Creates a new predicate overlay from subject and clip shapes.
-    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
     where
         R0: ShapeResource<P> + ?Sized,
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -90,7 +95,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     }
 
     /// Creates a new predicate overlay with custom solver and fill rule.
-    pub fn with_subj_and_clip_custom<R0, R1>(
+    pub fn from_subj_and_clip_custom<R0, R1>(
         subj: &R0,
         clip: &R1,
         fill_rule: FillRule,
@@ -101,7 +106,7 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -167,11 +172,43 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
     }
 }
 
+impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
+    /// Creates a new predicate overlay from subject and clip shapes.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    where
+        R0: ShapeResource<P> + ?Sized,
+        R1: ShapeResource<P> + ?Sized,
+    {
+        Self::from_subj_and_clip(subj, clip)
+    }
+
+    /// Creates a new predicate overlay with custom solver and fill rule.
+    /// Uses the default integer engine (`i32`).
+    #[inline]
+    pub fn with_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        fill_rule: FillRule,
+        solver: Solver,
+    ) -> Self
+    where
+        R0: ShapeResource<P> + ?Sized,
+        R1: ShapeResource<P> + ?Sized,
+    {
+        Self::from_subj_and_clip_custom(subj, clip, fill_rule, solver)
+    }
+}
+
 /// Ergonomic trait for spatial predicate operations on shape resources.
 ///
 /// This trait provides convenient methods for testing spatial relationships
 /// directly on contours, shapes, and shape collections without explicit
 /// overlay construction.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
+/// when you need to select `i16`, `i32`, or `i64` explicitly.
 ///
 /// # Example
 ///
@@ -191,6 +228,9 @@ impl<P: FloatPointCompatible> FloatPredicateOverlay<P> {
 /// // Non-overlapping shapes (fast bounding-box rejection)
 /// assert!(!square.intersects(&distant));
 /// assert!(square.disjoint(&distant));
+///
+/// // Select the integer engine explicitly.
+/// assert!(square.intersects_as::<i64>(&other));
 /// ```
 ///
 /// # Supported Types
@@ -214,19 +254,39 @@ where
     /// overlap and boundary contact (shapes sharing an edge).
     fn intersects(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::intersects`], but with an explicit integer engine.
+    fn intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
+
     /// Returns `true` if the interiors of this shape and another overlap.
     ///
     /// Unlike `intersects()`, this returns `false` for shapes that only share
     /// boundary points (edges or vertices) without interior overlap.
     fn interiors_intersect(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::interiors_intersect`], but with an explicit integer engine.
+    fn interiors_intersect_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
+
     /// Returns `true` if this shape touches another (boundaries intersect but interiors don't).
     ///
     /// Returns `true` when shapes share boundary points but their interiors don't overlap.
     fn touches(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::touches`], but with an explicit integer engine.
+    fn touches_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
+
     /// Returns `true` if this shape intersects another by point coincidence only.
     fn point_intersects(&self, other: &R1) -> bool;
+
+    /// Same as [`Self::point_intersects`], but with an explicit integer engine.
+    fn point_intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
 
     /// Returns `true` if this shape is completely within another.
     ///
@@ -234,15 +294,30 @@ where
     /// also has fill on the same side.
     fn within(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::within`], but with an explicit integer engine.
+    fn within_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
+
     /// Returns `true` if this shape does not intersect with another (no shared points).
     ///
     /// This is the negation of `intersects()`.
     fn disjoint(&self, other: &R1) -> bool;
 
+    /// Same as [`Self::disjoint`], but with an explicit integer engine.
+    fn disjoint_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
+
     /// Returns `true` if this shape completely covers another.
     ///
     /// `covers(A, B)` is equivalent to `within(B, A)`.
     fn covers(&self, other: &R1) -> bool;
+
+    /// Same as [`Self::covers`], but with an explicit integer engine.
+    fn covers_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt;
 }
 
 impl<R0, R1, P> FloatRelate<R1, P> for R0
@@ -253,27 +328,67 @@ where
 {
     #[inline]
     fn intersects(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).intersects()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).intersects()
+    }
+
+    #[inline]
+    fn intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).intersects()
     }
 
     #[inline]
     fn interiors_intersect(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).interiors_intersect()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).interiors_intersect()
+    }
+
+    #[inline]
+    fn interiors_intersect_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).interiors_intersect()
     }
 
     #[inline]
     fn touches(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).touches()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).touches()
+    }
+
+    #[inline]
+    fn touches_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).touches()
     }
 
     #[inline]
     fn point_intersects(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).point_intersects()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).point_intersects()
+    }
+
+    #[inline]
+    fn point_intersects_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).point_intersects()
     }
 
     #[inline]
     fn within(&self, other: &R1) -> bool {
-        FloatPredicateOverlay::with_subj_and_clip(self, other).within()
+        FloatPredicateOverlay::<P>::with_subj_and_clip(self, other).within()
+    }
+
+    #[inline]
+    fn within_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        FloatPredicateOverlay::<P, I>::from_subj_and_clip(self, other).within()
     }
 
     #[inline]
@@ -282,8 +397,24 @@ where
     }
 
     #[inline]
+    fn disjoint_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        !self.intersects_as::<I>(other)
+    }
+
+    #[inline]
     fn covers(&self, other: &R1) -> bool {
         other.within(self)
+    }
+
+    #[inline]
+    fn covers_as<I>(&self, other: &R1) -> bool
+    where
+        I: OverlayInt,
+    {
+        other.within_as::<I>(self)
     }
 }
 
@@ -300,6 +431,7 @@ mod tests {
 
         assert!(square.intersects(&other));
         assert!(other.intersects(&square));
+        assert!(square.intersects_as::<i64>(&other));
     }
 
     #[test]
@@ -537,7 +669,7 @@ mod tests {
         let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
 
         let iter = square.iter().chain(other.iter());
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, i32>::with_iter(iter);
 
         let mut overlay = FloatPredicateOverlay::with_adapter(adapter, 16);
         overlay.add_source(&square, ShapeType::Subject);
@@ -556,7 +688,7 @@ mod tests {
         let other = vec![[5.0, 5.0], [5.0, 15.0], [15.0, 15.0], [15.0, 5.0]];
 
         let iter = square.iter().chain(other.iter());
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, i32>::with_iter(iter);
 
         let mut overlay =
             FloatPredicateOverlay::with_adapter_custom(adapter, FillRule::NonZero, Solver::default(), 16);

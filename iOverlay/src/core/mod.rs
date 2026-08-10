@@ -1,8 +1,11 @@
 pub mod divide;
+pub mod edge_data;
+pub mod edge_overlay;
 pub mod extract;
 mod extract_ogc;
 pub mod fill_rule;
 pub mod graph;
+pub mod integer;
 pub(crate) mod link;
 pub(crate) mod nearest_vector;
 pub mod overlay;

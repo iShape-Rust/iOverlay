@@ -1,4 +1,5 @@
 use crate::core::fill_rule::FillRule;
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
@@ -10,6 +11,23 @@ use i_shape::source::resource::ShapeResource;
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
 /// allowing for boolean operations based on the specified build rule.
+///
+/// This convenience trait uses the default integer engine (`i32`). Use the `*_as::<I>` methods
+/// when you need to select `i16`, `i32`, or `i64` explicitly.
+///
+/// # Example
+///
+/// ```
+/// use i_overlay::core::fill_rule::FillRule;
+/// use i_overlay::float::slice::FloatSlice;
+///
+/// let shape = vec![[0.0, 0.0], [0.0, 2.0], [2.0, 2.0], [2.0, 0.0]];
+/// let line = vec![[-1.0, 1.0], [3.0, 1.0]];
+///
+/// let result = shape.slice_by_as::<i64>(&line, FillRule::EvenOdd);
+///
+/// assert_eq!(result.len(), 2);
+/// ```
 pub trait FloatSlice<R, P>
 where
     R: ShapeResource<P>,
@@ -28,6 +46,11 @@ where
     ///
     /// Note: Outer boundary paths have a counterclockwise order, and holes have a clockwise order.
     fn slice_by(&self, resource: &R, fill_rule: FillRule) -> Shapes<P>;
+
+    /// Same as [`Self::slice_by`], but with an explicit integer engine.
+    fn slice_by_as<I>(&self, resource: &R, fill_rule: FillRule) -> Shapes<P>
+    where
+        I: OverlayInt;
 
     /// Slices the current shapes by string lines with a fixed float-to-integer scale.
     ///
@@ -48,6 +71,16 @@ where
         fill_rule: FillRule,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Same as [`Self::slice_by_fixed_scale`], but with an explicit integer engine.
+    fn slice_by_fixed_scale_as<I>(
+        &self,
+        resource: &R,
+        fill_rule: FillRule,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: OverlayInt;
 
     /// Slices the current shapes by string lines.
     ///
@@ -70,6 +103,17 @@ where
         solver: Solver,
     ) -> Shapes<P>;
 
+    /// Same as [`Self::slice_custom_by`], but with an explicit integer engine.
+    fn slice_custom_by_as<I>(
+        &self,
+        resource: &R,
+        fill_rule: FillRule,
+        options: OverlayOptions<P::Scalar, I>,
+        solver: Solver,
+    ) -> Shapes<P>
+    where
+        I: OverlayInt;
+
     /// Slices the current shapes by string lines with a fixed float-to-integer scale.
     ///
     /// - `resource`: A string lines.
@@ -92,6 +136,18 @@ where
         solver: Solver,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError>;
+
+    /// Same as [`Self::slice_custom_by_fixed_scale`], but with an explicit integer engine.
+    fn slice_custom_by_fixed_scale_as<I>(
+        &self,
+        resource: &R,
+        fill_rule: FillRule,
+        options: OverlayOptions<P::Scalar, I>,
+        solver: Solver,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: OverlayInt;
 }
 
 impl<R0, R1, P> FloatSlice<R0, P> for R1
@@ -102,7 +158,18 @@ where
 {
     #[inline]
     fn slice_by(&self, resource: &R0, fill_rule: FillRule) -> Shapes<P> {
-        FloatStringOverlay::with_shape_and_string(self, resource)
+        FloatStringOverlay::<P>::with_shape_and_string(self, resource)
+            .build_graph_view(fill_rule)
+            .map(|graph| graph.extract_shapes(StringRule::Slice))
+            .unwrap_or_default()
+    }
+
+    #[inline]
+    fn slice_by_as<I>(&self, resource: &R0, fill_rule: FillRule) -> Shapes<P>
+    where
+        I: OverlayInt,
+    {
+        FloatStringOverlay::<P, I>::from_shape_and_string(self, resource)
             .build_graph_view(fill_rule)
             .map(|graph| graph.extract_shapes(StringRule::Slice))
             .unwrap_or_default()
@@ -116,7 +183,25 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         Ok(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(self, resource, scale)?
+            FloatStringOverlay::<P>::with_shape_and_string_fixed_scale(self, resource, scale)?
+                .build_graph_view(fill_rule)
+                .map(|graph| graph.extract_shapes(StringRule::Slice))
+                .unwrap_or_default(),
+        )
+    }
+
+    #[inline]
+    fn slice_by_fixed_scale_as<I>(
+        &self,
+        resource: &R0,
+        fill_rule: FillRule,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: OverlayInt,
+    {
+        Ok(
+            FloatStringOverlay::<P, I>::from_shape_and_string_fixed_scale(self, resource, scale)?
                 .build_graph_view(fill_rule)
                 .map(|graph| graph.extract_shapes(StringRule::Slice))
                 .unwrap_or_default(),
@@ -131,7 +216,24 @@ where
         options: OverlayOptions<P::Scalar>,
         solver: Solver,
     ) -> Shapes<P> {
-        FloatStringOverlay::with_shape_and_string(self, resource)
+        FloatStringOverlay::<P>::with_shape_and_string(self, resource)
+            .build_graph_view_with_solver(fill_rule, solver)
+            .map(|graph| graph.extract_shapes_custom(StringRule::Slice, options))
+            .unwrap_or_default()
+    }
+
+    #[inline]
+    fn slice_custom_by_as<I>(
+        &self,
+        resource: &R0,
+        fill_rule: FillRule,
+        options: OverlayOptions<P::Scalar, I>,
+        solver: Solver,
+    ) -> Shapes<P>
+    where
+        I: OverlayInt,
+    {
+        FloatStringOverlay::<P, I>::from_shape_and_string(self, resource)
             .build_graph_view_with_solver(fill_rule, solver)
             .map(|graph| graph.extract_shapes_custom(StringRule::Slice, options))
             .unwrap_or_default()
@@ -147,7 +249,27 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         Ok(
-            FloatStringOverlay::with_shape_and_string_fixed_scale(self, resource, scale)?
+            FloatStringOverlay::<P>::with_shape_and_string_fixed_scale(self, resource, scale)?
+                .build_graph_view_with_solver(fill_rule, solver)
+                .map(|graph| graph.extract_shapes_custom(StringRule::Slice, options))
+                .unwrap_or_default(),
+        )
+    }
+
+    #[inline]
+    fn slice_custom_by_fixed_scale_as<I>(
+        &self,
+        resource: &R0,
+        fill_rule: FillRule,
+        options: OverlayOptions<P::Scalar, I>,
+        solver: Solver,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError>
+    where
+        I: OverlayInt,
+    {
+        Ok(
+            FloatStringOverlay::<P, I>::from_shape_and_string_fixed_scale(self, resource, scale)?
                 .build_graph_view_with_solver(fill_rule, solver)
                 .map(|graph| graph.extract_shapes_custom(StringRule::Slice, options))
                 .unwrap_or_default(),
@@ -198,6 +320,12 @@ mod tests {
         assert_eq!(shapes[1].len(), 1);
         assert_eq!(shapes[0][0].len(), 4);
         assert_eq!(shapes[1][0].len(), 4);
+
+        let shapes = shape
+            .slice_by_fixed_scale_as::<i64>(&string, FillRule::EvenOdd, 10.0)
+            .unwrap();
+
+        assert_eq!(shapes.len(), 2);
     }
 
     #[test]

@@ -204,13 +204,13 @@ mod tests {
         println!("clip: {}", clip.json_print());
     }
 
-    fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath> {
+    fn many_squares(start: IntPoint, size: i32, offset: i32, n: usize) -> Vec<IntPath<i32>> {
         let mut result = Vec::with_capacity(n * n);
         let mut y = start.y;
         for _ in 0..n {
             let mut x = start.x;
             for _ in 0..n {
-                let path: IntPath = vec![
+                let path: IntPath<i32> = vec![
                     IntPoint::new(x, y),
                     IntPoint::new(x, y + size),
                     IntPoint::new(x + size, y + size),
@@ -225,13 +225,13 @@ mod tests {
         result
     }
 
-    fn many_lines_x(a: i32, n: usize) -> Vec<IntPath> {
+    fn many_lines_x(a: i32, n: usize) -> Vec<IntPath<i32>> {
         let w = a / 2;
         let s = a * (n as i32) / 2;
         let mut x = -s + w / 2;
         let mut result = Vec::with_capacity(n);
         for _ in 0..n {
-            let path: IntPath = vec![
+            let path: IntPath<i32> = vec![
                 IntPoint::new(x, -s),
                 IntPoint::new(x, s),
                 IntPoint::new(x + w, s),
@@ -244,13 +244,13 @@ mod tests {
         result
     }
 
-    fn many_lines_y(a: i32, n: usize) -> Vec<IntPath> {
+    fn many_lines_y(a: i32, n: usize) -> Vec<IntPath<i32>> {
         let h = a / 2;
         let s = a * (n as i32) / 2;
         let mut y = -s + h / 2;
         let mut result = Vec::with_capacity(n);
         for _ in 0..n {
-            let path: IntPath = vec![
+            let path: IntPath<i32> = vec![
                 IntPoint::new(-s, y),
                 IntPoint::new(s, y),
                 IntPoint::new(s, y - h),
@@ -263,7 +263,7 @@ mod tests {
         result
     }
 
-    fn discrete_spiral(count: usize, a: i32) -> Vec<IntContour> {
+    fn discrete_spiral(count: usize, a: i32) -> Vec<IntContour<i32>> {
         let mut rects = Vec::with_capacity(8 * count);
 
         let a2 = 2 * a;
@@ -353,7 +353,7 @@ mod tests {
         rects
     }
 
-    fn romb(x: i32, y: i32, a: i32) -> IntContour {
+    fn romb(x: i32, y: i32, a: i32) -> IntContour<i32> {
         vec![
             IntPoint::new(x - a, y),
             IntPoint::new(x, y - a),
@@ -362,7 +362,7 @@ mod tests {
         ]
     }
 
-    fn square(x: i32, y: i32, a: i32) -> IntContour {
+    fn square(x: i32, y: i32, a: i32) -> IntContour<i32> {
         vec![
             IntPoint::new(x - a, y + a),
             IntPoint::new(x - a, y - a),
@@ -371,7 +371,14 @@ mod tests {
         ]
     }
 
-    fn repeat_xy(origin: IntContour, x0: i32, y0: i32, dx: i32, dy: i32, count: usize) -> Vec<IntContour> {
+    fn repeat_xy(
+        origin: IntContour<i32>,
+        x0: i32,
+        y0: i32,
+        dx: i32,
+        dy: i32,
+        count: usize,
+    ) -> Vec<IntContour<i32>> {
         let mut contours = Vec::with_capacity(8 * count);
         let mut x = x0;
         for _ in 0..count {
@@ -391,7 +398,7 @@ mod tests {
         contours
     }
 
-    fn repeat_x(origin: IntContour, x0: i32, y0: i32, dx: i32, count: usize) -> Vec<IntContour> {
+    fn repeat_x(origin: IntContour<i32>, x0: i32, y0: i32, dx: i32, count: usize) -> Vec<IntContour<i32>> {
         let mut contours = Vec::with_capacity(8 * count);
         let mut x = x0;
         for _ in 0..count {
@@ -407,7 +414,7 @@ mod tests {
         contours
     }
 
-    fn repeat_y(origin: IntContour, x0: i32, y0: i32, dy: i32, count: usize) -> Vec<IntContour> {
+    fn repeat_y(origin: IntContour<i32>, x0: i32, y0: i32, dy: i32, count: usize) -> Vec<IntContour<i32>> {
         let mut contours = Vec::with_capacity(8 * count);
         let mut y = y0;
         for _ in 0..count {

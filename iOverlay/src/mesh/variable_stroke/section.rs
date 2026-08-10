@@ -1,73 +1,136 @@
-use crate::mesh::math::Math;
 use crate::mesh::variable_stroke::style::StrokeVertex;
-use crate::segm::boolean::ShapeCountBoolean;
-use crate::segm::segment::Segment;
-use alloc::vec::Vec;
-use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy)]
 pub(super) struct Section<P: FloatPointCompatible> {
     pub(super) a: P,
     pub(super) b: P,
     pub(super) a_radius: P::Scalar,
     pub(super) b_radius: P::Scalar,
-    pub(super) a_top: P,
-    pub(super) b_top: P,
-    pub(super) a_bot: P,
-    pub(super) b_bot: P,
-    pub(super) dir: P,
+    pub(super) a_left: P,
+    pub(super) b_left: P,
+    pub(super) a_right: P,
+    pub(super) b_right: P,
+    pub(super) direction: P,
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct CoveredSection<P: FloatPointCompatible> {
+    pub(super) center: P,
+    pub(super) radius: P::Scalar,
+    pub(super) outward: P,
+}
+
+pub(super) enum SectionKind<P: FloatPointCompatible> {
+    Regular(Section<P>),
+    Covered(CoveredSection<P>),
+    Coincident,
+    Empty,
 }
 
 impl<P: FloatPointCompatible> Section<P> {
-    pub(super) fn new(a: &StrokeVertex<P>, b: &StrokeVertex<P>) -> Self {
-        let dir = Math::normal(&b.point, &a.point);
-        let ta = Math::ortho_and_scale(&dir, a.radius());
-        let tb = Math::ortho_and_scale(&dir, b.radius());
+    pub(super) fn classify(a: &StrokeVertex<P>, b: &StrokeVertex<P>) -> SectionKind<P> {
+        if !Self::is_finite(a) || !Self::is_finite(b) {
+            return SectionKind::Empty;
+        }
 
-        let a_top = FloatPointMath::add(&a.point, &ta);
-        let a_bot = FloatPointMath::sub(&a.point, &ta);
+        let a_radius = a.radius();
+        let b_radius = b.radius();
+        if a_radius <= P::Scalar::ZERO && b_radius <= P::Scalar::ZERO {
+            return SectionKind::Empty;
+        }
 
-        let b_top = FloatPointMath::add(&b.point, &tb);
-        let b_bot = FloatPointMath::sub(&b.point, &tb);
+        let vector = FloatPointMath::sub(&b.point, &a.point);
+        let distance_sqr = FloatPointMath::sqr_length(&vector);
+        if distance_sqr <= P::Scalar::ZERO {
+            return SectionKind::Coincident;
+        }
 
-        Section {
+        let radius_delta = a_radius - b_radius;
+        if radius_delta * radius_delta >= distance_sqr {
+            let direction = FloatPointMath::normalize(&vector);
+            return if a_radius >= b_radius {
+                SectionKind::Covered(CoveredSection {
+                    center: a.point,
+                    radius: a_radius,
+                    outward: P::from_xy(-direction.x(), -direction.y()),
+                })
+            } else {
+                SectionKind::Covered(CoveredSection {
+                    center: b.point,
+                    radius: b_radius,
+                    outward: direction,
+                })
+            };
+        }
+
+        let distance = distance_sqr.sqrt();
+        let direction = FloatPointMath::scale(&vector, P::Scalar::ONE / distance);
+        let k = radius_delta / distance;
+        let h = (P::Scalar::ONE - k * k).max(P::Scalar::ZERO).sqrt();
+        if h <= P::Scalar::ZERO {
+            return SectionKind::Empty;
+        }
+
+        let normal = P::from_xy(-direction.y(), direction.x());
+        let left_normal = P::from_xy(
+            k * direction.x() + h * normal.x(),
+            k * direction.y() + h * normal.y(),
+        );
+        let right_normal = P::from_xy(
+            k * direction.x() - h * normal.x(),
+            k * direction.y() - h * normal.y(),
+        );
+
+        let a_left = FloatPointMath::add(&a.point, &FloatPointMath::scale(&left_normal, a_radius));
+        let b_left = FloatPointMath::add(&b.point, &FloatPointMath::scale(&left_normal, b_radius));
+        let a_right = FloatPointMath::add(&a.point, &FloatPointMath::scale(&right_normal, a_radius));
+        let b_right = FloatPointMath::add(&b.point, &FloatPointMath::scale(&right_normal, b_radius));
+
+        SectionKind::Regular(Self {
             a: a.point,
             b: b.point,
-            a_radius: a.radius(),
-            b_radius: b.radius(),
-            a_top,
-            b_top,
-            a_bot,
-            b_bot,
-            dir,
-        }
+            a_radius,
+            b_radius,
+            a_left,
+            b_left,
+            a_right,
+            b_right,
+            direction,
+        })
     }
 
     #[inline]
-    pub(super) fn join_radius(&self, next: &Self) -> P::Scalar {
-        self.b_radius.max(next.a_radius)
+    fn is_finite(vertex: &StrokeVertex<P>) -> bool {
+        vertex.point.x().is_finite() && vertex.point.y().is_finite() && vertex.width.is_finite()
     }
 }
 
-pub(super) trait SectionToSegment<P: FloatPointCompatible> {
-    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P>);
-}
+#[cfg(test)]
+mod tests {
+    use super::{Section, SectionKind};
+    use crate::mesh::variable_stroke::StrokeVertex;
 
-impl<P: FloatPointCompatible> SectionToSegment<P> for Vec<Segment<ShapeCountBoolean>> {
-    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P>) {
-        let a_top = adapter.float_to_int(&section.a_top);
-        let b_top = adapter.float_to_int(&section.b_top);
-        let a_bot = adapter.float_to_int(&section.a_bot);
-        let b_bot = adapter.float_to_int(&section.b_bot);
+    #[test]
+    fn equal_width_has_parallel_tangents() {
+        let a = StrokeVertex::new([0.0, 0.0], 4.0);
+        let b = StrokeVertex::new([10.0, 0.0], 4.0);
+        let SectionKind::Regular(section) = Section::classify(&a, &b) else {
+            panic!("expected regular section");
+        };
 
-        if a_top != b_top {
-            self.push(Segment::subject(b_top, a_top));
-        }
-        if a_bot != b_bot {
-            self.push(Segment::subject(a_bot, b_bot));
-        }
+        assert_eq!(section.a_left, [0.0, 2.0]);
+        assert_eq!(section.b_left, [10.0, 2.0]);
+        assert_eq!(section.a_right, [0.0, -2.0]);
+        assert_eq!(section.b_right, [10.0, -2.0]);
+    }
+
+    #[test]
+    fn larger_end_covers_smaller_start() {
+        let a = StrokeVertex::new([0.0, 0.0], 2.0);
+        let b = StrokeVertex::new([2.0, 0.0], 6.0);
+        assert!(matches!(Section::classify(&a, &b), SectionKind::Covered(_)));
     }
 }

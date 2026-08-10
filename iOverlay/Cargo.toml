@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "6.0.1"
+version = "8.0.0"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 rust-version = "1.88"
@@ -12,10 +12,11 @@ readme = "README.md"
 categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 
 [dependencies]
-i_float = { version = "^2.0.0" }
-i_shape = { version = "^2.0.0" }
-i_tree = { version = "^0.18.0" }
-i_key_sort = { version = "^0.10.1" }
+i_tree = { version = "^0.19.0" }
+i_key_sort = { version = "^0.11.0" }
+
+i_float = { version = "^4.0.0"}
+i_shape = { version = "^4.0.0"}
 
 #i_float = { path = "../../iFloat"}
 #i_shape = { path = "../../iShape"}
@@ -36,7 +37,7 @@ allow_multithreading = ["dep:rayon", "i_key_sort/allow_multithreading"]
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 rand = { version = "~0.10", features = ["alloc"] }
+i_float = { version = "^4.0.0", features = ["serde"] }
+i_shape = { version = "^4.0.0", features = ["serde"] }
 #i_float = { path = "../../iFloat", features = ["serde"] }
 #i_shape = { path = "../../iShape", features = ["serde"] }
-i_float = { version = "^2.0.0", features = ["serde"] }
-i_shape = { version = "^2.0.0", features = ["serde"] }

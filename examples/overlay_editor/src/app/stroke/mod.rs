@@ -1,3 +1,3 @@
 pub(crate) mod content;
-pub(crate) mod control;
+mod control;
 mod workspace;

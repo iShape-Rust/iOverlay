@@ -1,63 +1,115 @@
-use std::time::Instant;
+use crate::test::util::{OverlayInt, Util};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::core::solver::Solver;
+use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::IntContour;
+use std::time::Instant;
 
 pub(crate) struct WindMillTest;
 
 /*
-// 7
-// Difference:
+test 8
+WindMillTest
+Difference:
+
+i16
 
 // multithreading on
-1     - 0.000007
-2     - 0.000028
-4     - 0.000136
-8     - 0.000702
-16     - 0.003199
-32     - 0.010574
-64     - 0.049129
-128     - 0.202190
-256     - 0.887956
-512     - 3.830878
-1024     - 15.643612
+1     - 0.000004
+2     - 0.000012
+4     - 0.000049
+8     - 0.000239
+16     - 0.001321
+32     - 0.003630
+64     - 0.013392
+128     - 0.055149
+256     - 0.245865
 
 // multithreading off
-1     - 0.000007
-2     - 0.000027
-4     - 0.000136
-8     - 0.000708
-16     - 0.003072
-32     - 0.010975
-64     - 0.054829
-128     - 0.243694
-256     - 1.180819
-512     - 4.130558
-1024     - 17.840079
+1     - 0.000004
+2     - 0.000012
+4     - 0.000049
+8     - 0.000241
+16     - 0.001326
+32     - 0.004098
+64     - 0.018836
+128     - 0.080683
+256     - 0.375508
+
+i32
+
+// multithreading on
+1     - 0.000004
+2     - 0.000013
+4     - 0.000048
+8     - 0.000229
+16     - 0.001354
+32     - 0.003816
+64     - 0.015072
+128     - 0.061520
+256     - 0.280049
+512     - 1.243484
+
+// multithreading off
+1     - 0.000004
+2     - 0.000012
+4     - 0.000049
+8     - 0.000231
+16     - 0.001354
+32     - 0.004408
+64     - 0.021355
+128     - 0.090989
+256     - 0.416754
+512     - 1.820984
+
+i64
+
+// multithreading on
+1     - 0.000005
+2     - 0.000014
+4     - 0.000058
+8     - 0.000284
+16     - 0.001662
+32     - 0.004458
+64     - 0.018935
+128     - 0.077800
+256     - 0.349065
+512     - 1.508555
+
+// multithreading off
+1     - 0.000005
+2     - 0.000014
+4     - 0.000059
+8     - 0.000281
+16     - 0.001637
+32     - 0.005425
+64     - 0.026436
+128     - 0.115288
+256     - 0.513712
+512     - 2.269812
+
  */
 
 impl WindMillTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64, simple_geometry: bool) {
-        let (subj_paths, clip_paths) = Self::geometry(80, n);
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+        if Util::skip_if_out_of_range::<I>(n, 80 * n + 80) {
+            return;
+        }
+
+        let (subj_paths, clip_paths) = Self::geometry(I::from_usize(80), n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
         let sq_it_count = it_count * it_count;
 
         let start = Instant::now();
 
-        if simple_geometry {
-            // for _ in 0..sq_it_count {
-            //     let _ = Overlay::with_contours(&subj_paths, &clip_paths)
-            //         .overlay_45geom_with_min_area_and_solver(rule, FillRule::NonZero, 0, solver);
-            // }
-        } else {
-            for _ in 0..sq_it_count {
-                let _ = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+        for _ in 0..sq_it_count {
+            let _ =
+                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
                     .overlay(rule, FillRule::NonZero);
-            }
         }
 
         let duration = start.elapsed();
@@ -66,25 +118,26 @@ impl WindMillTest {
         println!("{}     - {:.6}", n, time);
     }
 
-    pub(crate) fn validate(n: usize, rule: OverlayRule, solver: Solver) {
-        let (subj_paths, clip_paths) = Self::geometry(80, n);
+    pub(crate) fn validate<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver) {
+        let (subj_paths, clip_paths) = Self::geometry(I::from_usize(80), n);
 
-        let res = Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-            .overlay(rule, FillRule::NonZero);
+        let res =
+            Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
+                .overlay(rule, FillRule::NonZero);
 
         assert_eq!(res.len(), n * n);
         println!("result validation PASS");
     }
 
-    fn geometry(size: i32, count: usize) -> (Vec<IntContour>, Vec<IntContour>) {
+    fn geometry<I: IntNumber>(size: I, count: usize) -> (Vec<IntContour<I>>, Vec<IntContour<I>>) {
         let mut subj_paths = Vec::with_capacity(4 * count * count);
         let mut clip_paths = Vec::with_capacity(4 * count * count);
 
-        let a = size / 8;
+        let a = size / I::from_usize(8);
 
-        let mut x = size / 2;
+        let mut x = size / I::TWO;
         for _ in 0..count {
-            let mut y = size / 2;
+            let mut y = size / I::TWO;
             for _ in 0..count {
                 let (subj, clip) = Self::shapes(IntPoint::new(x, y), a);
 
@@ -100,54 +153,59 @@ impl WindMillTest {
         (subj_paths, clip_paths)
     }
 
-    fn shapes(center: IntPoint, a: i32) -> (Vec<IntContour>, Vec<IntContour>) {
+    fn shapes<I: IntNumber>(center: IntPoint<I>, a: I) -> (Vec<IntContour<I>>, Vec<IntContour<I>>) {
+        let i0 = I::from_usize(0);
+        let i1 = I::from_usize(1);
+        let i2 = I::from_usize(2);
+        let i3 = I::from_usize(3);
+        let i4 = I::from_usize(4);
         let clip_paths = vec![
             vec![
-                IntPoint::new(-3 * a + center.x, 1 * a + center.y),
-                IntPoint::new(-3 * a + center.x, 3 * a + center.y),
-                IntPoint::new(-1 * a + center.x, 3 * a + center.y),
-                IntPoint::new(-1 * a + center.x, 1 * a + center.y),
+                IntPoint::new(-i3 * a + center.x, i1 * a + center.y),
+                IntPoint::new(-i3 * a + center.x, i3 * a + center.y),
+                IntPoint::new(-i1 * a + center.x, i3 * a + center.y),
+                IntPoint::new(-i1 * a + center.x, i1 * a + center.y),
             ],
             vec![
-                IntPoint::new(1 * a + center.x, 2 * a + center.y),
-                IntPoint::new(1 * a + center.x, 4 * a + center.y),
-                IntPoint::new(3 * a + center.x, 4 * a + center.y),
-                IntPoint::new(3 * a + center.x, 2 * a + center.y),
+                IntPoint::new(i1 * a + center.x, i2 * a + center.y),
+                IntPoint::new(i1 * a + center.x, i4 * a + center.y),
+                IntPoint::new(i3 * a + center.x, i4 * a + center.y),
+                IntPoint::new(i3 * a + center.x, i2 * a + center.y),
             ],
             vec![
-                IntPoint::new(-2 * a + center.x, -3 * a + center.y),
-                IntPoint::new(-2 * a + center.x, -1 * a + center.y),
-                IntPoint::new(0 * a + center.x, -1 * a + center.y),
-                IntPoint::new(0 * a + center.x, -3 * a + center.y),
+                IntPoint::new(-i2 * a + center.x, -i3 * a + center.y),
+                IntPoint::new(-i2 * a + center.x, -i1 * a + center.y),
+                IntPoint::new(i0 * a + center.x, -i1 * a + center.y),
+                IntPoint::new(i0 * a + center.x, -i3 * a + center.y),
             ],
             vec![
-                IntPoint::new(2 * a + center.x, -2 * a + center.y),
-                IntPoint::new(2 * a + center.x, 0 * a + center.y),
-                IntPoint::new(4 * a + center.x, 0 * a + center.y),
-                IntPoint::new(4 * a + center.x, -2 * a + center.y),
+                IntPoint::new(i2 * a + center.x, -i2 * a + center.y),
+                IntPoint::new(i2 * a + center.x, i0 * a + center.y),
+                IntPoint::new(i4 * a + center.x, i0 * a + center.y),
+                IntPoint::new(i4 * a + center.x, -i2 * a + center.y),
             ],
         ];
 
         let subj_paths = vec![
             vec![
-                IntPoint::new(0 * a + center.x, 0 * a + center.y),
-                IntPoint::new(-3 * a + center.x, 0 * a + center.y),
-                IntPoint::new(0 * a + center.x, 3 * a + center.y),
+                IntPoint::new(i0 * a + center.x, i0 * a + center.y),
+                IntPoint::new(-i3 * a + center.x, i0 * a + center.y),
+                IntPoint::new(i0 * a + center.x, i3 * a + center.y),
             ],
             vec![
-                IntPoint::new(0 * a + center.x, 1 * a + center.y),
-                IntPoint::new(0 * a + center.x, 4 * a + center.y),
-                IntPoint::new(3 * a + center.x, 1 * a + center.y),
+                IntPoint::new(i0 * a + center.x, i1 * a + center.y),
+                IntPoint::new(i0 * a + center.x, i4 * a + center.y),
+                IntPoint::new(i3 * a + center.x, i1 * a + center.y),
             ],
             vec![
-                IntPoint::new(1 * a + center.x, 0 * a + center.y),
-                IntPoint::new(1 * a + center.x, -3 * a + center.y),
-                IntPoint::new(-2 * a + center.x, 0 * a + center.y),
+                IntPoint::new(i1 * a + center.x, i0 * a + center.y),
+                IntPoint::new(i1 * a + center.x, -i3 * a + center.y),
+                IntPoint::new(-i2 * a + center.x, i0 * a + center.y),
             ],
             vec![
-                IntPoint::new(1 * a + center.x, 1 * a + center.y),
-                IntPoint::new(4 * a + center.x, 1 * a + center.y),
-                IntPoint::new(1 * a + center.x, -2 * a + center.y),
+                IntPoint::new(i1 * a + center.x, i1 * a + center.y),
+                IntPoint::new(i4 * a + center.x, i1 * a + center.y),
+                IntPoint::new(i1 * a + center.x, -i2 * a + center.y),
             ],
         ];
 

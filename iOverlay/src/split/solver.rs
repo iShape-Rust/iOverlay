@@ -1,3 +1,5 @@
+use crate::core::edge_data::{EdgeDataSplit, OverlayEdgeData};
+use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
 use crate::geom::x_segment::XSegment;
 use crate::segm::merge::ShapeSegmentsMerge;
@@ -7,61 +9,85 @@ use crate::segm::winding::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::line_mark::{LineMark, SortMarkByIndexAndPoint};
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 
-#[derive(Clone)]
-pub(crate) struct SplitSolver {
-    pub(super) marks: Vec<LineMark>,
+pub(crate) struct SplitSolver<I: IntNumber> {
+    pub(super) marks: Vec<LineMark<I>>,
 }
 
-impl SplitSolver {
+impl<I: IntNumber> SplitSolver<I> {
     #[inline(always)]
     pub(crate) fn new() -> Self {
         Self { marks: Vec::new() }
     }
+}
+
+impl<I> SplitSolver<I>
+where
+    I: OverlayInt,
+{
+    #[inline]
+    pub(crate) fn split_segments<C: WindingCount, D: OverlayEdgeData<C>>(
+        &mut self,
+        segments: &mut Vec<Segment<C, I, D>>,
+        solver: &Solver,
+    ) -> bool {
+        let mut store = D::Store::default();
+        self.split_segments_with_store(segments, solver, &mut store)
+    }
 
     #[inline]
-    pub(crate) fn split_segments<C: WindingCount>(
+    pub(crate) fn split_segments_with_store<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C>>,
+        segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) -> bool {
         if segments.is_empty() {
             return false;
         }
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
-        let any_merged = segments.merge_if_needed();
-        let any_intersection = self.split(segments, solver);
+        let any_merged = segments.merge_if_needed_with_store(store);
+        if segments.is_empty() {
+            return true;
+        }
 
+        let any_intersection = self.split(segments, solver, store);
         any_merged | any_intersection
     }
 
     #[inline]
-    fn split<C: WindingCount>(&mut self, segments: &mut Vec<Segment<C>>, solver: &Solver) -> bool {
+    fn split<C: WindingCount, D: OverlayEdgeData<C>>(
+        &mut self,
+        segments: &mut Vec<Segment<C, I, D>>,
+        solver: &Solver,
+        store: &mut D::Store,
+    ) -> bool {
         let is_list = solver.is_list_split(segments);
         let snap_radius = solver.snap_radius();
         if is_list {
-            return self.list_split(snap_radius, segments, solver);
+            return self.list_split(snap_radius, segments, solver, store);
         }
 
         let is_fragmentation = solver.is_fragmentation_required(segments);
 
         if is_fragmentation {
-            self.fragment_split(snap_radius, segments, solver)
+            self.fragment_split(snap_radius, segments, solver, store)
         } else {
-            self.tree_split(snap_radius, segments, solver)
+            self.tree_split(snap_radius, segments, solver, store)
         }
     }
 
     pub(super) fn cross(
         i: usize,
         j: usize,
-        ei: &XSegment,
-        ej: &XSegment,
-        marks: &mut Vec<LineMark>,
-        radius: i64,
+        ei: &XSegment<I>,
+        ej: &XSegment<I>,
+        marks: &mut Vec<LineMark<I>>,
+        radius: I::Wide,
     ) -> bool {
-        let cross = if let Some(cross) = CrossSolver::cross(ei, ej, radius) {
+        let cross = if let Some(cross) = CrossSolver::<I>::cross(ei, ej, radius) {
             cross
         } else {
             return false;
@@ -91,7 +117,7 @@ impl SplitSolver {
                 });
             }
             CrossType::Overlay => {
-                let mask = CrossSolver::collinear(ei, ej);
+                let mask = CrossSolver::<I>::collinear(ei, ej);
                 if mask == 0 {
                     return false;
                 }
@@ -129,11 +155,12 @@ impl SplitSolver {
         cross.is_round
     }
 
-    pub(super) fn apply<C: WindingCount>(
+    pub(super) fn apply<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        segments: &mut Vec<Segment<C>>,
-        reusable_buffer: &mut Vec<LineMark>,
+        segments: &mut Vec<Segment<C, I, D>>,
+        reusable_buffer: &mut Vec<LineMark<I>>,
         solver: &Solver,
+        store: &mut D::Store,
     ) {
         self.marks
             .sort_by_index_and_point(solver.is_parallel_sort_allowed(), reusable_buffer);
@@ -161,40 +188,70 @@ impl SplitSolver {
             };
 
             let count = s0.count;
+            let data = s0.data;
             let x_seg = s0.x_segment;
 
             if start + 1 == i {
                 // single split
-                *s0 = Segment::create_and_validate(x_seg.a, m0.point, count);
-                let s1 = Segment::create_and_validate(m0.point, x_seg.b, count);
+                let (d0, d1) = data.split(
+                    EdgeDataSplit {
+                        a: x_seg.a,
+                        p: m0.point,
+                        b: x_seg.b,
+                    },
+                    store,
+                );
+                *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0, store);
+                let s1 = Segment::create_and_validate_with_data(m0.point, x_seg.b, count, d1, store);
                 segments.push(s1);
 
                 continue;
             }
 
-            // we have servral points
+            // we have several points
             let sub_marks = &mut self.marks[start..i];
             Self::sort_sub_marks(sub_marks, x_seg);
 
             let m0 = sub_marks[0];
-            *s0 = Segment::create_and_validate(x_seg.a, m0.point, count);
+            let (d0, mut rest_data) = data.split(
+                EdgeDataSplit {
+                    a: x_seg.a,
+                    p: m0.point,
+                    b: x_seg.b,
+                },
+                store,
+            );
+            *s0 = Segment::create_and_validate_with_data(x_seg.a, m0.point, count, d0, store);
 
             let mut p0 = m0.point;
 
             for mi in sub_marks.iter().skip(1) {
-                segments.push(Segment::create_and_validate(p0, mi.point, count));
+                let (di, next_data) = rest_data.split(
+                    EdgeDataSplit {
+                        a: p0,
+                        p: mi.point,
+                        b: x_seg.b,
+                    },
+                    store,
+                );
+                segments.push(Segment::create_and_validate_with_data(
+                    p0, mi.point, count, di, store,
+                ));
+                rest_data = next_data;
                 p0 = mi.point;
             }
 
-            segments.push(Segment::create_and_validate(p0, x_seg.b, count));
+            segments.push(Segment::create_and_validate_with_data(
+                p0, x_seg.b, count, rest_data, store,
+            ));
         }
 
         segments.sort_by_ab(solver.is_parallel_sort_allowed());
-        segments.merge_if_needed();
+        segments.merge_if_needed_with_store(store);
     }
 
     #[inline]
-    fn sort_sub_marks(marks: &mut [LineMark], x_seg: XSegment) {
+    fn sort_sub_marks(marks: &mut [LineMark<I>], x_seg: XSegment<I>) {
         let mut j0 = 0;
         let mut j = 1;
 
@@ -224,7 +281,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn y_range(j0: usize, j1: usize, s: XSegment, marks: &[LineMark]) -> (i32, i32) {
+    fn y_range(j0: usize, j1: usize, s: XSegment<I>, marks: &[LineMark<I>]) -> (I, I) {
         let y0 = if j0 == 0 { s.a.y } else { marks[j0 - 1].point.y };
         let y1 = if j1 == marks.len() {
             s.b.y
@@ -235,7 +292,7 @@ impl SplitSolver {
     }
 
     #[inline]
-    fn sort_sub_marks_by_y(y0: i32, y1: i32, marks: &mut [LineMark]) {
+    fn sort_sub_marks_by_y(y0: I, y1: I, marks: &mut [LineMark<I>]) {
         // The x-coordinate is the same for every point
         // By default, the range should be sorted in ascending order by the y-coordinate.
         if y0 > y1 {

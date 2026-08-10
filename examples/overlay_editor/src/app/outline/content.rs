@@ -6,10 +6,10 @@ use crate::data::outline::OutlineResource;
 use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
-use i_triangle::i_overlay::mesh::style::{LineJoin, OutlineStyle};
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use i_triangle::i_overlay::mesh::outline::offset::OutlineOffset;
+use i_triangle::i_overlay::mesh::style::{LineJoin, OutlineStyle};
 use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
@@ -41,11 +41,8 @@ pub(crate) enum OutlineMessage {
 impl EditorApp {
     fn outline_sidebar(&self) -> Column<'_, AppMessage> {
         let count = self.app_resource.outline.count;
-        let mut column = Column::new().push(
-            Space::new()
-                .width(Length::Fill)
-                .height(Length::Fixed(2.0)),
-        );
+        let mut column =
+            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0)));
         for index in 0..count {
             let is_selected = self.state.outline.test == index;
             column = column.push(
@@ -99,8 +96,12 @@ impl EditorApp {
     pub(crate) fn outline_update(&mut self, message: OutlineMessage) {
         match message {
             OutlineMessage::TestSelected(index) => self.outline_set_test(index),
-            OutlineMessage::OuterOffsetValueUpdated(value) => self.outline_update_outer_offset(value),
-            OutlineMessage::InnerOffsetValueUpdated(value) => self.outline_update_inner_offset(value),
+            OutlineMessage::OuterOffsetValueUpdated(value) => {
+                self.outline_update_outer_offset(value)
+            }
+            OutlineMessage::InnerOffsetValueUpdated(value) => {
+                self.outline_update_inner_offset(value)
+            }
             OutlineMessage::JoinSelected(join) => self.outline_update_join(join),
             OutlineMessage::JoinValueUpdated(value) => self.outline_update_join_value(value),
             OutlineMessage::PointEdited(update) => self.outline_update_point(update),
@@ -247,7 +248,7 @@ impl OutlineState {
             JoinOption::Miter => {
                 let ratio = 0.03 * self.join_value as f32;
                 style = style.line_join(LineJoin::Miter(ratio))
-            },
+            }
             JoinOption::Round => {
                 let ratio = 0.015 * self.join_value as f32;
                 style = style.line_join(LineJoin::Round(ratio))

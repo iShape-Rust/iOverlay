@@ -1,47 +1,100 @@
+use crate::test::util::OverlayInt;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
-use std::f64::consts::PI;
-use std::time::Instant;
 use i_overlay::core::solver::Solver;
 use i_overlay::float::overlay::FloatOverlay;
+use std::f64::consts::PI;
+use std::time::Instant;
 
 pub(crate) struct CorrosionTest;
 
 /*
+test 6
+CorrosionTest
+Difference:
 
-// 6
-// Difference:
+i16
 
 // multithreading on
-1     - 0.000010
-2     - 0.000061
-4     - 0.000364
-8     - 0.001869
-16     - 0.004424
-32     - 0.017941
-64     - 0.079459
-128     - 0.326245
-256     - 1.313516
-512     - 5.392524
-1024     - 22.228494
+1     - 0.000006
+2     - 0.000018
+4     - 0.000082
+8     - 0.000578
+16     - 0.003789
+32     - 0.007703
+64     - 0.030151
+128     - 0.134113
+256     - 0.553680
+512     - 2.020489
 
 // multithreading off
-1     - 0.000010
-2     - 0.000064
-4     - 0.000381
-8     - 0.001897
-16     - 0.005981
-32     - 0.023521
-64     - 0.106998
-128     - 0.439589
-256     - 1.756946
-512     - 7.186862
-1024     - 30.818670
+1     - 0.000006
+2     - 0.000018
+4     - 0.000082
+8     - 0.000583
+16     - 0.003799
+32     - 0.009568
+64     - 0.041341
+128     - 0.209341
+256     - 0.878897
+512     - 2.869231
+
+i32
+
+// multithreading on
+1     - 0.000007
+2     - 0.000024
+4     - 0.000103
+8     - 0.000645
+16     - 0.004095
+32     - 0.008387
+64     - 0.033293
+128     - 0.133794
+256     - 0.594231
+512     - 2.297538
+
+// multithreading off
+1     - 0.000007
+2     - 0.000023
+4     - 0.000104
+8     - 0.000636
+16     - 0.004134
+32     - 0.011785
+64     - 0.050564
+128     - 0.199536
+256     - 0.812732
+512     - 3.383901
+
+i64
+
+// multithreading on
+1     - 0.000009
+2     - 0.000036
+4     - 0.000158
+8     - 0.000914
+16     - 0.005314
+32     - 0.010206
+64     - 0.042668
+128     - 0.175621
+256     - 0.737713
+512     - 3.101692
+
+// multithreading off
+1     - 0.000009
+2     - 0.000036
+4     - 0.000159
+8     - 0.000918
+16     - 0.005234
+32     - 0.016559
+64     - 0.072355
+128     - 0.304704
+256     - 1.280368
+512     - 5.351266
 */
 
 // A series of concentric squares, each progressively larger than the last.
 impl CorrosionTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         // 500
         let (subj_paths, clip_paths) = Self::geometry(100.0, n);
 
@@ -51,7 +104,12 @@ impl CorrosionTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let mut overlay = FloatOverlay::with_subj_and_clip_custom(&subj_paths, &clip_paths, Default::default(), solver);
+            let mut overlay = FloatOverlay::<[f64; 2], I>::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            );
             let _res = overlay.overlay(rule, FillRule::NonZero);
         }
         let duration = start.elapsed();

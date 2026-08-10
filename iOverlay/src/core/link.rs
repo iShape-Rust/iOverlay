@@ -3,22 +3,29 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::geom::id_point::IdPoint;
 use crate::segm::segment::SegmentFill;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct OverlayLink {
-    pub(crate) a: IdPoint,
-    pub(crate) b: IdPoint,
+#[derive(Clone)]
+pub(crate) struct OverlayLink<I: IntNumber, D = ()> {
+    pub(crate) a: IdPoint<I>,
+    pub(crate) b: IdPoint<I>,
     pub(crate) fill: SegmentFill,
+    pub(crate) data: D,
 }
 
-impl OverlayLink {
+impl<I: IntNumber, D> OverlayLink<I, D> {
     #[inline(always)]
-    pub(crate) fn new(a: IdPoint, b: IdPoint, fill: SegmentFill) -> OverlayLink {
-        OverlayLink { a, b, fill }
+    pub(crate) fn new_with_data(
+        a: IdPoint<I>,
+        b: IdPoint<I>,
+        fill: SegmentFill,
+        data: D,
+    ) -> OverlayLink<I, D> {
+        OverlayLink { a, b, fill, data }
     }
 
     #[inline(always)]
-    pub(crate) fn other(&self, node_id: usize) -> IdPoint {
+    pub(crate) fn other(&self, node_id: usize) -> IdPoint<I> {
         if self.a.id == node_id { self.b } else { self.a }
     }
 

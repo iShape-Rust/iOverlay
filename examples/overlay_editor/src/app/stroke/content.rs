@@ -6,10 +6,10 @@ use crate::data::stroke::StrokeResource;
 use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
-use i_triangle::i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_triangle::i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::mesh::stroke::offset::StrokeOffset;
+use i_triangle::i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
@@ -50,11 +50,8 @@ pub(crate) enum StrokeMessage {
 impl EditorApp {
     fn stroke_sidebar(&self) -> Column<'_, AppMessage> {
         let count = self.app_resource.stroke.count;
-        let mut column = Column::new().push(
-            Space::new()
-                .width(Length::Fill)
-                .height(Length::Fixed(2.0)),
-        );
+        let mut column =
+            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0)));
         for index in 0..count {
             let is_selected = self.state.stroke.test == index;
             column = column.push(
@@ -285,7 +282,7 @@ impl StrokeState {
                 let ratio = 0.03 * self.join_value as f32;
                 println!("ratio: {}", ratio);
                 style = style.line_join(LineJoin::Miter(ratio))
-            },
+            }
             JoinOption::Round => {
                 let ratio = 0.015 * self.join_value as f32;
                 style = style.line_join(LineJoin::Round(ratio))
@@ -294,39 +291,27 @@ impl StrokeState {
         }
 
         match self.start_cap {
-            CapOption::Butt => {
-                style = style.start_cap(LineCap::Butt)
-            },
+            CapOption::Butt => style = style.start_cap(LineCap::Butt),
             CapOption::Round => {
                 let ratio = 0.015 * self.start_cap_value as f32;
                 style = style.start_cap(LineCap::Round(ratio))
             }
             CapOption::Square => style = style.start_cap(LineCap::Square),
             CapOption::Arrow => {
-                let points = vec![
-                    [-1.0, -2.0],
-                    [ 3.0,  0.0],
-                    [-1.0,  2.0],
-                ];
+                let points = vec![[-1.0, -2.0], [3.0, 0.0], [-1.0, 2.0]];
                 style = style.start_cap(LineCap::Custom(Rc::from(points)))
             }
         }
 
         match self.end_cap {
-            CapOption::Butt => {
-                style = style.end_cap(LineCap::Butt)
-            },
+            CapOption::Butt => style = style.end_cap(LineCap::Butt),
             CapOption::Round => {
                 let ratio = 0.015 * self.end_cap_value as f32;
                 style = style.end_cap(LineCap::Round(ratio))
             }
             CapOption::Square => style = style.end_cap(LineCap::Square),
             CapOption::Arrow => {
-                let points = vec![
-                    [-1.0, -2.0],
-                    [ 3.0,  0.0],
-                    [-1.0,  2.0],
-                ];
+                let points = vec![[-1.0, -2.0], [3.0, 0.0], [-1.0, 2.0]];
                 style = style.end_cap(LineCap::Custom(Rc::from(points)))
             }
         }

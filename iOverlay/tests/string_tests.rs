@@ -3,6 +3,8 @@ mod util;
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::bool_assert_comparison)]
+
     use crate::data::overlay::StringTest;
     use crate::util::overlay;
     use crate::util::overlay::JsonPrint;

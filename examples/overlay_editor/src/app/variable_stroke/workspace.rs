@@ -17,8 +17,8 @@ pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
     pub(crate) scale: f32,
     pub(crate) variable_input: Vec<Vec<VariableStrokePoint>>,
-    pub(crate) centerline_input: IntPaths,
-    pub(crate) stroke_output: IntPaths,
+    pub(crate) centerline_input: IntPaths<i32>,
+    pub(crate) stroke_output: IntPaths<i32>,
     pub(crate) points: Vec<EditorPoint>,
 }
 

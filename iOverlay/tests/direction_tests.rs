@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::useless_vec)]
+
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
@@ -20,7 +22,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -28,15 +30,15 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
         let r0 = &path.simplify(FillRule::NonZero, op0)[0][0];
-        debug_assert!(r0.area_two() < 0);
+        assert!(r0.area_two() > 0i64);
 
         let r1 = &path.simplify(FillRule::NonZero, op1)[0][0];
-        debug_assert!(r1.area_two() > 0);
+        assert!(r1.area_two() < 0i64);
     }
 
     #[test]
@@ -60,7 +62,7 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
@@ -68,17 +70,17 @@ mod tests {
             preserve_input_collinear: false,
             output_direction: ContourDirection::Clockwise,
             preserve_output_collinear: false,
-            min_output_area: 0,
+            min_output_area: 0u64,
             ogc: false,
         };
 
         let r0 = &path.simplify(FillRule::NonZero, op0)[0];
-        debug_assert!(r0[0].area_two() < 0);
-        debug_assert!(r0[1].area_two() > 0);
+        assert!(r0[0].area_two() > 0i64);
+        assert!(r0[1].area_two() < 0i64);
 
         let r1 = &path.simplify(FillRule::NonZero, op1)[0];
-        debug_assert!(r1[0].area_two() > 0);
-        debug_assert!(r1[1].area_two() < 0);
+        assert!(r1[0].area_two() < 0i64);
+        assert!(r1[1].area_two() > 0i64);
     }
 
     #[test]
@@ -100,7 +102,7 @@ mod tests {
 
         // test default behavior
         let r = Overlay::with_contours(&path, &[]).overlay(OverlayRule::Subject, FillRule::NonZero);
-        debug_assert!(r[0][0].area_two() < 0);
-        debug_assert!(r[0][1].area_two() > 0);
+        assert!(r[0][0].area_two() > 0i64);
+        assert!(r[0][1].area_two() < 0i64);
     }
 }

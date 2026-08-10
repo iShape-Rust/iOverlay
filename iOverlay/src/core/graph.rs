@@ -6,6 +6,7 @@ use super::link::OverlayLink;
 use crate::build::builder::GraphNode;
 use crate::core::overlay::IntOverlayOptions;
 use alloc::vec::Vec;
+use i_float::int::number::int::IntNumber;
 
 /// A representation of geometric shapes organized for efficient boolean operations.
 ///
@@ -13,13 +14,12 @@ use alloc::vec::Vec;
 ///
 /// Use `OverlayGraph` to perform boolean operations on the geometric shapes you've added to an `Overlay`, after it has processed the shapes according to the specified build and overlay rules.
 /// [More information](https://ishape-rust.github.io/iShape-js/overlay/overlay_graph/overlay_graph.html) about Overlay Graph.
-pub struct OverlayGraph<'a> {
-    pub(crate) options: IntOverlayOptions,
+pub struct OverlayGraph<'a, I: IntNumber, D = ()> {
+    pub(crate) options: IntOverlayOptions<I::WideUInt>,
     pub(crate) nodes: &'a [OverlayNode],
-    pub(crate) links: &'a [OverlayLink],
+    pub(crate) links: &'a [OverlayLink<I, D>],
 }
 
-#[derive(Debug)]
 pub(crate) enum OverlayNode {
     Bridge([usize; 2]),
     Cross(Vec<usize>),
@@ -36,7 +36,7 @@ impl GraphNode for OverlayNode {
     }
 }
 
-impl OverlayGraph<'_> {
+impl<I: IntNumber, D> OverlayGraph<'_, I, D> {
     pub fn validate(&self) {
         for node in self.nodes.iter() {
             if let OverlayNode::Cross(indices) = node {

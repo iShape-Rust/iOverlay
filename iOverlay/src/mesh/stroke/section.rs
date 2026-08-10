@@ -5,8 +5,9 @@ use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::vector::FloatPointMath;
+use i_float::int::number::int::IntNumber;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(super) struct Section<P: FloatPointCompatible> {
     pub(super) a: P,
     pub(super) b: P,
@@ -40,12 +41,12 @@ impl<P: FloatPointCompatible> Section<P> {
     }
 }
 
-pub(crate) trait SectionToSegment<P: FloatPointCompatible> {
-    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P>);
+pub(crate) trait SectionToSegment<P: FloatPointCompatible, I: IntNumber> {
+    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P, I>);
 }
 
-impl<P: FloatPointCompatible> SectionToSegment<P> for Vec<Segment<ShapeCountBoolean>> {
-    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P>) {
+impl<P: FloatPointCompatible, I: IntNumber> SectionToSegment<P, I> for Vec<Segment<ShapeCountBoolean, I>> {
+    fn add_section(&mut self, section: &Section<P>, adapter: &FloatPointAdapter<P, I>) {
         let a_top = adapter.float_to_int(&section.a_top);
         let b_top = adapter.float_to_int(&section.b_top);
         let a_bot = adapter.float_to_int(&section.a_bot);

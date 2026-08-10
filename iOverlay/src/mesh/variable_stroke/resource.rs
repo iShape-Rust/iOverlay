@@ -47,10 +47,7 @@ impl<'a, P: FloatPointCompatible> Iterator for ContourResourceIterator<'a, P> {
     }
 }
 
-impl<P> VariableStrokeSource<P> for [StrokeVertex<P>]
-where
-    P: FloatPointCompatible,
-{
+impl<P: FloatPointCompatible> VariableStrokeSource<P> for [StrokeVertex<P>] {
     type ResourceIter<'a>
         = ContourResourceIterator<'a, P>
     where
@@ -63,10 +60,7 @@ where
     }
 }
 
-impl<P, const N: usize> VariableStrokeSource<P> for [StrokeVertex<P>; N]
-where
-    P: FloatPointCompatible,
-{
+impl<P: FloatPointCompatible, const N: usize> VariableStrokeSource<P> for [StrokeVertex<P>; N] {
     type ResourceIter<'a>
         = ContourResourceIterator<'a, P>
     where
@@ -79,10 +73,7 @@ where
     }
 }
 
-impl<P> VariableStrokeSource<P> for Vec<StrokeVertex<P>>
-where
-    P: FloatPointCompatible,
-{
+impl<P: FloatPointCompatible> VariableStrokeSource<P> for Vec<StrokeVertex<P>> {
     type ResourceIter<'a>
         = ContourResourceIterator<'a, P>
     where
@@ -95,10 +86,7 @@ where
     }
 }
 
-impl<'b, P> VariableStrokeSource<P> for &'b [StrokeVertex<P>]
-where
-    P: FloatPointCompatible,
-{
+impl<'b, P: FloatPointCompatible> VariableStrokeSource<P> for &'b [StrokeVertex<P>] {
     type ResourceIter<'a>
         = ContourResourceIterator<'a, P>
     where
@@ -116,26 +104,13 @@ pub struct ShapeResourceIterator<'a, P: FloatPointCompatible> {
     index: usize,
 }
 
-impl<'a, P: FloatPointCompatible> ShapeResourceIterator<'a, P> {
-    #[inline]
-    fn with_slice(slice: &'a [Vec<StrokeVertex<P>>]) -> Self {
-        Self { slice, index: 0 }
-    }
-}
-
 impl<'a, P: FloatPointCompatible> Iterator for ShapeResourceIterator<'a, P> {
     type Item = &'a [StrokeVertex<P>];
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.slice.len() {
-            return None;
-        }
-
-        let i = self.index;
+        let path = self.slice.get(self.index)?;
         self.index += 1;
-        let path = unsafe { self.slice.get_unchecked(i) };
-
         Some(path.as_slice())
     }
 
@@ -145,10 +120,7 @@ impl<'a, P: FloatPointCompatible> Iterator for ShapeResourceIterator<'a, P> {
     }
 }
 
-impl<P> VariableStrokeSource<P> for [Vec<StrokeVertex<P>>]
-where
-    P: FloatPointCompatible,
-{
+impl<P: FloatPointCompatible> VariableStrokeSource<P> for [Vec<StrokeVertex<P>>] {
     type ResourceIter<'a>
         = ShapeResourceIterator<'a, P>
     where
@@ -157,14 +129,14 @@ where
 
     #[inline]
     fn iter_variable_paths(&self) -> Self::ResourceIter<'_> {
-        ShapeResourceIterator::with_slice(self)
+        ShapeResourceIterator {
+            slice: self,
+            index: 0,
+        }
     }
 }
 
-impl<P, const N: usize> VariableStrokeSource<P> for [Vec<StrokeVertex<P>>; N]
-where
-    P: FloatPointCompatible,
-{
+impl<P: FloatPointCompatible, const N: usize> VariableStrokeSource<P> for [Vec<StrokeVertex<P>>; N] {
     type ResourceIter<'a>
         = ShapeResourceIterator<'a, P>
     where
@@ -173,14 +145,14 @@ where
 
     #[inline]
     fn iter_variable_paths(&self) -> Self::ResourceIter<'_> {
-        ShapeResourceIterator::with_slice(self)
+        ShapeResourceIterator {
+            slice: self,
+            index: 0,
+        }
     }
 }
 
-impl<P> VariableStrokeSource<P> for Vec<Vec<StrokeVertex<P>>>
-where
-    P: FloatPointCompatible,
-{
+impl<P: FloatPointCompatible> VariableStrokeSource<P> for Vec<Vec<StrokeVertex<P>>> {
     type ResourceIter<'a>
         = ShapeResourceIterator<'a, P>
     where
@@ -189,14 +161,14 @@ where
 
     #[inline]
     fn iter_variable_paths(&self) -> Self::ResourceIter<'_> {
-        ShapeResourceIterator::with_slice(self.as_slice())
+        ShapeResourceIterator {
+            slice: self.as_slice(),
+            index: 0,
+        }
     }
 }
 
-impl<'b, P> VariableStrokeSource<P> for &'b [Vec<StrokeVertex<P>>]
-where
-    P: FloatPointCompatible,
-{
+impl<'b, P: FloatPointCompatible> VariableStrokeSource<P> for &'b [Vec<StrokeVertex<P>>] {
     type ResourceIter<'a>
         = ShapeResourceIterator<'a, P>
     where
@@ -205,6 +177,9 @@ where
 
     #[inline]
     fn iter_variable_paths(&self) -> Self::ResourceIter<'b> {
-        ShapeResourceIterator::with_slice(self)
+        ShapeResourceIterator {
+            slice: self,
+            index: 0,
+        }
     }
 }

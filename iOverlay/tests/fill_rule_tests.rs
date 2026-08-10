@@ -8,7 +8,7 @@ mod tests {
 
     #[test]
     fn test_both_clock_wise() {
-        fn overlay() -> Overlay {
+        fn overlay() -> Overlay<i32> {
             let mut overlay = Overlay::new(2);
 
             overlay.add_contour(&square(10, true), ShapeType::Subject);
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_both_counter_clock_wise() {
-        fn overlay() -> Overlay {
+        fn overlay() -> Overlay<i32> {
             let mut overlay = Overlay::new(2);
 
             overlay.add_contour(&square(10, false), ShapeType::Subject);
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_cw_and_ccw() {
-        fn overlay() -> Overlay {
+        fn overlay() -> Overlay<i32> {
             let mut overlay = Overlay::new(2);
 
             overlay.add_contour(&square(10, true), ShapeType::Subject);
@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_ccw_and_cw() {
-        fn overlay() -> Overlay {
+        fn overlay() -> Overlay<i32> {
             let mut overlay = Overlay::new(2);
 
             overlay.add_contour(&square(10, false), ShapeType::Subject);
@@ -174,7 +174,7 @@ mod tests {
         assert_eq!(positive[0].len(), 2);
     }
 
-    fn square(radius: i32, is_clockwise: bool) -> IntPath {
+    fn square(radius: i32, is_clockwise: bool) -> IntPath<i32> {
         let mut square = [
             IntPoint::new(-radius, -radius),
             IntPoint::new(-radius, radius),

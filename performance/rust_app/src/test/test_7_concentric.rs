@@ -1,61 +1,102 @@
+use crate::test::util::OverlayInt;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
-use std::f64::consts::PI;
-use std::time::Instant;
 use i_overlay::core::solver::Solver;
 use i_overlay::float::overlay::FloatOverlay;
+use std::f64::consts::PI;
+use std::time::Instant;
 
 pub(crate) struct ConcentricTest;
 
 /*
+test 7
+ConcentricTest
+Difference:
 
-// 7
-// Difference:
+i16
+
+// multithreading on
+1     - 0.000007
+2     - 0.000020
+4     - 0.000082
+8     - 0.000610
+16     - 0.005260
+32     - 0.013028
+64     - 0.053713
+128     - 0.318682
+256     - 1.384741
+512     - 6.981723
+
+// multithreading off
+1     - 0.000007
+2     - 0.000020
+4     - 0.000083
+8     - 0.000569
+16     - 0.005350
+32     - 0.009203
+64     - 0.035059
+128     - 0.170760
+256     - 0.712446
+512     - 3.317967
+
+i32
+
+// multithreading on
+1     - 0.000010
+2     - 0.000028
+4     - 0.000113
+8     - 0.000660
+16     - 0.004171
+32     - 0.008281
+64     - 0.034357
+128     - 0.134210
+256     - 0.563524
+512     - 2.367582
+
+// multithreading off
+1     - 0.000010
+2     - 0.000029
+4     - 0.000112
+8     - 0.000709
+16     - 0.004211
+32     - 0.012234
+64     - 0.052943
+128     - 0.223251
+256     - 0.955805
+512     - 3.692530
+
+i64
 
 // multithreading on
 1     - 0.000016
-2     - 0.000086
-4     - 0.000407
-8     - 0.001839
-16     - 0.008672
-32     - 0.028811
-64     - 0.090131
-128     - 0.368713
-256     - 1.456724
-512     - 6.657090
-1024     - 31.702080
+2     - 0.000049
+4     - 0.000189
+8     - 0.000955
+16     - 0.005389
+32     - 0.010158
+64     - 0.042141
+128     - 0.171089
+256     - 0.726401
+512     - 3.116469
 
 // multithreading off
-1     - 0.000015
-2     - 0.000086
-4     - 0.000402
-8     - 0.001852
-16     - 0.008529
-32     - 0.035403
-64     - 0.122799
-128     - 0.504404
-256     - 2.038331
-512     - 10.096450
-1024     - 50.159095
-
-
-1     - 0.000015
-2     - 0.000086
-4     - 0.000399
-8     - 0.001818
-16     - 0.007582
-32     - 0.036797
-64     - 0.133616
-128     - 0.536633
-256     - 2.157370
-512     - 10.505163
+1     - 0.000016
+2     - 0.000049
+4     - 0.000186
+8     - 0.001010
+16     - 0.005452
+32     - 0.017694
+64     - 0.075916
+128     - 0.325436
+256     - 1.386162
+512     - 5.722743
 
 
 */
 
 // A series of concentric squares, each progressively larger than the last.
 impl ConcentricTest {
-    pub(crate) fn run(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         let (subj_paths, clip_paths) = Self::geometry(100.0, n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
@@ -64,7 +105,12 @@ impl ConcentricTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let mut overlay = FloatOverlay::with_subj_and_clip_custom(&subj_paths, &clip_paths, Default::default(), solver);
+            let mut overlay = FloatOverlay::<[f64; 2], I>::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            );
             let _res = overlay.overlay(rule, FillRule::NonZero);
         }
         let duration = start.elapsed();

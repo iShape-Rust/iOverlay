@@ -1,7 +1,8 @@
-use crate::mesh::style::{LineCap, LineJoin};
+use core::f64::consts::PI;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 
+/// A point on a variable-width centerline.
 #[derive(Debug, Clone, Copy)]
 pub struct StrokeVertex<P: FloatPointCompatible> {
     pub point: P,
@@ -16,48 +17,47 @@ impl<P: FloatPointCompatible> StrokeVertex<P> {
 
     #[inline]
     pub(super) fn radius(&self) -> P::Scalar {
-        P::Scalar::from_float(0.5 * self.width.to_f64().max(0.0))
+        P::Scalar::HALF * self.width.max(P::Scalar::ZERO)
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct VariableStrokeStyle<P: FloatPointCompatible> {
-    pub start_cap: LineCap<P>,
-    pub end_cap: LineCap<P>,
-    pub join: LineJoin<P::Scalar>,
+/// Round-only style for variable-width strokes.
+#[derive(Debug, Clone, Copy)]
+pub struct VariableStrokeStyle<T: FloatNumber> {
+    /// Maximum angular step used to approximate round joins and caps, in radians.
+    pub round_angle: T,
 }
 
-impl<P: FloatPointCompatible> VariableStrokeStyle<P> {
+impl<T: FloatNumber> VariableStrokeStyle<T> {
     #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
     #[inline]
-    pub fn start_cap(mut self, cap: LineCap<P>) -> Self {
-        self.start_cap = cap.normalize();
+    pub fn round_angle(mut self, angle: T) -> Self {
+        self.round_angle = Self::normalize_angle(angle);
         self
     }
 
     #[inline]
-    pub fn end_cap(mut self, cap: LineCap<P>) -> Self {
-        self.end_cap = cap.normalize();
-        self
+    pub(super) fn normalized(self) -> Self {
+        Self {
+            round_angle: Self::normalize_angle(self.round_angle),
+        }
     }
 
     #[inline]
-    pub fn line_join(mut self, join: LineJoin<P::Scalar>) -> Self {
-        self.join = join.normalize();
-        self
+    fn normalize_angle(angle: T) -> T {
+        let value = angle.to_f64().clamp(0.01 * PI, 0.25 * PI);
+        T::from_float(value)
     }
 }
 
-impl<P: FloatPointCompatible> Default for VariableStrokeStyle<P> {
+impl<T: FloatNumber> Default for VariableStrokeStyle<T> {
     fn default() -> Self {
         Self {
-            start_cap: LineCap::Butt,
-            end_cap: LineCap::Butt,
-            join: LineJoin::Bevel,
+            round_angle: T::from_float(0.1),
         }
     }
 }

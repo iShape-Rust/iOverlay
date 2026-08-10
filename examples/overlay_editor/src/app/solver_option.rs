@@ -10,7 +10,7 @@ impl SolverOption {
     pub(crate) const ALL: [SolverOption; 3] = [
         SolverOption::Auto,
         SolverOption::Average,
-        SolverOption::Precise
+        SolverOption::Precise,
     ];
 }
 

@@ -1,12 +1,16 @@
 use crate::bind::segment::{ContourIndex, IdSegment, IdSegments};
-use crate::geom::v_segment::VSegment;
+use crate::geom::v_segment::{BottomSegment, VSegment};
 use crate::util::log::Int;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
+use i_float::int::number::int::IntNumber;
+use i_float::int::point::IntPoint;
+use i_key_sort::sort::key::SortKey;
 use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
+use i_tree::Expiration;
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::list::KeyExpList;
 use i_tree::key::tree::KeyExpTree;
@@ -20,15 +24,18 @@ pub(crate) struct ShapeBinder;
 
 impl ShapeBinder {
     #[inline]
-    pub(crate) fn bind(
+    pub(crate) fn bind<I>(
         shape_count: usize,
-        hole_segments: Vec<IdSegment>,
-        segments: Vec<IdSegment>,
-    ) -> BindSolution {
+        hole_segments: Vec<IdSegment<I>>,
+        segments: Vec<IdSegment<I>>,
+    ) -> BindSolution
+    where
+        I: IntNumber + Expiration,
+    {
         if shape_count < 32 {
             let capacity = segments.len().log2_sqrt().max(4) * 2;
             let list = KeyExpList::new(capacity);
-            Self::private_solve::<KeyExpList<VSegment, i32, ContourIndex>>(
+            Self::private_solve::<I, KeyExpList<VSegment<I>, I, ContourIndex>>(
                 list,
                 shape_count,
                 hole_segments,
@@ -37,7 +44,7 @@ impl ShapeBinder {
         } else {
             let capacity = segments.len().log2_sqrt().max(8);
             let list = KeyExpTree::new(capacity);
-            Self::private_solve::<KeyExpTree<VSegment, i32, ContourIndex>>(
+            Self::private_solve::<I, KeyExpTree<VSegment<I>, I, ContourIndex>>(
                 list,
                 shape_count,
                 hole_segments,
@@ -46,12 +53,16 @@ impl ShapeBinder {
         }
     }
 
-    fn private_solve<S: KeyExpCollection<VSegment, i32, ContourIndex>>(
+    fn private_solve<I, S>(
         mut scan_list: S,
         shape_count: usize,
-        anchors: Vec<IdSegment>,
-        segments: Vec<IdSegment>,
-    ) -> BindSolution {
+        anchors: Vec<IdSegment<I>>,
+        segments: Vec<IdSegment<I>>,
+    ) -> BindSolution
+    where
+        I: IntNumber + Expiration,
+        S: KeyExpCollection<VSegment<I>, I, ContourIndex>,
+    {
         let children_count = anchors.len();
         let mut parent_for_child = {
             #[cfg(debug_assertions)]
@@ -105,15 +116,15 @@ impl ShapeBinder {
     }
 }
 
-pub(crate) trait JoinHoles {
-    fn join_unsorted_holes(&mut self, holes: Vec<IntContour>, clockwise: bool);
-    fn join_sorted_holes(&mut self, holes: Vec<IntContour>, anchors: Vec<IdSegment>, clockwise: bool);
-    fn scan_join(&mut self, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool);
+pub(crate) trait JoinHoles<I: IntNumber + Expiration + SortKey> {
+    fn join_unsorted_holes(&mut self, holes: Vec<IntContour<I>>, clockwise: bool);
+    fn join_sorted_holes(&mut self, holes: Vec<IntContour<I>>, anchors: Vec<IdSegment<I>>, clockwise: bool);
+    fn scan_join(&mut self, holes: Vec<IntPath<I>>, hole_segments: Vec<IdSegment<I>>, clockwise: bool);
 }
 
-impl JoinHoles for Vec<IntShape> {
+impl<I: IntNumber + Expiration + SortKey> JoinHoles<I> for Vec<IntShape<I>> {
     #[inline]
-    fn join_unsorted_holes(&mut self, holes: Vec<IntPath>, clockwise: bool) {
+    fn join_unsorted_holes(&mut self, holes: Vec<IntPath<I>>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -140,7 +151,7 @@ impl JoinHoles for Vec<IntShape> {
     }
 
     #[inline]
-    fn join_sorted_holes(&mut self, holes: Vec<IntContour>, anchors: Vec<IdSegment>, clockwise: bool) {
+    fn join_sorted_holes(&mut self, holes: Vec<IntContour<I>>, anchors: Vec<IdSegment<I>>, clockwise: bool) {
         if self.is_empty() || holes.is_empty() {
             return;
         }
@@ -157,7 +168,7 @@ impl JoinHoles for Vec<IntShape> {
         self.scan_join(holes, anchors, clockwise);
     }
 
-    fn scan_join(&mut self, holes: Vec<IntPath>, hole_segments: Vec<IdSegment>, clockwise: bool) {
+    fn scan_join(&mut self, holes: Vec<IntPath<I>>, hole_segments: Vec<IdSegment<I>>, clockwise: bool) {
         let x_min = hole_segments[0].v_segment.a.x;
         let x_max = hole_segments[hole_segments.len() - 1].v_segment.a.x;
 
@@ -186,39 +197,52 @@ impl JoinHoles for Vec<IntShape> {
     }
 }
 
-pub(crate) trait LeftBottomSegment {
-    fn left_bottom_segment(&self) -> VSegment;
+pub(crate) trait LeftBottomSegment<I: IntNumber> {
+    fn left_bottom_segment(&self) -> VSegment<I>;
+    fn left_bottom_segment_from(&self, a: IntPoint<I>) -> VSegment<I>;
 }
 
-impl LeftBottomSegment for IntContour {
-    fn left_bottom_segment(&self) -> VSegment {
-        let mut index = 0;
+impl<I: IntNumber> LeftBottomSegment<I> for IntContour<I> {
+    fn left_bottom_segment(&self) -> VSegment<I> {
         let mut a = *self.first().unwrap();
-        for (i, &p) in self.iter().enumerate().skip(1) {
+        for &p in self.iter().skip(1) {
             if p < a {
                 a = p;
-                index = i;
             }
         }
+
+        self.left_bottom_segment_from(a)
+    }
+
+    fn left_bottom_segment_from(&self, a: IntPoint<I>) -> VSegment<I> {
         let n = self.len();
-        let b0 = self[(index + 1) % n];
-        let b1 = self[(index + n - 1) % n];
+        let mut result: Option<VSegment<I>> = None;
 
-        let s0 = VSegment { a, b: b0 };
-        let s1 = VSegment { a, b: b1 };
+        for (i, &p) in self.iter().enumerate() {
+            if p != a {
+                continue;
+            }
 
-        if s0.is_under_segment(&s1) { s0 } else { s1 }
+            // Self-touching contours can visit the left-bottom point several times.
+            // Check every incident edge at that point and keep the lowest anchor edge.
+            let b0 = self[(i + 1) % n];
+            let b1 = self[(i + n - 1) % n];
+            result.update_if_under(VSegment { a, b: b0 });
+            result.update_if_under(VSegment { a, b: b1 });
+        }
+
+        result.unwrap_or(VSegment { a, b: a })
     }
 }
 
 #[inline]
-fn is_sorted(segments: &[IdSegment]) -> bool {
+fn is_sorted<I: IntNumber>(segments: &[IdSegment<I>]) -> bool {
     segments
         .windows(2)
         .all(|slice| slice[0].v_segment.a <= slice[1].v_segment.a)
 }
 
-impl IdSegment {
+impl<I: IntNumber> IdSegment<I> {
     #[inline]
     fn cmp_by_a_then_by_angle(&self, other: &Self) -> Ordering {
         self.v_segment
@@ -233,7 +257,7 @@ pub(crate) trait SortByAngle {
     fn add_sort_by_angle(&mut self);
 }
 
-impl SortByAngle for [IdSegment] {
+impl<I: IntNumber + SortKey> SortByAngle for [IdSegment<I>] {
     #[inline]
     fn sort_by_a_then_by_angle(&mut self) {
         self.sort_by_two_keys_then_by(
