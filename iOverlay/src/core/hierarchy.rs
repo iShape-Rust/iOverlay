@@ -3,6 +3,7 @@ use crate::bind::solver::{LeftBottomSegment, ShapeBinder, SortByAngle};
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_key_sort::sort::key::SortKey;
+use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use i_shape::flat::buffer::FlatShapesBuffer;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::IntShapes;
@@ -119,7 +120,12 @@ where
             });
         }
 
-        links.sort_unstable();
+        links.sort_by_two_keys_then_by(
+            false,
+            |link| link.parent_shape_index,
+            |link| link.parent_contour_index,
+            |a, b| a.child_shape_index.cmp(&b.child_shape_index),
+        );
         links
     }
 

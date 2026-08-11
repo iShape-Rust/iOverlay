@@ -8,6 +8,7 @@ use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeTy
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
+use crate::float::hierarchy::FloatFlatShapeHierarchy;
 use crate::i_shape::source::resource::ShapeResource;
 use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
@@ -365,6 +366,24 @@ where
         }
 
         float
+    }
+
+    /// Executes a Boolean operation and returns flat float shapes together with
+    /// their immediate nesting relationships.
+    #[inline]
+    pub fn overlay_hierarchy(
+        &mut self,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+    ) -> FloatFlatShapeHierarchy<P> {
+        let preserve_output_collinear = self.overlay.options.preserve_output_collinear;
+        let hierarchy = self.overlay.overlay_hierarchy(overlay_rule, fill_rule);
+        FloatFlatShapeHierarchy::from_int(
+            hierarchy,
+            &self.adapter,
+            self.clean_result,
+            preserve_output_collinear,
+        )
     }
 
     /// Executes a single Boolean operation and writes the result into a flat contour buffer.
