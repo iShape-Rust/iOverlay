@@ -22,6 +22,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
   - [Quick Start](#quick-start)
 - [Boolean Operations](#boolean-operations)
   - [Simple Example](#simple-example)
+  - [Flat Shape Hierarchy](#flat-shape-hierarchy)
   - [Overlay Rules](#overlay-rules)
   - [Edge Attributes and Provenance](#edge-attributes-and-provenance)
 - [Spatial Predicates](#spatial-predicates)
@@ -53,6 +54,7 @@ iOverlay powers polygon boolean operations in [geo](https://github.com/georust/g
 - **Spatial Predicates**: `intersects`, `disjoint`, `interiors_intersect`, `touches`, `within`, `covers` with early-exit optimization.
 - **Polyline Operations**: clip and slice.
 - **Polygons**: with holes, self-intersections, and multiple contours.
+- **Flat Shape Hierarchy**: FFI-friendly shape, hole, and nested-island relationships.
 - **Simplification**: removes degenerate vertices and merges collinear edges.
 - **Buffering**: offsets paths and polygons.
 - **Fill Rules**: even-odd, non-zero, positive and negative.
@@ -190,6 +192,34 @@ The `overlay` function returns `Shapes<P>`, which is an alias for `Vec<Shape<P>>
 
 **Note**: By default, outer boundaries are counterclockwise and holes are clockwise—unless `main_direction` is set. [More information](https://ishape-rust.github.io/iShape-js/overlay/contours/contours.html) about contours.
 
+&nbsp;
+### Flat Shape Hierarchy
+
+The regular `overlay` result groups each outer contour with its holes, but shapes nested inside those holes are separate entries. Use `overlay_hierarchy` when you also need the immediate parent-hole relationship.
+
+```rust
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay::Overlay;
+use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::i_shape::int_shape;
+
+let subject = int_shape![
+    [[0, 0], [100, 0], [100, 100], [0, 100]],
+    [[10, 10], [10, 90], [90, 90], [90, 10]],
+    [[20, 20], [80, 20], [80, 80], [20, 80]],
+];
+
+let mut overlay = Overlay::with_contours(&subject, &[]);
+let result = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::EvenOdd);
+
+assert_eq!(result.shapes.shape_ranges.len(), 2);
+assert_eq!(result.links.len(), 1);
+
+let link = result.links[0];
+assert_eq!(link.parent_shape_index, 0);
+assert_eq!(link.parent_contour_index, 1);
+assert_eq!(link.child_shape_index, 1);
+```
 
 &nbsp;
 ### Overlay Rules
