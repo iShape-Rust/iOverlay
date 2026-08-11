@@ -5,6 +5,7 @@ pub mod extract;
 mod extract_ogc;
 pub mod fill_rule;
 pub mod graph;
+pub mod hierarchy;
 pub mod integer;
 pub(crate) mod link;
 pub(crate) mod nearest_vector;

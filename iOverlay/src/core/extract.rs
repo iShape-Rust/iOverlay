@@ -2,6 +2,7 @@ use super::overlay_rule::OverlayRule;
 use crate::bind::segment::{ContourIndex, IdSegment};
 use crate::bind::solver::{JoinHoles, LeftBottomSegment};
 use crate::core::graph::{OverlayGraph, OverlayNode};
+use crate::core::hierarchy::FlatShapeHierarchy;
 use crate::core::integer::OverlayInt;
 use crate::core::link::OverlayLink;
 use crate::core::link::OverlayLinkFilter;
@@ -73,6 +74,21 @@ where
         } else {
             self.extract(overlay_rule, buffer)
         }
+    }
+
+    /// Extracts flat shapes and the immediate nesting relationships between them.
+    ///
+    /// Each link connects a hole contour to a shape directly contained by that
+    /// hole. Shapes absent from all links are standalone one-node trees.
+    #[inline]
+    pub fn extract_shape_hierarchy(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> FlatShapeHierarchy<I> {
+        let clockwise = self.options.output_direction == ContourDirection::Clockwise;
+        let shapes = self.extract_shapes(overlay_rule, buffer);
+        FlatShapeHierarchy::from_shapes(shapes, clockwise)
     }
 
     /// Extracts the flat contours from the overlay graph based on the specified overlay rule.

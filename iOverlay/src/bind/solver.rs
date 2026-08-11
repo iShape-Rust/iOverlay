@@ -4,6 +4,7 @@ use crate::util::log::Int;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
+use core::ops::ControlFlow;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
@@ -24,7 +25,7 @@ pub(crate) struct ShapeBinder;
 
 impl ShapeBinder {
     #[inline]
-    pub(crate) fn bind<I>(
+    pub(crate) fn bind_required<I>(
         shape_count: usize,
         hole_segments: Vec<IdSegment<I>>,
         segments: Vec<IdSegment<I>>,
@@ -32,49 +33,85 @@ impl ShapeBinder {
     where
         I: IntNumber + Expiration,
     {
-        if shape_count < 32 {
-            let capacity = segments.len().log2_sqrt().max(4) * 2;
-            let list = KeyExpList::new(capacity);
-            Self::private_solve::<I, KeyExpList<VSegment<I>, I, ContourIndex>>(
-                list,
-                shape_count,
-                hole_segments,
-                segments,
-            )
-        } else {
-            let capacity = segments.len().log2_sqrt().max(8);
-            let list = KeyExpTree::new(capacity);
-            Self::private_solve::<I, KeyExpTree<VSegment<I>, I, ContourIndex>>(
-                list,
-                shape_count,
-                hole_segments,
-                segments,
-            )
-        }
+        let parent_for_child = vec![usize::MAX; hole_segments.len()];
+
+        Self::bind_with_resolver(
+            shape_count,
+            hole_segments,
+            segments,
+            parent_for_child,
+            Self::resolve_required_parent,
+        )
     }
 
-    fn private_solve<I, S>(
-        mut scan_list: S,
+    #[inline]
+    pub(crate) fn bind_optional<I>(
         shape_count: usize,
-        anchors: Vec<IdSegment<I>>,
+        child_segments: Vec<IdSegment<I>>,
         segments: Vec<IdSegment<I>>,
     ) -> BindSolution
     where
         I: IntNumber + Expiration,
-        S: KeyExpCollection<VSegment<I>, I, ContourIndex>,
     {
-        let children_count = anchors.len();
-        let mut parent_for_child = {
-            #[cfg(debug_assertions)]
-            {
-                // prefer crash in debug mode
-                vec![usize::MAX; children_count]
-            }
-            #[cfg(not(debug_assertions))]
-            {
-                vec![0; children_count]
-            }
-        };
+        let parent_for_child = vec![usize::MAX; child_segments.len()];
+        Self::bind_with_resolver(
+            shape_count,
+            child_segments,
+            segments,
+            parent_for_child,
+            Self::resolve_optional_parent,
+        )
+    }
+
+    fn bind_with_resolver<I, F>(
+        shape_count: usize,
+        child_segments: Vec<IdSegment<I>>,
+        segments: Vec<IdSegment<I>>,
+        parent_for_child: Vec<usize>,
+        resolve_parent: F,
+    ) -> BindSolution
+    where
+        I: IntNumber + Expiration,
+        F: Fn(ContourIndex, &[usize]) -> ControlFlow<(), usize>,
+    {
+        if shape_count < 32 {
+            let capacity = segments.len().log2_sqrt().max(4) * 2;
+            let list = KeyExpList::new(capacity);
+            Self::private_solve::<I, KeyExpList<VSegment<I>, I, ContourIndex>, F>(
+                list,
+                shape_count,
+                child_segments,
+                segments,
+                parent_for_child,
+                resolve_parent,
+            )
+        } else {
+            let capacity = segments.len().log2_sqrt().max(8);
+            let list = KeyExpTree::new(capacity);
+            Self::private_solve::<I, KeyExpTree<VSegment<I>, I, ContourIndex>, F>(
+                list,
+                shape_count,
+                child_segments,
+                segments,
+                parent_for_child,
+                resolve_parent,
+            )
+        }
+    }
+
+    fn private_solve<I, S, F>(
+        mut scan_list: S,
+        shape_count: usize,
+        anchors: Vec<IdSegment<I>>,
+        segments: Vec<IdSegment<I>>,
+        mut parent_for_child: Vec<usize>,
+        resolve_parent: F,
+    ) -> BindSolution
+    where
+        I: IntNumber + Expiration,
+        S: KeyExpCollection<VSegment<I>, I, ContourIndex>,
+        F: Fn(ContourIndex, &[usize]) -> ControlFlow<(), usize>,
+    {
         let mut children_count_for_parent = vec![0; shape_count];
 
         let mut j = 0;
@@ -95,15 +132,13 @@ impl ShapeBinder {
             }
 
             let target_id = scan_list.first_less(anchor.v_segment.a.x, ContourIndex::EMPTY, anchor.v_segment);
-            let parent_index = if target_id.is_hole() {
-                // index is a hole index
-                // at this moment this hole parent is known
-                parent_for_child[target_id.index()]
-            } else {
-                target_id.index()
+            let ControlFlow::Continue(parent_index) = resolve_parent(target_id, &parent_for_child) else {
+                continue;
             };
 
             let child_index = anchor.contour_index.index();
+            debug_assert!(child_index < parent_for_child.len());
+            debug_assert!(parent_index < children_count_for_parent.len());
 
             parent_for_child[child_index] = parent_index;
             children_count_for_parent[parent_index] += 1;
@@ -112,6 +147,45 @@ impl ShapeBinder {
         BindSolution {
             parent_for_child,
             children_count_for_parent,
+        }
+    }
+
+    #[inline]
+    fn resolve_required_parent(
+        target_id: ContourIndex,
+        parent_for_child: &[usize],
+    ) -> ControlFlow<(), usize> {
+        ControlFlow::Continue(Self::target_parent(target_id, parent_for_child))
+    }
+
+    #[inline]
+    fn resolve_optional_parent(
+        target_id: ContourIndex,
+        parent_for_child: &[usize],
+    ) -> ControlFlow<(), usize> {
+        if target_id.is_empty() {
+            return ControlFlow::Break(());
+        }
+
+        let parent_index = Self::target_parent(target_id, parent_for_child);
+        if parent_index == usize::MAX {
+            // The scan can hit another root child before reaching empty space.
+            // Propagate its missing parent: this child is outside as well.
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(parent_index)
+        }
+    }
+
+    #[inline]
+    fn target_parent(target_id: ContourIndex, parent_for_child: &[usize]) -> usize {
+        if target_id.is_hole() {
+            // index is a child index; at this moment its parent is known
+            let child_index = target_id.index();
+            debug_assert!(child_index < parent_for_child.len());
+            parent_for_child[child_index]
+        } else {
+            target_id.index()
         }
     }
 }
@@ -184,7 +258,7 @@ impl<I: IntNumber + Expiration + SortKey> JoinHoles<I> for Vec<IntShape<I>> {
 
         segments.sort_by_a_then_by_angle();
 
-        let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
+        let solution = ShapeBinder::bind_required(self.len(), hole_segments, segments);
 
         for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
             self[shape_index].reserve(capacity);
