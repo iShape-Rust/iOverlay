@@ -23,6 +23,9 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 
+#[cfg(feature = "variable_stroke_debug")]
+use crate::mesh::variable_stroke::VariableStrokeDebugResult;
+
 /// Builds round-cap, round-join strokes whose width is stored at each centerline vertex.
 pub trait VariableStrokeOffset<P>: VariableStrokeSource<P>
 where
@@ -208,6 +211,32 @@ where
 {
 }
 
+/// Debug-only companion to [`VariableStrokeOffset`] that exposes every directed edge submitted
+/// to the overlay engine. Enable the `variable_stroke_debug` crate feature to use it.
+#[cfg(feature = "variable_stroke_debug")]
+pub trait VariableStrokeDebug<P>: VariableStrokeSource<P>
+where
+    P: FloatPointCompatible + 'static,
+{
+    fn variable_stroke_debug(&self, style: VariableStrokeStyle<P::Scalar>) -> VariableStrokeDebugResult<P> {
+        match VariableStrokeSolver::<P, i32>::prepare(self, style) {
+            Some(solver) => solver.build_debug(self, Default::default()),
+            None => VariableStrokeDebugResult {
+                edges: vec![],
+                shapes: vec![],
+            },
+        }
+    }
+}
+
+#[cfg(feature = "variable_stroke_debug")]
+impl<S, P> VariableStrokeDebug<P> for S
+where
+    S: VariableStrokeSource<P>,
+    P: FloatPointCompatible + 'static,
+{
+}
+
 struct VariableStrokeSolver<P: FloatPointCompatible, I: IntNumber> {
     max_radius: P::Scalar,
     builder: VariableStrokeBuilder<P::Scalar>,
@@ -333,6 +362,42 @@ where
         }
     }
 
+    #[cfg(feature = "variable_stroke_debug")]
+    fn build_debug<S: VariableStrokeSource<P> + ?Sized>(
+        self,
+        source: &S,
+        options: OverlayOptions<P::Scalar, I>,
+    ) -> VariableStrokeDebugResult<P> {
+        if self.radius_is_too_small() {
+            return VariableStrokeDebugResult {
+                edges: vec![],
+                shapes: vec![],
+            };
+        }
+
+        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
+        let mut edges = Vec::with_capacity(segments.capacity());
+        for (path_index, path) in source.iter_variable_paths().enumerate() {
+            self.builder
+                .build_debug(path, path_index, &self.adapter, &mut segments, &mut edges);
+        }
+
+        let mut overlay = Overlay::with_segments(segments);
+        overlay.options = options.int_with_adapter(&self.adapter);
+        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
+        let mut shapes = shapes.to_float(&self.adapter);
+
+        if options.clean_result {
+            if options.preserve_output_collinear {
+                shapes.despike_contour(&self.adapter);
+            } else {
+                shapes.simplify_contour(&self.adapter);
+            }
+        }
+
+        VariableStrokeDebugResult { edges, shapes }
+    }
+
     #[inline]
     fn radius_is_too_small(&self) -> bool {
         let radius = self
@@ -352,6 +417,48 @@ mod tests {
     use crate::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
     use alloc::vec;
     use i_shape::float::area::Area;
+
+    #[cfg(feature = "variable_stroke_debug")]
+    use crate::mesh::variable_stroke::{VariableStrokeDebug, VariableStrokeDebugEdgeKind};
+
+    #[cfg(feature = "variable_stroke_debug")]
+    #[test]
+    fn debug_trace_preserves_order_and_edge_categories() {
+        let paths = vec![vec![
+            StrokeVertex::new([0.0_f32, 0.0], 10.0),
+            StrokeVertex::new([100.0, 0.0], 40.0),
+            StrokeVertex::new([100.0, -100.0], 10.0),
+        ]];
+        let result = paths.variable_stroke_debug(VariableStrokeStyle::new().round_angle(0.2));
+
+        assert!(!result.shapes.is_empty());
+        assert!(!result.edges.is_empty());
+        assert!(
+            result
+                .edges
+                .iter()
+                .any(|edge| edge.kind == VariableStrokeDebugEdgeKind::SectionBoundary)
+        );
+        assert!(
+            result
+                .edges
+                .iter()
+                .any(|edge| edge.kind == VariableStrokeDebugEdgeKind::JoinArc)
+        );
+        assert!(
+            result
+                .edges
+                .iter()
+                .any(|edge| edge.kind == VariableStrokeDebugEdgeKind::CapArc)
+        );
+        assert!(
+            result
+                .edges
+                .iter()
+                .enumerate()
+                .all(|(order, edge)| edge.order == order)
+        );
+    }
 
     #[test]
     fn equal_width_builds_round_stroke() {

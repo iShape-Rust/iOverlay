@@ -6,6 +6,13 @@ use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum RadiusTrend {
+    Decreasing,
+    Constant,
+    Increasing,
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct Section<P: FloatPointCompatible> {
     pub(super) a: P,
@@ -14,6 +21,7 @@ pub(super) struct Section<P: FloatPointCompatible> {
     pub(super) b_left: P,
     pub(super) a_right: P,
     pub(super) b_right: P,
+    pub(super) radius_trend: RadiusTrend,
 }
 
 impl<P: FloatPointCompatible> Section<P> {
@@ -33,6 +41,13 @@ impl<P: FloatPointCompatible> Section<P> {
         if int_a_radius.max(int_b_radius) <= I::ONE {
             return None;
         }
+        let radius_trend = if int_a_radius < int_b_radius {
+            RadiusTrend::Increasing
+        } else if int_a_radius > int_b_radius {
+            RadiusTrend::Decreasing
+        } else {
+            RadiusTrend::Constant
+        };
 
         let int_radius_delta = int_a_radius.to_wide() - int_b_radius.to_wide();
         let vector = int_b - int_a;
@@ -47,10 +62,10 @@ impl<P: FloatPointCompatible> Section<P> {
         let a_radius = adapter.len_to_float(int_a_radius);
         let b_radius = adapter.len_to_float(int_b_radius);
 
-        Some(Self::new(a_radius, b_radius, &a, &b))
+        Some(Self::new(a_radius, b_radius, &a, &b, radius_trend))
     }
 
-    fn new(a_radius: P::Scalar, b_radius: P::Scalar, a: &P, b: &P) -> Self {
+    fn new(a_radius: P::Scalar, b_radius: P::Scalar, a: &P, b: &P, radius_trend: RadiusTrend) -> Self {
         let direction = Math::normal(b, a);
         let center_vector = FloatPointMath::sub(b, a);
         let distance_sqr = FloatPointMath::sqr_length(&center_vector);
@@ -81,13 +96,14 @@ impl<P: FloatPointCompatible> Section<P> {
             b_left,
             a_right,
             b_right,
+            radius_trend,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Section;
+    use super::{RadiusTrend, Section};
     use crate::mesh::variable_stroke::StrokeVertex;
     use i_float::adapter::FloatPointAdapter;
     use i_float::float::rect::FloatRect;
@@ -106,6 +122,26 @@ mod tests {
         assert_eq!(section.b_left, [10.0, 2.0]);
         assert_eq!(section.a_right, [0.0, -2.0]);
         assert_eq!(section.b_right, [10.0, -2.0]);
+        assert_eq!(section.radius_trend, RadiusTrend::Constant);
+    }
+
+    #[test]
+    fn radius_trend_uses_adapter_radii() {
+        let increasing = Section::try_new(
+            &StrokeVertex::new([0.0, 0.0], 4.0),
+            &StrokeVertex::new([10.0, 0.0], 6.0),
+            &adapter(),
+        )
+        .unwrap();
+        let decreasing = Section::try_new(
+            &StrokeVertex::new([0.0, 0.0], 6.0),
+            &StrokeVertex::new([10.0, 0.0], 4.0),
+            &adapter(),
+        )
+        .unwrap();
+
+        assert_eq!(increasing.radius_trend, RadiusTrend::Increasing);
+        assert_eq!(decreasing.radius_trend, RadiusTrend::Decreasing);
     }
 
     #[test]

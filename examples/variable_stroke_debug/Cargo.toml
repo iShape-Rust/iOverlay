@@ -1,0 +1,19 @@
+[package]
+name = "variable_stroke_debug"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+iced = { version = "0.14.0", features = ["wgpu", "advanced", "fira-sans"] }
+i_overlay = { path = "../../iOverlay", features = ["variable_stroke_debug"] }
+i_triangle = { version = "^0.46.0", features = ["serde"] }
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+
+[patch.crates-io]
+i_overlay = { path = "../../iOverlay" }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
