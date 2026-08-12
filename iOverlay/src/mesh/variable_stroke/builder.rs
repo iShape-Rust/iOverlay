@@ -158,8 +158,11 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
         let mut result = Vec::new();
         let mut start = 0;
         let mut start_cap = Cap::Round;
+        let mut final_end_cap = Cap::Round;
 
         for (index, pair) in path.windows(2).enumerate() {
+            final_end_cap = Cap::Round;
+
             if let Some((end_cap, next_start_cap)) = Self::break_caps(&pair[0], &pair[1], adapter) {
                 result.push(SubSegment {
                     start,
@@ -184,6 +187,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
 
                 start = index;
                 start_cap = Cap::Butt;
+                final_end_cap = Cap::Butt;
             }
         }
 
@@ -191,7 +195,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
             start,
             end: path.len() - 1,
             start_cap,
-            end_cap: Cap::Round,
+            end_cap: final_end_cap,
         });
         result
     }
@@ -954,6 +958,7 @@ mod tests {
         assert_eq!(subsegments[1].start, 1);
         assert_eq!(subsegments[1].end, 2);
         assert_eq!(subsegments[1].start_cap, Cap::Butt);
+        assert_eq!(subsegments[1].end_cap, Cap::Butt);
 
         let result = paths.variable_stroke(VariableStrokeStyle::new().round_angle(0.75_f32));
         let has_tooth = result.iter().flatten().flatten().any(|point| {
@@ -980,6 +985,7 @@ mod tests {
         assert_eq!(subsegments.len(), 2);
         assert_eq!(subsegments[0].end_cap, Cap::Round);
         assert_eq!(subsegments[1].start_cap, Cap::Butt);
+        assert_eq!(subsegments[1].end_cap, Cap::Butt);
 
         let result = paths.variable_stroke(VariableStrokeStyle::new().round_angle(0.75_f32));
         let has_tooth = result.iter().flatten().flatten().any(|point| {
