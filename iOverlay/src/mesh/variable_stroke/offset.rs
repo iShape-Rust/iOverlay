@@ -2,7 +2,6 @@ use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
 use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
-use crate::float::hierarchy::FloatFlatShapeHierarchy;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::variable_stroke::builder::VariableStrokeBuilder;
@@ -33,10 +32,6 @@ where
         self.variable_stroke_custom(style, Default::default())
     }
 
-    fn variable_stroke_hierarchy(&self, style: VariableStrokeStyle<P::Scalar>) -> FloatFlatShapeHierarchy<P> {
-        self.variable_stroke_custom_hierarchy(style, Default::default())
-    }
-
     fn variable_stroke_into(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
@@ -51,14 +46,6 @@ where
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
         self.variable_stroke_custom_as::<i32>(style, options)
-    }
-
-    fn variable_stroke_custom_hierarchy(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-        options: OverlayOptions<P::Scalar>,
-    ) -> FloatFlatShapeHierarchy<P> {
-        self.variable_stroke_custom_hierarchy_as::<i32>(style, options)
     }
 
     fn variable_stroke_custom_into(
@@ -76,14 +63,6 @@ where
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
         self.variable_stroke_custom_fixed_scale(style, Default::default(), scale)
-    }
-
-    fn variable_stroke_fixed_scale_hierarchy(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-        scale: P::Scalar,
-    ) -> Result<FloatFlatShapeHierarchy<P>, FixedScaleOverlayError> {
-        self.variable_stroke_custom_fixed_scale_hierarchy(style, Default::default(), scale)
     }
 
     fn variable_stroke_fixed_scale_into(
@@ -104,15 +83,6 @@ where
         self.variable_stroke_custom_fixed_scale_as::<i32>(style, options, scale)
     }
 
-    fn variable_stroke_custom_fixed_scale_hierarchy(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-        options: OverlayOptions<P::Scalar>,
-        scale: P::Scalar,
-    ) -> Result<FloatFlatShapeHierarchy<P>, FixedScaleOverlayError> {
-        self.variable_stroke_custom_fixed_scale_hierarchy_as::<i32>(style, options, scale)
-    }
-
     fn variable_stroke_custom_fixed_scale_into(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
@@ -128,16 +98,6 @@ where
         I: OverlayInt + 'static,
     {
         self.variable_stroke_custom_as::<I>(style, Default::default())
-    }
-
-    fn variable_stroke_hierarchy_as<I>(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-    ) -> FloatFlatShapeHierarchy<P>
-    where
-        I: OverlayInt + 'static,
-    {
-        self.variable_stroke_custom_hierarchy_as::<I>(style, Default::default())
     }
 
     fn variable_stroke_into_as<I>(
@@ -164,20 +124,6 @@ where
         }
     }
 
-    fn variable_stroke_custom_hierarchy_as<I>(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-        options: OverlayOptions<P::Scalar, I>,
-    ) -> FloatFlatShapeHierarchy<P>
-    where
-        I: OverlayInt + 'static,
-    {
-        match VariableStrokeSolver::<P, I>::prepare(self, style) {
-            Some(solver) => solver.build_hierarchy(self, options),
-            None => FloatFlatShapeHierarchy::default(),
-        }
-    }
-
     fn variable_stroke_custom_into_as<I>(
         &self,
         style: VariableStrokeStyle<P::Scalar>,
@@ -201,17 +147,6 @@ where
         I: OverlayInt + 'static,
     {
         self.variable_stroke_custom_fixed_scale_as::<I>(style, Default::default(), scale)
-    }
-
-    fn variable_stroke_fixed_scale_hierarchy_as<I>(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-        scale: P::Scalar,
-    ) -> Result<FloatFlatShapeHierarchy<P>, FixedScaleOverlayError>
-    where
-        I: OverlayInt + 'static,
-    {
-        self.variable_stroke_custom_fixed_scale_hierarchy_as::<I>(style, Default::default(), scale)
     }
 
     fn variable_stroke_fixed_scale_into_as<I>(
@@ -241,23 +176,6 @@ where
         };
         solver.apply_scale(scale)?;
         Ok(solver.build(self, options))
-    }
-
-    fn variable_stroke_custom_fixed_scale_hierarchy_as<I>(
-        &self,
-        style: VariableStrokeStyle<P::Scalar>,
-        options: OverlayOptions<P::Scalar, I>,
-        scale: P::Scalar,
-    ) -> Result<FloatFlatShapeHierarchy<P>, FixedScaleOverlayError>
-    where
-        I: OverlayInt + 'static,
-    {
-        let mut solver = match VariableStrokeSolver::<P, I>::prepare(self, style) {
-            Some(solver) => solver,
-            None => return Ok(FloatFlatShapeHierarchy::default()),
-        };
-        solver.apply_scale(scale)?;
-        Ok(solver.build_hierarchy(self, options))
     }
 
     fn variable_stroke_custom_fixed_scale_into_as<I>(
@@ -380,29 +298,6 @@ where
         float
     }
 
-    fn build_hierarchy<S: VariableStrokeSource<P> + ?Sized>(
-        self,
-        source: &S,
-        options: OverlayOptions<P::Scalar, I>,
-    ) -> FloatFlatShapeHierarchy<P> {
-        if self.radius_is_too_small() {
-            return FloatFlatShapeHierarchy::default();
-        }
-
-        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
-        for path in source.iter_variable_paths() {
-            self.builder.build(path, &self.adapter, &mut segments);
-        }
-
-        let clean_result = options.clean_result;
-        let preserve_output_collinear = options.preserve_output_collinear;
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options.int_with_adapter(&self.adapter);
-        let hierarchy = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::Positive);
-
-        FloatFlatShapeHierarchy::from_int(hierarchy, &self.adapter, clean_result, preserve_output_collinear)
-    }
-
     fn build_into<S: VariableStrokeSource<P> + ?Sized>(
         self,
         source: &S,
@@ -456,7 +351,6 @@ mod tests {
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
     use crate::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
     use alloc::vec;
-    use alloc::vec::Vec;
     use i_shape::float::area::Area;
 
     #[test]
@@ -478,27 +372,6 @@ mod tests {
         ];
         let shapes = path.variable_stroke_as::<i64>(VariableStrokeStyle::new());
         assert!(!shapes.is_empty());
-    }
-
-    #[test]
-    fn hierarchy_links_nested_stroke_shapes() {
-        let paths = vec![
-            closed_square_variable_path(0.0, 100.0, 10.0),
-            closed_square_variable_path(30.0, 70.0, 10.0),
-        ];
-        let style = VariableStrokeStyle::new().round_angle(0.1);
-        let hierarchy = paths
-            .variable_stroke_fixed_scale_hierarchy(style, 1_000.0)
-            .unwrap();
-        let regular_shapes = paths.variable_stroke_fixed_scale(style, 1_000.0).unwrap();
-
-        assert_eq!(hierarchy.shapes.to_shapes(), regular_shapes);
-        assert_eq!(hierarchy.shapes.shape_ranges.len(), 2);
-        assert_eq!(hierarchy.links.len(), 1);
-
-        let link = hierarchy.links[0];
-        assert_ne!(link.parent_shape_index, link.child_shape_index);
-        assert!(hierarchy.shapes.shape_ranges[link.parent_shape_index].contains(&link.parent_contour_index));
     }
 
     #[test]
@@ -671,11 +544,5 @@ mod tests {
             min_projection < -8.5,
             "round start does not cover the larger circle: projection={min_projection}"
         );
-    }
-
-    fn closed_square_variable_path(min: f64, max: f64, width: f64) -> Vec<StrokeVertex<[f64; 2]>> {
-        [[min, min], [max, min], [max, max], [min, max], [min, min]]
-            .map(|point| StrokeVertex::new(point, width))
-            .to_vec()
     }
 }
