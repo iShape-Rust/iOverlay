@@ -12,6 +12,9 @@ use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 
+#[cfg(feature = "variable_stroke_debug")]
+use crate::mesh::variable_stroke::{VariableStrokeDebugEdge, VariableStrokeDebugEdgeKind};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Cap {
     Butt,
@@ -22,16 +25,6 @@ enum Cap {
 enum ArcSweep {
     Minor,
     Major,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum EdgeKind {
-    SectionBoundary,
-    JoinArc,
-    JoinClosure,
-    CapArc,
-    CapClosure,
-    CircleArc,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -88,7 +81,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
         path_index: usize,
         adapter: &FloatPointAdapter<P, I>,
         segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
-        debug_edges: &mut Vec<crate::mesh::variable_stroke::VariableStrokeDebugEdge<P>>,
+        debug_edges: &mut Vec<VariableStrokeDebugEdge<P>>,
     ) where
         P: FloatPointCompatible<Scalar = T>,
         I: IntNumber,
@@ -146,7 +139,10 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
         output.add_end_cap(&previous, subsegment.end_cap, self.round_angle);
     }
 
-    fn find_subsegments<P, I>(path: &[StrokeVertex<P>], adapter: &FloatPointAdapter<P, I>) -> Vec<SubSegment>
+    fn find_subsegments<P, I>(
+        path: &[StrokeVertex<P>],
+        adapter: &FloatPointAdapter<P, I>,
+    ) -> Vec<SubSegment>
     where
         P: FloatPointCompatible<Scalar = T>,
         I: IntNumber,
@@ -176,7 +172,8 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
                 continue;
             }
 
-            if index > 0 && Self::circle_is_covered_by_section(&path[index - 1], &pair[0], &pair[1], adapter)
+            if index > 0
+                && Self::circle_is_covered_by_section(&path[index - 1], &pair[0], &pair[1], adapter)
             {
                 result.push(SubSegment {
                     start,
@@ -267,7 +264,11 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
             let b = points[(index + 1) % points.len()];
             let edge = b - a;
             let side = edge.cross_product(center - a);
-            let interior_distance = if orientation > I::Wide::ZERO { side } else { -side };
+            let interior_distance = if orientation > I::Wide::ZERO {
+                side
+            } else {
+                -side
+            };
             if interior_distance < I::Wide::ZERO {
                 return false;
             }
@@ -302,7 +303,7 @@ struct SegmentBuilder<'a, P: FloatPointCompatible, I: IntNumber> {
     adapter: &'a FloatPointAdapter<P, I>,
     segments: &'a mut Vec<Segment<ShapeCountBoolean, I>>,
     #[cfg(feature = "variable_stroke_debug")]
-    debug_edges: Option<&'a mut Vec<crate::mesh::variable_stroke::VariableStrokeDebugEdge<P>>>,
+    debug_edges: Option<&'a mut Vec<VariableStrokeDebugEdge<P>>>,
     #[cfg(feature = "variable_stroke_debug")]
     debug_path_index: usize,
 }
@@ -314,13 +315,16 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
             return;
         }
 
-        let center = self.adapter.int_to_float(&self.adapter.float_to_int(center));
+        let center = self
+            .adapter
+            .int_to_float(&self.adapter.float_to_int(center));
         let radius = self.adapter.len_to_float(int_radius);
         let count = (P::Scalar::from_float(2.0 * PI) / angle)
             .to_usize()
             .saturating_add(1)
             .clamp(3, 1024);
-        let rotator = Rotator::with_angle(P::Scalar::from_float(2.0 * PI) / P::Scalar::from_usize(count));
+        let rotator =
+            Rotator::with_angle(P::Scalar::from_float(2.0 * PI) / P::Scalar::from_usize(count));
         let mut vector = P::from_xy(radius, P::Scalar::ZERO);
         let first = FloatPointMath::add(&center, &vector);
         let mut a = first;
@@ -332,15 +336,30 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
                 vector = rotator.rotate(&vector);
                 FloatPointMath::add(&center, &vector)
             };
-            self.add_edge(&a, &b, EdgeKind::CircleArc);
+            self.add_edge(
+                &a,
+                &b,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::CircleArc,
+            );
             a = b;
         }
     }
 
     #[inline]
     fn add_section(&mut self, section: &Section<P>) {
-        self.add_edge(&section.b_left, &section.a_left, EdgeKind::SectionBoundary);
-        self.add_edge(&section.a_right, &section.b_right, EdgeKind::SectionBoundary);
+        self.add_edge(
+            &section.b_left,
+            &section.a_left,
+            #[cfg(feature = "variable_stroke_debug")]
+            VariableStrokeDebugEdgeKind::SectionBoundary,
+        );
+        self.add_edge(
+            &section.a_right,
+            &section.b_right,
+            #[cfg(feature = "variable_stroke_debug")]
+            VariableStrokeDebugEdgeKind::SectionBoundary,
+        );
     }
 
     fn add_join(&mut self, prev: &Section<P>, next: &Section<P>, angle: P::Scalar) -> usize {
@@ -393,10 +412,16 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
                 &prev.b_left,
                 angle,
                 ArcSweep::Minor,
-                EdgeKind::JoinArc,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::JoinArc,
             ) as usize;
         } else {
-            self.add_edge(&next.a_left, &prev.b_left, EdgeKind::JoinClosure);
+            self.add_edge(
+                &next.a_left,
+                &prev.b_left,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::JoinClosure,
+            );
         }
 
         if right_arc {
@@ -406,10 +431,16 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
                 &next.a_right,
                 angle,
                 ArcSweep::Major,
-                EdgeKind::JoinArc,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::JoinArc,
             ) as usize;
         } else {
-            self.add_edge(&prev.b_right, &next.a_right, EdgeKind::JoinClosure);
+            self.add_edge(
+                &prev.b_right,
+                &next.a_right,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::JoinClosure,
+            );
         }
 
         arc_count
@@ -417,7 +448,12 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
 
     fn add_start_cap(&mut self, section: &Section<P>, cap: Cap, angle: P::Scalar) {
         match cap {
-            Cap::Butt => self.add_edge(&section.a_left, &section.a_right, EdgeKind::CapClosure),
+            Cap::Butt => self.add_edge(
+                &section.a_left,
+                &section.a_right,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::CapClosure,
+            ),
             Cap::Round => {
                 let sweep = if section.radius_trend == RadiusTrend::Decreasing {
                     ArcSweep::Major
@@ -430,7 +466,8 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
                     &section.a_right,
                     angle,
                     sweep,
-                    EdgeKind::CapArc,
+                    #[cfg(feature = "variable_stroke_debug")]
+                    VariableStrokeDebugEdgeKind::CapArc,
                 );
             }
         }
@@ -438,7 +475,12 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
 
     fn add_end_cap(&mut self, section: &Section<P>, cap: Cap, angle: P::Scalar) {
         match cap {
-            Cap::Butt => self.add_edge(&section.b_right, &section.b_left, EdgeKind::CapClosure),
+            Cap::Butt => self.add_edge(
+                &section.b_right,
+                &section.b_left,
+                #[cfg(feature = "variable_stroke_debug")]
+                VariableStrokeDebugEdgeKind::CapClosure,
+            ),
             Cap::Round => {
                 let sweep = if section.radius_trend == RadiusTrend::Increasing {
                     ArcSweep::Major
@@ -451,7 +493,8 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
                     &section.b_left,
                     angle,
                     sweep,
-                    EdgeKind::CapArc,
+                    #[cfg(feature = "variable_stroke_debug")]
+                    VariableStrokeDebugEdgeKind::CapArc,
                 );
             }
         }
@@ -483,10 +526,12 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
         to: &P,
         angle: P::Scalar,
         aligned_sweep: ArcSweep,
-        edge_kind: EdgeKind,
+        #[cfg(feature = "variable_stroke_debug")] edge_kind: VariableStrokeDebugEdgeKind,
     ) -> bool {
         let sweep = self.arc_sweep_ccw(center, from, to, aligned_sweep);
-        if sweep == ArcSweep::Minor && self.adapter.float_to_int(from) == self.adapter.float_to_int(to) {
+        if sweep == ArcSweep::Minor
+            && self.adapter.float_to_int(from) == self.adapter.float_to_int(to)
+        {
             return false;
         }
 
@@ -515,6 +560,9 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
                 vector = rotator.rotate(&vector);
                 FloatPointMath::add(center, &vector)
             };
+            #[cfg(not(feature = "variable_stroke_debug"))]
+            self.add_edge(&a, &b);
+            #[cfg(feature = "variable_stroke_debug")]
             self.add_edge(&a, &b, edge_kind);
             a = b;
         }
@@ -523,22 +571,17 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
     }
 
     #[inline]
-    fn add_edge(&mut self, a: &P, b: &P, _edge_kind: EdgeKind) {
+    fn add_edge(
+        &mut self,
+        a: &P,
+        b: &P,
+        #[cfg(feature = "variable_stroke_debug")] kind: VariableStrokeDebugEdgeKind,
+    ) {
         let a = self.adapter.float_to_int(a);
         let b = self.adapter.float_to_int(b);
         if a != b {
             #[cfg(feature = "variable_stroke_debug")]
             if let Some(debug_edges) = self.debug_edges.as_mut() {
-                use crate::mesh::variable_stroke::{VariableStrokeDebugEdge, VariableStrokeDebugEdgeKind};
-
-                let kind = match _edge_kind {
-                    EdgeKind::SectionBoundary => VariableStrokeDebugEdgeKind::SectionBoundary,
-                    EdgeKind::JoinArc => VariableStrokeDebugEdgeKind::JoinArc,
-                    EdgeKind::JoinClosure => VariableStrokeDebugEdgeKind::JoinClosure,
-                    EdgeKind::CapArc => VariableStrokeDebugEdgeKind::CapArc,
-                    EdgeKind::CapClosure => VariableStrokeDebugEdgeKind::CapClosure,
-                    EdgeKind::CircleArc => VariableStrokeDebugEdgeKind::CircleArc,
-                };
                 debug_edges.push(VariableStrokeDebugEdge {
                     a: self.adapter.int_to_float(&a),
                     b: self.adapter.int_to_float(&b),
@@ -554,7 +597,9 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ArcSweep, Cap, EdgeKind, SegmentBuilder, SubSegment, VariableStrokeBuilder};
+    use super::{ArcSweep, Cap, SegmentBuilder, SubSegment, VariableStrokeBuilder};
+    #[cfg(feature = "variable_stroke_debug")]
+    use crate::mesh::variable_stroke::VariableStrokeDebugEdgeKind;
     use crate::mesh::variable_stroke::offset::VariableStrokeOffset;
     use crate::mesh::variable_stroke::section::Section;
     use crate::mesh::variable_stroke::style::{StrokeVertex, VariableStrokeStyle};
@@ -778,7 +823,8 @@ mod tests {
             &to,
             core::f64::consts::FRAC_PI_4,
             ArcSweep::Minor,
-            EdgeKind::JoinArc,
+            #[cfg(feature = "variable_stroke_debug")]
+            VariableStrokeDebugEdgeKind::JoinArc,
         ));
         assert_eq!(segments.len(), 1);
         let edge = segments[0].x_segment;
@@ -810,7 +856,8 @@ mod tests {
             &contact,
             core::f64::consts::FRAC_PI_4,
             ArcSweep::Major,
-            EdgeKind::JoinArc,
+            #[cfg(feature = "variable_stroke_debug")]
+            VariableStrokeDebugEdgeKind::JoinArc,
         ));
         assert!(segments.len() >= 3);
     }
@@ -949,7 +996,8 @@ mod tests {
         ]];
         let precise_adapter: FloatPointAdapter<[f32; 2], i32> =
             FloatPointAdapter::with_scale(FloatRect::new(-250.0, 250.0, -250.0, 250.0), 1_000.0);
-        let subsegments = VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
+        let subsegments =
+            VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
 
         assert_eq!(subsegments.len(), 2);
         assert_eq!(subsegments[0].start, 0);
@@ -980,7 +1028,8 @@ mod tests {
         ]];
         let precise_adapter: FloatPointAdapter<[f32; 2], i32> =
             FloatPointAdapter::with_scale(FloatRect::new(-250.0, 250.0, -250.0, 250.0), 1_000.0);
-        let subsegments = VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
+        let subsegments =
+            VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
 
         assert_eq!(subsegments.len(), 2);
         assert_eq!(subsegments[0].end_cap, Cap::Round);
