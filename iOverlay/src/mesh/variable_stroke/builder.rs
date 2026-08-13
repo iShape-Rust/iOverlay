@@ -139,10 +139,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
         output.add_end_cap(&previous, subsegment.end_cap, self.round_angle);
     }
 
-    fn find_subsegments<P, I>(
-        path: &[StrokeVertex<P>],
-        adapter: &FloatPointAdapter<P, I>,
-    ) -> Vec<SubSegment>
+    fn find_subsegments<P, I>(path: &[StrokeVertex<P>], adapter: &FloatPointAdapter<P, I>) -> Vec<SubSegment>
     where
         P: FloatPointCompatible<Scalar = T>,
         I: IntNumber,
@@ -172,8 +169,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
                 continue;
             }
 
-            if index > 0
-                && Self::circle_is_covered_by_section(&path[index - 1], &pair[0], &pair[1], adapter)
+            if index > 0 && Self::circle_is_covered_by_section(&path[index - 1], &pair[0], &pair[1], adapter)
             {
                 result.push(SubSegment {
                     start,
@@ -264,11 +260,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
             let b = points[(index + 1) % points.len()];
             let edge = b - a;
             let side = edge.cross_product(center - a);
-            let interior_distance = if orientation > I::Wide::ZERO {
-                side
-            } else {
-                -side
-            };
+            let interior_distance = if orientation > I::Wide::ZERO { side } else { -side };
             if interior_distance < I::Wide::ZERO {
                 return false;
             }
@@ -315,16 +307,13 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
             return;
         }
 
-        let center = self
-            .adapter
-            .int_to_float(&self.adapter.float_to_int(center));
+        let center = self.adapter.int_to_float(&self.adapter.float_to_int(center));
         let radius = self.adapter.len_to_float(int_radius);
         let count = (P::Scalar::from_float(2.0 * PI) / angle)
             .to_usize()
             .saturating_add(1)
             .clamp(3, 1024);
-        let rotator =
-            Rotator::with_angle(P::Scalar::from_float(2.0 * PI) / P::Scalar::from_usize(count));
+        let rotator = Rotator::with_angle(P::Scalar::from_float(2.0 * PI) / P::Scalar::from_usize(count));
         let mut vector = P::from_xy(radius, P::Scalar::ZERO);
         let first = FloatPointMath::add(&center, &vector);
         let mut a = first;
@@ -529,9 +518,7 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
         #[cfg(feature = "variable_stroke_debug")] edge_kind: VariableStrokeDebugEdgeKind,
     ) -> bool {
         let sweep = self.arc_sweep_ccw(center, from, to, aligned_sweep);
-        if sweep == ArcSweep::Minor
-            && self.adapter.float_to_int(from) == self.adapter.float_to_int(to)
-        {
+        if sweep == ArcSweep::Minor && self.adapter.float_to_int(from) == self.adapter.float_to_int(to) {
             return false;
         }
 
@@ -996,8 +983,7 @@ mod tests {
         ]];
         let precise_adapter: FloatPointAdapter<[f32; 2], i32> =
             FloatPointAdapter::with_scale(FloatRect::new(-250.0, 250.0, -250.0, 250.0), 1_000.0);
-        let subsegments =
-            VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
+        let subsegments = VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
 
         assert_eq!(subsegments.len(), 2);
         assert_eq!(subsegments[0].start, 0);
@@ -1028,8 +1014,7 @@ mod tests {
         ]];
         let precise_adapter: FloatPointAdapter<[f32; 2], i32> =
             FloatPointAdapter::with_scale(FloatRect::new(-250.0, 250.0, -250.0, 250.0), 1_000.0);
-        let subsegments =
-            VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
+        let subsegments = VariableStrokeBuilder::<f32>::find_subsegments(&paths[0], &precise_adapter);
 
         assert_eq!(subsegments.len(), 2);
         assert_eq!(subsegments[0].end_cap, Cap::Round);
