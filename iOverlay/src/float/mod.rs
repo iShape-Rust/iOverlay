@@ -1,5 +1,6 @@
 pub mod clip;
 pub mod graph;
+pub mod hierarchy;
 pub mod overlay;
 pub mod relate;
 pub mod scale;

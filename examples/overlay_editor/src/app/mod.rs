@@ -6,3 +6,4 @@ mod outline;
 mod solver_option;
 mod string;
 mod stroke;
+mod variable_stroke;

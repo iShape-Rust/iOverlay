@@ -286,7 +286,7 @@ where
 
         segments.sort_by_a_then_by_angle();
 
-        let solution = ShapeBinder::bind(self.len(), hole_segments, segments);
+        let solution = ShapeBinder::bind_required(self.len(), hole_segments, segments);
 
         for (shape_index, &capacity) in solution.children_count_for_parent.iter().enumerate() {
             self[shape_index].reserve_exact(capacity);

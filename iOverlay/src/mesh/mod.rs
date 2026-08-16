@@ -6,3 +6,4 @@ mod rotator;
 pub mod stroke;
 pub mod style;
 mod subject;
+pub mod variable_stroke;

@@ -5,6 +5,7 @@
 use crate::build::builder::GraphBuilder;
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
+use crate::core::hierarchy::FlatShapeHierarchy;
 use crate::core::integer::OverlayInt;
 use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
@@ -369,6 +370,36 @@ where
             .extract_shapes(overlay_rule, &mut buffer);
         self.boolean_buffer = Some(buffer);
         shapes
+    }
+
+    /// Executes a Boolean operation and returns flat shapes together with their
+    /// immediate nesting relationships.
+    ///
+    /// A hierarchy link associates a hole contour with each shape directly
+    /// contained by that hole. Independent shapes do not occur in the link list.
+    #[inline]
+    pub fn overlay_hierarchy(
+        &mut self,
+        overlay_rule: OverlayRule,
+        fill_rule: FillRule,
+    ) -> FlatShapeHierarchy<I> {
+        self.split_solver.split_segments(&mut self.segments, &self.solver);
+        if self.segments.is_empty() {
+            return FlatShapeHierarchy::default();
+        }
+        let mut buffer = self.boolean_buffer.take().unwrap_or_default();
+        let hierarchy = self
+            .graph_builder
+            .build_boolean_overlay(
+                fill_rule,
+                overlay_rule,
+                self.options,
+                &self.solver,
+                &self.segments,
+            )
+            .extract_shape_hierarchy(overlay_rule, &mut buffer);
+        self.boolean_buffer = Some(buffer);
+        hierarchy
     }
 
     /// Executes a single Boolean operation and writes the result into a flat contour buffer.

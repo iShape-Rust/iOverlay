@@ -21,6 +21,7 @@ fn run_desktop() -> iced::Result {
             "../tests/boolean",
             "../tests/string",
             "../tests/stroke",
+            "../tests/variable_stroke",
             "../tests/outline",
         );
         let app = EditorApp::with_resource(app_resource);

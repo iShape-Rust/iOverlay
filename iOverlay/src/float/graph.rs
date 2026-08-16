@@ -6,6 +6,7 @@ use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::graph::OverlayGraph;
 use crate::core::integer::OverlayInt;
 use crate::core::overlay_rule::OverlayRule;
+use crate::float::hierarchy::FloatFlatShapeHierarchy;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::int::number::int::IntNumber;
@@ -76,5 +77,22 @@ where
         }
 
         float
+    }
+
+    /// Extracts flat float shapes and their immediate nesting relationships.
+    #[inline]
+    pub fn extract_shape_hierarchy(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> FloatFlatShapeHierarchy<P> {
+        let preserve_output_collinear = self.graph.options.preserve_output_collinear;
+        let hierarchy = self.graph.extract_shape_hierarchy(overlay_rule, buffer);
+        FloatFlatShapeHierarchy::from_int(
+            hierarchy,
+            &self.adapter,
+            self.clean_result,
+            preserve_output_collinear,
+        )
     }
 }

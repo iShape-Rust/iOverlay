@@ -21,6 +21,7 @@ impl WebApp {
         boolean_data: String,
         string_data: String,
         stroke_data: String,
+        variable_stroke_data: String,
         outline_data: String,
     ) {
         use iced::application;
@@ -38,8 +39,13 @@ impl WebApp {
 
         let app_initializer = move || {
             info!("wasm init");
-            let app_resource =
-                AppResource::with_content(&boolean_data, &string_data, &stroke_data, &outline_data);
+            let app_resource = AppResource::with_content(
+                &boolean_data,
+                &string_data,
+                &stroke_data,
+                &variable_stroke_data,
+                &outline_data,
+            );
             let app = EditorApp::with_resource(app_resource);
 
             (app, iced::Task::none())

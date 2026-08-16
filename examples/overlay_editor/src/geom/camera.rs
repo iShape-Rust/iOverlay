@@ -34,8 +34,8 @@ impl Camera {
     }
 
     pub(crate) fn new(rect: IntRect, size: Size) -> Self {
-        let w_pow = rect.width().ilog2() as usize;
-        let h_pow = rect.height().ilog2() as usize;
+        let w_pow = rect.width().max(1).ilog2() as usize;
+        let h_pow = rect.height().max(1).ilog2() as usize;
 
         let width = (1 << w_pow) as f32;
         let height = (1 << h_pow) as f32;
@@ -93,5 +93,28 @@ impl Camera {
         let x = view_distance.x * self.i_scale;
         let y = -view_distance.y * self.i_scale;
         Vector { x, y }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Camera;
+    use i_triangle::i_overlay::i_float::int::rect::IntRect;
+    use iced::Size;
+
+    #[test]
+    fn camera_supports_degenerate_bounds() {
+        let rects = [
+            IntRect::new(0, 10_000, 0, 0),
+            IntRect::new(0, 0, -10_000, 10_000),
+            IntRect::new(42, 42, 24, 24),
+        ];
+
+        for rect in rects {
+            let camera = Camera::new(rect, Size::new(800.0, 600.0));
+            assert!(camera.scale.is_finite());
+            assert!(camera.scale > 0.0);
+            assert!(camera.i_scale.is_finite());
+        }
     }
 }
