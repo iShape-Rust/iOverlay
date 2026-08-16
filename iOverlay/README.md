@@ -11,6 +11,8 @@
 iOverlay is a high-performance polygon overlay engine for Rust. It solves robust boolean operations on complex polygons for GIS, CAD, and graphics workflows, built for developers who need reliable geometry at scale across integer and floating-point APIs.
 
 iOverlay powers polygon boolean operations in [geo](https://github.com/georust/geo).
+
+For specialized geometry, see [iCurve](https://github.com/iShape-Rust/iCurve) for polygon boolean operations with Bézier curves and [xOverlay](https://github.com/iShape-Rust/xOverlay) for high-performance boolean operations on orthogonal (Manhattan) polygons.
     
 ## Table of Contents
 
