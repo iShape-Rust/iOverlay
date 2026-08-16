@@ -1,3 +1,51 @@
+## [8.1.0] - 2026-08-16
+### Added
+- Variable-width strokes.
+- Flat shape hierarchy.
+- Batch point-location API.
+
+### Fixed
+- Stroke and inner-butt edge cases.
+
+## [8.0.0] - 2026-08-02
+### Changed
+- Introduced the unified `OverlayInt` trait.
+- Upgraded to `i_float` and `i_shape` 4.x.
+- Improved handling of empty and degenerate geometry.
+
+## [7.0.0] - 2026-06-01
+### Added
+- Generic integer API supporting `i16`, `i32`, and `i64`.
+- Edge attributes and provenance.
+- Selectable integer engines for floating-point operations.
+
+## [6.0.0] - 2026-05-02
+### Changed
+- Simplified the floating-point API using the associated `Scalar` type in `FloatPointCompatible`.
+- Upgraded to `i_float` and `i_shape` 2.x.
+
+## [5.0.0] - 2026-04-22
+### Changed
+- Established Rust 1.88 as the minimum supported Rust version.
+- Adopted a SemVer-based release policy.
+- Improved performance and moved multithreaded sorting behind a feature.
+
+## [4.0.0] - 2025-05-26
+### Changed
+- Added `no_std` support.
+- Disabled multithreading by default.
+- Significantly refactored the public API and internal buffers.
+
+## [3.0.0] - 2025-04-17
+### Changed
+- Changed the default contour orientation to counterclockwise for outer contours and clockwise for holes.
+- Reworked splitting, hole binding, and simplification.
+
+## [2.0.0] - 2025-02-20
+### Added
+- Stroke, outline, and buffering APIs.
+- Multiple `LineCap` and `LineJoin` styles.
+
 ## [1.10.0] - 2025-02-02
 ### Changed
 - snap by radius can now grow without limit.
