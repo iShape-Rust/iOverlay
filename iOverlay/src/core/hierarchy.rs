@@ -151,12 +151,22 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::ChildLink;
+    use super::{ChildLink, FlatShapeHierarchy};
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay::{ContourDirection, Overlay};
     use crate::core::overlay_rule::OverlayRule;
     use alloc::vec;
     use i_shape::int_shape;
+
+    #[test]
+    fn default_hierarchy_is_empty() {
+        let hierarchy = FlatShapeHierarchy::<i32>::default();
+
+        assert!(hierarchy.shapes.points.is_empty());
+        assert!(hierarchy.shapes.contour_ranges.is_empty());
+        assert!(hierarchy.shapes.shape_ranges.is_empty());
+        assert!(hierarchy.links.is_empty());
+    }
 
     #[test]
     fn nested_shapes_form_a_link_chain() {

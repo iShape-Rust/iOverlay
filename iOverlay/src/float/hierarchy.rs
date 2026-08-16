@@ -136,8 +136,9 @@ mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::core::hierarchy::{ChildLink, FlatShapeHierarchy};
     use crate::core::overlay_rule::OverlayRule;
+    use crate::core::solver::Solver;
     use crate::float::hierarchy::FloatFlatShapeHierarchy;
-    use crate::float::overlay::FloatOverlay;
+    use crate::float::overlay::{FloatOverlay, OverlayOptions};
     use alloc::vec;
     use alloc::vec::Vec;
     use i_float::adapter::FloatPointAdapter;
@@ -181,6 +182,122 @@ mod tests {
 
         assert_eq!(hierarchy.shapes.shape_ranges, vec![0..2, 2..4, 4..5]);
         assert_eq!(hierarchy.links.len(), 2);
+    }
+
+    #[test]
+    fn float_graph_hierarchy_covers_other_cleaning_modes() {
+        let subject = nested_subject::<f32>();
+        let mut options = OverlayOptions::<f32>::default();
+        options.preserve_output_collinear = true;
+        let mut overlay = FloatOverlay::from_subj_custom(&subject, options, Solver::default());
+        let graph = overlay.build_graph_view(FillRule::EvenOdd).unwrap();
+        let mut buffer = BooleanExtractionBuffer::default();
+        let preserved = graph.extract_shape_hierarchy(OverlayRule::Subject, &mut buffer);
+
+        assert_eq!(preserved.shapes.shape_ranges, vec![0..2, 2..4, 4..5]);
+        assert_eq!(preserved.links.len(), 2);
+
+        let subject = nested_subject::<f64>();
+        let mut overlay = FloatOverlay::<[f64; 2], i32>::from_subj(&subject);
+        let graph = overlay.build_graph_view(FillRule::EvenOdd).unwrap();
+        let mut buffer = BooleanExtractionBuffer::default();
+        let uncleaned = graph.extract_shape_hierarchy(OverlayRule::Subject, &mut buffer);
+
+        assert_eq!(uncleaned.shapes.shape_ranges, vec![0..2, 2..4, 4..5]);
+        assert_eq!(uncleaned.links.len(), 2);
+    }
+
+    #[test]
+    fn default_hierarchy_is_empty() {
+        let hierarchy = FloatFlatShapeHierarchy::<[f64; 2]>::default();
+
+        assert!(hierarchy.shapes.points.is_empty());
+        assert!(hierarchy.shapes.contour_ranges.is_empty());
+        assert!(hierarchy.shapes.shape_ranges.is_empty());
+        assert!(hierarchy.links.is_empty());
+    }
+
+    #[test]
+    fn clean_result_preserves_valid_collinear_mode_contour() {
+        let int_hierarchy = FlatShapeHierarchy {
+            shapes: FlatShapesBuffer {
+                points: vec![
+                    IntPoint::new(0, 0),
+                    IntPoint::new(10, 0),
+                    IntPoint::new(10, 10),
+                    IntPoint::new(0, 10),
+                ],
+                contour_ranges: vec![0..4],
+                shape_ranges: vec![0..1],
+            },
+            links: vec![],
+        };
+        let adapter =
+            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-10.0, 20.0, -10.0, 20.0), 1.0);
+
+        let hierarchy = FloatFlatShapeHierarchy::from_int(int_hierarchy, &adapter, true, true);
+
+        assert_eq!(hierarchy.shapes.shape_ranges, vec![0..1]);
+        assert_eq!(hierarchy.shapes.contour_ranges, vec![0..4]);
+        assert!(hierarchy.links.is_empty());
+    }
+
+    #[test]
+    fn clean_result_drops_empty_hull_and_remaps_surviving_link() {
+        let int_hierarchy = FlatShapeHierarchy {
+            shapes: FlatShapesBuffer {
+                points: vec![
+                    IntPoint::new(0, 0),
+                    IntPoint::new(20, 0),
+                    IntPoint::new(20, 20),
+                    IntPoint::new(0, 20),
+                    IntPoint::new(5, 5),
+                    IntPoint::new(5, 15),
+                    IntPoint::new(15, 15),
+                    IntPoint::new(15, 5),
+                    IntPoint::new(6, 6),
+                    IntPoint::new(7, 6),
+                    IntPoint::new(8, 6),
+                    IntPoint::new(7, 7),
+                    IntPoint::new(9, 7),
+                    IntPoint::new(9, 9),
+                    IntPoint::new(7, 9),
+                ],
+                contour_ranges: vec![0..4, 4..8, 8..11, 11..15],
+                shape_ranges: vec![0..2, 2..3, 3..4],
+            },
+            links: vec![
+                ChildLink {
+                    parent_shape_index: 0,
+                    parent_contour_index: 1,
+                    child_shape_index: 1,
+                },
+                ChildLink {
+                    parent_shape_index: 0,
+                    parent_contour_index: 1,
+                    child_shape_index: 2,
+                },
+                ChildLink {
+                    parent_shape_index: 1,
+                    parent_contour_index: 2,
+                    child_shape_index: 2,
+                },
+            ],
+        };
+        let adapter =
+            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-10.0, 30.0, -10.0, 30.0), 1.0);
+
+        let hierarchy = FloatFlatShapeHierarchy::from_int(int_hierarchy, &adapter, true, false);
+
+        assert_eq!(hierarchy.shapes.shape_ranges, vec![0..2, 2..3]);
+        assert_eq!(
+            hierarchy.links,
+            vec![ChildLink {
+                parent_shape_index: 0,
+                parent_contour_index: 1,
+                child_shape_index: 1,
+            }]
+        );
     }
 
     #[test]

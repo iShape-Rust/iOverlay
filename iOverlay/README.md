@@ -197,6 +197,8 @@ The `overlay` function returns `Shapes<P>`, which is an alias for `Vec<Shape<P>>
 
 The regular `overlay` result groups each outer contour with its holes, but shapes nested inside those holes are separate entries. Use `overlay_hierarchy` when you also need the immediate parent-hole relationship.
 
+<img src="readme/shape_hierarchy.svg" alt="Flat Shape Hierarchy" style="max-width:768px;width:100%;">
+
 ```rust
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;

@@ -412,10 +412,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::VariableStrokeOffset;
+    use crate::float::overlay::OverlayOptions;
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
     use crate::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
     use alloc::vec;
+    use alloc::vec::Vec;
+    use i_shape::flat::float::FloatFlatContoursBuffer;
     use i_shape::float::area::Area;
 
     #[cfg(feature = "variable_stroke_debug")]
@@ -489,6 +492,116 @@ mod tests {
         ];
         let shapes = path.variable_stroke(VariableStrokeStyle::new());
         assert!(shapes.is_empty());
+    }
+
+    fn assert_flat_output_matches(
+        shapes: Vec<Vec<Vec<[f32; 2]>>>,
+        output: &FloatFlatContoursBuffer<[f32; 2]>,
+    ) {
+        let contours: Vec<_> = shapes.into_iter().flatten().collect();
+        assert_eq!(output.to_contours(), contours);
+    }
+
+    #[test]
+    fn flat_output_variants_match_allocating_variants() {
+        let path = [
+            StrokeVertex::new([0.0_f32, 0.0], 4.0),
+            StrokeVertex::new([10.0, 2.0], 8.0),
+            StrokeVertex::new([20.0, -1.0], 5.0),
+        ];
+        let style = VariableStrokeStyle::new().round_angle(0.2);
+        let mut output = FloatFlatContoursBuffer::default();
+
+        let expected = path.variable_stroke(style);
+        path.variable_stroke_into(style, &mut output);
+        assert_flat_output_matches(expected, &output);
+
+        let mut options = OverlayOptions::<f32>::default();
+        options.preserve_output_collinear = true;
+        let expected = path.variable_stroke_custom(style, options);
+        path.variable_stroke_custom_into(style, options, &mut output);
+        assert_flat_output_matches(expected, &output);
+
+        let expected = path.variable_stroke_fixed_scale(style, 1_000.0).unwrap();
+        path.variable_stroke_fixed_scale_into(style, 1_000.0, &mut output)
+            .unwrap();
+        assert_flat_output_matches(expected, &output);
+
+        let expected = path
+            .variable_stroke_custom_fixed_scale(style, options, 1_000.0)
+            .unwrap();
+        path.variable_stroke_custom_fixed_scale_into(style, options, 1_000.0, &mut output)
+            .unwrap();
+        assert_flat_output_matches(expected, &output);
+
+        let expected = path.variable_stroke_as::<i64>(style);
+        path.variable_stroke_into_as::<i64>(style, &mut output);
+        assert_flat_output_matches(expected, &output);
+
+        let mut options_i64 = OverlayOptions::<f32, i64>::default();
+        options_i64.preserve_output_collinear = true;
+        let expected = path.variable_stroke_custom_as::<i64>(style, options_i64);
+        path.variable_stroke_custom_into_as::<i64>(style, options_i64, &mut output);
+        assert_flat_output_matches(expected, &output);
+
+        let expected = path
+            .variable_stroke_fixed_scale_as::<i64>(style, 1_000.0)
+            .unwrap();
+        path.variable_stroke_fixed_scale_into_as::<i64>(style, 1_000.0, &mut output)
+            .unwrap();
+        assert_flat_output_matches(expected, &output);
+
+        let expected = path
+            .variable_stroke_custom_fixed_scale_as::<i64>(style, options_i64, 1_000.0)
+            .unwrap();
+        path.variable_stroke_custom_fixed_scale_into_as::<i64>(style, options_i64, 1_000.0, &mut output)
+            .unwrap();
+        assert_flat_output_matches(expected, &output);
+    }
+
+    #[test]
+    fn empty_and_subpixel_inputs_clear_flat_output() {
+        let drawable = [
+            StrokeVertex::new([0.0_f32, 0.0], 4.0),
+            StrokeVertex::new([10.0, 0.0], 6.0),
+        ];
+        let empty: [StrokeVertex<[f32; 2]>; 0] = [];
+        let single = [StrokeVertex::new([0.0_f32, 0.0], 4.0)];
+        let style = VariableStrokeStyle::new();
+        let mut output = FloatFlatContoursBuffer::default();
+
+        drawable.variable_stroke_into(style, &mut output);
+        assert!(!output.points.is_empty());
+        empty.variable_stroke_into(style, &mut output);
+        assert!(output.points.is_empty());
+        assert!(output.ranges.is_empty());
+
+        drawable.variable_stroke_into(style, &mut output);
+        single
+            .variable_stroke_custom_fixed_scale_into_as::<i64>(
+                style,
+                OverlayOptions::default(),
+                1_000.0,
+                &mut output,
+            )
+            .unwrap();
+        assert!(output.points.is_empty());
+        assert!(output.ranges.is_empty());
+
+        let paths = vec![vec![], drawable.to_vec()];
+        assert!(!paths.variable_stroke(style).is_empty());
+
+        assert!(
+            drawable
+                .variable_stroke_fixed_scale(style, 0.1)
+                .unwrap()
+                .is_empty()
+        );
+        drawable
+            .variable_stroke_fixed_scale_into(style, 0.1, &mut output)
+            .unwrap();
+        assert!(output.points.is_empty());
+        assert!(output.ranges.is_empty());
     }
 
     #[test]

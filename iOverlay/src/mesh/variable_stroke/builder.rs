@@ -602,6 +602,31 @@ mod tests {
     }
 
     #[test]
+    fn empty_path_does_not_create_subsegments_or_edges() {
+        let path: [StrokeVertex<[f64; 2]>; 0] = [];
+        let adapter = adapter();
+        let builder = VariableStrokeBuilder::new(VariableStrokeStyle::new());
+        let mut segments = Vec::<Segment<ShapeCountBoolean, i32>>::new();
+
+        assert!(VariableStrokeBuilder::<f64>::find_subsegments(&path, &adapter).is_empty());
+        builder.build(&path, &adapter, &mut segments);
+
+        assert!(segments.is_empty());
+    }
+
+    #[test]
+    fn single_round_vertex_builds_a_circle() {
+        let path = [StrokeVertex::new([0.0, 0.0], 4.0)];
+        let adapter = adapter();
+        let builder = VariableStrokeBuilder::new(VariableStrokeStyle::new());
+        let mut segments = Vec::<Segment<ShapeCountBoolean, i32>>::new();
+
+        builder.build(&path, &adapter, &mut segments);
+
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
     fn covered_break_uses_butt_on_smaller_side() {
         let path = [
             StrokeVertex::new([-20.0, 0.0], 4.0),
