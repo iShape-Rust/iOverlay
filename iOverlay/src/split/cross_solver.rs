@@ -218,8 +218,10 @@ impl<I: IntNumber> CrossSolver<I> {
 
     fn cross_point(target: &XSegment<I>, other: &XSegment<I>) -> IntPoint<I> {
         // edges are not parallel
-        // any abs(x) and abs(y) < 2^30
-        // The result must be < 2^30
+        // Input coordinates follow the N-bit range documented in core::integer.
+        // Coordinate differences are at most I::MAX in magnitude; sums and
+        // differences of two products fit in I::Wide. The intersection remains
+        // within the segment bounds, including after integer rounding.
 
         // Classic approach:
 

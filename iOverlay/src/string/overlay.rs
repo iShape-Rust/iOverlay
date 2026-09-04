@@ -20,6 +20,10 @@ use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
 
+/// Integer polygon and string overlay builder.
+///
+/// Polygon and string coordinates must satisfy the
+/// [integer coordinate range](crate::core::integer). Bounds are not checked.
 pub struct StringOverlay<I: OverlayInt> {
     pub options: IntOverlayOptions<I::WideUInt>,
     pub(super) segments: Vec<Segment<ShapeCountString, I>>,

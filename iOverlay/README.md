@@ -37,6 +37,7 @@ For specialized geometry, see [iCurve](https://github.com/iShape-Rust/iCurve) fo
   - [Offsetting a Polygon](#offsetting-a-polygon)
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
+- [Integer Coordinate Limits](#integer-coordinate-limits)
 - [FAQ](#faq)
 - [License](#license)
 
@@ -582,6 +583,25 @@ println!("shapes: {:?}", &shapes);
 | <img src="readme/line_join_bevel.svg" alt="Bevel" style="width:100px;"> | <img src="readme/line_join_mitter.svg" alt="Miter" style="width:100px;"> | <img src="readme/line_join_round.svg" alt="Round" style="width:100px;"> |
 
 &nbsp;
+
+## Integer Coordinate Limits
+
+For an `N`-bit engine, keep each input coordinate within
+`-2^(N - 2)..=2^(N - 2) - 1` (inclusive):
+
+| Engine | Minimum x or y | Maximum x or y |
+| --- | ---: | ---: |
+| `i16` | -16,384 | 16,383 |
+| `i32` | -1,073,741,824 | 1,073,741,823 |
+| `i64` | -4,611,686,018,427,387,904 | 4,611,686,018,427,387,903 |
+
+These limits leave room for coordinate differences and their products. They apply
+to all inputs and solver strategies. Integer APIs do not check them; exceeding
+these bounds can cause overflow or incorrect results. Use a wider engine or rescale
+larger inputs. See the [range derivation](src/core/integer.rs) for details.
+
+For float APIs, the limits apply after conversion. An explicit conservative budget
+is `FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)`.
 
 ## FAQ
 ### 1. When should I use `FloatOverlay`, `SingleFloatOverlay`, or `FloatOverlayGraph`?

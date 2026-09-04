@@ -16,6 +16,9 @@ use i_shape::int::shape::{IntContour, IntShape};
 
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
+/// All input coordinates must satisfy the [integer coordinate range](crate::core::integer).
+/// Bounds are not checked when adding geometry.
+///
 /// `PredicateOverlay` provides efficient spatial relationship testing between
 /// two polygon sets without computing full boolean operation results. It is
 /// designed for cases where you only need to know *whether* shapes intersect,

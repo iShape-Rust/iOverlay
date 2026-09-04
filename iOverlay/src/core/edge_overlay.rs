@@ -22,6 +22,10 @@ pub struct InputEdge<I: IntNumber, D> {
     pub data: D,
 }
 
+/// Integer overlay builder with per-edge data.
+///
+/// Edge endpoints must satisfy the [integer coordinate range](crate::core::integer).
+/// Bounds are not checked.
 pub struct EdgeOverlay<I: OverlayInt, D: OverlayEdgeData> {
     pub solver: Solver,
     pub options: IntOverlayOptions<I::WideUInt>,
