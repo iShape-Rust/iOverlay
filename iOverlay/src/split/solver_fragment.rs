@@ -58,7 +58,9 @@ where
                     j += 1;
                 }
 
-                let index = buffer.layout.index(x);
+                // Segments ending at the border are stored in the left group.
+                // on_border contains only borders with a positive group index.
+                let index = buffer.layout.index(x) - 1;
                 if let Some(fragments) = buffer.groups.get(index) {
                     self.on_border_split(x, fragments, &mut buffer.on_border[j0..j]);
                 }
