@@ -12,6 +12,45 @@ mod tests {
     use i_shape::int::shape::IntContour;
 
     #[test]
+    fn test_issue_87_frag_preserves_filled_region() {
+        // https://github.com/iShape-Rust/iOverlay/issues/87
+        let subj = vec![
+            vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(5, 1),
+                IntPoint::new(4, 0),
+                IntPoint::new(4, 2),
+            ],
+            vec![IntPoint::new(0, 0), IntPoint::new(1, 0), IntPoint::new(4, 1)],
+        ];
+        let results: Vec<_> = [Solver::LIST, Solver::TREE, Solver::AUTO, Solver::FRAG]
+            .into_iter()
+            .map(|solver| {
+                let shapes = Overlay::with_contours_custom(&subj, &[], Default::default(), solver)
+                    .overlay(OverlayRule::Subject, FillRule::EvenOdd);
+                let area2: i64 = shapes
+                    .iter()
+                    .flatten()
+                    .map(|contour| {
+                        contour
+                            .iter()
+                            .zip(contour.iter().cycle().skip(1))
+                            .map(|(a, b)| i64::from(a.x) * i64::from(b.y) - i64::from(b.x) * i64::from(a.y))
+                            .sum::<i64>()
+                    })
+                    .sum();
+                println!("{:?}: area2={area2}, shapes={shapes:?}", solver.strategy);
+                (solver.strategy, shapes, area2)
+            })
+            .collect();
+
+        for (strategy, shapes, area2) in &results {
+            assert_eq!(*area2, 7, "{strategy:?} lost part of the filled region");
+            assert_eq!(shapes, &results[0].1, "{strategy:?} differs from List");
+        }
+    }
+
+    #[test]
     fn test_many_squares() {
         let fill = FillRule::NonZero;
         let rule = OverlayRule::Xor;
