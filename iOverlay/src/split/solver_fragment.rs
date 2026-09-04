@@ -314,3 +314,140 @@ where
         cross.is_round
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::solver::Solver;
+    use crate::geom::x_segment::XSegment;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use crate::segm::segment::Segment;
+    use crate::split::grid_layout::GridLayout;
+    use crate::split::solver::SplitSolver;
+    use alloc::vec::Vec;
+    use i_float::int::point::IntPoint;
+
+    // Exercise the complete splitter so the tests include selection of the border's
+    // neighboring group, not just on_border_split with an already selected group.
+    fn assert_border_split(edges: &[[i32; 4]], expected_verticals: &[[i32; 4]]) {
+        // Keep the x range at [0, 8]. With 4..15 edges the column width is 4.
+        // These isolated edges do not intersect the geometry under test.
+        let padding = [[0, 100, 8, 100], [0, 102, 8, 102]];
+        for dx in [-11, 0, 7] {
+            let segment = |&[ax, ay, bx, by]: &[i32; 4]| Segment {
+                x_segment: XSegment {
+                    a: IntPoint::new(ax + dx, ay),
+                    b: IntPoint::new(bx + dx, by),
+                },
+                count: ShapeCountBoolean::SUBJ_DIRECT,
+                data: (),
+            };
+            let mut input: Vec<_> = edges.iter().chain(&padding).map(segment).collect();
+            input.sort_unstable();
+            let layout = GridLayout::new(input.iter().map(|s| s.x_segment), input.len()).unwrap();
+            assert_eq!(layout.pos(1), dx + 4);
+            assert_eq!(layout.pos(2), dx + 8);
+
+            let mut expected: Vec<_> = edges
+                .iter()
+                .filter(|e| e[0] != e[2])
+                .chain(expected_verticals)
+                .chain(&padding)
+                .map(segment)
+                .collect();
+            expected.sort_unstable();
+            let expected: Vec<_> = expected.iter().map(|s| (s.x_segment, s.count)).collect();
+
+            for solver in [Solver::LIST, Solver::TREE, Solver::FRAG] {
+                for multithreading in [None, solver.multithreading] {
+                    let solver = Solver {
+                        multithreading,
+                        ..solver
+                    };
+                    let mut actual = input.clone();
+                    SplitSolver::new().split_segments(&mut actual, &solver);
+                    let actual: Vec<_> = actual.iter().map(|s| (s.x_segment, s.count)).collect();
+                    assert_eq!(
+                        actual,
+                        expected,
+                        "strategy={:?}, dx={dx}, multithreading={}",
+                        solver.strategy,
+                        multithreading.is_some(),
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn border_horizontal_endpoint_from_left() {
+        // Cover both the first internal border and the rightmost border, where
+        // the right group contains only the vertical segment.
+        for x in [4, 8] {
+            assert_border_split(&[[x, 0, x, 6], [0, 3, x, 3]], &[[x, 0, x, 3], [x, 3, x, 6]]);
+        }
+    }
+
+    #[test]
+    fn border_sloped_endpoints_at_same_point() {
+        // Rising and falling edges create duplicate marks at (4, 3).
+        assert_border_split(
+            &[[4, 0, 4, 6], [0, 0, 4, 3], [0, 6, 4, 3]],
+            &[[4, 0, 4, 3], [4, 3, 4, 6]],
+        );
+    }
+
+    #[test]
+    fn border_multiple_points_and_verticals() {
+        assert_border_split(
+            &[
+                [4, 0, 4, 3],
+                [4, 5, 4, 8],
+                [0, 1, 4, 1],
+                [0, 2, 4, 2],
+                [0, 6, 4, 6],
+                [0, 7, 4, 7],
+            ],
+            &[
+                [4, 0, 4, 1],
+                [4, 1, 4, 2],
+                [4, 2, 4, 3],
+                [4, 5, 4, 6],
+                [4, 6, 4, 7],
+                [4, 7, 4, 8],
+            ],
+        );
+    }
+
+    #[test]
+    fn border_multiple_columns() {
+        assert_border_split(
+            &[[4, 0, 4, 6], [8, 0, 8, 6], [0, 1, 4, 1], [6, 3, 8, 3]],
+            &[[4, 0, 4, 1], [4, 1, 4, 6], [8, 0, 8, 3], [8, 3, 8, 6]],
+        );
+    }
+
+    #[test]
+    fn border_shared_ends_and_outside_points_do_not_split() {
+        assert_border_split(
+            &[
+                [4, 0, 4, 6],
+                [0, -1, 4, -1],
+                [0, 0, 4, 0],
+                [0, 6, 4, 6],
+                [0, 7, 4, 7],
+            ],
+            &[[4, 0, 4, 6]],
+        );
+    }
+
+    #[test]
+    fn border_endpoint_from_right() {
+        // This contact is handled inside the right group by bin_split.
+        assert_border_split(&[[4, 0, 4, 6], [4, 3, 8, 3]], &[[4, 0, 4, 3], [4, 3, 4, 6]]);
+    }
+
+    #[test]
+    fn border_first_column_has_no_left_neighbor() {
+        assert_border_split(&[[0, 0, 0, 6], [0, 3, 8, 3]], &[[0, 0, 0, 3], [0, 3, 0, 6]]);
+    }
+}
