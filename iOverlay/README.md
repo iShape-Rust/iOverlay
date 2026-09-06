@@ -598,7 +598,7 @@ For an `N`-bit engine, keep each input coordinate within
 These limits leave room for coordinate differences and their products. They apply
 to all inputs and solver strategies. Integer APIs do not check them; exceeding
 these bounds can cause overflow or incorrect results. Use a wider engine or rescale
-larger inputs. See the [range derivation](src/core/integer.rs) for details.
+larger inputs. See the [range derivation and arithmetic audit](readme/integer_range.md) for details.
 
 For float APIs, the limits apply after conversion. An explicit conservative budget
 is `FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)`.

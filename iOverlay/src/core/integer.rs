@@ -11,6 +11,12 @@
 //! | `i32` | -1,073,741,824 | 1,073,741,823 |
 //! | `i64` | -4,611,686,018,427,387,904 | 4,611,686,018,427,387,903 |
 //!
+//! The maximum coordinate difference is `D = I::MAX`; sums of two products
+//! fit in `I::Wide` because `2 * D^2 < 2^(2*N - 1)`. Intersection numerators
+//! use extended-width products. Area accumulation must allow partial sums to
+//! wrap even though the final contour area fits. Integer input bounds are not
+//! checked at runtime.
+//!
 //! ## Floating-point conversion
 //!
 //! These limits concern the integer coordinates after conversion, not the

@@ -216,6 +216,32 @@ fn one_more_unit_of_span_exceeds_the_arithmetic_budget() {
 }
 
 #[test]
+fn conservative_float_scale_keeps_rounded_i16_span_in_range() {
+    use i_float::adapter::FloatPointAdapter;
+    use i_float::float::rect::FloatRect;
+
+    let half_extent = 1.99999;
+    let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent);
+    let min = [-half_extent, -half_extent];
+    let max = [half_extent, half_extent];
+
+    // Truncating log2(1.99999) to 0 selects scale 8192.
+    // 1.99999 * 8192 = 16383.91808 rounds to 16384: the span exceeds i16::MAX.
+    let old_scale = FloatPointAdapter::<[f64; 2], i16>::with_scale(rect, 8192.0);
+    let old_min = old_scale.float_to_int(&min);
+    let old_max = old_scale.float_to_int(&max);
+    assert_eq!((old_min.x, old_max.x), (-16384, 16384));
+    assert_eq!(i32::from(old_max.x) - i32::from(old_min.x), 32768);
+    assert_eq!(old_max.x.checked_sub(old_min.x), None);
+
+    let conservative = FloatPointAdapter::<[f64; 2], i16>::with_coordinate_bits(rect, i16::BITS - 3);
+    let safe_min = conservative.float_to_int(&min);
+    let safe_max = conservative.float_to_int(&max);
+    assert_eq!((safe_min.x, safe_max.x), (-8192, 8192));
+    assert_eq!(safe_max.x.checked_sub(safe_min.x), Some(16384));
+}
+
+#[test]
 fn explicit_float_coordinate_budget() {
     use i_float::adapter::FloatPointAdapter;
     use i_float::float::rect::FloatRect;
@@ -260,4 +286,175 @@ fn explicit_float_coordinate_budget() {
     check_adapter::<i16>();
     check_adapter::<i32>();
     check_adapter::<i64>();
+}
+
+#[test]
+fn spiral_vector_area_at_coordinate_limits() {
+    fn check_spiral<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
+        let lo = -(1_i64 << (I::BITS - 2));
+        let hi = -lo - 1;
+        // A simple, one-unit-wide spiral. Its shoelace partial sums encompass
+        // several full squares before the return path cancels them out.
+        let mut points = vec![
+            [lo, lo],
+            [hi, lo],
+            [hi, hi],
+            [lo, hi],
+            [lo, lo + 4],
+            [hi - 4, lo + 4],
+            [hi - 4, hi - 4],
+            [lo + 4, hi - 4],
+            [lo + 4, lo + 8],
+            [hi - 8, lo + 8],
+        ];
+        points.extend([
+            [hi - 8, lo + 9],
+            [lo + 5, lo + 9],
+            [lo + 5, hi - 5],
+            [hi - 5, hi - 5],
+            [hi - 5, lo + 5],
+            [lo + 1, lo + 5],
+            [lo + 1, hi - 1],
+            [hi - 1, hi - 1],
+            [hi - 1, lo + 1],
+            [lo, lo + 1],
+        ]);
+        let input = vec![contour::<I>(&points)];
+        for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
+            let mut overlay = Overlay::<I>::with_contours_custom(&input, &[], Default::default(), solver);
+            // Sum the nine rectangular runs of the corridor, subtracting their
+            // corner overlaps. Check filtering at the exact area and one above.
+            let area = I::MAX.to_wide() * I::Wide::from_u32(9) - I::Wide::from_u32(56);
+            overlay.options.min_output_area = area.to_uint();
+            let vectors = overlay.build_shape_vectors(FillRule::EvenOdd, OverlayRule::Subject);
+            let actual = vectors
+                .iter()
+                .map(|s| {
+                    s.iter()
+                        .map(|c| c.iter().map(|e| [e.a.x.into(), e.a.y.into()]).collect())
+                        .collect()
+                })
+                .collect();
+            assert_eq!(canonical(actual), canonical(vec![vec![points.clone()]]));
+            overlay.options.min_output_area = (area + I::Wide::ONE).to_uint();
+            assert!(
+                overlay
+                    .build_shape_vectors(FillRule::EvenOdd, OverlayRule::Subject)
+                    .is_empty()
+            );
+        }
+    }
+    check_spiral::<i16>();
+    check_spiral::<i32>();
+    check_spiral::<i64>();
+}
+
+#[test]
+fn fragment_radius_at_coordinate_limits() {
+    use i_overlay::core::solver::Precision;
+    fn check_radius<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
+        let hi = (1_i64 << (I::BITS - 2)) - 1;
+        for lo in [-hi, -hi - 1] {
+            let input = vec![contour::<I>(&[[lo, lo], [hi, hi], [lo, hi], [hi, lo]])];
+            // Symmetric bounds give an exact crossing; the odd span gives a rounded
+            // crossing and a subsequent repair pass. Check the squared-radius cap
+            // and exponent saturation without narrowing the threshold to I.
+            let cap = (2 * (I::BITS - 4)) as usize;
+            for start in [cap - 1, cap, cap + 1, usize::MAX] {
+                let solver = Solver {
+                    precision: Precision {
+                        start,
+                        progression: 1,
+                    },
+                    ..Solver::FRAG
+                };
+                let actual = Overlay::<I>::with_contours_custom(&input, &[], Default::default(), solver)
+                    .overlay(OverlayRule::Subject, FillRule::EvenOdd);
+                let actual = actual
+                    .iter()
+                    .map(|s| {
+                        s.iter()
+                            .map(|c| c.iter().map(|p| [p.x.into(), p.y.into()]).collect())
+                            .collect()
+                    })
+                    .collect();
+                let expected = vec![
+                    vec![vec![[lo, lo], [hi, lo], [0, 0]]],
+                    vec![vec![[lo, hi], [0, 0], [hi, hi]]],
+                ];
+                assert_eq!(canonical(actual), canonical(expected));
+            }
+        }
+    }
+    check_radius::<i16>();
+    check_radius::<i32>();
+    check_radius::<i64>();
+}
+
+#[test]
+fn seeded_boundary_overlays_match_a_wider_engine() {
+    use rand::{RngExt, SeedableRng, rngs::StdRng};
+
+    fn check_engine<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
+        let mut rng = StdRng::seed_from_u64(88);
+        let lo = -(1_i64 << (I::BITS - 2));
+        let hi = -lo - 1;
+        let extremes = [lo, lo + 1, lo + 2, -1, 0, 1, hi - 1, hi];
+        for case in 0..256 {
+            let mut coordinate = || {
+                if rng.random_bool(0.75) {
+                    extremes[rng.random_range(0..extremes.len())]
+                } else {
+                    rng.random_range(lo..=hi)
+                }
+            };
+            let subject: Contour = (0..6).map(|_| [coordinate(), coordinate()]).collect();
+            let clip: Contour = (0..6).map(|_| [coordinate(), coordinate()]).collect();
+            let rules = [
+                OverlayRule::Subject,
+                OverlayRule::Union,
+                OverlayRule::Intersect,
+                OverlayRule::Difference,
+                OverlayRule::Xor,
+            ];
+            let rule = rules[case % rules.len()];
+            for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
+                let wide = Overlay::<i64>::with_contours_custom(
+                    &[contour::<i64>(&subject)],
+                    &[contour::<i64>(&clip)],
+                    Default::default(),
+                    solver,
+                )
+                .overlay(rule, FillRule::EvenOdd);
+                let narrow = Overlay::<I>::with_contours_custom(
+                    &[contour::<I>(&subject)],
+                    &[contour::<I>(&clip)],
+                    Default::default(),
+                    solver,
+                )
+                .overlay(rule, FillRule::EvenOdd);
+                let expected = wide
+                    .iter()
+                    .map(|s| s.iter().map(|c| c.iter().map(|p| [p.x, p.y]).collect()).collect())
+                    .collect();
+                let actual = narrow
+                    .iter()
+                    .map(|s| {
+                        s.iter()
+                            .map(|c| c.iter().map(|p| [p.x.into(), p.y.into()]).collect())
+                            .collect()
+                    })
+                    .collect();
+                assert_eq!(
+                    canonical(actual),
+                    canonical(expected),
+                    "{} case {case} {:?}; subject={subject:?}, clip={clip:?}",
+                    core::any::type_name::<I>(),
+                    solver.strategy
+                );
+            }
+        }
+    }
+    check_engine::<i16>();
+    check_engine::<i32>();
 }

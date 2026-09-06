@@ -262,7 +262,8 @@ impl<I: IntNumber> GridLayout<I> {
 
     #[inline]
     pub(super) fn pos(&self, index: usize) -> I {
-        I::from_usize(index << self.power) + self.min_x
+        // Convert before shifting: the offset fits I, but may exceed usize on 32-bit targets.
+        (I::from_usize(index) << self.power) + self.min_x
     }
 
     pub(super) fn new<It>(iter: It, count: usize) -> Option<Self>
@@ -307,6 +308,79 @@ mod tests {
     use i_float::int::rect::IntRect;
     use i_float::triangle::Triangle;
     use rand::RngExt;
+
+    #[test]
+    fn i64_column_positions_with_large_shift() {
+        let layout = GridLayout {
+            min_x: -(1_i64 << 62),
+            max_x: (1_i64 << 62) - 1,
+            power: 60,
+        };
+        // A shift in usize would fail on a 32-bit target.
+        assert_eq!(layout.pos(0), layout.min_x);
+        assert_eq!(layout.pos(4), 0);
+        assert_eq!(layout.pos(7), 3_i64 << 60);
+    }
+
+    #[test]
+    fn boundary_fragments_enclose_exact_segment() {
+        use crate::core::integer::OverlayInt;
+
+        fn check<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
+            let lo = -(1_i64 << (I::BITS - 2));
+            let hi = -lo - 1;
+            let span = hi - lo;
+            let lengths = [1, 2, 3, 4, 5, 127, 128, 129, span / 2, span - 1, span];
+            let int = |v| I::try_from(v).ok().unwrap();
+            for width in lengths {
+                for height in lengths {
+                    for right in [false, true] {
+                        for descending in [false, true] {
+                            let x0 = if right { hi - width } else { lo };
+                            let x1 = x0 + width;
+                            let (y0, y1) = if descending {
+                                (hi, hi - height)
+                            } else {
+                                (lo, lo + height)
+                            };
+                            let segment = XSegment {
+                                a: IntPoint::new(int(x0), int(y0)),
+                                b: IntPoint::new(int(x1), int(y1)),
+                            };
+                            for max_power in [1, 3, 6] {
+                                let Some(layout) = GridLayout::with_min_max(int(x0), int(x1), max_power)
+                                else {
+                                    continue;
+                                };
+                                let mut buffer = FragmentBuffer::new(layout);
+                                buffer.add_segment(0, segment);
+                                let mut previous_x = x0;
+                                for f in buffer.groups.iter().flatten() {
+                                    let r = &f.rect;
+                                    assert_eq!(r.min_x.into(), previous_x);
+                                    previous_x = r.max_x.into();
+                                    assert!(r.min_x <= r.max_x && r.min_y <= r.max_y);
+                                    assert!(r.min_y.into() >= y0.min(y1) && r.max_y.into() <= y0.max(y1));
+                                    // Exact rational y at both ends of the fragment, using
+                                    // i128 independently of the fixed-point approximation.
+                                    for x in [r.min_x.into(), r.max_x.into()] {
+                                        let y_numerator = y0 as i128 * width as i128
+                                            + (y1 as i128 - y0 as i128) * (x as i128 - x0 as i128);
+                                        assert!((r.min_y.into() as i128) * width as i128 <= y_numerator);
+                                        assert!(y_numerator <= (r.max_y.into() as i128) * width as i128);
+                                    }
+                                }
+                                assert_eq!(previous_x, x1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        check::<i16>();
+        check::<i32>();
+        check::<i64>();
+    }
 
     #[test]
     fn test_0() {

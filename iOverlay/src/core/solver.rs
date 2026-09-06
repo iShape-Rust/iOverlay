@@ -21,16 +21,20 @@ pub enum Strategy {
 /// Represents the precision level used by the solver to determine
 /// the tolerance for snapping to the nearest edge ends.
 ///
-/// The precision determines a radius calculated as `2^value`,
+/// The precision determines a squared radius calculated as `2^value`,
 /// where `value` starts at `start` and increases in increments
 /// defined by `progression` in each iteration.
+/// The exponent is capped at `2 * (I::BITS - 4)` for the selected integer engine,
+/// limiting the linear radius to `2^(I::BITS - 4)`.
+/// This threshold is compared directly with squared distances; the corresponding
+/// linear radius is `sqrt(2^value)`.
 ///
 /// - `start`: The initial exponent value.
 /// - `progression`: The step size for incrementing the exponent
 ///   in each iteration.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Precision {
-    /// The initial exponent value for the radius calculation.
+    /// The initial exponent value for the squared-radius calculation.
     pub start: usize,
     /// The amount by which the exponent increases in each iteration.
     pub progression: usize,
@@ -38,37 +42,37 @@ pub struct Precision {
 
 impl Precision {
     /// Absolute precision with no progression.
-    /// (Radius remains at `2^0 = 1`)
+    /// (Squared radius remains at `2^0 = 1`)
     pub const ABSOLUTE: Precision = Self {
         start: 0,
         progression: 0,
     };
 
-    /// High precision, starting at `2^0 = 1` and doubling every loop.
+    /// High precision, with squared radius starting at `2^0 = 1` and doubling every loop.
     pub const HIGH: Precision = Self {
         start: 0,
         progression: 1,
     };
 
-    /// Medium-high precision, starting at `2^1 = 2` and doubling every loop.
+    /// Medium-high precision, with squared radius starting at `2^1 = 2` and doubling every loop.
     pub const MEDIUM_HIGH: Precision = Self {
         start: 1,
         progression: 1,
     };
 
-    /// Medium precision, starting at `2^0 = 1` and quadrupling every loop.
+    /// Medium precision, with squared radius starting at `2^0 = 1` and quadrupling every loop.
     pub const MEDIUM: Precision = Self {
         start: 0,
         progression: 2,
     };
 
-    /// Medium-low precision, starting at `2^2 = 4` and quadrupling every loop.
+    /// Medium-low precision, with squared radius starting at `2^2 = 4` and quadrupling every loop.
     pub const MEDIUM_LOW: Precision = Self {
         start: 2,
         progression: 2,
     };
 
-    /// Low precision, starting at `2^2 = 4` and increasing by a factor of 8 every loop.
+    /// Low precision, with squared radius starting at `2^2 = 4` and increasing by a factor of 8 every loop.
     pub const LOW: Precision = Self {
         start: 2,
         progression: 3,

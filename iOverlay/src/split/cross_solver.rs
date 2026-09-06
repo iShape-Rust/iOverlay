@@ -76,7 +76,7 @@ impl<I: IntNumber> CrossSolver<I> {
     pub(super) fn cross(
         target: &XSegment<I>,
         other: &XSegment<I>,
-        radius: I::Wide,
+        radius_squared: I::Wide,
     ) -> Option<CrossResult<I>> {
         let a0b0a1 = Triangle::clock_direction(target.a, target.b, other.a);
         let a0b0b1 = Triangle::clock_direction(target.a, target.b, other.b);
@@ -131,7 +131,7 @@ impl<I: IntNumber> CrossSolver<I> {
             };
         }
 
-        Self::middle_cross(target, other, radius)
+        Self::middle_cross(target, other, radius_squared)
     }
 
     pub(super) fn collinear(target: &XSegment<I>, other: &XSegment<I>) -> CollinearMask {
@@ -161,7 +161,11 @@ impl<I: IntNumber> CrossSolver<I> {
         CollinearMask::new(is_target_a, is_target_b, is_other_a, is_other_b)
     }
 
-    fn middle_cross(target: &XSegment<I>, other: &XSegment<I>, radius: I::Wide) -> Option<CrossResult<I>> {
+    fn middle_cross(
+        target: &XSegment<I>,
+        other: &XSegment<I>,
+        radius_squared: I::Wide,
+    ) -> Option<CrossResult<I>> {
         let p = CrossSolver::cross_point(target, other);
 
         if Triangle::is_line(target.a, p, target.b) && Triangle::is_line(other.a, p, other.b) {
@@ -172,7 +176,7 @@ impl<I: IntNumber> CrossSolver<I> {
             });
         }
 
-        // still can be common ends because of rounding
+        // Rounding can bring the crossing close to an endpoint.
         // snap to nearest end with r (1^2 + 1^2 == 2)
 
         let ra0 = target.a.sqr_distance(p);
@@ -181,7 +185,7 @@ impl<I: IntNumber> CrossSolver<I> {
         let ra1 = other.a.sqr_distance(p);
         let rb1 = other.b.sqr_distance(p);
 
-        if ra0 <= radius || ra1 <= radius || rb0 <= radius || rb1 <= radius {
+        if ra0 <= radius_squared || ra1 <= radius_squared || rb0 <= radius_squared || rb1 <= radius_squared {
             let r0 = ra0.min(rb0);
             let r1 = ra1.min(rb1);
 
@@ -318,6 +322,81 @@ mod tests {
     use crate::geom::x_segment::XSegment;
     use crate::split::cross_solver::{CrossSolver, CrossType};
     use i_float::int::point::IntPoint;
+
+    #[test]
+    fn snapping_compares_squared_distance_directly_with_the_threshold() {
+        let target = XSegment::new(IntPoint::new(0, 0), IntPoint::new(5, 5));
+        let other = XSegment::new(IntPoint::new(0, 3), IntPoint::new(5, -2));
+        // The rounded crossing is (2, 2). Its nearest endpoint is (0, 3),
+        // at squared distance 5. A threshold of 4 must not be squared again.
+        let crossing = CrossSolver::cross(&target, &other, 4).unwrap();
+        assert!(matches!(crossing.cross_type, CrossType::Pure));
+        assert_eq!(crossing.point, IntPoint::new(2, 2));
+        let snapped = CrossSolver::cross(&target, &other, 5).unwrap();
+        assert!(matches!(snapped.cross_type, CrossType::OtherEnd));
+        assert_eq!(snapped.point, other.a);
+    }
+
+    #[test]
+    fn boundary_crossings_match_exact_rational_coordinates() {
+        use crate::core::integer::OverlayInt;
+
+        fn check<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
+            let hi = (1_i64 << (I::BITS - 2)) - 1;
+            let lo = -hi - 1;
+            let ys = [lo, lo + 1, lo + 2, -1, 0, 1, hi - 1, hi];
+            let point = |x, y| IntPoint::new(I::try_from(x).ok().unwrap(), I::try_from(y).ok().unwrap());
+            for a0 in ys {
+                for a1 in ys {
+                    for b0 in ys {
+                        for b1 in ys {
+                            // Strictly intersecting segments with the same x interval.
+                            // Their intersection parameter is t = n / d. Unlike the
+                            // general determinant formula, this oracle fits in i128
+                            // even for i64 coordinates and needs no UIntProduct.
+                            let n = b0 as i128 - a0 as i128;
+                            let d = (a1 as i128 - a0 as i128) - (b1 as i128 - b0 as i128);
+                            if n == 0 || d == 0 || n.signum() != d.signum() || n.abs() >= d.abs() {
+                                continue;
+                            }
+                            let round = |delta: i128| {
+                                let product = delta * n.abs();
+                                let q = (product.abs() + d.abs() / 2) / d.abs();
+                                q * product.signum()
+                            };
+                            let expected_x = lo as i128 + round(hi as i128 - lo as i128);
+                            // Axis-aligned branches truncate relative to the first endpoint.
+                            let expected_y = a0 as i128 + round(a1 as i128 - a0 as i128);
+                            let a = XSegment {
+                                a: point(lo, a0),
+                                b: point(hi, a1),
+                            };
+                            let b = XSegment {
+                                a: point(lo, b0),
+                                b: point(hi, b1),
+                            };
+                            let result = CrossSolver::<I>::cross_point(&a, &b);
+                            // For a horizontal target x is truncated, not rounded.
+                            let expected_x = if a0 == a1 {
+                                lo as i128 + (hi as i128 - lo as i128) * n.abs() / d.abs()
+                            } else {
+                                expected_x
+                            };
+                            assert_eq!(
+                                [result.x.into(), result.y.into()],
+                                [expected_x as i64, expected_y as i64],
+                                "{}: {a0}, {a1}, {b0}, {b1}",
+                                core::any::type_name::<I>()
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        check::<i16>();
+        check::<i32>();
+        check::<i64>();
+    }
 
     impl XSegment<i32> {
         fn new(a: IntPoint, b: IntPoint) -> Self {
