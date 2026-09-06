@@ -10,6 +10,12 @@
 //! - **Fill Rules**: even-odd, non-zero, positive and negative.
 //! - **Data Types**: Supports `i16`/`i32`/`i64` integer APIs and `f32`/`f64` floating-point APIs.
 //!
+//! ## Integer coordinate limits
+//!
+//! Integer inputs must stay within `-2^(N - 2)..=2^(N - 2) - 1` for an `N`-bit
+//! engine; for example, `-16_384..=16_383` for `i16`. The full storage-type range
+//! is not supported. See [coordinate ranges and their derivation](core::integer).
+//!
 //! ## Simple Example
 //! ![Simple Example](https://raw.githubusercontent.com/iShape-Rust/iOverlay/main/readme/example_union.svg)
 //! Here's an example of performing a union operation between two polygons:

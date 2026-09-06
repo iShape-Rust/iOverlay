@@ -28,7 +28,7 @@ where
             need_to_fix = false;
             self.marks.clear();
 
-            let radius = snap_radius.radius::<I>();
+            let radius_squared = snap_radius.radius_squared::<I>();
 
             for (i, si) in segments.iter().enumerate() {
                 let xsi = &si.x_segment;
@@ -43,7 +43,7 @@ where
                         continue;
                     }
 
-                    let is_round = Self::cross(i, j, xsi, xsj, &mut self.marks, radius);
+                    let is_round = Self::cross(i, j, xsi, xsj, &mut self.marks, radius_squared);
                     need_to_fix = need_to_fix || is_round
                 }
             }

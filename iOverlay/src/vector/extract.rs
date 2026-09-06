@@ -366,9 +366,12 @@ impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath
             return (true, is_modified);
         }
 
-        let double_area = self
-            .iter()
-            .fold(I::Wide::ZERO, |acc, edge| acc + edge.a.cross_product(edge.b));
+        // A spiral can overflow a partial shoelace sum even though its final
+        // area fits. Accumulate modulo the wide type, as IntPath::unsafe_area
+        // does; the bounded final area is recovered after cancellation.
+        let double_area = self.iter().fold(I::Wide::ZERO, |acc, edge| {
+            acc.wrapping_add(edge.a.cross_product(edge.b))
+        });
 
         ((double_area.unsigned_abs() >> 1) >= min_output_area, is_modified)
     }

@@ -64,6 +64,9 @@ pub enum ContourDirection {
 }
 
 /// This struct is essential for describing and uploading the geometry or shapes required to construct an `OverlayGraph`. It prepares the necessary data for boolean operations.
+///
+/// All input coordinates must satisfy the [integer coordinate range](crate::core::integer).
+/// Bounds are not checked when adding geometry.
 pub struct Overlay<I: OverlayInt> {
     pub solver: Solver,
     pub options: IntOverlayOptions<I::WideUInt>,
