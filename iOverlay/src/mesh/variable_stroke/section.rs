@@ -5,6 +5,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::wide_int::WideIntNumber;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RadiusTrend {
@@ -53,7 +54,7 @@ impl<P: FloatPointCompatible> Section<P> {
         let vector = int_b - int_a;
         let int_distance_sqr = vector.sqr_length();
 
-        if int_radius_delta * int_radius_delta >= int_distance_sqr {
+        if (int_radius_delta * int_radius_delta).to_uint() >= int_distance_sqr {
             return None;
         }
 

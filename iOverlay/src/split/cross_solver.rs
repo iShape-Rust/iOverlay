@@ -76,7 +76,7 @@ impl<I: IntNumber> CrossSolver<I> {
     pub(super) fn cross(
         target: &XSegment<I>,
         other: &XSegment<I>,
-        radius_squared: I::Wide,
+        radius_squared: I::WideUInt,
     ) -> Option<CrossResult<I>> {
         let a0b0a1 = Triangle::clock_direction(target.a, target.b, other.a);
         let a0b0b1 = Triangle::clock_direction(target.a, target.b, other.b);
@@ -164,7 +164,7 @@ impl<I: IntNumber> CrossSolver<I> {
     fn middle_cross(
         target: &XSegment<I>,
         other: &XSegment<I>,
-        radius_squared: I::Wide,
+        radius_squared: I::WideUInt,
     ) -> Option<CrossResult<I>> {
         let p = CrossSolver::cross_point(target, other);
 

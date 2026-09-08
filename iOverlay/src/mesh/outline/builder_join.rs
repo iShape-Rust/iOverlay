@@ -10,7 +10,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
+use i_float::int::number::uint::UIntNumber;
 
 pub(super) trait JoinBuilder<P: FloatPointCompatible, I: IntNumber> {
     fn add_join(
@@ -105,7 +105,7 @@ impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for MiterJoinBuild
         let ib = s1.a_top;
 
         let sq_len = ia.sqr_distance(ib);
-        if sq_len < I::Wide::from_usize(4) {
+        if sq_len < I::WideUInt::from_u64(4) {
             BevelJoinBuilder::join(s0, s1, adapter, segments);
             return;
         }

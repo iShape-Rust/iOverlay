@@ -10,6 +10,7 @@ use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
+use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 
 #[cfg(feature = "variable_stroke_debug")]
@@ -209,7 +210,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
         let radius_delta = a_radius.to_wide() - b_radius.to_wide();
         let distance_sqr = (int_b - int_a).sqr_length();
 
-        if radius_delta * radius_delta < distance_sqr {
+        if (radius_delta * radius_delta).to_uint() < distance_sqr {
             return None;
         }
 
@@ -248,7 +249,7 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
             adapter.float_to_int(&section.a_right),
         ];
         let center = adapter.float_to_int(&c.point);
-        let radius = c_radius.to_wide();
+        let radius = c_radius.to_wide().to_uint();
         let first_edge = points[1] - points[0];
         let orientation = first_edge.cross_product(points[2] - points[1]);
         if orientation == I::Wide::ZERO {
@@ -268,9 +269,9 @@ impl<T: FloatNumber> VariableStrokeBuilder<T> {
             let length_sqr = edge.sqr_length();
             let mut length = length_sqr.isqrt();
             if length * length < length_sqr {
-                length = length + I::Wide::ONE;
+                length += I::WideUInt::ONE;
             }
-            if interior_distance < radius * length {
+            if interior_distance.to_uint() < radius * length {
                 return false;
             }
         }

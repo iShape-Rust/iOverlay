@@ -85,7 +85,7 @@ where
         ei: &XSegment<I>,
         ej: &XSegment<I>,
         marks: &mut Vec<LineMark<I>>,
-        radius_squared: I::Wide,
+        radius_squared: I::WideUInt,
     ) -> bool {
         let cross = if let Some(cross) = CrossSolver::<I>::cross(ei, ej, radius_squared) {
             cross
