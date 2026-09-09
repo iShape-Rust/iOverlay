@@ -112,7 +112,7 @@ impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> StrokeBuild<P,
     #[inline]
     fn capacity(&self, paths_count: usize, points_count: usize, is_closed_path: bool) -> usize {
         if is_closed_path {
-            self.join_builder.capacity() * points_count - 2
+            (self.join_builder.capacity() * points_count).saturating_sub(2)
         } else {
             self.join_builder.capacity() * (points_count.saturating_sub(1))
                 + paths_count * (self.end_cap_builder.capacity() + self.start_cap_builder.capacity())
