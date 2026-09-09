@@ -9,7 +9,6 @@ use core::f64::consts::PI;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
 use i_float::float::vector::FloatPointMath;
 use i_float::int::number::int::IntNumber;
 
@@ -121,11 +120,11 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
     #[inline]
     pub(super) fn additional_offset(&self) -> P::Scalar {
         if let Some(points) = &self.points {
-            if let Some(rect) = FloatRect::with_iter(points.iter()) {
-                rect.width() + rect.height()
-            } else {
-                P::Scalar::from_float(0.0)
+            let mut max_sqr_radius = P::Scalar::from_float(0.0);
+            for point in points {
+                max_sqr_radius = max_sqr_radius.max(FloatPointMath::sqr_length(point));
             }
+            max_sqr_radius.sqrt()
         } else {
             P::Scalar::from_float(0.0)
         }

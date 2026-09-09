@@ -587,10 +587,39 @@ where
 mod tests {
     use crate::mesh::stroke::offset::StrokeOffset;
     use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
+    use alloc::rc::Rc;
     use alloc::vec;
     use alloc::vec::Vec;
     use core::f32::consts::PI;
     use i_shape::flat::float::FloatFlatContoursBuffer;
+
+    #[test]
+    fn test_custom_cap_extent_is_included_in_stroke_bounds() {
+        let path = [[0.0_f64, 0.0], [10.0, 0.0]];
+        // The template has zero width and height, but extends 100 radii
+        // from the endpoint after rotation and translation.
+        let cap = LineCap::Custom(Rc::from(vec![[100.0, 0.0]]));
+        let style = StrokeStyle::new(2.0)
+            .start_cap(cap.clone())
+            .end_cap(cap);
+
+        let shapes = path.stroke(style, false);
+
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        let contour = &shapes[0][0];
+        assert_eq!(contour.len(), 6);
+        for point in [
+            [-100.0, 0.0],
+            [0.0, -1.0],
+            [10.0, -1.0],
+            [110.0, 0.0],
+            [10.0, 1.0],
+            [0.0, 1.0],
+        ] {
+            assert!(contour.contains(&point), "missing cap/stroke vertex: {point:?}");
+        }
+    }
 
     #[test]
     fn test_doc() {
