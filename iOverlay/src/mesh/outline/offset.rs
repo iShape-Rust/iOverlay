@@ -487,7 +487,7 @@ where
 
         for path in source.iter_paths() {
             let area = path.unsafe_int_area(&self.adapter);
-            if area.unsigned_abs() <= <I::WideUInt as UIntNumber>::from_u64(1) {
+            if area == I::Wide::ZERO {
                 // ignore degenerate paths
                 continue;
             }
