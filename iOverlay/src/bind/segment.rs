@@ -1,5 +1,5 @@
 use crate::geom::v_segment::VSegment;
-use crate::vector::edge::{DataVectorEdge, DataVectorPath};
+use crate::vector::edge::DataVectorPath;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
@@ -125,24 +125,37 @@ impl<I: IntNumber, D> IdSegments<I> for DataVectorPath<I, D> {
         x_max: I,
         clockwise: bool,
     ) {
-        fn inner<'a, D: 'a, I: IntNumber + 'a, It: Iterator<Item = &'a DataVectorEdge<I, D>>>(
+        fn inner<I: IntNumber, It: Iterator<Item = (IntPoint<I>, IntPoint<I>)>>(
             iter: It,
             buffer: &mut Vec<IdSegment<I>>,
             id_data: ContourIndex,
             x_min: I,
             x_max: I,
         ) {
-            for vec in iter {
-                if vec.a.x < vec.b.x && x_min < vec.b.x && vec.a.x <= x_max {
-                    buffer.push(IdSegment::<I>::new(id_data, vec.a, vec.b));
+            for (a, b) in iter {
+                if a.x < b.x && x_min < b.x && a.x <= x_max {
+                    buffer.push(IdSegment::<I>::new(id_data, a, b));
                 }
             }
         }
 
         if clockwise {
-            inner(self.iter(), buffer, id_data, x_min, x_max);
+            // Reversing edge order does not reverse their endpoints.
+            inner(
+                self.iter().map(|edge| (edge.b, edge.a)),
+                buffer,
+                id_data,
+                x_min,
+                x_max,
+            );
         } else {
-            inner(self.iter().rev(), buffer, id_data, x_min, x_max);
+            inner(
+                self.iter().map(|edge| (edge.a, edge.b)),
+                buffer,
+                id_data,
+                x_min,
+                x_max,
+            );
         }
     }
 }
