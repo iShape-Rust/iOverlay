@@ -95,3 +95,34 @@ fn hypothesis_collapsed_hole_does_not_erase_other_holes() {
         "a collapsed hole must not change any other contour"
     );
 }
+
+#[test]
+fn rectangular_frame_offsets_match_analytic_area() {
+    let source = vec![square(0.0, 30.0, false), square(10.0, 20.0, true)];
+    for outer_offset in -16..=6 {
+        for inner_offset in -6..=6 {
+            let style = OutlineStyle::new(0.0)
+                .outer_offset(outer_offset as f64)
+                .inner_offset(inner_offset as f64)
+                .line_join(LineJoin::Miter(0.1));
+            let result = source.outline_fixed_scale(&style, 100.0).unwrap();
+            let outer_side = (30.0 + 2.0 * outer_offset as f64).max(0.0);
+            let hole_side = (10.0 - 2.0 * inner_offset as f64).max(0.0);
+            let expected = (outer_side * outer_side - hole_side * hole_side).max(0.0);
+            let actual: f64 = result
+                .iter()
+                .flatten()
+                .map(|path| {
+                    path.iter()
+                        .zip(path.iter().cycle().skip(1))
+                        .map(|(a, b)| (a[0] * b[1] - a[1] * b[0]) * 0.5)
+                        .sum::<f64>()
+                })
+                .sum();
+            assert!(
+                (actual - expected).abs() < 0.001,
+                "outer={outer_offset}, inner={inner_offset}, expected={expected}, actual={actual}, result={result:?}"
+            );
+        }
+    }
+}

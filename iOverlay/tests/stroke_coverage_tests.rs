@@ -124,3 +124,91 @@ fn variable_strokes_cover_vertex_disks() {
         assert_vertex_disks_covered(&shapes, &path, case);
     }
 }
+
+#[test]
+fn variable_strokes_cover_interpolated_disks() {
+    let mut seed = 0xa153_61b9_911d_7283_u64;
+    let mut next = || {
+        seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+        ((seed >> 32) % 41) as f64 - 20.0
+    };
+    for case in 0..3000 {
+        let path: Vec<_> = (0..2 + case % 8)
+            .map(|_| StrokeVertex::new([next(), next()], next() + 20.0))
+            .collect();
+        let shapes = path
+            .variable_stroke_fixed_scale(VariableStrokeStyle::new().round_angle(0.05), 10000.0)
+            .unwrap();
+        let mut samples = Vec::new();
+        for pair in path.windows(2) {
+            for step in 1..4 {
+                let t = step as f64 / 4.0;
+                let width = pair[0].width * (1.0 - t) + pair[1].width * t;
+                if width == 0.0 {
+                    continue;
+                }
+                samples.push(StrokeVertex::new(
+                    [
+                        pair[0].point[0] * (1.0 - t) + pair[1].point[0] * t,
+                        pair[0].point[1] * (1.0 - t) + pair[1].point[1] * t,
+                    ],
+                    width,
+                ));
+            }
+        }
+        assert_vertex_disks_covered(&shapes, &samples, case);
+    }
+}
+
+// Minimize squared distance minus squared interpolated radius along a
+// centerline segment. This oracle does not construct joins or tangent edges.
+fn within_variable_stroke(path: &[StrokeVertex<[f64; 2]>], p: [f64; 2]) -> bool {
+    path.windows(2).any(|pair| {
+        let a = pair[0];
+        let b = pair[1];
+        let dx = b.point[0] - a.point[0];
+        let dy = b.point[1] - a.point[1];
+        let x = p[0] - a.point[0];
+        let y = p[1] - a.point[1];
+        // Allow a margin for integer snapping and arc approximation.
+        let r = 0.5 * a.width + 0.03;
+        let dr = 0.5 * (b.width - a.width);
+        let qa = dx * dx + dy * dy - dr * dr;
+        let qb = -2.0 * (x * dx + y * dy + r * dr);
+        let qc = x * x + y * y - r * r;
+        let mut minimum = qc.min(qa + qb + qc);
+        if qa > 0.0 {
+            let t = (-qb / (2.0 * qa)).clamp(0.0, 1.0);
+            minimum = minimum.min((qa * t + qb) * t + qc);
+        }
+        minimum <= 0.0
+    })
+}
+
+#[test]
+fn variable_strokes_do_not_fill_outside_interpolated_disks() {
+    let mut seed = 0xa153_61b9_911d_7283_u64;
+    let mut next = || {
+        seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+        ((seed >> 32) % 41) as f64 - 20.0
+    };
+    for case in 0..500 {
+        let path: Vec<_> = (0..2 + case % 8)
+            .map(|_| StrokeVertex::new([next(), next()], next() + 20.0))
+            .collect();
+        let shapes = path
+            .variable_stroke_fixed_scale(VariableStrokeStyle::new().round_angle(0.05), 10000.0)
+            .unwrap();
+        for x in -40..=40 {
+            for y in -40..=40 {
+                let p = [x as f64 + 0.37, y as f64 + 0.29];
+                if !within_variable_stroke(&path, p) {
+                    assert!(
+                        !contains(&shapes, p),
+                        "excess area: case={case}, p={p:?}, path={path:?}, shapes={shapes:?}"
+                    );
+                }
+            }
+        }
+    }
+}

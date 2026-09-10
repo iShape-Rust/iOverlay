@@ -478,6 +478,8 @@ where
 
         let mut offset_overlay = Overlay::new(16);
         offset_overlay.options = overlay.options;
+        // Small offset contours can merge into a larger result; filter area only after union.
+        offset_overlay.options.min_output_area = I::WideUInt::ZERO;
 
         let mut segments = Vec::new();
         let mut bool_buffer = BooleanExtractionBuffer::default();
