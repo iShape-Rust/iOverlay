@@ -253,7 +253,8 @@ impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for RoundJoinBuild
             return;
         }
 
-        let angle = dot_product.acos();
+        // Normalization can round the dot product outside [-1, 1], making acos return NaN.
+        let angle = dot_product.max(-P::Scalar::ONE).min(P::Scalar::ONE).acos();
         let n = (angle * self.inv_ratio).to_usize();
         let delta_angle = angle / P::Scalar::from_usize(n);
 
