@@ -241,3 +241,35 @@ mod tests {
         assert!(!segments.is_empty());
     }
 }
+
+#[cfg(test)]
+mod non_degenerate_tests {
+    use super::*;
+    use i_float::float::rect::FloatRect;
+
+    #[test]
+    fn outline_styles_skip_coincident_integer_endpoints() {
+        let adapter =
+            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-100.0, 100.0, -100.0, 100.0), 1.0);
+        for radius in [-2.0, -0.1, 0.0, 0.1, 2.0] {
+            for join in [
+                LineJoin::Bevel,
+                LineJoin::Miter(0.1),
+                LineJoin::Miter(3.0),
+                LineJoin::Round(0.01),
+            ] {
+                let builder = OutlineBuilder::new(radius, &join);
+                for end in [[10.0, 10.0], [0.0, 0.0], [20.0, 0.1]] {
+                    let path = [[0.0, 0.0], [0.0, 0.0], [0.01, 0.01], [10.0, 0.0], end];
+                    let mut segments = Vec::new();
+                    builder.build(&path, &adapter, &mut segments);
+                    assert!(!segments.is_empty());
+                    assert!(
+                        segments.iter().all(|s| s.x_segment.a < s.x_segment.b),
+                        "radius={radius}, join={join:?}, end={end:?}"
+                    );
+                }
+            }
+        }
+    }
+}

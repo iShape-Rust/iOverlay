@@ -603,6 +603,30 @@ mod tests {
     }
 
     #[test]
+    fn variable_width_strokes_skip_coincident_integer_endpoints() {
+        for width in [0.0, 0.1, 1.0, 4.0] {
+            for end in [[10.0, 10.0], [0.0, 0.0], [20.0, 0.1]] {
+                let path = [
+                    StrokeVertex::new([0.0, 0.0], width),
+                    StrokeVertex::new([0.01, 0.01], width),
+                    StrokeVertex::new([10.0, 0.0], width * 2.0),
+                    StrokeVertex::new(end, width),
+                ];
+                let builder = VariableStrokeBuilder::new(VariableStrokeStyle::new().round_angle(0.01));
+                let mut segments = Vec::<Segment<ShapeCountBoolean, i32>>::new();
+                builder.build(&path, &adapter(), &mut segments);
+                assert!(
+                    segments.iter().all(|s| s.x_segment.a < s.x_segment.b),
+                    "width={width}, end={end:?}"
+                );
+                if width == 4.0 {
+                    assert!(!segments.is_empty());
+                }
+            }
+        }
+    }
+
+    #[test]
     fn empty_path_does_not_create_subsegments_or_edges() {
         let path: [StrokeVertex<[f64; 2]>; 0] = [];
         let adapter = adapter();

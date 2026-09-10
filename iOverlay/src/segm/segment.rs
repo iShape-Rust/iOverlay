@@ -39,6 +39,7 @@ impl<C: WindingCount, I: IntNumber, D: OverlayEdgeData<C>> Segment<C, I, D> {
         data: D,
         store: &mut D::Store,
     ) -> Self {
+        debug_assert!(a != b, "split points must differ from the segment endpoints");
         if a < b {
             Self {
                 x_segment: XSegment { a, b },

@@ -255,3 +255,54 @@ mod tests {
         assert!(!segments.is_empty());
     }
 }
+
+#[cfg(test)]
+mod non_degenerate_tests {
+    use super::*;
+    use crate::mesh::style::LineCap;
+    use alloc::rc::Rc;
+    use i_float::float::rect::FloatRect;
+
+    #[test]
+    fn stroke_styles_skip_coincident_integer_endpoints() {
+        let adapter =
+            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-100.0, 100.0, -100.0, 100.0), 1.0);
+        let caps = [
+            LineCap::Butt,
+            LineCap::Square,
+            LineCap::Round(0.01),
+            LineCap::Custom(Rc::from([[0.0, -1.0], [0.0, -1.0], [0.01, -1.0], [0.0, 1.0]])),
+        ];
+        for width in [0.0, 0.1, 1.0, 4.0] {
+            for join in [
+                LineJoin::Bevel,
+                LineJoin::Miter(0.1),
+                LineJoin::Miter(3.0),
+                LineJoin::Round(0.01),
+            ] {
+                for cap in &caps {
+                    let builder = StrokeBuilder::new(
+                        StrokeStyle::new(width)
+                            .line_join(join.clone())
+                            .start_cap(cap.clone())
+                            .end_cap(cap.clone()),
+                    );
+                    for end in [[10.0, 10.0], [0.0, 0.0], [20.0, 0.1]] {
+                        let path = [[0.0, 0.0], [0.0, 0.0], [0.01, 0.01], [10.0, 0.0], end];
+                        for closed in [false, true] {
+                            let mut segments = Vec::new();
+                            builder.build(&path, closed, &adapter, &mut segments);
+                            assert!(
+                                segments.iter().all(|s| s.x_segment.a < s.x_segment.b),
+                                "width={width}, join={join:?}, cap={cap:?}, closed={closed}, end={end:?}"
+                            );
+                            if width == 4.0 {
+                                assert!(!segments.is_empty());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

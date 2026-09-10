@@ -79,12 +79,17 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.a);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::subject(a, b));
+                // Repeated template points and rounding can collapse a cap edge.
+                if a != b {
+                    segments.push(Segment::subject(a, b));
+                }
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.a_bot);
-        segments.push(Segment::subject(a, last));
+        if a != last {
+            segments.push(Segment::subject(a, last));
+        }
     }
 
     pub(super) fn add_to_end<I: IntNumber>(
@@ -100,12 +105,16 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
                 let r = rotator.rotate(p);
                 let q = FloatPointMath::add(&r, &section.b);
                 let b = adapter.float_to_int(&q);
-                segments.push(Segment::subject(a, b));
+                if a != b {
+                    segments.push(Segment::subject(a, b));
+                }
                 a = b;
             }
         }
         let last = adapter.float_to_int(&section.b_top);
-        segments.push(Segment::subject(a, last));
+        if a != last {
+            segments.push(Segment::subject(a, last));
+        }
     }
 
     #[inline]
@@ -128,5 +137,42 @@ impl<P: FloatPointCompatible> CapBuilder<P> {
         } else {
             P::Scalar::from_float(0.0)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::fill_rule::FillRule;
+    use crate::core::overlay::Overlay;
+    use crate::core::overlay_rule::OverlayRule;
+    use crate::mesh::stroke::section::SectionToSegment;
+    use i_float::float::rect::FloatRect;
+
+    #[test]
+    fn round_caps_do_not_emit_collapsed_edges() {
+        let adapter = FloatPointAdapter::<[f64; 2], i32>::with_scale(
+            FloatRect {
+                min_x: -3.0,
+                max_x: 13.0,
+                min_y: -3.0,
+                max_y: 3.0,
+            },
+            1.0,
+        );
+        let section = Section::new(2.0, &[0.0, 0.0], &[10.0, 0.0]);
+        let cap = CapBuilder::new(LineCap::Round(0.01 * PI), 2.0);
+        let mut segments = Vec::new();
+        segments.add_section(&section, &adapter);
+        cap.add_to_start(&section, &adapter, &mut segments);
+        cap.add_to_end(&section, &adapter, &mut segments);
+
+        let collapsed = segments.iter().filter(|s| s.x_segment.a == s.x_segment.b).count();
+        assert_eq!(
+            collapsed, 0,
+            "cap construction must skip coincident integer endpoints"
+        );
+        let output = Overlay::with_segments(segments).overlay(OverlayRule::Subject, FillRule::Positive);
+        assert_eq!(output.len(), 1);
     }
 }

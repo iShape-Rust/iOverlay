@@ -7,6 +7,10 @@ use i_float::int::point::IntPoint;
 impl<I: IntNumber> Segment<ShapeCountBoolean, I> {
     #[inline]
     pub(crate) fn subject(p0: IntPoint<I>, p1: IntPoint<I>) -> Self {
+        debug_assert!(
+            p0 != p1,
+            "zero-length edges must be filtered before construction"
+        );
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },
