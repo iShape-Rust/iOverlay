@@ -318,10 +318,11 @@ where
 
                 // Self-touch splits can only produce holes inside this contour.
 
-                let hole_start_data = StartPathData::new(clockwise, link, left_top_link);
+                // Reverse both the starting edge and traversal to give holes the opposite winding.
+                let hole_start_data = StartPathData::new(!clockwise, link, left_top_link);
                 self.find_contour(
                     &hole_start_data,
-                    clockwise,
+                    !clockwise,
                     VisitState::HoleVisited,
                     contour_visited,
                     points,
