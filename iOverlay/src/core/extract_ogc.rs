@@ -224,6 +224,7 @@ where
 
         // First, mark all edges that belong to the contour.
 
+        let mut start_link_id = start_data.link_id;
         let mut end_link_id = start_data.link_id;
 
         global_visited.visit_edge(link_id, VisitState::HullVisited);
@@ -263,6 +264,7 @@ where
                 link.a.id
             };
             end_link_id = end_link_id.max(link_id);
+            start_link_id = start_link_id.min(link_id);
             contour_visited.visit_edge(link_id, VisitState::Unvisited);
             global_visited.visit_edge(link_id, VisitState::HullVisited);
             original_contour_len += 1;
@@ -298,7 +300,8 @@ where
 
         if contour_len < original_contour_len {
             // contour has self touches
-            let mut link_index = start_data.link_id;
+            let mut link_index = start_link_id;
+
             while link_index <= end_link_id {
                 if contour_visited.is_visited(link_index) {
                     link_index += 1;
@@ -318,7 +321,6 @@ where
 
                 // Self-touch splits can only produce holes inside this contour.
 
-                // Reverse both the starting edge and traversal to give holes the opposite winding.
                 let hole_start_data = StartPathData::new(!clockwise, link, left_top_link);
                 self.find_contour(
                     &hole_start_data,
