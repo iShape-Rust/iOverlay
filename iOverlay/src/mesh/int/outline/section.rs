@@ -1,9 +1,12 @@
 use crate::mesh::uniq_iter::UniqueSegment;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
+use i_float::int::unit_vector::UnitIntVector;
 
 #[derive(Clone, Copy)]
 pub(super) struct OffsetSection<I: IntNumber> {
+    pub(super) offset: I,
+    pub(super) direction: UnitIntVector<I>,
     pub(super) a: IntPoint<I>,
     pub(super) b: IntPoint<I>,
     pub(super) a_top: IntPoint<I>,
@@ -13,17 +16,17 @@ pub(super) struct OffsetSection<I: IntNumber> {
 impl<I: IntNumber> OffsetSection<I> {
     pub(super) fn new(segment: UniqueSegment<I>, offset: I) -> Self {
         let (a, b) = (segment.a, segment.b);
+        let direction = crate::mesh::int::math::direction(b - a).expect("unique segment");
         if offset == I::ZERO {
             return Self {
+                offset,
+                direction,
                 a,
                 b,
                 a_top: a,
                 b_top: b,
             };
         }
-        let direction = (b - a)
-            .fast_normalize()
-            .expect("unique segments must have nonzero length");
         let scaled = direction.scale(offset);
 
         let dx = scaled.y;
@@ -33,6 +36,13 @@ impl<I: IntNumber> OffsetSection<I> {
 
         debug_assert!(a_top.is_in_safe_range() && b_top.is_in_safe_range());
 
-        Self { a, b, a_top, b_top }
+        Self {
+            offset,
+            direction,
+            a,
+            b,
+            a_top,
+            b_top,
+        }
     }
 }

@@ -19,7 +19,7 @@ impl<I: IntNumber, J: JoinBuilder<I>> OutlineBuilder<I, J> {
         Self { offset, join_builder }
     }
 
-    pub(super) fn build(&self, path: &[IntPoint<I>], segments: &mut Vec<Segment<ShapeCountBoolean, I>>) {
+    pub(super) fn build(&mut self, path: &[IntPoint<I>], segments: &mut Vec<Segment<ShapeCountBoolean, I>>) {
         let Some(mut iter) = UniqueSegmentsIter::new(path.iter().copied()) else {
             return;
         };
@@ -40,7 +40,7 @@ impl<I: IntNumber, J: JoinBuilder<I>> OutlineBuilder<I, J> {
 
     #[inline]
     fn feed_join(
-        &self,
+        &mut self,
         previous: &OffsetSection<I>,
         next: &OffsetSection<I>,
         segments: &mut Vec<Segment<ShapeCountBoolean, I>>,

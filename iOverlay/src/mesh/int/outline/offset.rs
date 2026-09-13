@@ -1,30 +1,26 @@
-//! Integer outline construction. Bevel joins are implemented; angle-based joins
-//! are explicit placeholders. Float outline remains a separate API for now.
+//! Integer outline construction used directly and by the float adapter.
 use super::bounds;
 use super::build::BuildOutlineOverlay;
 use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
 use crate::core::overlay::IntOverlayOptions;
 use crate::core::overlay_rule::OverlayRule;
-use crate::mesh::int::style::{IntLineJoin, IntOutlineStyle};
+use crate::mesh::int::style::IntOutlineStyle;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::int::shape::IntShapes;
 use i_shape::source::int::resource::IntShapeResource;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IntOutlineError {
-    /// Miter and round joins await integer angle support.
-    UnsupportedJoin(IntLineJoin),
     /// The conservative expanded input bounds fail the coordinate-range check.
-    /// Returned by `validate_outline`, not by outline construction.
+    /// Returned by optional mesh validation, not by construction.
     CoordinateOutOfRange,
 }
 
 impl core::fmt::Display for IntOutlineError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::UnsupportedJoin(join) => write!(f, "integer {join:?} joins are not implemented"),
-            Self::CoordinateOutOfRange => f.write_str("outline coordinate exceeds the integer engine range"),
+            Self::CoordinateOutOfRange => f.write_str("mesh coordinate exceeds the integer engine range"),
         }
     }
 }
@@ -63,13 +59,13 @@ impl core::error::Error for IntOutlineError {}
 /// # Ok::<(), i_overlay::mesh::int::outline::offset::IntOutlineError>(())
 /// ```
 pub trait IntOutlineOffset<I: OverlayInt>: IntShapeResource<I> {
-    /// Checks supported joins and the coordinate range of the prospective operation.
+    /// Checks the coordinate range of the prospective operation.
     ///
     /// Computes input bounds, expands by the maximum outer/inner join padding,
     /// and checks `IntRect::is_in_safe_range`. Padding uses absolute offsets even
     /// for shrinking outlines, since temporary edges must also stay in range.
     /// The estimate is conservative and may reject geometry whose actual points
-    /// would fit. Empty input passes for supported joins. This does not validate
+    /// would fit. Empty input passes. This does not validate
     /// winding, topology, or the accumulated area of repeated winding.
     fn validate_outline(&self, style: &IntOutlineStyle<I>) -> Result<(), IntOutlineError> {
         bounds::validate(self, style)

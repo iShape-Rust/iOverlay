@@ -1,3 +1,5 @@
+use super::arc::ArcOptions;
+use i_float::int::angle::Angle;
 use i_float::int::number::int::IntNumber;
 
 /// Join styles for integer mesh operations.
@@ -5,12 +7,11 @@ use i_float::int::number::int::IntNumber;
 pub enum IntLineJoin {
     #[default]
     Bevel,
-    /// Placeholder until integer angles and miter construction are implemented.
-    /// Requesting this join returns `IntOutlineError::UnsupportedJoin`.
-    Miter,
-    /// Placeholder until integer angles and arc construction are implemented.
-    /// Requesting this join returns `IntOutlineError::UnsupportedJoin`.
-    Round,
+    /// Clipped miter, limited by the minimum interior angle.
+    /// The angle is clamped to 0.01*pi..=0.99*pi.
+    Miter(Angle),
+    /// Rounded join with reusable integer rotation settings.
+    Round(ArcOptions),
 }
 
 /// Signed offsets in input coordinate units. Positive values expand the filled
@@ -48,6 +49,52 @@ impl<I: IntNumber> IntOutlineStyle<I> {
         self
     }
 
+    pub fn line_join(mut self, join: IntLineJoin) -> Self {
+        self.join = join;
+        self
+    }
+}
+
+/// End caps for integer strokes. Custom points are local displacements in input
+/// coordinate units, with x pointing outward and y pointing to its left. They
+/// are already scaled to the desired size; no fractional template scale is used.
+#[derive(Debug, Clone)]
+pub enum IntLineCap<I: IntNumber = i32> {
+    Butt,
+    Square,
+    Round(ArcOptions),
+    Custom(alloc::rc::Rc<[i_float::int::point::IntPoint<I>]>),
+}
+
+#[derive(Debug, Clone)]
+pub struct IntStrokeStyle<I: IntNumber = i32> {
+    pub width: I,
+    pub start_cap: IntLineCap<I>,
+    pub end_cap: IntLineCap<I>,
+    pub join: IntLineJoin,
+}
+
+impl<I: IntNumber> IntStrokeStyle<I> {
+    pub fn new(width: I) -> Self {
+        Self {
+            width,
+            start_cap: IntLineCap::Butt,
+            end_cap: IntLineCap::Butt,
+            join: IntLineJoin::Bevel,
+        }
+    }
+    pub fn width(mut self, width: I) -> Self {
+        self.width = width;
+        self
+    }
+    pub fn start_cap(mut self, cap: IntLineCap<I>) -> Self {
+        self.start_cap = cap;
+        self
+    }
+    pub fn end_cap(mut self, cap: IntLineCap<I>) -> Self {
+        self.end_cap = cap;
+        self
+    }
     pub fn line_join(mut self, join: IntLineJoin) -> Self {
         self.join = join;
         self

@@ -1,13 +1,14 @@
 use super::bounds;
 use super::builder::OutlineBuilder;
-use super::builder_join::{BevelJoinBuilder, JoinBuilder};
+use super::builder_join::JoinBuilder;
 use super::offset::IntOutlineError;
 use crate::core::extract::BooleanExtractionBuffer;
 use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
-use crate::mesh::int::style::{IntLineJoin, IntOutlineStyle};
+use crate::mesh::int::join::Join;
+use crate::mesh::int::style::IntOutlineStyle;
 use alloc::vec::Vec;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
@@ -21,27 +22,22 @@ pub(super) trait BuildOutlineOverlay<I: OverlayInt>: IntShapeResource<I> {
         style: &IntOutlineStyle<I>,
         options: IntOverlayOptions<I::WideUInt>,
     ) -> Result<Overlay<I>, IntOutlineError> {
-        match style.join {
-            IntLineJoin::Bevel => {
-                debug_assert!(
-                    bounds::validate(self, style).is_ok(),
-                    "outline bounds exceed the safe coordinate range"
-                );
-                Ok(self.build_overlay_with_builders(
-                    options,
-                    OutlineBuilder::new(style.outer_offset, BevelJoinBuilder),
-                    OutlineBuilder::new(style.inner_offset, BevelJoinBuilder),
-                ))
-            }
-            join => Err(IntOutlineError::UnsupportedJoin(join)),
-        }
+        debug_assert!(
+            bounds::validate(self, style).is_ok(),
+            "outline bounds exceed the safe coordinate range"
+        );
+        Ok(self.build_overlay_with_builders(
+            options,
+            OutlineBuilder::new(style.outer_offset, Join::new(style.join)),
+            OutlineBuilder::new(style.inner_offset, Join::new(style.join)),
+        ))
     }
 
     fn build_overlay_with_builders<J: JoinBuilder<I>>(
         &self,
         options: IntOverlayOptions<I::WideUInt>,
-        outer_builder: OutlineBuilder<I, J>,
-        inner_builder: OutlineBuilder<I, J>,
+        mut outer_builder: OutlineBuilder<I, J>,
+        mut inner_builder: OutlineBuilder<I, J>,
     ) -> Overlay<I> {
         let mut overlay = Overlay::new_custom(0, options, Default::default());
         let mut contour_options = options;
@@ -64,12 +60,16 @@ pub(super) trait BuildOutlineOverlay<I: OverlayInt>: IntShapeResource<I> {
             }
             let (builder, direction, fill) = if area > I::Wide::ZERO {
                 (
-                    &outer_builder,
+                    &mut outer_builder,
                     ContourDirection::CounterClockwise,
                     FillRule::Positive,
                 )
             } else {
-                (&inner_builder, ContourDirection::Clockwise, FillRule::Negative)
+                (
+                    &mut inner_builder,
+                    ContourDirection::Clockwise,
+                    FillRule::Negative,
+                )
             };
             segments.clear();
             builder.build(path, &mut segments);

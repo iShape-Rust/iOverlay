@@ -1,21 +1,6 @@
 use i_float::float::compatible::FloatPointCompatible;
 
-/// The variable-stroke construction operation that emitted a raw pre-overlay edge.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VariableStrokeDebugEdgeKind {
-    /// One of the two tangent boundaries of a drawable centerline section.
-    SectionBoundary,
-    /// One chord of a round join.
-    JoinArc,
-    /// A straight edge closing the gap between adjacent sections.
-    JoinClosure,
-    /// One chord of a round end cap.
-    CapArc,
-    /// A butt edge closing an end cap.
-    CapClosure,
-    /// One chord of a circle emitted for an isolated drawable vertex.
-    CircleArc,
-}
+pub use crate::mesh::int::variable_stroke::debug::VariableStrokeDebugEdgeKind;
 
 /// One directed edge submitted by `SegmentBuilder` before overlay processing.
 #[derive(Debug, Clone, Copy)]

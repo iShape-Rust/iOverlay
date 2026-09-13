@@ -1,12 +1,8 @@
-use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
-use crate::core::overlay::Overlay;
-use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
-use crate::mesh::float::stroke::builder::StrokeBuilder;
-use crate::mesh::float::stroke::offset::vec::Vec;
 use crate::mesh::float::style::StrokeStyle;
+use crate::mesh::int::stroke::offset::IntStrokeOffset;
 use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
@@ -18,7 +14,7 @@ use i_float::int::number::wide_int::WideIntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
-use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::adapter::{ResourceToInt, ShapesToFloat};
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::float::resource::ShapeResource;
@@ -259,25 +255,6 @@ where
         self.stroke_custom_into(style, is_closed_path, Default::default(), output)
     }
 
-    fn stroke_fixed_scale(
-        &self,
-        style: StrokeStyle<P>,
-        is_closed_path: bool,
-        scale: P::Scalar,
-    ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        self.stroke_custom_fixed_scale(style, is_closed_path, Default::default(), scale)
-    }
-
-    fn stroke_fixed_scale_into(
-        &self,
-        style: StrokeStyle<P>,
-        is_closed_path: bool,
-        scale: P::Scalar,
-        output: &mut FloatFlatContoursBuffer<P>,
-    ) -> Result<(), FixedScaleOverlayError> {
-        self.stroke_custom_fixed_scale_into(style, is_closed_path, Default::default(), scale, output)
-    }
-
     fn stroke_custom(
         &self,
         style: StrokeStyle<P>,
@@ -301,6 +278,25 @@ where
             Some(solver) => solver.build_into(self, is_closed_path, options, output),
             None => output.clear_and_reserve(0, 0),
         }
+    }
+
+    fn stroke_fixed_scale(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        scale: P::Scalar,
+    ) -> Result<Shapes<P>, FixedScaleOverlayError> {
+        self.stroke_custom_fixed_scale(style, is_closed_path, Default::default(), scale)
+    }
+
+    fn stroke_fixed_scale_into(
+        &self,
+        style: StrokeStyle<P>,
+        is_closed_path: bool,
+        scale: P::Scalar,
+        output: &mut FloatFlatContoursBuffer<P>,
+    ) -> Result<(), FixedScaleOverlayError> {
+        self.stroke_custom_fixed_scale_into(style, is_closed_path, Default::default(), scale, output)
     }
 
     fn stroke_custom_fixed_scale(
@@ -455,10 +451,8 @@ where
 
 struct StrokeSolver<P: FloatPointCompatible, I: IntNumber> {
     r: P::Scalar,
-    builder: StrokeBuilder<P, I>,
+    style: StrokeStyle<P>,
     adapter: FloatPointAdapter<P, I>,
-    paths_count: usize,
-    points_count: usize,
 }
 
 impl<P, I> StrokeSolver<P, I>
@@ -467,32 +461,18 @@ where
     I: OverlayInt + 'static,
 {
     fn prepare<S: ShapeResource<P>>(source: &S, style: StrokeStyle<P>) -> Option<Self> {
-        let mut paths_count = 0;
-        let mut points_count = 0;
-        for path in source.iter_paths() {
-            paths_count += 1;
-            points_count += path.len();
-        }
-
-        if paths_count == 0 {
+        if source.iter_paths().next().is_none() {
             return None;
         }
 
         let r = P::Scalar::from_float(0.5 * style.width.to_f64());
-        let builder = StrokeBuilder::<P, I>::new(style);
-        let a = builder.additional_offset(r);
+        let a = style.padding();
 
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(a);
         let adapter = FloatPointAdapter::<P, I>::new(rect);
 
-        Some(Self {
-            r,
-            builder,
-            adapter,
-            paths_count,
-            points_count,
-        })
+        Some(Self { r, style, adapter })
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
@@ -512,20 +492,11 @@ where
             return vec![];
         }
 
-        let capacity = self
-            .builder
-            .capacity(self.paths_count, self.points_count, is_closed_path);
-        let mut segments = Vec::with_capacity(capacity);
-
-        for path in source.iter_paths() {
-            self.builder
-                .build(path, is_closed_path, &self.adapter, &mut segments);
-        }
-
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options.int_with_adapter(&self.adapter);
-
-        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
+        let paths = source.to_int_paths(&self.adapter);
+        let style = self.style.to_int(&self.adapter);
+        let shapes = paths
+            .stroke_custom(&style, is_closed_path, options.int_with_adapter(&self.adapter))
+            .expect("valid integer stroke");
 
         let mut float = shapes.to_float(&self.adapter);
 
@@ -554,21 +525,17 @@ where
             return;
         }
 
-        let capacity = self
-            .builder
-            .capacity(self.paths_count, self.points_count, is_closed_path);
-        let mut segments = Vec::with_capacity(capacity);
-
-        for path in source.iter_paths() {
-            self.builder
-                .build(path, is_closed_path, &self.adapter, &mut segments);
-        }
-
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options.int_with_adapter(&self.adapter);
-
+        let paths = source.to_int_paths(&self.adapter);
+        let style = self.style.to_int(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
+        paths
+            .stroke_custom_into(
+                &style,
+                is_closed_path,
+                options.int_with_adapter(&self.adapter),
+                &mut int_output,
+            )
+            .expect("valid integer stroke");
 
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);

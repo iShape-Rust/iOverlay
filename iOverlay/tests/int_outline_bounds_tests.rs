@@ -69,13 +69,16 @@ check_bounds!(expanded_bounds_i32, i32);
 check_bounds!(expanded_bounds_i64, i64);
 
 #[test]
-fn empty_input_needs_no_coordinate_space_but_still_checks_join_support() {
+fn empty_input_needs_no_coordinate_space_for_any_join() {
     let empty: Vec<IntPoint> = vec![];
     assert_eq!(empty.validate_outline(&IntOutlineStyle::new(i32::MIN)), Ok(()));
-    for join in [IntLineJoin::Miter, IntLineJoin::Round] {
+    for join in [
+        IntLineJoin::Miter(i_float::int::angle::Angle::from_bits(1 << 26)),
+        IntLineJoin::Round(Default::default()),
+    ] {
         assert_eq!(
             empty.validate_outline(&IntOutlineStyle::new(0).line_join(join)),
-            Err(IntOutlineError::UnsupportedJoin(join))
+            Ok(())
         );
     }
 }

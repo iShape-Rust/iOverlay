@@ -1,28 +1,20 @@
-use crate::core::extract::BooleanExtractionBuffer;
-use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
-use crate::core::overlay::ShapeType::Subject;
-use crate::core::overlay::{ContourDirection, Overlay};
-use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
-use crate::mesh::float::outline::builder::OutlineBuilder;
 use crate::mesh::float::style::OutlineStyle;
+use crate::mesh::int::outline::offset::IntOutlineOffset;
+use crate::mesh::int::style::IntOutlineStyle;
 use alloc::vec;
-use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
 use i_float::int::number::int::IntNumber;
-use i_float::int::number::uint::UIntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
-use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::adapter::{ResourceToInt, ShapesToFloat};
 use i_shape::float::despike::DeSpikeContour;
-use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::float::resource::ShapeResource;
 
@@ -407,10 +399,8 @@ where
 }
 
 struct OutlineSolver<P: FloatPointCompatible, I: IntNumber> {
-    outer_builder: OutlineBuilder<P, I>,
-    inner_builder: OutlineBuilder<P, I>,
+    style: OutlineStyle<P::Scalar>,
     adapter: FloatPointAdapter<P, I>,
-    points_count: usize,
 }
 
 impl<P, I> OutlineSolver<P, I>
@@ -419,42 +409,25 @@ where
     I: OverlayInt + 'static,
 {
     fn prepare<S: ShapeResource<P>>(source: &S, style: &OutlineStyle<P::Scalar>) -> Option<Self> {
-        let (points_count, paths_count) = {
-            let mut points_count = 0;
-            let mut paths_count = 0;
-            for path in source.iter_paths() {
-                points_count += path.len();
-                paths_count += 1;
-            }
-            (points_count, paths_count)
-        };
-
-        if paths_count == 0 {
+        if source.iter_paths().next().is_none() {
             return None;
         }
 
-        let join = style.join.clone().normalize();
-        let outer_builder: OutlineBuilder<P, I> = OutlineBuilder::new(-style.outer_offset, &join);
-        let inner_builder: OutlineBuilder<P, I> = OutlineBuilder::new(-style.inner_offset, &join);
-
-        let outer_radius = style.outer_offset;
-        let inner_radius = style.inner_offset;
-
-        let outer_additional_offset = outer_builder.additional_offset(outer_radius);
-        let inner_additional_offset = inner_builder.additional_offset(inner_radius);
-
-        let additional_offset = outer_additional_offset.abs() + inner_additional_offset.abs();
-
+        let additional_offset = P::Scalar::from_float(
+            (style.outer_offset.to_f64().abs() + style.inner_offset.to_f64().abs()) * style.join.padding(),
+        );
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(additional_offset);
 
         let adapter = FloatPointAdapter::<P, I>::new(rect);
 
         Some(Self {
-            outer_builder,
-            inner_builder,
+            style: OutlineStyle {
+                outer_offset: style.outer_offset,
+                inner_offset: style.inner_offset,
+                join: style.join.clone(),
+            },
             adapter,
-            points_count,
         })
     }
 
@@ -464,67 +437,21 @@ where
         Ok(())
     }
 
-    fn build_overlay<S: ShapeResource<P>>(
-        &self,
-        source: &S,
-        options: OverlayOptions<P::Scalar, I>,
-    ) -> Overlay<I> {
-        let total_capacity = self.outer_builder.capacity(self.points_count);
-        let mut overlay = Overlay::new_custom(
-            total_capacity,
-            options.int_with_adapter(&self.adapter),
-            Default::default(),
-        );
-
-        let mut offset_overlay = Overlay::new(16);
-        offset_overlay.options = overlay.options;
-        // Small offset contours can merge into a larger result; filter area only after union.
-        offset_overlay.options.min_output_area = I::WideUInt::ZERO;
-
-        let mut segments = Vec::new();
-        let mut bool_buffer = BooleanExtractionBuffer::default();
-        let mut flat_buffer = FlatContoursBuffer::<I>::with_capacity(0);
-
-        for path in source.iter_paths() {
-            let area = path.unsafe_int_area(&self.adapter);
-            if area == I::Wide::ZERO {
-                // ignore degenerate paths
-                continue;
-            }
-
-            offset_overlay.clear();
-            segments.clear();
-
-            let contour_fill_rule = if area > I::Wide::ZERO {
-                offset_overlay.options.output_direction = ContourDirection::CounterClockwise;
-                segments.reserve(self.outer_builder.capacity(path.len()));
-                self.outer_builder.build(path, &self.adapter, &mut segments);
-                FillRule::Positive
-            } else {
-                offset_overlay.options.output_direction = ContourDirection::Clockwise;
-                segments.reserve(self.inner_builder.capacity(path.len()));
-                self.inner_builder.build(path, &self.adapter, &mut segments);
-
-                FillRule::Negative
-            };
-
-            offset_overlay.add_segments(&segments);
-
-            if let Some(graph) = offset_overlay.build_graph_view(contour_fill_rule) {
-                graph.extract_contours_into(OverlayRule::Subject, &mut bool_buffer, &mut flat_buffer);
-            }
-
-            overlay.add_flat_buffer(&flat_buffer, Subject);
+    fn int_style(&self) -> IntOutlineStyle<I> {
+        IntOutlineStyle {
+            outer_offset: self.adapter.round_len_to_int(self.style.outer_offset),
+            inner_offset: self.adapter.round_len_to_int(self.style.inner_offset),
+            join: (&self.style.join).into(),
         }
-
-        overlay
     }
 
     fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar, I>) -> Shapes<P> {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
-        let mut overlay = self.build_overlay(source, options);
-        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
+        let paths = source.to_int_paths(&self.adapter);
+        let shapes = paths
+            .outline_custom(&self.int_style(), options.int_with_adapter(&self.adapter))
+            .expect("integer outline supports every float join");
 
         if clean_result {
             let mut float = shapes.to_float(&self.adapter);
@@ -547,10 +474,15 @@ where
     ) {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
-        let mut overlay = self.build_overlay(source, options);
-
+        let paths = source.to_int_paths(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
+        paths
+            .outline_custom_into(
+                &self.int_style(),
+                options.int_with_adapter(&self.adapter),
+                &mut int_output,
+            )
+            .expect("integer outline supports every float join");
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);
 
@@ -1109,7 +1041,8 @@ mod tests {
         assert_eq!(shape.len(), 1);
 
         let path = shape.first().unwrap();
-        assert_eq!(path.len(), 8);
+        assert_eq!(path.len(), 4);
+        assert!(path.iter().all(|p| p[0].abs() == 11.0 && p[1].abs() == 11.0));
 
         let result_sign = path.area().signum();
         assert_eq!(original_sign, result_sign);

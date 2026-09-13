@@ -1,18 +1,17 @@
-use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
-use crate::core::overlay::Overlay;
-use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
-use crate::mesh::float::variable_stroke::builder::VariableStrokeBuilder;
 use crate::mesh::float::variable_stroke::resource::VariableStrokeSource;
 use crate::mesh::float::variable_stroke::style::VariableStrokeStyle;
+use crate::mesh::int::variable_stroke::offset::IntVariableStrokeOffset;
+use crate::mesh::int::variable_stroke::{IntStrokeVertex, IntVariableStrokeStyle};
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
+use i_float::int::angle::Angle;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
@@ -239,10 +238,8 @@ where
 
 struct VariableStrokeSolver<P: FloatPointCompatible, I: IntNumber> {
     max_radius: P::Scalar,
-    builder: VariableStrokeBuilder<P::Scalar>,
+    style: VariableStrokeStyle<P::Scalar>,
     adapter: FloatPointAdapter<P, I>,
-    paths_count: usize,
-    points_count: usize,
 }
 
 impl<P, I> VariableStrokeSolver<P, I>
@@ -279,23 +276,46 @@ where
             return None;
         }
 
-        let builder = VariableStrokeBuilder::new(style);
+        let style = style.normalized();
         let mut rect = rect?;
-        rect.add_offset(builder.additional_offset(max_radius));
+        rect.add_offset(P::Scalar::from_float(1.1) * max_radius);
         let adapter = FloatPointAdapter::<P, I>::new(rect);
 
         Some(Self {
             max_radius,
-            builder,
+            style,
             adapter,
-            paths_count,
-            points_count,
         })
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
         self.adapter = FloatPointAdapter::try_with_scale(*self.adapter.rect(), scale)?;
         Ok(())
+    }
+
+    fn int_style(&self) -> IntVariableStrokeStyle {
+        IntVariableStrokeStyle {
+            arc: crate::mesh::int::arc::ArcOptions {
+                max_step: Angle::from_radians(self.style.round_angle),
+                ..Default::default()
+            },
+        }
+    }
+    fn int_paths<S: VariableStrokeSource<P> + ?Sized>(&self, source: &S) -> Vec<Vec<IntStrokeVertex<I>>> {
+        source
+            .iter_variable_paths()
+            .map(|path| {
+                path.iter()
+                    .map(|v| {
+                        let radius = self.adapter.round_len_to_int(v.radius()).to_wide();
+                        IntStrokeVertex::new(
+                            self.adapter.float_to_int(&v.point),
+                            I::from_wide(radius + radius),
+                        )
+                    })
+                    .collect()
+            })
+            .collect()
     }
 
     fn build<S: VariableStrokeSource<P> + ?Sized>(
@@ -307,14 +327,10 @@ where
             return vec![];
         }
 
-        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
-        for path in source.iter_variable_paths() {
-            self.builder.build(path, &self.adapter, &mut segments);
-        }
-
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options.int_with_adapter(&self.adapter);
-        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
+        let paths = self.int_paths(source);
+        let shapes = paths
+            .variable_stroke_custom(self.int_style(), options.int_with_adapter(&self.adapter))
+            .expect("valid integer variable stroke");
         let mut float = shapes.to_float(&self.adapter);
 
         if options.clean_result {
@@ -338,15 +354,15 @@ where
             return;
         }
 
-        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
-        for path in source.iter_variable_paths() {
-            self.builder.build(path, &self.adapter, &mut segments);
-        }
-
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options.int_with_adapter(&self.adapter);
+        let paths = self.int_paths(source);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
+        paths
+            .variable_stroke_custom_into(
+                self.int_style(),
+                options.int_with_adapter(&self.adapter),
+                &mut int_output,
+            )
+            .expect("valid integer variable stroke");
 
         let iter = int_output
             .points
@@ -375,16 +391,24 @@ where
             };
         }
 
-        let mut segments = Vec::with_capacity(self.builder.capacity(self.paths_count, self.points_count));
-        let mut edges = Vec::with_capacity(segments.capacity());
-        for (path_index, path) in source.iter_variable_paths().enumerate() {
-            self.builder
-                .build_debug(path, path_index, &self.adapter, &mut segments, &mut edges);
-        }
-
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options.int_with_adapter(&self.adapter);
-        let shapes = overlay.overlay(OverlayRule::Subject, FillRule::Positive);
+        let paths = self.int_paths(source);
+        let result = paths
+            .variable_stroke_debug(self.int_style(), options.int_with_adapter(&self.adapter))
+            .expect("valid integer variable stroke");
+        let edges = result
+            .edges
+            .into_iter()
+            .map(
+                |edge| crate::mesh::float::variable_stroke::VariableStrokeDebugEdge {
+                    a: self.adapter.int_to_float(&edge.a),
+                    b: self.adapter.int_to_float(&edge.b),
+                    kind: edge.kind,
+                    path_index: edge.path_index,
+                    order: edge.order,
+                },
+            )
+            .collect();
+        let shapes = result.shapes;
         let mut shapes = shapes.to_float(&self.adapter);
 
         if options.clean_result {

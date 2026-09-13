@@ -1,6 +1,6 @@
-use super::builder_join::{BevelJoinBuilder, JoinBuilder};
 use super::offset::IntOutlineError;
-use crate::mesh::int::style::{IntLineJoin, IntOutlineStyle};
+use crate::mesh::int::join::Join;
+use crate::mesh::int::style::IntOutlineStyle;
 use i_float::int::number::int::IntNumber;
 use i_float::int::rect::IntRect;
 use i_shape::source::int::resource::IntShapeResource;
@@ -9,12 +9,8 @@ pub(super) fn validate<I: IntNumber, S: IntShapeResource<I> + ?Sized>(
     source: &S,
     style: &IntOutlineStyle<I>,
 ) -> Result<(), IntOutlineError> {
-    let padding = match style.join {
-        IntLineJoin::Bevel => BevelJoinBuilder
-            .additional_offset(style.outer_offset)
-            .max(BevelJoinBuilder.additional_offset(style.inner_offset)),
-        join => return Err(IntOutlineError::UnsupportedJoin(join)),
-    };
+    let padding =
+        Join::padding(style.join, style.outer_offset).max(Join::padding(style.join, style.inner_offset));
     let Some(rect) = IntRect::with_iter(source.iter_paths().flatten()) else {
         return Ok(());
     };

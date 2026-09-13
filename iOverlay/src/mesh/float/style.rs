@@ -1,7 +1,14 @@
+use crate::mesh::int::arc::ArcOptions;
+use crate::mesh::int::style::{IntLineCap, IntLineJoin, IntStrokeStyle};
 use alloc::rc::Rc;
+use alloc::vec::Vec;
 use core::f64::consts::PI;
+use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_float::int::angle::Angle;
+use i_float::int::number::int::IntNumber;
+use i_float::int::point::IntPoint;
 
 /// The endpoint style of a line.
 #[derive(Debug, Clone)]
@@ -64,7 +71,32 @@ impl<P: FloatPointCompatible> LineCap<P> {
     }
 }
 
+impl<T: FloatNumber> From<&LineJoin<T>> for IntLineJoin {
+    /// Converts a floating-point join, normalizing its angle before quantization.
+    fn from(join: &LineJoin<T>) -> Self {
+        match join.clone().normalize() {
+            LineJoin::Bevel => IntLineJoin::Bevel,
+            LineJoin::Miter(a) => IntLineJoin::Miter(Angle::from_radians(a)),
+            LineJoin::Round(a) => IntLineJoin::Round(ArcOptions {
+                max_step: Angle::from_radians(a),
+                ..ArcOptions::default()
+            }),
+        }
+    }
+}
+
 impl<T: FloatNumber> LineJoin<T> {
+    /// Conservative multiplier for the join's reach relative to the offset radius.
+    pub(super) fn padding(&self) -> f64 {
+        match IntLineJoin::from(self) {
+            IntLineJoin::Miter(minimum) => {
+                let sin = Angle::from_bits(minimum.bits() / 2).sin() as f64;
+                1.1 * (1u32 << 30) as f64 / sin
+            }
+            _ => 1.1,
+        }
+    }
+
     pub(crate) fn normalize(self) -> Self {
         match self {
             LineJoin::Miter(ratio) => {
@@ -111,6 +143,64 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
     pub fn line_join(mut self, join: LineJoin<P::Scalar>) -> Self {
         self.join = join.normalize();
         self
+    }
+
+    pub(super) fn to_int<I: IntNumber>(&self, adapter: &FloatPointAdapter<P, I>) -> IntStrokeStyle<I> {
+        let radius = P::Scalar::from_float(0.5 * self.width.to_f64().max(0.0));
+        let cap = |cap: &LineCap<P>| match cap.clone().normalize() {
+            LineCap::Butt => IntLineCap::Butt,
+            LineCap::Square => IntLineCap::Square,
+            LineCap::Round(a) => IntLineCap::Round(ArcOptions {
+                max_step: Angle::from_radians(a),
+                ..ArcOptions::default()
+            }),
+            LineCap::Custom(points) => IntLineCap::Custom(
+                points
+                    .iter()
+                    .map(|p| {
+                        IntPoint::new(
+                            adapter.round_len_to_int(p.x() * radius),
+                            adapter.round_len_to_int(p.y() * radius),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .into(),
+            ),
+        };
+        let radius = adapter.round_len_to_int(radius);
+        IntStrokeStyle {
+            width: I::from_wide(radius.to_wide() + radius.to_wide()),
+            start_cap: cap(&self.start_cap),
+            end_cap: cap(&self.end_cap),
+            join: IntLineJoin::from(&self.join),
+        }
+    }
+
+    /// Conservative distance by which the stroke can extend beyond its input bounds.
+    pub(super) fn padding(&self) -> P::Scalar {
+        let cap = |cap: &LineCap<P>| match cap {
+            LineCap::Square => 2.0,
+            LineCap::Custom(points) => {
+                points
+                    .iter()
+                    .map(|p| {
+                        let x = p.x().to_f64();
+                        let y = p.y().to_f64();
+                        FloatNumber::sqrt(x * x + y * y)
+                    })
+                    .fold(1.0_f64, f64::max)
+                    * 1.1
+            }
+            _ => 1.1,
+        };
+        P::Scalar::from_float(
+            0.5 * self.width.to_f64().max(0.0)
+                * self
+                    .join
+                    .padding()
+                    .max(cap(&self.start_cap))
+                    .max(cap(&self.end_cap)),
+        )
     }
 }
 

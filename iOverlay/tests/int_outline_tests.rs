@@ -163,15 +163,18 @@ fn output_direction_is_configurable() {
 }
 
 #[test]
-fn errors_preserve_output_and_stubs_are_explicit() {
+fn all_joins_build_into_reused_output() {
     let path = rectangle(0, 0, 8192, 8192);
     let mut output = FlatContoursBuffer::default();
     output.set_with_contour(&path);
-    let saved = output.clone();
-    for join in [IntLineJoin::Miter, IntLineJoin::Round] {
+    for join in [
+        IntLineJoin::Miter(i_float::int::angle::Angle::from_bits(1 << 26)),
+        IntLineJoin::Round(Default::default()),
+    ] {
         let result = path.outline_into(&IntOutlineStyle::new(1024).line_join(join), &mut output);
-        assert_eq!(result, Err(IntOutlineError::UnsupportedJoin(join)));
-        assert_eq!(output, saved);
+        assert_eq!(result, Ok(()));
+        assert!(!output.points.is_empty());
+        assert!(output.points.iter().any(|p| p.x < 0 || p.y < 0));
     }
 }
 

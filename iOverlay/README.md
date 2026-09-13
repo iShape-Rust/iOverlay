@@ -490,11 +490,26 @@ println!("result: {:?}", result);
 
 ## Buffering
 
-Floating-point outline, stroke, and variable-width stroke APIs live under `mesh::float`.
-Integer outline lives under `mesh::int::outline`, with styles in `mesh::int::style`.
-Integer outline currently supports bevel joins; miter and round joins return `UnsupportedJoin`.
-Use `validate_outline(&style)` for an optional conservative coordinate-range check.
-Integer construction asserts the bounds in debug builds and trusts the caller in release builds.
+Outline, stroke, and variable-width stroke geometry is built by `mesh::int`.
+The existing `mesh::float` APIs select a scale, convert input and styles, call the
+integer API, and convert the result back. Fixed-scale methods retain the supplied
+grid. Integer rounding and CORDIC arc subdivision can change individual vertices
+compared with the former float builders.
+
+Use `IntOutlineOffset`, `IntStrokeOffset`, or `IntVariableStrokeOffset` from the
+corresponding `mesh::int::{outline,stroke,variable_stroke}::offset` module.
+Outline and stroke styles live in `mesh::int::style`; variable-width vertices and
+styles live in `mesh::int::variable_stroke`. Bevel, clipped miter, and round joins
+are supported. Stroke caps can be butt, square, round, or custom; variable-width
+strokes use round caps and joins. Round geometry uses `ArcOptions`, including
+configurable CORDIC rotation precision (default: 5).
+
+Integer distances use input coordinate units without automatic rescaling.
+Stroke radius is `ceil(max(width, 0) / 2)`; radii at most 1 are degenerate.
+Use `validate_outline(&style)`, `validate_stroke(&style)`, or
+`validate_variable_stroke()` for an optional conservative coordinate-range check.
+Construction asserts bounds in debug builds and trusts the caller in release.
+All three APIs provide `*_into` methods that replace a reusable flat output buffer.
 
 ### Offsetting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">

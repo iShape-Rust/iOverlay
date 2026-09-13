@@ -1,9 +1,7 @@
-mod builder;
 #[cfg(feature = "variable_stroke_debug")]
 mod debug;
 pub mod offset;
 mod resource;
-mod section;
 mod style;
 
 #[cfg(feature = "variable_stroke_debug")]
