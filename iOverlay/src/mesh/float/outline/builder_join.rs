@@ -1,6 +1,6 @@
-use crate::mesh::miter::Miter;
-use crate::mesh::outline::section::OffsetSection;
-use crate::mesh::rotator::Rotator;
+use crate::mesh::float::miter::Miter;
+use crate::mesh::float::outline::section::OffsetSection;
+use crate::mesh::float::rotator::Rotator;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec::Vec;

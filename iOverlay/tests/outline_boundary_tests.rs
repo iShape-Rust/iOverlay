@@ -1,5 +1,5 @@
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::style::{LineJoin, OutlineStyle};
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::style::{LineJoin, OutlineStyle};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 

@@ -1,5 +1,5 @@
-use crate::mesh::math::Math;
-use crate::mesh::variable_stroke::style::StrokeVertex;
+use crate::mesh::float::math::Math;
+use crate::mesh::float::variable_stroke::style::StrokeVertex;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -105,7 +105,7 @@ impl<P: FloatPointCompatible> Section<P> {
 #[cfg(test)]
 mod tests {
     use super::{RadiusTrend, Section};
-    use crate::mesh::variable_stroke::StrokeVertex;
+    use crate::mesh::float::variable_stroke::StrokeVertex;
     use i_float::adapter::FloatPointAdapter;
     use i_float::float::rect::FloatRect;
 

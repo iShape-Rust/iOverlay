@@ -42,7 +42,7 @@ impl<T: FloatNumber> Rotator<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::mesh::rotator::Rotator;
+    use crate::mesh::float::rotator::Rotator;
     use core::f64::consts::PI;
 
     #[test]

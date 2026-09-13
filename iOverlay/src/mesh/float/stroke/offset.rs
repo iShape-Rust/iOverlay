@@ -4,10 +4,9 @@ use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
-use crate::i_shape::source::resource::ShapeResource;
-use crate::mesh::stroke::builder::StrokeBuilder;
-use crate::mesh::stroke::offset::vec::Vec;
-use crate::mesh::style::StrokeStyle;
+use crate::mesh::float::stroke::builder::StrokeBuilder;
+use crate::mesh::float::stroke::offset::vec::Vec;
+use crate::mesh::float::style::StrokeStyle;
 use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
@@ -22,6 +21,7 @@ use i_shape::flat::float::FloatFlatContoursBuffer;
 use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Trait for generating stroke outlines from float paths.
 ///
@@ -31,8 +31,8 @@ use i_shape::float::simple::SimplifyContour;
 /// # Example
 ///
 /// ```
-/// use i_overlay::mesh::stroke::offset::StrokeOffset;
-/// use i_overlay::mesh::style::StrokeStyle;
+/// use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+/// use i_overlay::mesh::float::style::StrokeStyle;
 ///
 /// let path = [[0.0, 0.0], [10.0, 0.0]];
 /// let style = StrokeStyle::new(2.0);
@@ -585,8 +585,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::mesh::stroke::offset::StrokeOffset;
-    use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
+    use crate::mesh::float::stroke::offset::StrokeOffset;
+    use crate::mesh::float::style::{LineCap, LineJoin, StrokeStyle};
     use alloc::rc::Rc;
     use alloc::vec;
     use alloc::vec::Vec;
@@ -599,9 +599,7 @@ mod tests {
         // The template has zero width and height, but extends 100 radii
         // from the endpoint after rotation and translation.
         let cap = LineCap::Custom(Rc::from(vec![[100.0, 0.0]]));
-        let style = StrokeStyle::new(2.0)
-            .start_cap(cap.clone())
-            .end_cap(cap);
+        let style = StrokeStyle::new(2.0).start_cap(cap.clone()).end_cap(cap);
 
         let shapes = path.stroke(style, false);
 

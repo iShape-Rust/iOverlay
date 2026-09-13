@@ -9,7 +9,7 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::ShapeToFloat;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// The `FloatStringOverlay` struct is a builder for overlaying geometric shapes by converting
 /// floating-point geometry to integer space. It provides methods for adding paths and shapes,

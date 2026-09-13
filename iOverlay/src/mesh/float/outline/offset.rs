@@ -6,8 +6,8 @@ use crate::core::overlay::{ContourDirection, Overlay};
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
-use crate::mesh::outline::builder::OutlineBuilder;
-use crate::mesh::style::OutlineStyle;
+use crate::mesh::float::outline::builder::OutlineBuilder;
+use crate::mesh::float::style::OutlineStyle;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
@@ -24,7 +24,7 @@ use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::int_area::IntArea;
 use i_shape::float::simple::SimplifyContour;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Trait for offsetting float contours and shapes.
 ///
@@ -34,8 +34,8 @@ use i_shape::source::resource::ShapeResource;
 /// # Example
 ///
 /// ```
-/// use i_overlay::mesh::outline::offset::OutlineOffset;
-/// use i_overlay::mesh::style::OutlineStyle;
+/// use i_overlay::mesh::float::outline::offset::OutlineOffset;
+/// use i_overlay::mesh::float::style::OutlineStyle;
 ///
 /// let path = [[0.0, 0.0], [10.0, 0.0], [0.0, 10.0]];
 /// let style = OutlineStyle::new(1.0);
@@ -568,8 +568,8 @@ where
 mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::float::simplify::SimplifyShape;
-    use crate::mesh::outline::offset::OutlineOffset;
-    use crate::mesh::style::{LineJoin, OutlineStyle};
+    use crate::mesh::float::outline::offset::OutlineOffset;
+    use crate::mesh::float::style::{LineJoin, OutlineStyle};
     use alloc::vec;
     use alloc::vec::Vec;
     use core::f32::consts::PI;

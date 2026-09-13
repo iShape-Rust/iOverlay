@@ -1,9 +1,9 @@
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::OutlineStyle;
-use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
-use i_overlay::mesh::variable_stroke::offset::VariableStrokeOffset;
-use i_overlay::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::OutlineStyle;
+use i_overlay::mesh::float::style::{LineCap, LineJoin, StrokeStyle};
+use i_overlay::mesh::float::variable_stroke::offset::VariableStrokeOffset;
+use i_overlay::mesh::float::variable_stroke::{StrokeVertex, VariableStrokeStyle};
 
 fn contains(shapes: &[Vec<Vec<[f64; 2]>>], p: [f64; 2]) -> bool {
     shapes.iter().any(|shape| {

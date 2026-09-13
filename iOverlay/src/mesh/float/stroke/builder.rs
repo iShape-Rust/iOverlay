@@ -1,7 +1,9 @@
-use crate::mesh::stroke::builder_cap::CapBuilder;
-use crate::mesh::stroke::builder_join::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
-use crate::mesh::stroke::section::{Section, SectionToSegment};
-use crate::mesh::style::{LineJoin, StrokeStyle};
+use crate::mesh::float::stroke::builder_cap::CapBuilder;
+use crate::mesh::float::stroke::builder_join::{
+    BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder,
+};
+use crate::mesh::float::stroke::section::{Section, SectionToSegment};
+use crate::mesh::float::style::{LineJoin, StrokeStyle};
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::boxed::Box;
@@ -233,8 +235,8 @@ impl<J: JoinBuilder<P, I>, P: FloatPointCompatible, I: IntNumber> Builder<J, P, 
 
 #[cfg(test)]
 mod tests {
-    use crate::mesh::stroke::builder::StrokeBuilder;
-    use crate::mesh::style::StrokeStyle;
+    use crate::mesh::float::stroke::builder::StrokeBuilder;
+    use crate::mesh::float::style::StrokeStyle;
     use crate::segm::boolean::ShapeCountBoolean;
     use crate::segm::segment::Segment;
     use alloc::vec::Vec;
@@ -259,7 +261,7 @@ mod tests {
 #[cfg(test)]
 mod non_degenerate_tests {
     use super::*;
-    use crate::mesh::style::LineCap;
+    use crate::mesh::float::style::LineCap;
     use alloc::rc::Rc;
     use i_float::float::rect::FloatRect;
 

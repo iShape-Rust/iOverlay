@@ -4,9 +4,9 @@ use crate::core::overlay::Overlay;
 use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
-use crate::mesh::variable_stroke::builder::VariableStrokeBuilder;
-use crate::mesh::variable_stroke::resource::VariableStrokeSource;
-use crate::mesh::variable_stroke::style::VariableStrokeStyle;
+use crate::mesh::float::variable_stroke::builder::VariableStrokeBuilder;
+use crate::mesh::float::variable_stroke::resource::VariableStrokeSource;
+use crate::mesh::float::variable_stroke::style::VariableStrokeStyle;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
@@ -24,7 +24,7 @@ use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 
 #[cfg(feature = "variable_stroke_debug")]
-use crate::mesh::variable_stroke::VariableStrokeDebugResult;
+use crate::mesh::float::variable_stroke::VariableStrokeDebugResult;
 
 /// Builds round-cap, round-join strokes whose width is stored at each centerline vertex.
 pub trait VariableStrokeOffset<P>: VariableStrokeSource<P>
@@ -413,16 +413,16 @@ where
 mod tests {
     use super::VariableStrokeOffset;
     use crate::float::overlay::OverlayOptions;
-    use crate::mesh::stroke::offset::StrokeOffset;
-    use crate::mesh::style::{LineCap, LineJoin, StrokeStyle};
-    use crate::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
+    use crate::mesh::float::stroke::offset::StrokeOffset;
+    use crate::mesh::float::style::{LineCap, LineJoin, StrokeStyle};
+    use crate::mesh::float::variable_stroke::{StrokeVertex, VariableStrokeStyle};
     use alloc::vec;
     use alloc::vec::Vec;
     use i_shape::flat::float::FloatFlatContoursBuffer;
     use i_shape::float::area::Area;
 
     #[cfg(feature = "variable_stroke_debug")]
-    use crate::mesh::variable_stroke::{VariableStrokeDebug, VariableStrokeDebugEdgeKind};
+    use crate::mesh::float::variable_stroke::{VariableStrokeDebug, VariableStrokeDebugEdgeKind};
 
     #[cfg(feature = "variable_stroke_debug")]
     #[test]

@@ -1,4 +1,4 @@
-use crate::mesh::math::Math;
+use crate::mesh::float::math::Math;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec::Vec;

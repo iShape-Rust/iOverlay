@@ -1,9 +1,9 @@
-use crate::mesh::math::Math;
-use crate::mesh::outline::builder_join::JoinBuilder;
-use crate::mesh::outline::builder_join::{BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
-use crate::mesh::outline::section::OffsetSection;
-use crate::mesh::outline::uniq_iter::{UniqueSegment, UniqueSegmentsIter};
-use crate::mesh::style::LineJoin;
+use crate::mesh::float::math::Math;
+use crate::mesh::float::outline::builder_join::JoinBuilder;
+use crate::mesh::float::outline::builder_join::{BevelJoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
+use crate::mesh::float::outline::section::OffsetSection;
+use crate::mesh::float::style::LineJoin;
+use crate::mesh::uniq_iter::{UniqueSegment, UniqueSegmentsIter};
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::boxed::Box;
@@ -219,8 +219,8 @@ impl<T> VecPushSome<T> for Vec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::mesh::outline::builder::OutlineBuilder;
-    use crate::mesh::style::LineJoin;
+    use crate::mesh::float::outline::builder::OutlineBuilder;
+    use crate::mesh::float::style::LineJoin;
     use crate::segm::boolean::ShapeCountBoolean;
     use crate::segm::segment::Segment;
     use alloc::vec::Vec;

@@ -9,7 +9,7 @@ use i_float::adapter::{FloatPointAdapter, FloatPointAdapterScaleError};
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_shape::base::data::Shapes;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 #[derive(Debug, Clone, Copy)]
 pub enum FixedScaleOverlayError {

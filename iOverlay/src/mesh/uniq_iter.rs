@@ -106,7 +106,7 @@ fn include_point<I: IntNumber>(p0: IntPoint<I>, p1: IntPoint<I>, p2: IntPoint<I>
 }
 #[cfg(test)]
 mod tests {
-    use crate::mesh::outline::uniq_iter::{UniqueSegment, UniqueSegmentsIter};
+    use crate::mesh::uniq_iter::{UniqueSegment, UniqueSegmentsIter};
     use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
     use i_shape::int_path;

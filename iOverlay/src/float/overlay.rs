@@ -9,7 +9,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
 use crate::float::hierarchy::FloatFlatShapeHierarchy;
-use crate::i_shape::source::resource::ShapeResource;
+use crate::i_shape::source::float::resource::ShapeResource;
 use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;

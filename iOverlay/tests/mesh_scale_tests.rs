@@ -1,9 +1,9 @@
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::float::overlay::FloatOverlay;
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineJoin, OutlineStyle, StrokeStyle};
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::{LineJoin, OutlineStyle, StrokeStyle};
 
 fn normalized_area(shapes: &[Vec<Vec<[f64; 2]>>], scale: f64) -> f64 {
     shapes

@@ -7,7 +7,7 @@ use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::rule::StringRule;
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Shapes;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// The `FloatSlice` trait provides methods to slice geometric shapes using a given path or set of paths,
 /// allowing for boolean operations based on the specified build rule.

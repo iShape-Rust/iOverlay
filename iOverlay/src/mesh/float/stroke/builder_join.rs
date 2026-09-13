@@ -1,6 +1,6 @@
-use crate::mesh::miter::{Miter, SharpMiter};
-use crate::mesh::rotator::Rotator;
-use crate::mesh::stroke::section::Section;
+use crate::mesh::float::miter::{Miter, SharpMiter};
+use crate::mesh::float::rotator::Rotator;
+use crate::mesh::float::stroke::section::Section;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec::Vec;
@@ -305,7 +305,7 @@ impl<P: FloatPointCompatible, I: IntNumber> JoinBuilder<P, I> for RoundJoinBuild
 #[cfg(test)]
 mod tests {
     use super::{BevelJoinBuilder, JoinBuilder, MiterJoinBuilder, RoundJoinBuilder};
-    use crate::mesh::stroke::section::Section;
+    use crate::mesh::float::stroke::section::Section;
     use crate::segm::boolean::ShapeCountBoolean;
     use crate::segm::segment::Segment;
     use alloc::vec::Vec;

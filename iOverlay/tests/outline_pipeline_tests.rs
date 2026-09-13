@@ -1,7 +1,7 @@
 use i_overlay::float::overlay::OverlayOptions;
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineJoin, OutlineStyle, StrokeStyle};
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::{LineJoin, OutlineStyle, StrokeStyle};
 use i_shape::flat::float::FloatFlatContoursBuffer;
 
 fn rectangle(x0: f64, y0: f64, x1: f64, y1: f64) -> Vec<[f64; 2]> {

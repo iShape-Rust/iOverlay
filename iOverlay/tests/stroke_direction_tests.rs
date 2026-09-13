@@ -1,5 +1,5 @@
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineJoin, StrokeStyle};
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::{LineJoin, StrokeStyle};
 
 fn canonical(shapes: Vec<Vec<Vec<[f64; 2]>>>) -> Vec<Vec<Vec<[i64; 2]>>> {
     let mut shapes: Vec<Vec<Vec<[i64; 2]>>> = shapes

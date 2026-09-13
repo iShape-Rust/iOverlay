@@ -1,6 +1,6 @@
-use crate::mesh::rotator::Rotator;
-use crate::mesh::stroke::section::Section;
-use crate::mesh::style::LineCap;
+use crate::mesh::float::rotator::Rotator;
+use crate::mesh::float::stroke::section::Section;
+use crate::mesh::float::style::LineCap;
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec;
@@ -146,7 +146,7 @@ mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::core::overlay::Overlay;
     use crate::core::overlay_rule::OverlayRule;
-    use crate::mesh::stroke::section::SectionToSegment;
+    use crate::mesh::float::stroke::section::SectionToSegment;
     use i_float::float::rect::FloatRect;
 
     #[test]

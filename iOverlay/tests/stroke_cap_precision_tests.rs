@@ -1,6 +1,6 @@
 use i_overlay::float::overlay::OverlayOptions;
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineCap, StrokeStyle};
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::{LineCap, StrokeStyle};
 
 #[test]
 fn round_caps_survive_coarse_integer_grid() {

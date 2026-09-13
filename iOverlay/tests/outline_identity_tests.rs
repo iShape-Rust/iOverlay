@@ -3,8 +3,8 @@ use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::{ContourDirection, Overlay};
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::float::overlay::OverlayOptions;
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::style::OutlineStyle;
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::style::OutlineStyle;
 
 type Shapes = Vec<Vec<Vec<IntPoint>>>;
 

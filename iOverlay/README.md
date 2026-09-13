@@ -490,12 +490,18 @@ println!("result: {:?}", result);
 
 ## Buffering
 
+Floating-point outline, stroke, and variable-width stroke APIs live under `mesh::float`.
+Integer outline lives under `mesh::int::outline`, with styles in `mesh::int::style`.
+Integer outline currently supports bevel joins; miter and round joins return `UnsupportedJoin`.
+Use `validate_outline(&style)` for an optional conservative coordinate-range check.
+Integer construction asserts the bounds in debug builds and trusts the caller in release builds.
+
 ### Offsetting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
 
 ```rust
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::{LineCap, LineJoin, StrokeStyle};
 
 let path = [
     [ 2.0, 1.0],
@@ -523,8 +529,8 @@ println!("result: {:?}", shapes);
 <img src="readme/example_offseting_polygon.svg" alt="Path Example" style="width:400px;">
 
 ```rust
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::style::{LineJoin, OutlineStyle};
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::style::{LineJoin, OutlineStyle};
 
 let shape = vec![
     vec![

@@ -1,6 +1,6 @@
-use crate::mesh::rotator::Rotator;
-use crate::mesh::variable_stroke::section::{RadiusTrend, Section};
-use crate::mesh::variable_stroke::style::{StrokeVertex, VariableStrokeStyle};
+use crate::mesh::float::rotator::Rotator;
+use crate::mesh::float::variable_stroke::section::{RadiusTrend, Section};
+use crate::mesh::float::variable_stroke::style::{StrokeVertex, VariableStrokeStyle};
 use crate::segm::boolean::ShapeCountBoolean;
 use crate::segm::segment::Segment;
 use alloc::vec::Vec;
@@ -14,7 +14,7 @@ use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 
 #[cfg(feature = "variable_stroke_debug")]
-use crate::mesh::variable_stroke::{VariableStrokeDebugEdge, VariableStrokeDebugEdgeKind};
+use crate::mesh::float::variable_stroke::{VariableStrokeDebugEdge, VariableStrokeDebugEdgeKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Cap {
@@ -587,10 +587,10 @@ impl<P: FloatPointCompatible, I: IntNumber> SegmentBuilder<'_, P, I> {
 mod tests {
     use super::{ArcSweep, Cap, SegmentBuilder, SubSegment, VariableStrokeBuilder};
     #[cfg(feature = "variable_stroke_debug")]
-    use crate::mesh::variable_stroke::VariableStrokeDebugEdgeKind;
-    use crate::mesh::variable_stroke::offset::VariableStrokeOffset;
-    use crate::mesh::variable_stroke::section::Section;
-    use crate::mesh::variable_stroke::style::{StrokeVertex, VariableStrokeStyle};
+    use crate::mesh::float::variable_stroke::VariableStrokeDebugEdgeKind;
+    use crate::mesh::float::variable_stroke::offset::VariableStrokeOffset;
+    use crate::mesh::float::variable_stroke::section::Section;
+    use crate::mesh::float::variable_stroke::style::{StrokeVertex, VariableStrokeStyle};
     use crate::segm::boolean::ShapeCountBoolean;
     use crate::segm::segment::Segment;
     use alloc::vec;

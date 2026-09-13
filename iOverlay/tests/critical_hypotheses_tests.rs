@@ -6,8 +6,8 @@ use i_overlay::core::overlay::ShapeType;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::core::relate::PredicateOverlay;
 use i_overlay::core::solver::Solver;
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::StrokeStyle;
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::StrokeStyle;
 
 fn rectangle(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<IntPoint> {
     vec![

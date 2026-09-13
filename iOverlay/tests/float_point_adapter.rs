@@ -6,7 +6,7 @@ mod tests {
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::float::overlay::FloatOverlay;
-    use i_shape::source::resource::ShapeResource;
+    use i_shape::source::float::resource::ShapeResource;
 
     #[test]
     fn test_adapter_with_rect() {

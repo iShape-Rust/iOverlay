@@ -5,7 +5,7 @@ use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Float-coordinate wrapper for spatial predicate evaluation.
 ///

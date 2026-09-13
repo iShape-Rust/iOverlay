@@ -2,8 +2,8 @@ use i_float::int::point::IntPoint;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::style::OutlineStyle;
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::style::OutlineStyle;
 
 fn area(shapes: &[Vec<Vec<[f64; 2]>>]) -> f64 {
     shapes

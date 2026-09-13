@@ -1,4 +1,4 @@
-use crate::mesh::variable_stroke::style::StrokeVertex;
+use crate::mesh::float::variable_stroke::style::StrokeVertex;
 use alloc::vec::Vec;
 use i_float::float::compatible::FloatPointCompatible;
 
@@ -187,7 +187,7 @@ impl<'b, P: FloatPointCompatible> VariableStrokeSource<P> for &'b [Vec<StrokeVer
 #[cfg(test)]
 mod tests {
     use super::VariableStrokeSource;
-    use crate::mesh::variable_stroke::StrokeVertex;
+    use crate::mesh::float::variable_stroke::StrokeVertex;
     use alloc::vec;
     use alloc::vec::Vec;
 

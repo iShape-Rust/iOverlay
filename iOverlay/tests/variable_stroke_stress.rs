@@ -1,5 +1,5 @@
-use i_overlay::mesh::variable_stroke::offset::VariableStrokeOffset;
-use i_overlay::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
+use i_overlay::mesh::float::variable_stroke::offset::VariableStrokeOffset;
+use i_overlay::mesh::float::variable_stroke::{StrokeVertex, VariableStrokeStyle};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::{Duration, Instant};
 
