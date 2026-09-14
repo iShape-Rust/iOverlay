@@ -1,8 +1,10 @@
+use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
+use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::float::style::StrokeStyle;
-use crate::mesh::int::stroke::offset::IntStrokeOffset;
+use crate::mesh::int::stroke::offset::build_stroke_overlay_iter;
 use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
@@ -14,7 +16,7 @@ use i_float::int::number::wide_int::WideIntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
-use i_shape::float::adapter::{ResourceToInt, ShapesToFloat};
+use i_shape::float::adapter::ShapesToFloat;
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::float::resource::ShapeResource;
@@ -492,11 +494,17 @@ where
             return vec![];
         }
 
-        let paths = source.to_int_paths(&self.adapter);
+        let paths = source
+            .iter_paths()
+            .map(|path| path.iter().map(|p| self.adapter.float_to_int(p)));
         let style = self.style.to_int(&self.adapter);
-        let shapes = paths
-            .stroke_custom(&style, is_closed_path, options.int_with_adapter(&self.adapter))
-            .expect("valid integer stroke");
+        let shapes = build_stroke_overlay_iter(
+            paths,
+            &style,
+            is_closed_path,
+            options.int_with_adapter(&self.adapter),
+        )
+        .overlay(OverlayRule::Subject, FillRule::Positive);
 
         let mut float = shapes.to_float(&self.adapter);
 
@@ -525,17 +533,18 @@ where
             return;
         }
 
-        let paths = source.to_int_paths(&self.adapter);
+        let paths = source
+            .iter_paths()
+            .map(|path| path.iter().map(|p| self.adapter.float_to_int(p)));
         let style = self.style.to_int(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        paths
-            .stroke_custom_into(
-                &style,
-                is_closed_path,
-                options.int_with_adapter(&self.adapter),
-                &mut int_output,
-            )
-            .expect("valid integer stroke");
+        build_stroke_overlay_iter(
+            paths,
+            &style,
+            is_closed_path,
+            options.int_with_adapter(&self.adapter),
+        )
+        .overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
 
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);

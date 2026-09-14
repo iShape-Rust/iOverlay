@@ -87,7 +87,7 @@ impl<T: FloatNumber> From<&LineJoin<T>> for IntLineJoin {
 
 impl<T: FloatNumber> LineJoin<T> {
     /// Conservative multiplier for the join's reach relative to the offset radius.
-    pub(super) fn padding(&self) -> f64 {
+    pub(super) fn padding_factor(&self) -> f64 {
         match IntLineJoin::from(self) {
             IntLineJoin::Miter(minimum) => {
                 let sin = Angle::from_bits(minimum.bits() / 2).sin() as f64;
@@ -193,14 +193,14 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
             }
             _ => 1.1,
         };
-        P::Scalar::from_float(
-            0.5 * self.width.to_f64().max(0.0)
-                * self
-                    .join
-                    .padding()
-                    .max(cap(&self.start_cap))
-                    .max(cap(&self.end_cap)),
-        )
+        let r = 0.5 * self.width.to_f64().max(0.0);
+
+        let join_factor = self.join.padding_factor();
+        let start_cap_factor = cap(&self.start_cap);
+        let end_cap_factor = cap(&self.start_cap);
+
+        let factor = join_factor.max(start_cap_factor).max(end_cap_factor);
+        P::Scalar::from_float(r * factor)
     }
 }
 

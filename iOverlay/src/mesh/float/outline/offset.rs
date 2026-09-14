@@ -414,7 +414,8 @@ where
         }
 
         let additional_offset = P::Scalar::from_float(
-            (style.outer_offset.to_f64().abs() + style.inner_offset.to_f64().abs()) * style.join.padding(),
+            (style.outer_offset.to_f64().abs() + style.inner_offset.to_f64().abs())
+                * style.join.padding_factor(),
         );
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
         rect.add_offset(additional_offset);

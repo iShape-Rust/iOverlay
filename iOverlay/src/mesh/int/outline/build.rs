@@ -1,4 +1,4 @@
-use super::bounds;
+use super::bounds::OutlineBounds;
 use super::builder::OutlineBuilder;
 use super::builder_join::JoinBuilder;
 use super::offset::IntOutlineError;
@@ -23,7 +23,7 @@ pub(super) trait BuildOutlineOverlay<I: OverlayInt>: IntShapeResource<I> {
         options: IntOverlayOptions<I::WideUInt>,
     ) -> Result<Overlay<I>, IntOutlineError> {
         debug_assert!(
-            bounds::validate(self, style).is_ok(),
+            self.validate_outline_bounds(style).is_ok(),
             "outline bounds exceed the safe coordinate range"
         );
         Ok(self.build_overlay_with_builders(

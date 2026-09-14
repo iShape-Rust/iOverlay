@@ -154,19 +154,23 @@ impl<I: IntNumber> StrokeBuilder<I> {
     }
     pub(super) fn build(
         &mut self,
-        path: &[IntPoint<I>],
+        path: impl IntoIterator<Item = IntPoint<I>>,
         closed: bool,
         segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
     ) {
         self.sections.clear();
         if self.radius <= I::ONE {
+            // Still consume points for the caller's debug range validation.
+            #[cfg(debug_assertions)]
+            for _ in path {}
             return;
         }
-        let Some(&first) = path.first() else {
+        let mut path = path.into_iter();
+        let Some(first) = path.next() else {
             return;
         };
         let mut previous = first;
-        for &next in &path[1..] {
+        for next in path {
             if previous != next {
                 self.sections.push(Section::new(previous, next, self.radius));
                 previous = next;
@@ -276,7 +280,7 @@ mod tests {
                                 end,
                             ];
                             let mut segments = Vec::new();
-                            builder.build(&path, closed, &mut segments);
+                            builder.build(path, closed, &mut segments);
                             assert!(segments.iter().all(|s| s.x_segment.a < s.x_segment.b));
                             if width >= 4 {
                                 assert!(!segments.is_empty());

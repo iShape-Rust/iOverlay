@@ -1,5 +1,5 @@
 //! Integer outline construction used directly and by the float adapter.
-use super::bounds;
+use super::bounds::OutlineBounds;
 use super::build::BuildOutlineOverlay;
 use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
@@ -68,7 +68,7 @@ pub trait IntOutlineOffset<I: OverlayInt>: IntShapeResource<I> {
     /// would fit. Empty input passes. This does not validate
     /// winding, topology, or the accumulated area of repeated winding.
     fn validate_outline(&self, style: &IntOutlineStyle<I>) -> Result<(), IntOutlineError> {
-        bounds::validate(self, style)
+        self.validate_outline_bounds(style)
     }
 
     fn outline(&self, style: &IntOutlineStyle<I>) -> Result<IntShapes<I>, IntOutlineError> {
