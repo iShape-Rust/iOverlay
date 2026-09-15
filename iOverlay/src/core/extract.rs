@@ -130,7 +130,6 @@ where
             .reserve(buffer.visited.len().saturating_sub(buffer.points.len()));
 
         let mut link_index = 0;
-        let mut anchors_already_sorted = true;
         while link_index < buffer.visited.len() {
             if buffer.visited.is_visited(link_index) {
                 link_index += 1;
@@ -160,10 +159,7 @@ where
                 &mut buffer.visited,
                 &mut buffer.points,
             );
-            let (is_valid, is_modified) = buffer.points.validate(
-                self.options.min_output_area,
-                self.options.preserve_output_collinear,
-            );
+            let is_valid = buffer.points.validate(self.options.min_output_area);
 
             if !is_valid {
                 link_index += 1;
@@ -174,15 +170,7 @@ where
 
             if is_hole {
                 let left_bottom = if clockwise { contour[1] } else { contour[0] };
-                let mut v_segment = contour.left_bottom_segment_from(left_bottom);
-
-                if is_modified {
-                    let most_left = contour.left_bottom_segment();
-                    if most_left != v_segment {
-                        v_segment = most_left;
-                        anchors_already_sorted = false;
-                    }
-                };
+                let v_segment = contour.left_bottom_segment_from(left_bottom);
 
                 debug_assert!(v_segment == contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
@@ -193,11 +181,11 @@ where
             }
         }
 
-        if !anchors_already_sorted {
-            anchors.sort_unstable_by_key(|s0| s0.v_segment.a);
-        }
-
         shapes.join_sorted_holes(holes, anchors, clockwise);
+
+        if !self.options.preserve_output_collinear {
+            shapes.simplify_contour();
+        }
 
         shapes
     }
@@ -277,10 +265,7 @@ where
                 &mut buffer.visited,
                 &mut buffer.points,
             );
-            let (is_valid, _) = buffer.points.validate(
-                self.options.min_output_area,
-                self.options.preserve_output_collinear,
-            );
+            let is_valid = buffer.points.validate(self.options.min_output_area);
 
             if !is_valid {
                 link_index += 1;
@@ -321,31 +306,25 @@ impl<I: IntNumber> StartPathData<I> {
 }
 
 pub(crate) trait GraphContour<I: IntNumber> {
-    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool);
+    fn validate(&mut self, min_output_area: I::WideUInt) -> bool;
     fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
 }
 
 impl<I: IntNumber> GraphContour<I> for IntContour<I> {
     #[inline]
-    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool) {
-        let is_modified = if !preserve_output_collinear {
-            self.simplify_contour()
-        } else {
-            false
-        };
-
+    fn validate(&mut self, min_output_area: I::WideUInt) -> bool {
         if self.len() < 3 {
-            return (false, is_modified);
+            return false;
         }
 
         if min_output_area == I::WideUInt::ZERO {
-            return (true, is_modified);
+            return true;
         }
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() >> 1;
         let is_valid = abs_area >= min_output_area;
 
-        (is_valid, is_modified)
+        is_valid
     }
 
     #[inline]
