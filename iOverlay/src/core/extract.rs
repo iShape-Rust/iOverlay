@@ -67,6 +67,19 @@ where
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer<I>,
     ) -> IntShapes<I> {
+        let mut shapes = self.extract_shapes_with_collinear(overlay_rule, buffer);
+        if !self.options.preserve_output_collinear {
+            shapes.simplify_contour();
+        }
+        shapes
+    }
+
+    // Keep shared vertices until every binding step has finished.
+    fn extract_shapes_with_collinear(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> IntShapes<I> {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ogc {
@@ -87,8 +100,8 @@ where
         buffer: &mut BooleanExtractionBuffer<I>,
     ) -> FlatShapeHierarchy<I> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
-        let shapes = self.extract_shapes(overlay_rule, buffer);
-        FlatShapeHierarchy::from_shapes(shapes, clockwise)
+        let shapes = self.extract_shapes_with_collinear(overlay_rule, buffer);
+        FlatShapeHierarchy::from_shapes(shapes, clockwise, self.options.preserve_output_collinear)
     }
 
     /// Extracts the flat contours from the overlay graph based on the specified overlay rule.
@@ -130,7 +143,6 @@ where
             .reserve(buffer.visited.len().saturating_sub(buffer.points.len()));
 
         let mut link_index = 0;
-        let mut anchors_already_sorted = true;
         while link_index < buffer.visited.len() {
             if buffer.visited.is_visited(link_index) {
                 link_index += 1;
@@ -160,10 +172,7 @@ where
                 &mut buffer.visited,
                 &mut buffer.points,
             );
-            let (is_valid, is_modified) = buffer.points.validate(
-                self.options.min_output_area,
-                self.options.preserve_output_collinear,
-            );
+            let is_valid = buffer.points.validate(self.options.min_output_area);
 
             if !is_valid {
                 link_index += 1;
@@ -174,15 +183,7 @@ where
 
             if is_hole {
                 let left_bottom = if clockwise { contour[1] } else { contour[0] };
-                let mut v_segment = contour.left_bottom_segment_from(left_bottom);
-
-                if is_modified {
-                    let most_left = contour.left_bottom_segment();
-                    if most_left != v_segment {
-                        v_segment = most_left;
-                        anchors_already_sorted = false;
-                    }
-                };
+                let v_segment = contour.left_bottom_segment_from(left_bottom);
 
                 debug_assert!(v_segment == contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
@@ -191,10 +192,6 @@ where
             } else {
                 shapes.push(vec![contour]);
             }
-        }
-
-        if !anchors_already_sorted {
-            anchors.sort_unstable_by_key(|s0| s0.v_segment.a);
         }
 
         shapes.join_sorted_holes(holes, anchors, clockwise);
@@ -277,16 +274,21 @@ where
                 &mut buffer.visited,
                 &mut buffer.points,
             );
-            let (is_valid, _) = buffer.points.validate(
-                self.options.min_output_area,
-                self.options.preserve_output_collinear,
-            );
+            let is_valid = buffer.points.validate(self.options.min_output_area);
 
             if !is_valid {
                 link_index += 1;
                 continue;
             }
 
+            // Flat output has no binding step. Simplify only when exporting
+            // the contour, and discard contours that collapse during cleanup.
+            if !self.options.preserve_output_collinear {
+                buffer.points.simplify_contour();
+                if buffer.points.len() < 3 {
+                    continue;
+                }
+            }
             output.add_contour(buffer.points.as_slice());
         }
     }
@@ -321,31 +323,24 @@ impl<I: IntNumber> StartPathData<I> {
 }
 
 pub(crate) trait GraphContour<I: IntNumber> {
-    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool);
+    fn validate(&mut self, min_output_area: I::WideUInt) -> bool;
     fn push_node_and_get_other<D>(&mut self, link: &OverlayLink<I, D>, node_id: usize) -> usize;
 }
 
 impl<I: IntNumber> GraphContour<I> for IntContour<I> {
     #[inline]
-    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool) {
-        let is_modified = if !preserve_output_collinear {
-            self.simplify_contour()
-        } else {
-            false
-        };
-
+    fn validate(&mut self, min_output_area: I::WideUInt) -> bool {
         if self.len() < 3 {
-            return (false, is_modified);
+            return false;
         }
 
         if min_output_area == I::WideUInt::ZERO {
-            return (true, is_modified);
+            return true;
         }
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() >> 1;
-        let is_valid = abs_area >= min_output_area;
 
-        (is_valid, is_modified)
+        abs_area >= min_output_area
     }
 
     #[inline]

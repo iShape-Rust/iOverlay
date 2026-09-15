@@ -265,6 +265,18 @@ where
         }
     }
 
+    #[inline]
+    fn update_adapter(&mut self, adapter: FloatPointAdapter<P, I>) {
+        if self.overlay.options.min_output_area != I::WideUInt::ZERO {
+            let inv_scale = self.adapter.inv_scale().to_f64();
+            let area = self.overlay.options.min_output_area.to_f64() * inv_scale * inv_scale;
+            self.overlay.options.min_output_area = adapter
+                .round_sqr_len_to_int(P::Scalar::from_float(area))
+                .to_uint();
+        }
+        self.adapter = adapter;
+    }
+
     /// Reinit `FloatOverlay` instance and initializes it with subject and clip shapes.
     /// - `subj`: A `ShapeResource` that define the subject.
     /// - `clip`: A `ShapeResource` that define the clip.
@@ -272,6 +284,13 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    ///
+    /// The current integer `min_output_area` is converted back to float area using
+    /// the previous adapter, then rounded to the new adapter's integer scale.
+    /// This approximately preserves the threshold in float units; repeated reinitialization
+    /// can lose precision. A threshold rounded to zero stays zero on subsequent calls.
+    /// An overlay created with `new_empty` starts with a zero threshold, so the
+    /// `min_output_area` originally passed to `new_empty` is not restored.
     pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
     where
         R0: ShapeResource<P> + ?Sized,
@@ -280,7 +299,7 @@ where
         self.clear();
 
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        self.adapter = FloatPointAdapter::with_iter(iter);
+        self.update_adapter(FloatPointAdapter::with_iter(iter));
         self.add_source(subj, ShapeType::Subject);
         self.add_source(clip, ShapeType::Clip);
     }
@@ -291,14 +310,20 @@ where
     ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
     ///     - `Contours`: A collection of contours, each representing a closed path.
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    ///
+    /// The current integer `min_output_area` is converted back to float area using
+    /// the previous adapter, then rounded to the new adapter's integer scale.
+    /// This approximately preserves the threshold in float units; repeated reinitialization
+    /// can lose precision. A threshold rounded to zero stays zero on subsequent calls.
+    /// An overlay created with `new_empty` starts with a zero threshold, so the
+    /// `min_output_area` originally passed to `new_empty` is not restored.
     pub fn reinit_with_subj<R>(&mut self, subj: &R)
     where
         R: ShapeResource<P> + ?Sized,
     {
         self.clear();
-
         let iter = subj.iter_paths().flatten();
-        self.adapter = FloatPointAdapter::with_iter(iter);
+        self.update_adapter(FloatPointAdapter::with_iter(iter));
         self.add_source(subj, ShapeType::Subject);
     }
 

@@ -56,7 +56,6 @@ where
         let mut anchors = Vec::new();
 
         let mut link_index = 0;
-        let mut anchors_already_sorted = true;
         while link_index < buffer.visited.len() {
             if buffer.visited.is_visited(link_index) {
                 link_index += 1;
@@ -82,10 +81,7 @@ where
 
             let mut contour =
                 self.find_vector_contour(start_data, direction, visited_state, &mut buffer.visited, store);
-            let (is_valid, is_modified) = contour.validate(
-                self.options.min_output_area,
-                self.options.preserve_output_collinear,
-            );
+            let is_valid = contour.validate(self.options.min_output_area);
 
             if !is_valid {
                 link_index += 1;
@@ -94,16 +90,7 @@ where
 
             if is_hole {
                 let left_bottom = if clockwise { contour[1].a } else { contour[0].a };
-                let mut v_segment = most_left_bottom_from(&contour, left_bottom);
-
-                if is_modified {
-                    let most_left = most_left_bottom(&contour);
-                    if most_left != v_segment {
-                        v_segment = most_left;
-                        anchors_already_sorted = false;
-                    }
-                };
-
+                let v_segment = most_left_bottom_from(&contour, left_bottom);
                 debug_assert!(v_segment == most_left_bottom(&contour));
                 let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id_data, v_segment));
@@ -113,11 +100,11 @@ where
             }
         }
 
-        if !anchors_already_sorted {
-            anchors.sort_by_key(|s0| s0.v_segment.a);
-        }
-
         shapes.join_sorted_holes(holes, anchors, clockwise);
+
+        if !self.options.preserve_output_collinear {
+            shapes.simplify_contour();
+        }
 
         shapes
     }
@@ -340,7 +327,7 @@ fn is_sorted<I: IntNumber>(segments: &[IdSegment<I>]) -> bool {
 }
 
 trait DataGraphContour<I: IntNumber, D: OverlayEdgeData> {
-    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool);
+    fn validate(&mut self, min_output_area: I::WideUInt) -> bool;
     fn push_node_and_get_other(
         &mut self,
         link: &OverlayLink<I, D>,
@@ -351,19 +338,13 @@ trait DataGraphContour<I: IntNumber, D: OverlayEdgeData> {
 
 impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath<I, D> {
     #[inline]
-    fn validate(&mut self, min_output_area: I::WideUInt, preserve_output_collinear: bool) -> (bool, bool) {
-        let is_modified = if !preserve_output_collinear {
-            self.simplify_contour()
-        } else {
-            false
-        };
-
+    fn validate(&mut self, min_output_area: I::WideUInt) -> bool {
         if self.len() < 3 {
-            return (false, is_modified);
+            return false;
         }
 
         if min_output_area == I::WideUInt::ZERO {
-            return (true, is_modified);
+            return true;
         }
 
         // A spiral can overflow a partial shoelace sum even though its final
@@ -373,7 +354,7 @@ impl<I: IntNumber, D: OverlayEdgeData> DataGraphContour<I, D> for DataVectorPath
             acc.wrapping_add(edge.a.cross_product(edge.b))
         });
 
-        ((double_area.unsigned_abs() >> 1) >= min_output_area, is_modified)
+        (double_area.unsigned_abs() >> 1) >= min_output_area
     }
 
     #[inline]

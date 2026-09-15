@@ -55,7 +55,7 @@ impl<I: IntNumber> Split<I> for IntContour<I> {
             }
         }
 
-        if contour_buffer.len() > 2 {
+        if contour_buffer.len() > 2 && contour_buffer.validate_area(min_area) {
             result.push(contour_buffer.as_slice().to_vec());
         }
 
@@ -171,7 +171,7 @@ impl<I: IntNumber> ValidateArea<I> for IntContour<I> {
             return true;
         }
         let abs_area = self.unsafe_area().unsigned_abs() >> 1;
-        abs_area < min_area
+        abs_area >= min_area
     }
 }
 

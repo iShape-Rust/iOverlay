@@ -102,7 +102,6 @@ where
 
             let mut holes = Vec::with_capacity(hole_count_hint);
             let mut anchors = Vec::with_capacity(hole_count_hint);
-            let mut anchors_already_sorted = true;
             link_index = 0;
 
             while link_index < buffer.visited.len() {
@@ -134,10 +133,7 @@ where
                     &mut buffer.points,
                 );
 
-                let (is_valid, is_modified) = buffer.points.validate(
-                    self.options.min_output_area,
-                    self.options.preserve_output_collinear,
-                );
+                let is_valid = buffer.points.validate(self.options.min_output_area);
 
                 if !is_valid {
                     link_index += 1;
@@ -146,24 +142,12 @@ where
                 let contour = buffer.points.as_slice().to_vec();
 
                 let left_bottom = if is_main_dir_cw { contour[1] } else { contour[0] };
-                let mut v_segment = contour.left_bottom_segment_from(left_bottom);
-
-                if is_modified {
-                    let most_left = contour.left_bottom_segment();
-                    if most_left != v_segment {
-                        v_segment = most_left;
-                        anchors_already_sorted = false;
-                    }
-                };
+                let v_segment = contour.left_bottom_segment_from(left_bottom);
 
                 debug_assert!(v_segment == contour.left_bottom_segment());
                 let id_data = ContourIndex::new_hole(holes.len());
                 anchors.push(IdSegment::with_segment(id_data, v_segment));
                 holes.push(contour);
-            }
-
-            if !anchors_already_sorted {
-                anchors.sort_unstable_by_key(|s0| s0.v_segment.a);
             }
 
             shapes.join_sorted_holes(holes, anchors, is_main_dir_cw);
@@ -224,6 +208,7 @@ where
 
         // First, mark all edges that belong to the contour.
 
+        let mut start_link_id = start_data.link_id;
         let mut end_link_id = start_data.link_id;
 
         global_visited.visit_edge(link_id, VisitState::HullVisited);
@@ -263,6 +248,7 @@ where
                 link.a.id
             };
             end_link_id = end_link_id.max(link_id);
+            start_link_id = start_link_id.min(link_id);
             contour_visited.visit_edge(link_id, VisitState::Unvisited);
             global_visited.visit_edge(link_id, VisitState::HullVisited);
             original_contour_len += 1;
@@ -280,10 +266,7 @@ where
             points,
         );
 
-        let (is_valid, _) = points.validate(
-            self.options.min_output_area,
-            self.options.preserve_output_collinear,
-        );
+        let is_valid = points.validate(self.options.min_output_area);
 
         let contour_len = points.len();
 
@@ -298,7 +281,8 @@ where
 
         if contour_len < original_contour_len {
             // contour has self touches
-            let mut link_index = start_data.link_id;
+            let mut link_index = start_link_id;
+
             while link_index <= end_link_id {
                 if contour_visited.is_visited(link_index) {
                     link_index += 1;
@@ -318,10 +302,10 @@ where
 
                 // Self-touch splits can only produce holes inside this contour.
 
-                let hole_start_data = StartPathData::new(clockwise, link, left_top_link);
+                let hole_start_data = StartPathData::new(!clockwise, link, left_top_link);
                 self.find_contour(
                     &hole_start_data,
-                    clockwise,
+                    !clockwise,
                     VisitState::HoleVisited,
                     contour_visited,
                     points,
@@ -329,10 +313,7 @@ where
 
                 // Hole have to belong to this shape.
                 if let Some(shape) = shape.as_mut() {
-                    let (is_valid, _) = points.validate(
-                        self.options.min_output_area,
-                        self.options.preserve_output_collinear,
-                    );
+                    let is_valid = points.validate(self.options.min_output_area);
 
                     if !is_valid {
                         link_index += 1;
