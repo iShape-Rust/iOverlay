@@ -7,6 +7,7 @@ use i_key_sort::sort::two_keys_cmp::TwoKeysAndCmpSort;
 use i_shape::flat::buffer::FlatShapesBuffer;
 use i_shape::int::count::PointsCount;
 use i_shape::int::shape::IntShapes;
+use i_shape::int::simple::Simplify;
 use i_tree::Expiration;
 
 /// A direct relationship between a hole contour and a shape nested inside it.
@@ -44,8 +45,26 @@ impl<I> FlatShapeHierarchy<I>
 where
     I: IntNumber + Expiration + SortKey,
 {
-    pub(crate) fn from_shapes(shapes: IntShapes<I>, clockwise: bool) -> Self {
+    pub(crate) fn from_shapes(
+        mut shapes: IntShapes<I>,
+        clockwise: bool,
+        preserve_output_collinear: bool,
+    ) -> Self {
         let links = Self::bind_links(&shapes, clockwise);
+        if !preserve_output_collinear {
+            // Extracted contours have non-zero area. Removing collinear
+            // vertices preserves that area, so no contour or shape disappears
+            // and all indices in links remain valid.
+            for shape in &mut shapes {
+                for contour in shape {
+                    contour.simplify_contour();
+                    debug_assert!(
+                        contour.len() >= 3,
+                        "non-zero-area contour collapsed during simplification"
+                    );
+                }
+            }
+        }
         let shapes = Self::flatten(shapes);
 
         Self { shapes, links }

@@ -172,31 +172,73 @@ fn check_hierarchy_case(ogc: bool, preserve_collinear: bool) {
     }
 }
 
-macro_rules! binding_tests {
-    ($module:ident, $ogc:expr, $preserve:expr) => {
-        mod $module {
-            #[test]
-            fn touching_shapes_bind_hole_across_tree_threshold() {
-                super::check_panic_case($ogc, $preserve, false);
-            }
+mod ordinary {
+    #[test]
+    fn touching_shapes_bind_hole_across_tree_threshold() {
+        super::check_panic_case(false, false, false);
+    }
 
-            #[test]
-            fn hole_stays_with_containing_shape() {
-                super::check_owner_case($ogc, $preserve, false);
-            }
+    #[test]
+    fn hole_stays_with_containing_shape() {
+        super::check_owner_case(false, false, false);
+    }
 
-            #[test]
-            fn separate_triangle_has_no_hierarchy_parent() {
-                super::check_hierarchy_case($ogc, $preserve);
-            }
-        }
-    };
+    #[test]
+    fn separate_triangle_has_no_hierarchy_parent() {
+        super::check_hierarchy_case(false, false);
+    }
 }
 
-binding_tests!(ordinary, false, false);
-binding_tests!(ogc, true, false);
-binding_tests!(ordinary_preserved, false, true);
-binding_tests!(ogc_preserved, true, true);
+mod ogc {
+    #[test]
+    fn touching_shapes_bind_hole_across_tree_threshold() {
+        super::check_panic_case(true, false, false);
+    }
+
+    #[test]
+    fn hole_stays_with_containing_shape() {
+        super::check_owner_case(true, false, false);
+    }
+
+    #[test]
+    fn separate_triangle_has_no_hierarchy_parent() {
+        super::check_hierarchy_case(true, false);
+    }
+}
+
+mod ordinary_preserved {
+    #[test]
+    fn touching_shapes_bind_hole_across_tree_threshold() {
+        super::check_panic_case(false, true, false);
+    }
+
+    #[test]
+    fn hole_stays_with_containing_shape() {
+        super::check_owner_case(false, true, false);
+    }
+
+    #[test]
+    fn separate_triangle_has_no_hierarchy_parent() {
+        super::check_hierarchy_case(false, true);
+    }
+}
+
+mod ogc_preserved {
+    #[test]
+    fn touching_shapes_bind_hole_across_tree_threshold() {
+        super::check_panic_case(true, true, false);
+    }
+
+    #[test]
+    fn hole_stays_with_containing_shape() {
+        super::check_owner_case(true, true, false);
+    }
+
+    #[test]
+    fn separate_triangle_has_no_hierarchy_parent() {
+        super::check_hierarchy_case(true, true);
+    }
+}
 
 #[test]
 fn vector_touching_shapes_bind_hole_across_tree_threshold() {

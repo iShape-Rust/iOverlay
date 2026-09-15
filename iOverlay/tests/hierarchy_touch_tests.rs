@@ -1,10 +1,54 @@
 use i_float::int::point::IntPoint;
 use i_overlay::core::fill_rule::FillRule;
-use i_overlay::core::overlay::{ContourDirection, Overlay};
+use i_overlay::core::hierarchy::ChildLink;
+use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
 use i_overlay::core::overlay_rule::OverlayRule;
 
 fn contour(points: &[[i32; 2]]) -> Vec<IntPoint> {
     points.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
+}
+
+#[test]
+fn hierarchy_preserves_links_and_honors_collinear_output_option() {
+    let subject = vec![
+        contour(&[[0, 0], [10, 0], [20, 0], [20, 20], [0, 20]]),
+        contour(&[[2, 2], [2, 10], [2, 18], [18, 18], [18, 2]]),
+        contour(&[[4, 4], [6, 4], [8, 4], [8, 8], [4, 8]]),
+    ];
+    for ogc in [false, true] {
+        for preserve in [false, true] {
+            for direction in [ContourDirection::CounterClockwise, ContourDirection::Clockwise] {
+                let options = IntOverlayOptions {
+                    preserve_input_collinear: true,
+                    preserve_output_collinear: preserve,
+                    output_direction: direction,
+                    ogc,
+                    ..Default::default()
+                };
+                let mut overlay = Overlay::with_contours_custom(&subject, &[], options, Default::default());
+                let hierarchy = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::NonZero);
+                let shapes = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
+
+                assert_eq!(hierarchy.shapes.to_shapes(), shapes);
+                assert_eq!(hierarchy.shapes.shape_ranges, vec![0..2, 2..3]);
+                assert!(
+                    hierarchy
+                        .shapes
+                        .contour_ranges
+                        .iter()
+                        .all(|r| r.len() == if preserve { 5 } else { 4 })
+                );
+                assert_eq!(
+                    hierarchy.links,
+                    vec![ChildLink {
+                        parent_shape_index: 0,
+                        parent_contour_index: 1,
+                        child_shape_index: 1,
+                    }]
+                );
+            }
+        }
+    }
 }
 
 #[test]

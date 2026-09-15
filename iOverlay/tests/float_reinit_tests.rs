@@ -46,9 +46,8 @@ fn reinit_subject_and_clip_preserves_minimum_area_in_float_units() {
         );
         reused.reinit_with_subj_and_clip(&subject, &clip);
 
-        let expected =
-            FloatOverlay::with_subj_and_clip_custom(&subject, &clip, options, Solver::AUTO)
-                .overlay(OverlayRule::Union, FillRule::NonZero);
+        let expected = FloatOverlay::with_subj_and_clip_custom(&subject, &clip, options, Solver::AUTO)
+            .overlay(OverlayRule::Union, FillRule::NonZero);
         assert_eq!(expected.len(), expected_count);
         assert_eq!(
             reused.overlay(OverlayRule::Union, FillRule::NonZero),

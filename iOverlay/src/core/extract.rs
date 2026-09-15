@@ -67,6 +67,19 @@ where
         overlay_rule: OverlayRule,
         buffer: &mut BooleanExtractionBuffer<I>,
     ) -> IntShapes<I> {
+        let mut shapes = self.extract_shapes_with_collinear(overlay_rule, buffer);
+        if !self.options.preserve_output_collinear {
+            shapes.simplify_contour();
+        }
+        shapes
+    }
+
+    // Keep shared vertices until every binding step has finished.
+    fn extract_shapes_with_collinear(
+        &self,
+        overlay_rule: OverlayRule,
+        buffer: &mut BooleanExtractionBuffer<I>,
+    ) -> IntShapes<I> {
         self.links
             .filter_by_overlay_into(overlay_rule, &mut buffer.visited);
         if self.options.ogc {
@@ -87,8 +100,8 @@ where
         buffer: &mut BooleanExtractionBuffer<I>,
     ) -> FlatShapeHierarchy<I> {
         let clockwise = self.options.output_direction == ContourDirection::Clockwise;
-        let shapes = self.extract_shapes(overlay_rule, buffer);
-        FlatShapeHierarchy::from_shapes(shapes, clockwise)
+        let shapes = self.extract_shapes_with_collinear(overlay_rule, buffer);
+        FlatShapeHierarchy::from_shapes(shapes, clockwise, self.options.preserve_output_collinear)
     }
 
     /// Extracts the flat contours from the overlay graph based on the specified overlay rule.
@@ -183,10 +196,6 @@ where
 
         shapes.join_sorted_holes(holes, anchors, clockwise);
 
-        if !self.options.preserve_output_collinear {
-            shapes.simplify_contour();
-        }
-
         shapes
     }
 
@@ -272,6 +281,14 @@ where
                 continue;
             }
 
+            // Flat output has no binding step. Simplify only when exporting
+            // the contour, and discard contours that collapse during cleanup.
+            if !self.options.preserve_output_collinear {
+                buffer.points.simplify_contour();
+                if buffer.points.len() < 3 {
+                    continue;
+                }
+            }
             output.add_contour(buffer.points.as_slice());
         }
     }
@@ -322,9 +339,8 @@ impl<I: IntNumber> GraphContour<I> for IntContour<I> {
         }
         let area = self.unsafe_area();
         let abs_area = area.unsigned_abs() >> 1;
-        let is_valid = abs_area >= min_output_area;
 
-        is_valid
+        abs_area >= min_output_area
     }
 
     #[inline]

@@ -10,6 +10,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::geom::v_segment::{BottomSegment, VSegment};
 use crate::segm::segment::SegmentFill;
 use crate::vector::edge::{DataVectorEdge, DataVectorPath, DataVectorShape};
+use crate::vector::simplify::VectorSimplify;
 use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
@@ -18,7 +19,6 @@ use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_key_sort::sort::key::SortKey;
 use i_tree::Expiration;
-use crate::vector::simplify::VectorSimplify;
 
 impl<I, D> OverlayGraph<'_, I, D>
 where

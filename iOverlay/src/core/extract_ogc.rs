@@ -11,7 +11,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntShape, IntShapes};
-use i_shape::int::simple::Simplify;
 
 impl<I> OverlayGraph<'_, I>
 where
@@ -155,10 +154,6 @@ where
         }
 
         buffer.contour_visited = Some(contour_visited);
-
-        if !self.options.preserve_output_collinear {
-            shapes.simplify_contour();
-        }
 
         shapes
     }
