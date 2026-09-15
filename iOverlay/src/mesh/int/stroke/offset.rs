@@ -5,8 +5,10 @@ use crate::core::{
     overlay::{IntOverlayOptions, Overlay},
     overlay_rule::OverlayRule,
 };
+use crate::mesh::int::math::{backend::MeshMath, float::FloatMath, integer::IntegerMath};
 use crate::mesh::int::outline::offset::IntOutlineError;
 use crate::mesh::int::style::IntStrokeStyle;
+use crate::mesh::math::MathMode;
 use alloc::vec::Vec;
 use i_float::int::{point::IntPoint, rect::IntRect};
 use i_shape::{
@@ -31,7 +33,7 @@ pub type IntStrokeError = IntOutlineError;
 pub trait IntStrokeOffset<I: OverlayInt>: IntShapeResource<I> {
     fn validate_stroke(&self, style: &IntStrokeStyle<I>) -> Result<(), IntStrokeError> {
         if let Some(rect) = IntRect::with_iter(self.iter_paths().flatten()) {
-            if !crate::mesh::int::bounds::expanded_is_safe(rect, StrokeBuilder::padding(style)) {
+            if !crate::mesh::int::bounds::expanded_is_safe(rect, stroke_padding(style)) {
                 return Err(IntStrokeError::CoordinateOutOfRange);
             }
         }
@@ -104,10 +106,39 @@ where
     Paths: IntoIterator<Item = Path>,
     Path: IntoIterator<Item = IntPoint<I>>,
 {
-    let mut builder = StrokeBuilder::new(style);
+    match style.math {
+        MathMode::Integer => {
+            build_stroke_overlay_with_math::<I, IntegerMath, _, _>(paths, style, closed, options)
+        }
+        MathMode::Float => {
+            build_stroke_overlay_with_math::<I, FloatMath, _, _>(paths, style, closed, options)
+        }
+    }
+}
+
+fn stroke_padding<I: OverlayInt>(style: &IntStrokeStyle<I>) -> I::Wide {
+    match style.math {
+        MathMode::Integer => StrokeBuilder::<I, IntegerMath>::padding(style),
+        MathMode::Float => StrokeBuilder::<I, FloatMath>::padding(style),
+    }
+}
+
+fn build_stroke_overlay_with_math<I, M, Paths, Path>(
+    paths: Paths,
+    style: &IntStrokeStyle<I>,
+    closed: bool,
+    options: IntOverlayOptions<I::WideUInt>,
+) -> Overlay<I>
+where
+    I: OverlayInt,
+    M: MeshMath<I>,
+    Paths: IntoIterator<Item = Path>,
+    Path: IntoIterator<Item = IntPoint<I>>,
+{
+    let mut builder = StrokeBuilder::<I, M>::new(style);
     let mut segments = Vec::new();
     #[cfg(debug_assertions)]
-    let padding = StrokeBuilder::padding(style);
+    let padding = StrokeBuilder::<I, M>::padding(style);
     for path in paths {
         #[cfg(debug_assertions)]
         let path = path.into_iter().inspect(|point| {
@@ -145,28 +176,30 @@ mod tests {
             vec![IntPoint::new(4096, -4096), IntPoint::new(4096, 4096)],
             vec![],
         ];
-        let style = IntStrokeStyle::new(1024);
-        for closed in [false, true] {
-            let expected = paths.stroke(&style, closed).unwrap();
-            let visited = Cell::new(0);
-            let visited_ref = &visited;
-            let mut expected_visited = 0;
-            let iter = paths.clone().into_iter().map(move |path| {
-                // Finish each path before requesting the next one.
-                assert_eq!(visited_ref.get(), expected_visited);
-                expected_visited += path.len();
-                let mut points = path.into_iter();
-                // A single-pass point iterator; no Clone or slice access required.
-                core::iter::from_fn(move || {
-                    let point = points.next()?;
-                    visited_ref.set(visited_ref.get() + 1);
-                    Some(point)
-                })
-            });
-            let actual = build_stroke_overlay_iter(iter, &style, closed, Default::default())
-                .overlay(OverlayRule::Subject, FillRule::Positive);
-            assert_eq!(actual, expected);
-            assert_eq!(visited.get(), paths.iter().map(Vec::len).sum::<usize>());
+        for math in [MathMode::Integer, MathMode::Float] {
+            let style = IntStrokeStyle::new(1024).math(math);
+            for closed in [false, true] {
+                let expected = paths.stroke(&style, closed).unwrap();
+                let visited = Cell::new(0);
+                let visited_ref = &visited;
+                let mut expected_visited = 0;
+                let iter = paths.clone().into_iter().map(move |path| {
+                    // Finish each path before requesting the next one.
+                    assert_eq!(visited_ref.get(), expected_visited);
+                    expected_visited += path.len();
+                    let mut points = path.into_iter();
+                    // A single-pass point iterator; no Clone or slice access required.
+                    core::iter::from_fn(move || {
+                        let point = points.next()?;
+                        visited_ref.set(visited_ref.get() + 1);
+                        Some(point)
+                    })
+                });
+                let actual = build_stroke_overlay_iter(iter, &style, closed, Default::default())
+                    .overlay(OverlayRule::Subject, FillRule::Positive);
+                assert_eq!(actual, expected);
+                assert_eq!(visited.get(), paths.iter().map(Vec::len).sum::<usize>());
+            }
         }
     }
 

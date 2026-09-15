@@ -1,7 +1,11 @@
 use crate::mesh::int::{
-    arc::{ArcBuilder, ArcDirection},
+    arc::ArcDirection,
     join::Join,
-    math::{point, scaled_point, vector},
+    math::{
+        backend::{ArcMath, MeshMath},
+        integer::IntegerMath,
+        point,
+    },
     style::{IntLineCap, IntStrokeStyle},
 };
 use crate::mesh::subject::SubjectSegments;
@@ -22,9 +26,9 @@ struct Section<I: IntNumber> {
 }
 
 impl<I: IntNumber> Section<I> {
-    fn new(a: IntPoint<I>, b: IntPoint<I>, radius: I) -> Self {
-        let dir = crate::mesh::int::math::direction(b - a).expect("unique section");
-        let v = dir.scale(radius);
+    fn new<M: MeshMath<I>>(a: IntPoint<I>, b: IntPoint<I>, radius: I) -> Self {
+        let dir = M::normalize(b - a).expect("unique section");
+        let v = M::scale(dir, radius);
         Self {
             a,
             b,
@@ -42,18 +46,18 @@ impl<I: IntNumber> Section<I> {
     }
 }
 
-enum Cap<I: IntNumber> {
+enum Cap<I: IntNumber, M: MeshMath<I>> {
     Butt,
     Square,
-    Round(ArcBuilder<I>),
+    Round(M::Arc),
     Custom(alloc::rc::Rc<[IntPoint<I>]>),
 }
-impl<I: IntNumber> Cap<I> {
+impl<I: IntNumber, M: MeshMath<I>> Cap<I, M> {
     fn new(cap: &IntLineCap<I>) -> Self {
         match cap {
             IntLineCap::Butt => Self::Butt,
             IntLineCap::Square => Self::Square,
-            IntLineCap::Round(options) => Self::Round(ArcBuilder::new(*options)),
+            IntLineCap::Round(options) => Self::Round(M::Arc::new(*options)),
             IntLineCap::Custom(points) => Self::Custom(points.clone()),
         }
     }
@@ -73,30 +77,26 @@ impl<I: IntNumber> Cap<I> {
         let mut previous = from;
         match self {
             Self::Round(arc) => {
-                let a = crate::mesh::int::math::direction(from - center).expect("positive radius");
-                let b = crate::mesh::int::math::direction(to - center).expect("positive radius");
+                let a = M::normalize(from - center).expect("positive radius");
+                let b = M::normalize(to - center).expect("positive radius");
                 for &dir in arc.build(a, b, ArcDirection::Counterclockwise) {
-                    let next = scaled_point(center, dir, radius);
+                    let offset = M::scale(dir, radius);
+                    let next = point(center, offset.x, offset.y);
                     segments.push_non_degenerate(previous, next);
                     previous = next;
                 }
             }
             Self::Square => {
-                let v = outward.scale(radius);
+                let v = M::scale(outward, radius);
                 for next in [point(from, v.x, v.y), point(to, v.x, v.y)] {
                     segments.push_non_degenerate(previous, next);
                     previous = next;
                 }
             }
             Self::Custom(points) => {
-                let v = vector(outward);
-                let shift = UnitIntVector::<I>::DENOMINATOR.ilog2();
                 for p in points.iter() {
-                    // Both products and their sum fit in Wide. Round once so
-                    // the rotated cap stays within its conservative bounds.
-                    let x = (v.x * p.x.to_wide() - v.y * p.y.to_wide()).shr_round(shift);
-                    let y = (v.y * p.x.to_wide() + v.x * p.y.to_wide()).shr_round(shift);
-                    let next = point(center, x, y);
+                    let v = M::rotate(outward, *p);
+                    let next = point(center, v.x, v.y);
                     segments.push_non_degenerate(previous, next);
                     previous = next;
                 }
@@ -107,14 +107,14 @@ impl<I: IntNumber> Cap<I> {
     }
 }
 
-pub(super) struct StrokeBuilder<I: IntNumber> {
+pub(super) struct StrokeBuilder<I: IntNumber, M: MeshMath<I> = IntegerMath> {
     radius: I,
-    join: Join<I>,
-    start: Cap<I>,
-    end: Cap<I>,
+    join: Join<I, M>,
+    start: Cap<I, M>,
+    end: Cap<I, M>,
     sections: Vec<Section<I>>,
 }
-impl<I: IntNumber> StrokeBuilder<I> {
+impl<I: IntNumber, M: MeshMath<I>> StrokeBuilder<I, M> {
     pub(super) fn radius(style: &IntStrokeStyle<I>) -> I {
         I::from_wide((style.width.max(I::ZERO).to_wide() + I::Wide::ONE) / I::Wide::TWO)
     }
@@ -139,9 +139,11 @@ impl<I: IntNumber> StrokeBuilder<I> {
                 .unwrap_or(I::Wide::ZERO),
             _ => radius.to_wide(),
         };
-        Join::padding(style.join, radius)
-            .max(cap_padding(&style.start_cap))
-            .max(cap_padding(&style.end_cap))
+        M::guard_padding(
+            Join::<I, M>::padding(style.join, radius)
+                .max(cap_padding(&style.start_cap))
+                .max(cap_padding(&style.end_cap)),
+        )
     }
     pub(super) fn new(style: &IntStrokeStyle<I>) -> Self {
         Self {
@@ -172,12 +174,13 @@ impl<I: IntNumber> StrokeBuilder<I> {
         let mut previous = first;
         for next in path {
             if previous != next {
-                self.sections.push(Section::new(previous, next, self.radius));
+                self.sections.push(Section::new::<M>(previous, next, self.radius));
                 previous = next;
             }
         }
         if closed && previous != first {
-            self.sections.push(Section::new(previous, first, self.radius));
+            self.sections
+                .push(Section::new::<M>(previous, first, self.radius));
         }
         if self.sections.is_empty() {
             return;
@@ -193,7 +196,7 @@ impl<I: IntNumber> StrokeBuilder<I> {
         if closed {
             self.add_join(last, first, segments);
         } else {
-            let backward = crate::mesh::int::math::direction(first.a - first.b).unwrap();
+            let backward = M::normalize(first.a - first.b).unwrap();
             self.start.add(
                 first.a,
                 first.a_left,
@@ -214,8 +217,8 @@ impl<I: IntNumber> StrokeBuilder<I> {
             (
                 b.a_left,
                 a.b_left,
-                crate::mesh::int::math::direction(b.a - b.b).unwrap(),
-                crate::mesh::int::math::direction(a.a - a.b).unwrap(),
+                M::normalize(b.a - b.b).unwrap(),
+                M::normalize(a.a - a.b).unwrap(),
             )
         };
         if cross >= I::Wide::ZERO {
@@ -270,7 +273,7 @@ mod tests {
                         .start_cap(cap.clone())
                         .end_cap(cap.clone())
                         .line_join(join);
-                    let mut builder = StrokeBuilder::new(&style);
+                    let mut builder = StrokeBuilder::<i32>::new(&style);
                     for closed in [false, true] {
                         for end in [IntPoint::new(10, 10), IntPoint::new(0, 0), IntPoint::new(20, 1)] {
                             let path = [

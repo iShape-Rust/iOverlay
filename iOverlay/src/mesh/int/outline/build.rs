@@ -28,8 +28,8 @@ pub(super) trait BuildOutlineOverlay<I: OverlayInt>: IntShapeResource<I> {
         );
         Ok(self.build_overlay_with_builders(
             options,
-            OutlineBuilder::new(style.outer_offset, Join::new(style.join)),
-            OutlineBuilder::new(style.inner_offset, Join::new(style.join)),
+            OutlineBuilder::new(style.outer_offset, Join::<I>::new(style.join)),
+            OutlineBuilder::new(style.inner_offset, Join::<I>::new(style.join)),
         ))
     }
 

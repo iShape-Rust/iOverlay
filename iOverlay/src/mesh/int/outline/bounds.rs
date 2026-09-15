@@ -7,8 +7,8 @@ use i_shape::source::int::resource::IntShapeResource;
 
 pub(super) trait OutlineBounds<I: IntNumber>: IntShapeResource<I> {
     fn validate_outline_bounds(&self, style: &IntOutlineStyle<I>) -> Result<(), IntOutlineError> {
-        let padding =
-            Join::padding(style.join, style.outer_offset).max(Join::padding(style.join, style.inner_offset));
+        let padding = Join::<I>::padding(style.join, style.outer_offset)
+            .max(Join::<I>::padding(style.join, style.inner_offset));
         let Some(rect) = IntRect::with_iter(self.iter_paths().flatten()) else {
             return Ok(());
         };

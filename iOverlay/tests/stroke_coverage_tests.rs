@@ -4,6 +4,7 @@ use i_overlay::mesh::float::style::OutlineStyle;
 use i_overlay::mesh::float::style::{LineCap, LineJoin, StrokeStyle};
 use i_overlay::mesh::float::variable_stroke::offset::VariableStrokeOffset;
 use i_overlay::mesh::float::variable_stroke::{StrokeVertex, VariableStrokeStyle};
+use i_overlay::mesh::math::MathMode;
 
 fn contains(shapes: &[Vec<Vec<[f64; 2]>>], p: [f64; 2]) -> bool {
     shapes.iter().any(|shape| {
@@ -44,49 +45,58 @@ fn assert_vertex_disks_covered(shapes: &[Vec<Vec<[f64; 2]>>], path: &[StrokeVert
 
 #[test]
 fn round_strokes_cover_vertex_disks() {
-    let mut seed = 0x37a2_b951_d477_1011_u64;
-    let mut next = || {
-        seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
-        ((seed >> 32) % 21) as f64 - 10.0
-    };
-    for case in 0..2000 {
-        let path: Vec<_> = (0..3 + case % 8).map(|_| [next(), next()]).collect();
-        let style = StrokeStyle::new(4.0)
-            .line_join(LineJoin::Round(0.05))
-            .start_cap(LineCap::Round(0.05))
-            .end_cap(LineCap::Round(0.05));
-        let shapes = path.stroke_fixed_scale(style, false, 10000.0).unwrap();
-        let vertices: Vec<_> = path.iter().map(|&p| StrokeVertex::new(p, 4.0)).collect();
-        assert_vertex_disks_covered(&shapes, &vertices, case);
+    for math in [MathMode::Integer, MathMode::Float] {
+        let mut seed = 0x37a2_b951_d477_1011_u64;
+        let mut next = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            ((seed >> 32) % 21) as f64 - 10.0
+        };
+        for case in 0..2000 {
+            let path: Vec<_> = (0..3 + case % 8).map(|_| [next(), next()]).collect();
+            let style = StrokeStyle::new(4.0)
+                .math(math)
+                .line_join(LineJoin::Round(0.05))
+                .start_cap(LineCap::Round(0.05))
+                .end_cap(LineCap::Round(0.05));
+            let shapes = path.stroke_fixed_scale(style, false, 10000.0).unwrap();
+            let vertices: Vec<_> = path.iter().map(|&p| StrokeVertex::new(p, 4.0)).collect();
+            assert_vertex_disks_covered(&shapes, &vertices, case);
+        }
     }
 }
 
 #[test]
 fn round_join_covers_a_reversing_vertex() {
-    let path = [[0.0, 0.0], [10.0, 0.0], [0.0, 0.0]];
-    let style = StrokeStyle::new(4.0)
-        .line_join(LineJoin::Round(0.05))
-        .start_cap(LineCap::Round(0.05))
-        .end_cap(LineCap::Round(0.05));
-    let shapes = path.stroke_fixed_scale(style, false, 10000.0).unwrap();
-    assert!(
-        contains(&shapes, [11.5, 0.0]),
-        "round join must cover the turn at x=10"
-    );
+    for math in [MathMode::Integer, MathMode::Float] {
+        let path = [[0.0, 0.0], [10.0, 0.0], [0.0, 0.0]];
+        let style = StrokeStyle::new(4.0)
+            .math(math)
+            .line_join(LineJoin::Round(0.05))
+            .start_cap(LineCap::Round(0.05))
+            .end_cap(LineCap::Round(0.05));
+        let shapes = path.stroke_fixed_scale(style, false, 10000.0).unwrap();
+        assert!(
+            contains(&shapes, [11.5, 0.0]),
+            "round join must cover the turn at x=10"
+        );
+    }
 }
 
 #[test]
 fn round_join_covers_a_diagonal_reversing_vertex() {
-    let path = [[0.0, 0.0], [6.0, -8.0], [0.0, 0.0]];
-    let style = StrokeStyle::new(4.0)
-        .line_join(LineJoin::Round(0.05))
-        .start_cap(LineCap::Round(0.05))
-        .end_cap(LineCap::Round(0.05));
-    let shapes = path.stroke_fixed_scale(style, false, 10000.0).unwrap();
-    assert!(
-        contains(&shapes, [6.9, -9.2]),
-        "round join must cover the diagonal turn"
-    );
+    for math in [MathMode::Integer, MathMode::Float] {
+        let path = [[0.0, 0.0], [6.0, -8.0], [0.0, 0.0]];
+        let style = StrokeStyle::new(4.0)
+            .math(math)
+            .line_join(LineJoin::Round(0.05))
+            .start_cap(LineCap::Round(0.05))
+            .end_cap(LineCap::Round(0.05));
+        let shapes = path.stroke_fixed_scale(style, false, 10000.0).unwrap();
+        assert!(
+            contains(&shapes, [6.9, -9.2]),
+            "round join must cover the diagonal turn"
+        );
+    }
 }
 
 #[test]

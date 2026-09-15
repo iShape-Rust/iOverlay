@@ -1,4 +1,6 @@
-use super::arc::{ArcBuilder, ArcDirection};
+use super::arc::ArcDirection;
+use super::math::backend::{ArcMath, MeshMath};
+use super::math::integer::IntegerMath;
 use super::math::{abs, mul_div, point, scaled_point, vector};
 use super::style::IntLineJoin;
 use crate::mesh::subject::SubjectSegments;
@@ -8,22 +10,22 @@ use i_float::int::angle::Angle;
 use i_float::int::number::{int::IntNumber, wide_int::WideIntNumber};
 use i_float::int::{point::IntPoint, unit_vector::UnitIntVector};
 
-pub(super) enum Join<I: IntNumber> {
+pub(super) enum Join<I: IntNumber, M: MeshMath<I> = IntegerMath> {
     Bevel,
     Miter { minimum: u32, sin: i32, cos: i32 },
-    Round(ArcBuilder<I>),
+    Round(M::Arc),
 }
 
-impl<I: IntNumber> Join<I> {
+impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
     pub(super) fn new(style: IntLineJoin) -> Self {
         match style {
             IntLineJoin::Bevel => Self::Bevel,
-            IntLineJoin::Round(options) => Self::Round(ArcBuilder::new(options)),
+            IntLineJoin::Round(options) => Self::Round(M::Arc::new(options)),
             IntLineJoin::Miter(angle) => {
                 let minimum = angle
                     .bits()
                     .clamp((1u32 << 31) / 100, ((1u64 << 31) * 99 / 100) as u32);
-                let (sin, cos) = Angle::from_bits(minimum / 2).sin_cos();
+                let (sin, cos) = M::sin_cos(Angle::from_bits(minimum / 2));
                 Self::Miter { minimum, sin, cos }
             }
         }
@@ -63,11 +65,11 @@ impl<I: IntNumber> Join<I> {
         match self {
             Self::Bevel => segments.push_non_degenerate(a, b),
             Self::Round(arc) => {
-                let Some(from) = crate::mesh::int::math::direction(a - center) else {
+                let Some(from) = M::normalize(a - center) else {
                     segments.push_non_degenerate(a, b);
                     return;
                 };
-                let Some(to) = crate::mesh::int::math::direction(b - center) else {
+                let Some(to) = M::normalize(b - center) else {
                     segments.push_non_degenerate(a, b);
                     return;
                 };
@@ -87,7 +89,7 @@ impl<I: IntNumber> Join<I> {
                     segments.push_non_degenerate(a, b);
                     return;
                 }
-                let turn = Angle::between(incoming, outgoing).bits();
+                let turn = M::angle_between(incoming, outgoing).bits();
                 let turn = turn.min(turn.wrapping_neg());
                 if (1u32 << 31) - turn < *minimum {
                     let extension = mul_div::<I>(

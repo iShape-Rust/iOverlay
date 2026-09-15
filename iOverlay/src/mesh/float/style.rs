@@ -1,5 +1,6 @@
 use crate::mesh::int::arc::ArcOptions;
 use crate::mesh::int::style::{IntLineCap, IntLineJoin, IntStrokeStyle};
+use crate::mesh::math::MathMode;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::f64::consts::PI;
@@ -50,6 +51,8 @@ pub struct StrokeStyle<P: FloatPointCompatible> {
     pub end_cap: LineCap<P>,
     /// The join style where two lines meet.
     pub join: LineJoin<P::Scalar>,
+    /// Arithmetic for stroke construction. Integer remains the default.
+    pub math: MathMode,
 }
 
 /// Defines the outline style for offsetting shapes.
@@ -145,6 +148,12 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
         self
     }
 
+    /// Selects construction arithmetic; the final boolean operation stays integer.
+    pub fn math(mut self, math: MathMode) -> Self {
+        self.math = math;
+        self
+    }
+
     pub(super) fn to_int<I: IntNumber>(&self, adapter: &FloatPointAdapter<P, I>) -> IntStrokeStyle<I> {
         let radius = P::Scalar::from_float(0.5 * self.width.to_f64().max(0.0));
         let cap = |cap: &LineCap<P>| match cap.clone().normalize() {
@@ -173,6 +182,7 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
             start_cap: cap(&self.start_cap),
             end_cap: cap(&self.end_cap),
             join: IntLineJoin::from(&self.join),
+            math: self.math,
         }
     }
 
@@ -197,7 +207,7 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
 
         let join_factor = self.join.padding_factor();
         let start_cap_factor = cap(&self.start_cap);
-        let end_cap_factor = cap(&self.start_cap);
+        let end_cap_factor = cap(&self.end_cap);
 
         let factor = join_factor.max(start_cap_factor).max(end_cap_factor);
         P::Scalar::from_float(r * factor)
@@ -211,6 +221,7 @@ impl<P: FloatPointCompatible> Default for StrokeStyle<P> {
             start_cap: LineCap::Butt,
             end_cap: LineCap::Butt,
             join: LineJoin::Bevel,
+            math: MathMode::Integer,
         }
     }
 }

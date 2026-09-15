@@ -1,5 +1,6 @@
 use i_overlay::mesh::float::stroke::offset::StrokeOffset;
 use i_overlay::mesh::float::style::{LineJoin, StrokeStyle};
+use i_overlay::mesh::math::MathMode;
 
 fn canonical(shapes: Vec<Vec<Vec<[f64; 2]>>>) -> Vec<Vec<Vec<[i64; 2]>>> {
     let mut shapes: Vec<Vec<Vec<[i64; 2]>>> = shapes
@@ -37,15 +38,17 @@ fn reversing_path_preserves_bevel_and_miter_strokes() {
         let mut reversed = path.clone();
         reversed.reverse();
         for closed in [false, true] {
-            for join in [LineJoin::Bevel, LineJoin::Miter(0.2)] {
-                let style = StrokeStyle::new(1.25).line_join(join.clone());
-                let forward = path.stroke_fixed_scale(style.clone(), closed, 1000.0).unwrap();
-                let backward = reversed.stroke_fixed_scale(style, closed, 1000.0).unwrap();
-                assert_eq!(
-                    canonical(forward),
-                    canonical(backward),
-                    "case={case}, closed={closed}, join={join:?}, path={path:?}"
-                );
+            for math in [MathMode::Integer, MathMode::Float] {
+                for join in [LineJoin::Bevel, LineJoin::Miter(0.2)] {
+                    let style = StrokeStyle::new(1.25).math(math).line_join(join.clone());
+                    let forward = path.stroke_fixed_scale(style.clone(), closed, 1000.0).unwrap();
+                    let backward = reversed.stroke_fixed_scale(style, closed, 1000.0).unwrap();
+                    assert_eq!(
+                        canonical(forward),
+                        canonical(backward),
+                        "case={case}, math={math:?}, closed={closed}, join={join:?}, path={path:?}"
+                    );
+                }
             }
         }
     }

@@ -511,6 +511,12 @@ Use `validate_outline(&style)`, `validate_stroke(&style)`, or
 Construction asserts bounds in debug builds and trusts the caller in release.
 All three APIs provide `*_into` methods that replace a reusable flat output buffer.
 
+Constant-width stroke also offers experimental float construction math through
+`StrokeStyle::math(MathMode::Float)` or `IntStrokeStyle::math(MathMode::Float)`,
+with `MathMode` in `mesh::math`. Directions are stored as `UnitIntVector`; integer
+coordinates and boolean operations are retained. `Integer` remains the default.
+See [stroke math modes and preliminary timings](docs/stroke_math.md) for details.
+
 ### Offsetting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
 

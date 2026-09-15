@@ -1,4 +1,5 @@
 use super::arc::ArcOptions;
+use crate::mesh::math::MathMode;
 use i_float::int::angle::Angle;
 use i_float::int::number::int::IntNumber;
 
@@ -72,6 +73,8 @@ pub struct IntStrokeStyle<I: IntNumber = i32> {
     pub start_cap: IntLineCap<I>,
     pub end_cap: IntLineCap<I>,
     pub join: IntLineJoin,
+    /// Arithmetic for stroke construction. Float mode may change rounded output.
+    pub math: MathMode,
 }
 
 impl<I: IntNumber> IntStrokeStyle<I> {
@@ -81,8 +84,15 @@ impl<I: IntNumber> IntStrokeStyle<I> {
             start_cap: IntLineCap::Butt,
             end_cap: IntLineCap::Butt,
             join: IntLineJoin::Bevel,
+            math: MathMode::Integer,
         }
     }
+    /// Selects construction arithmetic; coordinates and boolean operations stay integer.
+    pub fn math(mut self, math: MathMode) -> Self {
+        self.math = math;
+        self
+    }
+
     pub fn width(mut self, width: I) -> Self {
         self.width = width;
         self
