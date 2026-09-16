@@ -1,8 +1,10 @@
+use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
+use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::float::style::OutlineStyle;
-use crate::mesh::int::outline::offset::IntOutlineOffset;
+use crate::mesh::int::outline::build_outline_overlay_iter;
 use crate::mesh::int::style::IntOutlineStyle;
 use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
@@ -13,7 +15,7 @@ use i_float::int::number::int::IntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
-use i_shape::float::adapter::{ResourceToInt, ShapesToFloat};
+use i_shape::float::adapter::{ResourceToIntIter, ShapesToFloat};
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::float::resource::ShapeResource;
@@ -427,10 +429,10 @@ where
     fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar, I>) -> Shapes<P> {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
-        let paths = source.to_int_paths(&self.adapter);
-        let shapes = paths
-            .outline_custom(&self.int_style(), options.int_with_adapter(&self.adapter))
-            .expect("integer outline supports every float join");
+        let iter_paths = source.iter_int_paths(&self.adapter);
+        let shapes =
+            build_outline_overlay_iter(iter_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
+                .overlay(OverlayRule::Subject, FillRule::Positive);
 
         if clean_result {
             let mut float = shapes.to_float(&self.adapter);
@@ -453,15 +455,10 @@ where
     ) {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
-        let paths = source.to_int_paths(&self.adapter);
+        let iter_paths = source.iter_int_paths(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        paths
-            .outline_custom_into(
-                &self.int_style(),
-                options.int_with_adapter(&self.adapter),
-                &mut int_output,
-            )
-            .expect("integer outline supports every float join");
+        build_outline_overlay_iter(iter_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
+            .overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);
 
