@@ -19,8 +19,11 @@ impl<I: IntNumber, J: JoinBuilder<I>> OutlineBuilder<I, J> {
         Self { offset, join_builder }
     }
 
-    pub(super) fn build(&mut self, path: &[IntPoint<I>], segments: &mut Vec<Segment<ShapeCountBoolean, I>>) {
-        let Some(mut iter) = UniqueSegmentsIter::new(path.iter().copied()) else {
+    pub(super) fn build<Path>(&mut self, path: Path, segments: &mut Vec<Segment<ShapeCountBoolean, I>>)
+    where
+        Path: Iterator<Item = IntPoint<I>>,
+    {
+        let Some(mut iter) = UniqueSegmentsIter::new(path) else {
             return;
         };
         let Some(first) = iter.next() else {

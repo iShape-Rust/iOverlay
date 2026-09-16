@@ -3,7 +3,7 @@ use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
-use i_shape::int::path::ContourExtension;
+use i_shape::int::area::UnsafeArea;
 use i_shape::int::shape::IntContour;
 
 pub(super) trait Split<I: IntNumber> {
@@ -170,7 +170,7 @@ impl<I: IntNumber> ValidateArea<I> for IntContour<I> {
         if min_area == I::WideUInt::ZERO {
             return true;
         }
-        let abs_area = self.unsafe_area().unsigned_abs() >> 1;
+        let abs_area = self.iter().copied().unsafe_area().unsigned_abs() >> 1;
         abs_area >= min_area
     }
 }

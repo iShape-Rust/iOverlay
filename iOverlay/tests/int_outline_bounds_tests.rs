@@ -101,7 +101,7 @@ impl IntShapeResource<i32> for CountedResource<'_> {
 }
 
 #[test]
-fn release_construction_does_not_repeat_the_bounds_pass() {
+fn construction_does_not_repeat_the_bounds_pass() {
     let path = [
         IntPoint::new(0, 0),
         IntPoint::new(8192, 0),
@@ -117,20 +117,5 @@ fn release_construction_does_not_repeat_the_bounds_pass() {
     assert_eq!(source.traversals.get(), 1);
     source.traversals.set(0);
     assert_eq!(source.outline(&style).unwrap().len(), 1);
-    assert_eq!(
-        source.traversals.get(),
-        if cfg!(debug_assertions) { 2 } else { 1 }
-    );
-}
-
-#[cfg(debug_assertions)]
-#[test]
-#[should_panic(expected = "outline bounds exceed the safe coordinate range")]
-fn debug_construction_asserts_the_bounds_precondition() {
-    let path = [
-        IntPoint::new(0, 0),
-        IntPoint::new(i32::MAX, 0),
-        IntPoint::new(0, 8192),
-    ];
-    let _ = path.outline(&IntOutlineStyle::new(0));
+    assert_eq!(source.traversals.get(), 1);
 }

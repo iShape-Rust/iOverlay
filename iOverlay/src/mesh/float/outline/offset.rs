@@ -4,7 +4,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::float::style::OutlineStyle;
-use crate::mesh::int::outline::build_outline_overlay_iter;
+use crate::mesh::int::outline::BuildOutlineOverlay;
 use crate::mesh::int::style::IntOutlineStyle;
 use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
@@ -432,9 +432,9 @@ where
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
         let iter_int_paths = source.iter_int_paths(&self.adapter);
-        let shapes =
-            build_outline_overlay_iter(iter_int_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
-                .overlay(OverlayRule::Subject, FillRule::Positive);
+        let shapes = iter_int_paths
+            .build_overlay(&self.int_style(), options.int_with_adapter(&self.adapter))
+            .overlay(OverlayRule::Subject, FillRule::Positive);
 
         if clean_result {
             let mut float = shapes.to_float(&self.adapter);
@@ -459,7 +459,8 @@ where
         let clean_result = options.clean_result;
         let iter_int_paths = source.iter_int_paths(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        build_outline_overlay_iter(iter_int_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
+        iter_int_paths
+            .build_overlay(&self.int_style(), options.int_with_adapter(&self.adapter))
             .overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);

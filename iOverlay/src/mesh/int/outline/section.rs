@@ -1,3 +1,4 @@
+use crate::mesh::int::math::point;
 use crate::mesh::uniq_iter::UniqueSegment;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
@@ -31,10 +32,8 @@ impl<I: IntNumber> OffsetSection<I> {
 
         let dx = scaled.y;
         let dy = -scaled.x;
-        let a_top = IntPoint::new(I::from_wide(a.x.to_wide() + dx), I::from_wide(a.y.to_wide() + dy));
-        let b_top = IntPoint::new(I::from_wide(b.x.to_wide() + dx), I::from_wide(b.y.to_wide() + dy));
-
-        debug_assert!(a_top.is_in_safe_range() && b_top.is_in_safe_range());
+        let a_top = point(a, dx, dy);
+        let b_top = point(b, dx, dy);
 
         Self {
             offset,

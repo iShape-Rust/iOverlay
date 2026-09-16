@@ -35,8 +35,8 @@ impl core::error::Error for IntOutlineError {}
 /// Input and constructed coordinates must satisfy
 /// [`IntRect::is_in_safe_range`](i_float::int::rect::IntRect::is_in_safe_range).
 /// Use [`Self::validate_outline`] for an optional conservative bounds check.
-/// Construction checks this precondition only in debug builds; release builds
-/// trust the caller. Contour signed double areas must also fit in `I::Wide`
+/// Construction trusts the caller to satisfy this precondition.
+/// Contour signed double areas must also fit in `I::Wide`
 /// (including repeated winding).
 ///
 /// Uses [`fast_normalize`](i_float::int::vector::IntVector::fast_normalize)
@@ -89,7 +89,10 @@ pub trait IntOutlineOffset<I: OverlayInt>: IntShapeResource<I> {
         style: &IntOutlineStyle<I>,
         options: IntOverlayOptions<I::WideUInt>,
     ) -> Result<IntShapes<I>, IntOutlineError> {
-        let mut overlay = self.build_overlay(style, options)?;
+        let mut overlay = self
+            .iter_paths()
+            .map(|path| path.iter().copied())
+            .build_overlay(style, options);
         Ok(overlay.overlay(OverlayRule::Subject, FillRule::Positive))
     }
 
@@ -101,7 +104,10 @@ pub trait IntOutlineOffset<I: OverlayInt>: IntShapeResource<I> {
         options: IntOverlayOptions<I::WideUInt>,
         output: &mut FlatContoursBuffer<I>,
     ) -> Result<(), IntOutlineError> {
-        let mut overlay = self.build_overlay(style, options)?;
+        let mut overlay = self
+            .iter_paths()
+            .map(|path| path.iter().copied())
+            .build_overlay(style, options);
         overlay.overlay_into(OverlayRule::Subject, FillRule::Positive, output);
         Ok(())
     }
