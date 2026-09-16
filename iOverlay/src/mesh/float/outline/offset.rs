@@ -221,10 +221,7 @@ where
         style: &OutlineStyle<P::Scalar>,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        match OutlineSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver.build(self, options),
-            None => vec![],
-        }
+        self.outline_custom_as::<i32>(style, options)
     }
 
     fn outline_custom_into(
@@ -233,10 +230,7 @@ where
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        match OutlineSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver.build_into(self, options, output),
-            None => output.clear_and_reserve(0, 0),
-        }
+        self.outline_custom_into_as::<i32>(style, options, output)
     }
 
     fn outline_fixed_scale(
@@ -262,13 +256,7 @@ where
         options: OverlayOptions<P::Scalar>,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver,
-            None => return Ok(vec![]),
-        };
-        solver.apply_scale(s)?;
-        Ok(solver.build(self, options))
+        self.outline_custom_fixed_scale_as::<i32>(style, options, scale)
     }
 
     fn outline_custom_fixed_scale_into(
@@ -278,17 +266,7 @@ where
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
-        let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver,
-            None => {
-                output.clear_and_reserve(0, 0);
-                return Ok(());
-            }
-        };
-        solver.apply_scale(s)?;
-        solver.build_into(self, options, output);
-        Ok(())
+        self.outline_custom_fixed_scale_into_as::<i32>(style, options, scale, output)
     }
 
     fn outline_as<I>(&self, style: &OutlineStyle<P::Scalar>) -> Shapes<P>

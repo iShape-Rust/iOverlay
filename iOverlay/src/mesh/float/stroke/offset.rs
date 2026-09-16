@@ -263,10 +263,7 @@ where
         is_closed_path: bool,
         options: OverlayOptions<P::Scalar>,
     ) -> Shapes<P> {
-        match StrokeSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver.build(self, is_closed_path, options),
-            None => vec![],
-        }
+        self.stroke_custom_as::<i32>(style, is_closed_path, options)
     }
 
     fn stroke_custom_into(
@@ -276,10 +273,7 @@ where
         options: OverlayOptions<P::Scalar>,
         output: &mut FloatFlatContoursBuffer<P>,
     ) {
-        match StrokeSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver.build_into(self, is_closed_path, options, output),
-            None => output.clear_and_reserve(0, 0),
-        }
+        self.stroke_custom_into_as::<i32>(style, is_closed_path, options, output)
     }
 
     fn stroke_fixed_scale(
@@ -308,12 +302,7 @@ where
         options: OverlayOptions<P::Scalar>,
         scale: P::Scalar,
     ) -> Result<Shapes<P>, FixedScaleOverlayError> {
-        let mut solver = match StrokeSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver,
-            None => return Ok(vec![]),
-        };
-        solver.apply_scale(scale)?;
-        Ok(solver.build(self, is_closed_path, options))
+        self.stroke_custom_fixed_scale_as::<i32>(style, is_closed_path, options, scale)
     }
 
     fn stroke_custom_fixed_scale_into(
@@ -324,16 +313,7 @@ where
         scale: P::Scalar,
         output: &mut FloatFlatContoursBuffer<P>,
     ) -> Result<(), FixedScaleOverlayError> {
-        let mut solver = match StrokeSolver::<P, i32>::prepare(self, style) {
-            Some(solver) => solver,
-            None => {
-                output.clear_and_reserve(0, 0);
-                return Ok(());
-            }
-        };
-        solver.apply_scale(scale)?;
-        solver.build_into(self, is_closed_path, options, output);
-        Ok(())
+        self.stroke_custom_fixed_scale_into_as::<i32>(style, is_closed_path, options, scale, output)
     }
 
     fn stroke_as<I>(&self, style: StrokeStyle<P>, is_closed_path: bool) -> Shapes<P>
