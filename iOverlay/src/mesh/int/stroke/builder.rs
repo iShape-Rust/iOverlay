@@ -1,11 +1,7 @@
 use crate::mesh::int::{
-    arc::ArcDirection,
+    arc::{ArcDirection, ArcMath},
     join::Join,
-    math::{
-        backend::{ArcMath, MeshMath},
-        integer::IntegerMath,
-        point,
-    },
+    math::{backend::MeshMath, integer::IntegerMath, point},
     style::{IntLineCap, IntStrokeStyle},
 };
 use crate::mesh::subject::SubjectSegments;

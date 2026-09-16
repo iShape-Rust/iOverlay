@@ -1,6 +1,6 @@
-use super::backend::{ArcMath, MeshMath};
+use super::backend::MeshMath;
 use super::{direction, vector};
-use crate::mesh::int::arc::{ArcBuilder, ArcDirection, ArcOptions};
+use crate::mesh::int::arc::IntegerArc;
 use i_float::int::number::{int::IntNumber, wide_int::WideIntNumber};
 use i_float::int::{angle::Angle, point::IntPoint, unit_vector::UnitIntVector, vector::IntVector};
 
@@ -8,7 +8,7 @@ use i_float::int::{angle::Angle, point::IntPoint, unit_vector::UnitIntVector, ve
 pub(crate) struct IntegerMath;
 
 impl<I: IntNumber> MeshMath<I> for IntegerMath {
-    type Arc = ArcBuilder<I>;
+    type Arc = IntegerArc<I>;
     #[inline]
     fn sin_cos(angle: Angle) -> (i32, i32) {
         angle.sin_cos()
@@ -41,19 +41,5 @@ impl<I: IntNumber> MeshMath<I> for IntegerMath {
     #[inline]
     fn guard_padding(padding: I::Wide) -> I::Wide {
         padding
-    }
-}
-
-impl<I: IntNumber> ArcMath<UnitIntVector<I>> for ArcBuilder<I> {
-    fn new(options: ArcOptions) -> Self {
-        ArcBuilder::new(options)
-    }
-    fn build(
-        &mut self,
-        from: UnitIntVector<I>,
-        to: UnitIntVector<I>,
-        direction: ArcDirection,
-    ) -> &[UnitIntVector<I>] {
-        ArcBuilder::build(self, from, to, direction)
     }
 }

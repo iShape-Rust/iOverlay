@@ -1,5 +1,5 @@
-use super::arc::ArcDirection;
-use super::math::backend::{ArcMath, MeshMath};
+use super::arc::{ArcDirection, ArcMath};
+use super::math::backend::MeshMath;
 use super::math::integer::IntegerMath;
 use super::math::{abs, mul_div, point, scaled_point, vector};
 use super::style::IntLineJoin;

@@ -1,4 +1,4 @@
-use crate::mesh::int::math::point;
+use crate::mesh::int::math::{direction, point};
 use crate::mesh::uniq_iter::UniqueSegment;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
@@ -17,7 +17,7 @@ pub(super) struct OffsetSection<I: IntNumber> {
 impl<I: IntNumber> OffsetSection<I> {
     pub(super) fn new(segment: UniqueSegment<I>, offset: I) -> Self {
         let (a, b) = (segment.a, segment.b);
-        let direction = crate::mesh::int::math::direction(b - a).expect("unique segment");
+        let direction = direction(b - a).expect("unique segment");
         if offset == I::ZERO {
             return Self {
                 offset,

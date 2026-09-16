@@ -10,6 +10,7 @@ use crate::mesh::int::{
 use crate::mesh::math::MathMode;
 use alloc::vec::Vec;
 use core::hint::black_box;
+use i_float::float::number::FloatNumber;
 use i_float::int::{angle::Angle, point::IntPoint};
 use std::{println, time::Instant};
 
@@ -38,7 +39,7 @@ fn benchmark<I: OverlayInt>() {
                             + if jagged {
                                 if j % 2 == 0 { 0.0 } else { 4096.0 }
                             } else {
-                                libm::sin(j as f64 * 0.18) * 4096.0
+                                FloatNumber::sin(j as f64 * 0.18) * 4096.0
                             };
                         IntPoint::new(I::from_rounded_float(x), I::from_rounded_float(y))
                     })
