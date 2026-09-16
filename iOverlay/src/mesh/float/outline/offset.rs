@@ -293,9 +293,10 @@ where
     where
         I: OverlayInt + 'static,
     {
-        match OutlineSolver::<P, I>::prepare(self, style) {
-            Some(solver) => solver.build(self, options),
-            None => vec![],
+        if let Some(solver) = OutlineSolver::<P, I>::prepare(self, style) {
+            solver.build(self, options)
+        } else {
+            vec![]
         }
     }
 
@@ -307,9 +308,10 @@ where
     ) where
         I: OverlayInt + 'static,
     {
-        match OutlineSolver::<P, I>::prepare(self, style) {
-            Some(solver) => solver.build_into(self, options, output),
-            None => output.clear_and_reserve(0, 0),
+        if let Some(solver) = OutlineSolver::<P, I>::prepare(self, style) {
+            solver.build_into(self, options, output)
+        } else {
+            output.clear_and_reserve(0, 0)
         }
     }
 
@@ -429,9 +431,9 @@ where
     fn build<S: ShapeResource<P>>(self, source: &S, options: OverlayOptions<P::Scalar, I>) -> Shapes<P> {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
-        let iter_paths = source.iter_int_paths(&self.adapter);
+        let iter_int_paths = source.iter_int_paths(&self.adapter);
         let shapes =
-            build_outline_overlay_iter(iter_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
+            build_outline_overlay_iter(iter_int_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
                 .overlay(OverlayRule::Subject, FillRule::Positive);
 
         if clean_result {
@@ -455,9 +457,9 @@ where
     ) {
         let preserve_output_collinear = options.preserve_output_collinear;
         let clean_result = options.clean_result;
-        let iter_paths = source.iter_int_paths(&self.adapter);
+        let iter_int_paths = source.iter_int_paths(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        build_outline_overlay_iter(iter_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
+        build_outline_overlay_iter(iter_int_paths, &self.int_style(), options.int_with_adapter(&self.adapter))
             .overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
         let iter = int_output.points.iter().map(|p| self.adapter.int_to_float(p));
         output.set_with_iter(iter, &int_output.ranges);

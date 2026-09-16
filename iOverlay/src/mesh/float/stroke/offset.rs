@@ -16,7 +16,7 @@ use i_float::int::number::wide_int::WideIntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
 use i_shape::flat::float::FloatFlatContoursBuffer;
-use i_shape::float::adapter::ShapesToFloat;
+use i_shape::float::adapter::{ResourceToIntIter, ShapesToFloat};
 use i_shape::float::despike::DeSpikeContour;
 use i_shape::float::simple::SimplifyContour;
 use i_shape::source::float::resource::ShapeResource;
@@ -474,12 +474,11 @@ where
             return vec![];
         }
 
-        let paths = source
-            .iter_paths()
-            .map(|path| path.iter().map(|p| self.adapter.float_to_int(p)));
+        let iter_int_paths = source.iter_int_paths(&self.adapter);
+
         let style = self.style.to_int(&self.adapter);
         let shapes = build_stroke_overlay_iter(
-            paths,
+            iter_int_paths,
             &style,
             is_closed_path,
             options.int_with_adapter(&self.adapter),
@@ -513,13 +512,12 @@ where
             return;
         }
 
-        let paths = source
-            .iter_paths()
-            .map(|path| path.iter().map(|p| self.adapter.float_to_int(p)));
+        let iter_int_paths = source.iter_int_paths(&self.adapter);
+
         let style = self.style.to_int(&self.adapter);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
         build_stroke_overlay_iter(
-            paths,
+            iter_int_paths,
             &style,
             is_closed_path,
             options.int_with_adapter(&self.adapter),
