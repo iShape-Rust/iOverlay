@@ -491,9 +491,9 @@ println!("result: {:?}", result);
 ## Buffering
 
 Outline, stroke, and variable-width stroke geometry is built by `mesh::int`.
-The existing `mesh::float` APIs select a scale, convert input and styles, call the
-integer API, and convert the result back. Fixed-scale methods retain the supplied
-grid. Integer rounding and CORDIC arc subdivision can change individual vertices
+The `mesh::float` APIs select a scale, convert input and styles, delegate
+construction to the integer core, and convert the result back. Fixed-scale
+methods retain the supplied grid. Integer rounding and CORDIC arc subdivision can change individual vertices
 compared with the former float builders.
 
 Use `IntOutlineOffset`, `IntStrokeOffset`, or `IntVariableStrokeOffset` from the
@@ -513,14 +513,18 @@ Integer distances use input coordinate units without automatic rescaling.
 Stroke radius is `ceil(max(width, 0) / 2)`; radii at most 1 are degenerate.
 Use `validate_outline(&style)`, `validate_stroke(&style)`, or
 `validate_variable_stroke()` for an optional conservative coordinate-range check.
-Construction asserts bounds in debug builds and trusts the caller in release.
+Construction requires input and temporary coordinates to stay in the safe range.
 All three APIs provide `*_into` methods that replace a reusable flat output buffer.
 
-Constant-width stroke also offers experimental float construction math through
+Constant-width stroke also offers float construction math through
 `StrokeStyle::math(MathMode::Float)` or `IntStrokeStyle::math(MathMode::Float)`,
 with `MathMode` in `mesh::math`. Directions are stored as `UnitIntVector`; integer
 coordinates and boolean operations are retained. `Integer` remains the default.
-See [stroke math modes and preliminary timings](docs/stroke_math.md) for details.
+
+Choose `MathMode::Integer` for cross-platform deterministic construction;
+otherwise prefer `MathMode::Float` for higher precision and generally better speed.
+Outline and variable-width stroke currently use Integer only.
+See [stroke construction math](docs/stroke_math.md).
 
 ### Offsetting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">

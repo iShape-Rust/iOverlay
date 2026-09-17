@@ -13,7 +13,7 @@ pub type IntStrokeError = IntOutlineError;
 /// Strokes integer paths with radius `ceil(max(width, 0) / 2)`.
 /// Radii at most one produce no geometry.
 /// Coordinates, caps and temporary joins must stay in the engine's safe range.
-/// Validation is optional in release and asserted in debug builds.
+/// Use [`Self::validate_stroke`] for an optional conservative bounds check.
 ///
 /// ```
 /// use i_float::int::point::IntPoint;

@@ -12,7 +12,9 @@ pub enum IntLineJoin {
     /// Integer math clamps the minimum interior angle to at least 5 degrees
     /// and uses bevel joins for interior angles above 175 degrees.
     /// Float math clamps the minimum to 0.01*pi (1.8 degrees), without the
-    /// near-straight bevel cutoff. Both clamp the maximum below pi.
+    /// near-straight bevel cutoff. Both clamp the maximum to one Angle unit
+    /// below pi. The floating-point LineJoin adapter additionally clamps its
+    /// input angle to 0.01*pi..=0.99*pi before conversion to this type.
     Miter(Angle),
     /// Rounded join with reusable integer rotation settings.
     Round(ArcOptions),
