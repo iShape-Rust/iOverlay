@@ -4,6 +4,7 @@ use i_overlay::core::hierarchy::{ChildLink, FlatShapeHierarchy};
 use i_overlay::core::overlay::{ContourDirection, Overlay};
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_shape::int::path::ContourExtension;
+use i_shape::int::area::UnsafeArea;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 #[test]
@@ -119,7 +120,7 @@ fn assert_hierarchy_matches_containment(hierarchy: &FlatShapeHierarchy<i32>, see
                     continue;
                 }
 
-                let area = contour.unsafe_area().unsigned_abs();
+                let area = contour.iter().copied().unsafe_area().unsigned_abs();
                 if parent.is_none_or(|candidate| area < candidate.0) {
                     parent = Some((area, parent_shape_index, parent_contour_index));
                 }
