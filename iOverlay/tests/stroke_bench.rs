@@ -1,18 +1,15 @@
 //! Manual comparison; run with release optimizations and an otherwise idle machine.
-extern crate std;
-use super::offset::build_stroke_overlay_iter;
-use crate::core::{fill_rule::FillRule, integer::OverlayInt, overlay_rule::OverlayRule};
-use crate::mesh::int::{
-    arc::ArcOptions,
-    math::{backend::MeshMath, float::FloatMath, integer::IntegerMath},
-    style::{IntLineCap, IntLineJoin, IntStrokeStyle},
-};
-use crate::mesh::math::MathMode;
-use alloc::vec::Vec;
 use core::hint::black_box;
 use i_float::float::number::FloatNumber;
-use i_float::int::{angle::Angle, point::IntPoint};
-use std::{println, time::Instant};
+use i_float::int::{angle::Angle, point::IntPoint, unit_vector::UnitIntVector};
+use i_overlay::core::integer::OverlayInt;
+use i_overlay::mesh::int::{
+    arc::ArcOptions,
+    stroke::offset::IntStrokeOffset,
+    style::{IntLineCap, IntLineJoin, IntStrokeStyle},
+};
+use i_overlay::mesh::math::MathMode;
+use std::time::Instant;
 
 fn measure(mut run: impl FnMut() -> usize) -> (f64, usize) {
     let count = black_box(run());
@@ -55,10 +52,10 @@ fn benchmark<I: OverlayInt>() {
                 for &v in &vectors {
                     match math {
                         MathMode::Integer => {
-                            black_box(<IntegerMath as MeshMath<I>>::normalize(black_box(v)));
+                            black_box(black_box(v).fast_normalize());
                         }
                         MathMode::Float => {
-                            black_box(<FloatMath as MeshMath<I>>::normalize(black_box(v)));
+                            black_box(UnitIntVector::normalize_with_float(black_box(v)));
                         }
                     }
                 }
@@ -77,37 +74,26 @@ fn benchmark<I: OverlayInt>() {
                     .line_join(join)
                     .start_cap(IntLineCap::Round(ArcOptions::default()))
                     .end_cap(IntLineCap::Square);
-                for full in [false, true] {
-                    let (us, count) = measure(|| {
-                        let mut overlay = build_stroke_overlay_iter(
-                            black_box(&paths).iter().map(|p| p.iter().copied()),
-                            black_box(&style),
-                            false,
-                            Default::default(),
-                        );
-                        if full {
-                            overlay
-                                .overlay(OverlayRule::Subject, FillRule::Positive)
-                                .iter()
-                                .flatten()
-                                .map(Vec::len)
-                                .sum()
-                        } else {
-                            overlay.segments.len()
-                        }
-                    });
-                    println!(
-                        "i{} jagged={jagged} join={join:?} full={full} {math:?}: {us:.2} us, count={count}",
-                        I::BITS
-                    );
-                }
+                let (us, count) = measure(|| {
+                    black_box(&paths)
+                        .stroke(black_box(&style), false)
+                        .unwrap()
+                        .iter()
+                        .flatten()
+                        .map(Vec::len)
+                        .sum()
+                });
+                println!(
+                    "i{} jagged={jagged} join={join:?} stroke {math:?}: {us:.2} us, count={count}",
+                    I::BITS
+                );
             }
         }
     }
 }
 
 #[test]
-#[ignore = "manual timing: cargo test --release --lib benchmark_math_modes -- --ignored --nocapture"]
+#[ignore = "manual timing: cargo test --release --test stroke_bench benchmark_math_modes -- --ignored --nocapture"]
 fn benchmark_math_modes() {
     benchmark::<i32>();
     benchmark::<i64>();

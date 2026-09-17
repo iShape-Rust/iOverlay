@@ -4,7 +4,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::float::style::StrokeStyle;
-use crate::mesh::int::stroke::offset::build_stroke_overlay_iter;
+use crate::mesh::int::stroke::build_stroke_overlay_iter;
 use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;

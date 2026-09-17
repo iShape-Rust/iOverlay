@@ -22,9 +22,11 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
             IntLineJoin::Bevel => Self::Bevel,
             IntLineJoin::Round(options) => Self::Round(M::Arc::new(options)),
             IntLineJoin::Miter(angle) => {
+                let min_angle = (1u32 << 31) / 100;
+                let max_angle = (1u32 << 31) - 1;
                 let minimum = angle
                     .bits()
-                    .clamp((1u32 << 31) / 100, ((1u64 << 31) * 99 / 100) as u32);
+                    .clamp(min_angle, max_angle);
                 let (sin, cos) = M::sin_cos(Angle::from_bits(minimum / 2));
                 Self::Miter { minimum, sin, cos }
             }

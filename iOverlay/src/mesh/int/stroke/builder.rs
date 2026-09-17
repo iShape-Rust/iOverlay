@@ -1,107 +1,12 @@
+use super::{bounds::stroke_radius, builder_join::JoinBuilder, cap::Cap, section::Section};
 use crate::mesh::int::{
-    arc::{ArcDirection, ArcMath},
     join::Join,
-    math::{backend::MeshMath, integer::IntegerMath, point},
-    style::{IntLineCap, IntStrokeStyle},
+    math::{backend::MeshMath, integer::IntegerMath},
+    style::IntStrokeStyle,
 };
-use crate::mesh::subject::SubjectSegments;
 use crate::segm::{boolean::ShapeCountBoolean, segment::Segment};
 use alloc::vec::Vec;
-use i_float::int::number::{int::IntNumber, uint::UIntNumber, wide_int::WideIntNumber};
-use i_float::int::{point::IntPoint, unit_vector::UnitIntVector};
-
-#[derive(Clone, Copy)]
-struct Section<I: IntNumber> {
-    a: IntPoint<I>,
-    b: IntPoint<I>,
-    a_left: IntPoint<I>,
-    a_right: IntPoint<I>,
-    b_left: IntPoint<I>,
-    b_right: IntPoint<I>,
-    dir: UnitIntVector<I>,
-}
-
-impl<I: IntNumber> Section<I> {
-    fn new<M: MeshMath<I>>(a: IntPoint<I>, b: IntPoint<I>, radius: I) -> Self {
-        let dir = M::normalize(b - a).expect("unique section");
-        let v = M::scale(dir, radius);
-        Self {
-            a,
-            b,
-            dir,
-            a_left: point(a, -v.y, v.x),
-            a_right: point(a, v.y, -v.x),
-            b_left: point(b, -v.y, v.x),
-            b_right: point(b, v.y, -v.x),
-        }
-    }
-    fn add(&self, segments: &mut Vec<Segment<ShapeCountBoolean, I>>) {
-        for (a, b) in [(self.a_right, self.b_right), (self.b_left, self.a_left)] {
-            segments.push_non_degenerate(a, b);
-        }
-    }
-}
-
-enum Cap<I: IntNumber, M: MeshMath<I>> {
-    Butt,
-    Square,
-    Round(M::Arc),
-    Custom(alloc::rc::Rc<[IntPoint<I>]>),
-}
-impl<I: IntNumber, M: MeshMath<I>> Cap<I, M> {
-    fn new(cap: &IntLineCap<I>) -> Self {
-        match cap {
-            IntLineCap::Butt => Self::Butt,
-            IntLineCap::Square => Self::Square,
-            IntLineCap::Round(options) => Self::Round(M::Arc::new(*options)),
-            IntLineCap::Custom(points) => Self::Custom(points.clone()),
-        }
-    }
-    fn add(
-        &mut self,
-        center: IntPoint<I>,
-        from: IntPoint<I>,
-        to: IntPoint<I>,
-        outward: UnitIntVector<I>,
-        radius: I,
-        segments: &mut Vec<Segment<ShapeCountBoolean, I>>,
-    ) {
-        if matches!(self, Self::Butt) {
-            segments.push_non_degenerate(from, to);
-            return;
-        }
-        let mut previous = from;
-        match self {
-            Self::Round(arc) => {
-                let a = M::normalize(from - center).expect("positive radius");
-                let b = M::normalize(to - center).expect("positive radius");
-                for &dir in arc.build(a, b, ArcDirection::Counterclockwise) {
-                    let offset = M::scale(dir, radius);
-                    let next = point(center, offset.x, offset.y);
-                    segments.push_non_degenerate(previous, next);
-                    previous = next;
-                }
-            }
-            Self::Square => {
-                let v = M::scale(outward, radius);
-                for next in [point(from, v.x, v.y), point(to, v.x, v.y)] {
-                    segments.push_non_degenerate(previous, next);
-                    previous = next;
-                }
-            }
-            Self::Custom(points) => {
-                for p in points.iter() {
-                    let v = M::rotate(outward, *p);
-                    let next = point(center, v.x, v.y);
-                    segments.push_non_degenerate(previous, next);
-                    previous = next;
-                }
-            }
-            Self::Butt => {}
-        }
-        segments.push_non_degenerate(previous, to);
-    }
-}
+use i_float::int::{number::int::IntNumber, point::IntPoint};
 
 pub(super) struct StrokeBuilder<I: IntNumber, M: MeshMath<I> = IntegerMath> {
     radius: I,
@@ -111,39 +16,9 @@ pub(super) struct StrokeBuilder<I: IntNumber, M: MeshMath<I> = IntegerMath> {
     sections: Vec<Section<I>>,
 }
 impl<I: IntNumber, M: MeshMath<I>> StrokeBuilder<I, M> {
-    pub(super) fn radius(style: &IntStrokeStyle<I>) -> I {
-        I::from_wide((style.width.max(I::ZERO).to_wide() + I::Wide::ONE) / I::Wide::TWO)
-    }
-    pub(super) fn padding(style: &IntStrokeStyle<I>) -> I::Wide {
-        let radius = Self::radius(style);
-        let cap_padding = |cap: &IntLineCap<I>| match cap {
-            IntLineCap::Square => radius.to_wide() * I::Wide::TWO,
-            IntLineCap::Custom(points) => points
-                .iter()
-                .map(|p| {
-                    let d =
-                        i_float::int::vector::IntVector::<I>::new(p.x.to_wide(), p.y.to_wide()).sqr_length();
-                    let root = d.isqrt();
-                    I::Wide::from_uint(root)
-                        + if root * root < d {
-                            I::Wide::ONE
-                        } else {
-                            I::Wide::ZERO
-                        }
-                })
-                .max()
-                .unwrap_or(I::Wide::ZERO),
-            _ => radius.to_wide(),
-        };
-        M::guard_padding(
-            Join::<I, M>::padding(style.join, radius)
-                .max(cap_padding(&style.start_cap))
-                .max(cap_padding(&style.end_cap)),
-        )
-    }
     pub(super) fn new(style: &IntStrokeStyle<I>) -> Self {
         Self {
-            radius: Self::radius(style),
+            radius: stroke_radius(style),
             join: Join::new(style.join),
             start: Cap::new(&style.start_cap),
             end: Cap::new(&style.end_cap),
@@ -185,12 +60,13 @@ impl<I: IntNumber, M: MeshMath<I>> StrokeBuilder<I, M> {
             s.add(segments);
         }
         for i in 1..self.sections.len() {
-            self.add_join(self.sections[i - 1], self.sections[i], segments);
+            self.join
+                .add_join(self.sections[i - 1], self.sections[i], self.radius, segments);
         }
         let first = self.sections[0];
         let last = *self.sections.last().unwrap();
         if closed {
-            self.add_join(last, first, segments);
+            self.join.add_join(last, first, self.radius, segments);
         } else {
             let backward = M::normalize(first.a - first.b).unwrap();
             self.start.add(
@@ -205,40 +81,15 @@ impl<I: IntNumber, M: MeshMath<I>> StrokeBuilder<I, M> {
                 .add(last.b, last.b_right, last.b_left, last.dir, self.radius, segments);
         }
     }
-    fn add_join(&mut self, a: Section<I>, b: Section<I>, segments: &mut Vec<Segment<ShapeCountBoolean, I>>) {
-        let cross = (a.b - a.a).cross_product(b.b - b.a);
-        let (from, to, incoming, outgoing) = if cross >= I::Wide::ZERO {
-            (a.b_right, b.a_right, a.dir, b.dir)
-        } else {
-            (
-                b.a_left,
-                a.b_left,
-                M::normalize(b.a - b.b).unwrap(),
-                M::normalize(a.a - a.b).unwrap(),
-            )
-        };
-        if cross >= I::Wide::ZERO {
-            segments.push_non_degenerate(b.a_left, a.b_left);
-        } else {
-            segments.push_non_degenerate(a.b_right, b.a_right);
-        }
-        self.join.add(
-            a.b,
-            from,
-            to,
-            incoming,
-            outgoing,
-            self.radius,
-            ArcDirection::Counterclockwise,
-            segments,
-        );
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mesh::int::{arc::ArcOptions, style::IntLineJoin};
+    use crate::mesh::int::{
+        arc::ArcOptions,
+        style::{IntLineCap, IntLineJoin},
+    };
     use i_float::int::angle::Angle;
 
     #[test]
