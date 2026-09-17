@@ -1,5 +1,6 @@
 use i_overlay::mesh::float::variable_stroke::offset::VariableStrokeOffset;
 use i_overlay::mesh::float::variable_stroke::{StrokeVertex, VariableStrokeStyle};
+use i_overlay::mesh::math::MathMode;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::{Duration, Instant};
 
@@ -41,18 +42,21 @@ fn run_variable_stroke_stress_case(seed: u64, iteration: usize) {
     let style = VariableStrokeStyle::new().round_angle(round_angle);
 
     let result = catch_unwind(AssertUnwindSafe(|| {
-        let shapes = path.variable_stroke(style);
-        assert_valid_shapes(&shapes, seed);
+        for math in [MathMode::Integer, MathMode::Float] {
+            let style = style.math(math);
+            let shapes = path.variable_stroke(style);
+            assert_valid_shapes(&shapes, seed);
 
-        if seed & 1 == 0 {
-            let shapes = path.variable_stroke_as::<i64>(style);
+            if seed & 1 == 0 {
+                let shapes = path.variable_stroke_as::<i64>(style);
+                assert_valid_shapes(&shapes, seed);
+            }
+
+            let mut reversed = path.clone();
+            reversed.reverse();
+            let shapes = reversed.variable_stroke(style);
             assert_valid_shapes(&shapes, seed);
         }
-
-        let mut reversed = path.clone();
-        reversed.reverse();
-        let shapes = reversed.variable_stroke(style);
-        assert_valid_shapes(&shapes, seed);
     }));
 
     if let Err(payload) = result {

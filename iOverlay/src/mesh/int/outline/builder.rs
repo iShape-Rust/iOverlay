@@ -1,5 +1,6 @@
 use super::builder_join::JoinBuilder;
 use super::section::OffsetSection;
+use crate::mesh::int::{join::Join, math::backend::MeshMath};
 use crate::mesh::subject::SubjectSegments;
 use crate::mesh::uniq_iter::UniqueSegmentsIter;
 use crate::segm::boolean::ShapeCountBoolean;
@@ -9,13 +10,13 @@ use i_float::int::number::int::IntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 
-pub(super) struct OutlineBuilder<I: IntNumber, J: JoinBuilder<I>> {
+pub(super) struct OutlineBuilder<I: IntNumber, M: MeshMath<I>> {
     offset: I,
-    join_builder: J,
+    join_builder: Join<I, M>,
 }
 
-impl<I: IntNumber, J: JoinBuilder<I>> OutlineBuilder<I, J> {
-    pub(super) fn new(offset: I, join_builder: J) -> Self {
+impl<I: IntNumber, M: MeshMath<I>> OutlineBuilder<I, M> {
+    pub(super) fn new(offset: I, join_builder: Join<I, M>) -> Self {
         Self { offset, join_builder }
     }
 
@@ -29,11 +30,11 @@ impl<I: IntNumber, J: JoinBuilder<I>> OutlineBuilder<I, J> {
         let Some(first) = iter.next() else {
             return;
         };
-        let first = OffsetSection::new(first, self.offset);
+        let first = OffsetSection::new::<M>(first, self.offset);
         segments.push_non_degenerate(first.a_top, first.b_top);
         let mut previous = first;
         for segment in iter {
-            let next = OffsetSection::new(segment, self.offset);
+            let next = OffsetSection::new::<M>(segment, self.offset);
             segments.push_non_degenerate(next.a_top, next.b_top);
             self.feed_join(&previous, &next, segments);
             previous = next;

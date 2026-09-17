@@ -39,9 +39,8 @@ impl core::error::Error for IntOutlineError {}
 /// Contour signed double areas must also fit in `I::Wide`
 /// (including repeated winding).
 ///
-/// Uses [`fast_normalize`](i_float::int::vector::IntVector::fast_normalize)
-/// with about 6/14/30 bits of direction precision for i16/i32/i64.
-/// Scaling a direction also scales its approximation error.
+/// Construction arithmetic is selected by [`IntOutlineStyle::math`].
+/// Integer math is deterministic; float math may produce different rounded vertices.
 ///
 /// ```
 /// use i_overlay::i_float::int::point::IntPoint;

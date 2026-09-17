@@ -1,11 +1,14 @@
-use super::{IntVariableStrokeSource, IntVariableStrokeStyle, builder::VariableStrokeBuilder};
+#[cfg(feature = "variable_stroke_debug")]
+use super::build::build_variable_overlay_iter;
+use super::{IntVariableStrokeSource, IntVariableStrokeStyle, build::BuildVariableOverlay};
 use crate::core::{
-    fill_rule::FillRule,
-    integer::OverlayInt,
-    overlay::{IntOverlayOptions, Overlay},
-    overlay_rule::OverlayRule,
+    fill_rule::FillRule, integer::OverlayInt, overlay::IntOverlayOptions, overlay_rule::OverlayRule,
 };
-use crate::mesh::int::outline::offset::IntOutlineError;
+use crate::mesh::int::{
+    math::{backend::MeshMath, float::FloatMath},
+    outline::offset::IntOutlineError,
+};
+#[cfg(feature = "variable_stroke_debug")]
 use alloc::vec::Vec;
 use i_float::int::rect::IntRect;
 use i_shape::{flat::buffer::FlatContoursBuffer, int::shape::IntShapes};
@@ -26,6 +29,7 @@ pub type IntVariableStrokeError = IntOutlineError;
 /// assert_eq!(path.variable_stroke(IntVariableStrokeStyle::new()).unwrap().len(), 1);
 /// ```
 pub trait IntVariableStrokeOffset<I: OverlayInt>: IntVariableStrokeSource<I> {
+    /// Uses conservative padding valid for either construction math mode.
     fn validate_variable_stroke(&self) -> Result<(), IntVariableStrokeError> {
         let radius = self
             .iter_variable_paths()
@@ -34,7 +38,8 @@ pub trait IntVariableStrokeOffset<I: OverlayInt>: IntVariableStrokeSource<I> {
             .max()
             .unwrap_or(I::ZERO);
         if let Some(rect) = IntRect::with_iter(self.iter_variable_paths().flatten().map(|v| &v.point)) {
-            if !crate::mesh::int::bounds::expanded_is_safe(rect, radius.to_wide()) {
+            let padding = <FloatMath as MeshMath<I>>::guard_padding(radius.to_wide());
+            if !crate::mesh::int::bounds::expanded_is_safe(rect, padding) {
                 return Err(IntVariableStrokeError::CoordinateOutOfRange);
             }
         }
@@ -78,18 +83,13 @@ pub trait IntVariableStrokeOffset<I: OverlayInt>: IntVariableStrokeSource<I> {
         style: IntVariableStrokeStyle,
         options: IntOverlayOptions<I::WideUInt>,
     ) -> Result<super::debug::IntVariableStrokeDebugResult<I>, IntVariableStrokeError> {
-        debug_assert!(
-            self.validate_variable_stroke().is_ok(),
-            "variable stroke exceeds coordinate range"
-        );
-        let mut builder = VariableStrokeBuilder::new(style);
-        let mut segments = Vec::new();
         let mut edges = Vec::new();
-        for (index, path) in self.iter_variable_paths().enumerate() {
-            builder.build_debug(path, index, &mut segments, &mut edges);
-        }
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options;
+        let mut overlay = build_variable_overlay_iter(
+            self.iter_variable_paths().map(|path| path.iter().copied()),
+            style,
+            options,
+            Some(&mut edges),
+        );
         Ok(super::debug::IntVariableStrokeDebugResult {
             edges,
             shapes: overlay.overlay(OverlayRule::Subject, FillRule::Positive),
@@ -97,24 +97,3 @@ pub trait IntVariableStrokeOffset<I: OverlayInt>: IntVariableStrokeSource<I> {
     }
 }
 impl<I: OverlayInt, S: IntVariableStrokeSource<I> + ?Sized> IntVariableStrokeOffset<I> for S {}
-trait BuildVariableOverlay<I: OverlayInt>: IntVariableStrokeOffset<I> {
-    fn build_variable_overlay(
-        &self,
-        style: IntVariableStrokeStyle,
-        options: IntOverlayOptions<I::WideUInt>,
-    ) -> Overlay<I> {
-        debug_assert!(
-            self.validate_variable_stroke().is_ok(),
-            "variable stroke exceeds coordinate range"
-        );
-        let mut builder = VariableStrokeBuilder::new(style);
-        let mut segments = Vec::new();
-        for path in self.iter_variable_paths() {
-            builder.build(path, &mut segments);
-        }
-        let mut overlay = Overlay::with_segments(segments);
-        overlay.options = options;
-        overlay
-    }
-}
-impl<I: OverlayInt, S: IntVariableStrokeOffset<I> + ?Sized> BuildVariableOverlay<I> for S {}

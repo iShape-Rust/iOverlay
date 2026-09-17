@@ -409,6 +409,7 @@ where
                 outer_offset: style.outer_offset,
                 inner_offset: style.inner_offset,
                 join: style.join.clone(),
+                math: style.math,
             },
             adapter,
         })
@@ -425,6 +426,7 @@ where
             outer_offset: self.adapter.round_len_to_int(self.style.outer_offset),
             inner_offset: self.adapter.round_len_to_int(self.style.inner_offset),
             join: (&self.style.join).into(),
+            math: self.style.math,
         }
     }
 

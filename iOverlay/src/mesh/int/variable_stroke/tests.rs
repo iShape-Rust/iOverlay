@@ -1,6 +1,10 @@
+use super::super::builder_join::ArcSweep;
+use super::reference::*;
 use super::*;
+use crate::mesh::int::arc::ArcBuilder;
 use crate::mesh::int::arc::ArcOptions;
 use crate::mesh::int::variable_stroke::offset::IntVariableStrokeOffset;
+use i_float::int::{angle::Angle, point::IntPoint};
 
 fn vertex(x: i32, y: i32, width: i32) -> IntStrokeVertex<i32> {
     IntStrokeVertex::new(IntPoint::new(x, y), width)
@@ -140,8 +144,8 @@ fn joins_preserve_contacts_and_select_all_exposed_arcs() {
         ),
     ];
     for (path, expected) in cases {
-        let prev = Section::try_new(&path[0], &path[1]).unwrap();
-        let next = Section::try_new(&path[1], &path[2]).unwrap();
+        let prev = Section::try_new::<IntegerMath>(&path[0], &path[1]).unwrap();
+        let next = Section::try_new::<IntegerMath>(&path[1], &path[2]).unwrap();
         let mut arc = ArcBuilder::new(IntVariableStrokeStyle::default().arc);
         let mut segments = Vec::new();
         assert_eq!(output(&mut arc, &mut segments).add_join(&prev, &next), expected);
@@ -226,9 +230,16 @@ fn duplicates_and_small_widths_never_emit_zero_length_edges() {
                 vertex(10, 0, 2 * width),
                 vertex(end.0, end.1, width),
             ];
-            let mut builder = VariableStrokeBuilder::new(IntVariableStrokeStyle::default());
+            let mut builder = VariableStrokeBuilder::<i32>::new(IntVariableStrokeStyle::default());
             let mut segments = Vec::new();
-            builder.build(&path, &mut segments);
+            builder.build(
+                path,
+                &mut segments,
+                #[cfg(feature = "variable_stroke_debug")]
+                None,
+                #[cfg(feature = "variable_stroke_debug")]
+                0,
+            );
             assert!(segments.iter().all(|s| s.x_segment.a < s.x_segment.b));
             if width >= 4 {
                 assert!(!segments.is_empty());
@@ -243,7 +254,7 @@ fn short_sections_keep_tangent_precision_at_large_widths() {
         for delta in [0, 1] {
             let a = vertex(0, 0, 8192);
             let b = vertex(x, y, 8192 - 2 * delta);
-            let section = Section::try_new(&a, &b).unwrap();
+            let section = Section::try_new::<IntegerMath>(&a, &b).unwrap();
             let sq = f64::from(x * x + y * y);
             let tangent = (sq - f64::from(delta * delta)).sqrt();
             for (left, p) in [(true, section.a_left), (false, section.a_right)] {
@@ -260,5 +271,52 @@ fn short_sections_keep_tangent_precision_at_large_widths() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn streaming_matches_original_partitioned_segments() {
+    use rand::{RngExt, SeedableRng, rngs::StdRng};
+    let mut rng = StdRng::seed_from_u64(0x7365_6374_696f_6e73);
+    let style = IntVariableStrokeStyle::default();
+    let mut builder = VariableStrokeBuilder::<i32>::new(style);
+    let mut arc = ArcBuilder::new(style.arc);
+    let mut actual = Vec::new();
+    let mut expected = Vec::new();
+    for _ in 0..2048 {
+        let mut path = Vec::new();
+        for _ in 0..rng.random_range(0..24) {
+            let next = if !path.is_empty() && rng.random_range(0..5) == 0 {
+                let prev: IntStrokeVertex<i32> = path[path.len() - 1];
+                vertex(prev.point.x, prev.point.y, rng.random_range(-2..20000))
+            } else {
+                vertex(
+                    rng.random_range(-10000..10000),
+                    rng.random_range(-10000..10000),
+                    rng.random_range(-2..20000),
+                )
+            };
+            path.push(next);
+        }
+        actual.clear();
+        expected.clear();
+        builder.build(
+            path.iter().copied(),
+            &mut actual,
+            #[cfg(feature = "variable_stroke_debug")]
+            None,
+            #[cfg(feature = "variable_stroke_debug")]
+            0,
+        );
+        for part in VariableStrokeBuilder::find_subsegments(&path) {
+            VariableStrokeBuilder::add_subsegment(&part, &path, &mut output(&mut arc, &mut expected));
+        }
+        let signature =
+            |s: &Segment<ShapeCountBoolean, i32>| (s.x_segment.a, s.x_segment.b, s.count.subj, s.count.clip);
+        assert_eq!(
+            actual.iter().map(signature).collect::<Vec<_>>(),
+            expected.iter().map(signature).collect::<Vec<_>>(),
+            "path={path:?}"
+        );
     }
 }

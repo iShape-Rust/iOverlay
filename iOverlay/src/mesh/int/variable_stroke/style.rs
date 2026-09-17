@@ -1,4 +1,5 @@
 use crate::mesh::int::arc::ArcOptions;
+use crate::mesh::math::MathMode;
 use i_float::int::{
     number::{int::IntNumber, wide_int::WideIntNumber},
     point::IntPoint,
@@ -21,10 +22,13 @@ impl<I: IntNumber> IntStrokeVertex<I> {
 #[derive(Debug, Clone, Copy)]
 pub struct IntVariableStrokeStyle {
     pub arc: ArcOptions,
+    /// Arithmetic used to construct tangent contacts and arcs.
+    pub math: MathMode,
 }
 impl Default for IntVariableStrokeStyle {
     fn default() -> Self {
         Self {
+            math: MathMode::Integer,
             arc: ArcOptions {
                 max_step: i_float::int::angle::Angle::from_bits(68_356_528),
                 ..ArcOptions::default()
@@ -35,6 +39,10 @@ impl Default for IntVariableStrokeStyle {
 impl IntVariableStrokeStyle {
     pub fn new() -> Self {
         Self::default()
+    }
+    pub fn math(mut self, math: MathMode) -> Self {
+        self.math = math;
+        self
     }
     pub fn arc(mut self, arc: ArcOptions) -> Self {
         self.arc = arc;

@@ -14,7 +14,9 @@ pub(super) trait JoinBuilder<I: IntNumber> {
     );
 }
 
-impl<I: IntNumber> JoinBuilder<I> for crate::mesh::int::join::Join<I> {
+impl<I: IntNumber, M: crate::mesh::int::math::backend::MeshMath<I>> JoinBuilder<I>
+    for crate::mesh::int::join::Join<I, M>
+{
     fn add_join(
         &mut self,
         previous: &OffsetSection<I>,

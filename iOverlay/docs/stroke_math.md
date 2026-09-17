@@ -1,8 +1,8 @@
-# Stroke construction math
+# Mesh construction math
 
-Both `StrokeStyle` and `IntStrokeStyle` accept `.math(MathMode::Float)` from
-`i_overlay::mesh::math`. This selects construction arithmetic for constant-width
-stroke only; outline and variable-width stroke use integer construction math.
+The integer and floating-point styles for stroke, outline, and variable-width
+stroke all accept `.math(MathMode::Float)` from `i_overlay::mesh::math`. This
+selects construction arithmetic, independently of the input coordinate type.
 
 Use `MathMode::Integer` when cross-platform deterministic construction is
 required. For end-to-end reproducibility, use `mesh::int` with identical integer
@@ -13,7 +13,7 @@ also depends on the geometry and the boolean operation.
 
 `Integer` remains the default; select `Float` explicitly. The `mesh::float`
 namespace selects floating-point input coordinates, not construction arithmetic.
-Both input APIs support either stroke math mode, and both modes retain integer
+Both input APIs support either math mode, and both modes retain integer
 coordinates and boolean operations internally.
 
 Integer miter construction clamps the requested minimum interior angle to at
@@ -37,7 +37,7 @@ let style = StrokeStyle::new(1.0).math(MathMode::Float);
 let result = path.stroke(style, false);
 ```
 
-Construction dispatches once to a generic `StrokeBuilder<I, M>`. Float math
+Construction dispatches once to a generic builder using `IntegerMath` or `FloatMath`. Float math
 computes normalization and trigonometry in f64, then stores directions in
 `UnitIntVector`. Normalization uses `UnitIntVector::normalize_with_float`, and arc
 samples use `UnitIntVector::from_float_unchecked`. Scaling, custom-cap rotation,
@@ -51,13 +51,27 @@ Float arcs cache a rotation and reuse their output allocation. Floating rotation
 Conversion truncates fixed-scale components toward zero without checking the
 integer squared norm. Float normalization and rotation are approximate: directions
 may be slightly longer than one. There is no contraction step or guarantee of an
-exact norm bound. Float stroke bounds reserve a margin for numerical drift and
+exact norm bound. Float stroke and outline bounds reserve a margin for numerical drift and
 coordinate rounding. Final points still lie on the integer grid, so Float mode
 does not eliminate coordinate quantization or rounding-sensitive intersections.
 
 The modes may produce different rounded vertices and arc tessellations. Float
 mode does not promise cross-platform bitwise reproducibility. Code using
 exhaustive style struct literals must supply the `math` field.
+
+Variable-width strokes also select the tangent-contact calculation through a
+private `VariableStrokeMath` extension of `MeshMath`. Integer mode retains the
+scaled integer square root and rounded multiply/divide calculation. Float mode
+uses the same external-tangent formula in f64 and rounds local offsets before
+adding integer centers. The squared-length difference is computed in integers
+before conversion, preserving small positive differences near containment.
+Containment and orientation predicates remain integer operations.
+
+Variable-width paths are consumed once with a current chain and previous section;
+the float adapter converts vertices lazily. There are no intermediate path or
+subsegment collections. Arc storage is reused across paths. Debug edge collection
+uses the same traversal and records the same emitted geometry. The style-free
+`validate_variable_stroke()` uses conservative padding valid for both math modes.
 
 ## Validation
 
@@ -66,3 +80,7 @@ exhaustive style struct literals must supply the `math` field.
 - Both math modes cover constant-width round-stroke vertex disks, path reversal, coarse caps, empty paths, duplicates, and reused flat output.
 - Float arc tests check ordered samples, maximum angular gaps, approximate unit length within a numerical tolerance, and allocation reuse for i16/i32/i64.
 - Large-origin i64 tests translate the input by 2^60 and compare the translated-back stroke.
+
+- Both modes cover outline expansion/contraction and variable-width stroke areas for i16/i32/i64, flat output, and large-origin translation.
+- A deterministic randomized test compares streaming integer variable-stroke segments with the former partitioned traversal.
+- Variable-width stress tests exercise both construction modes, including reversed paths and the i64 engine.

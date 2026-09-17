@@ -28,6 +28,8 @@ pub struct IntOutlineStyle<I: IntNumber = i32> {
     pub outer_offset: I,
     pub inner_offset: I,
     pub join: IntLineJoin,
+    /// Arithmetic used to construct offsets and joins.
+    pub math: MathMode,
 }
 
 impl<I: IntNumber> IntOutlineStyle<I> {
@@ -36,7 +38,14 @@ impl<I: IntNumber> IntOutlineStyle<I> {
             outer_offset: offset,
             inner_offset: offset,
             join: IntLineJoin::Bevel,
+            math: MathMode::Integer,
         }
+    }
+
+    /// Selects construction arithmetic; boolean operations stay integer.
+    pub fn math(mut self, math: MathMode) -> Self {
+        self.math = math;
+        self
     }
 
     pub fn offset(mut self, offset: I) -> Self {

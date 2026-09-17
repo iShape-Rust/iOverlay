@@ -5,7 +5,9 @@ use crate::core::integer::OverlayInt;
 use crate::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
 use crate::core::overlay_rule::OverlayRule;
 use crate::mesh::int::join::Join;
+use crate::mesh::int::math::{backend::MeshMath, float::FloatMath, integer::IntegerMath};
 use crate::mesh::int::style::IntOutlineStyle;
+use crate::mesh::math::MathMode;
 use alloc::vec::Vec;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
@@ -28,54 +30,73 @@ where
         style: &IntOutlineStyle<I>,
         options: IntOverlayOptions<I::WideUInt>,
     ) -> Overlay<I> {
-        let mut outer_builder = OutlineBuilder::new(style.outer_offset, Join::<I>::new(style.join));
-        let mut inner_builder = OutlineBuilder::new(style.inner_offset, Join::<I>::new(style.join));
-
-        let mut overlay = Overlay::new_custom(0, options, Default::default());
-        let mut contour_options = options;
-
-        // Contours below the threshold can join into a larger surviving result.
-        contour_options.min_output_area = I::WideUInt::ZERO;
-
-        let mut contour_overlay = Overlay::new_custom(0, contour_options, Default::default());
-        let mut segments = Vec::new();
-        let mut extraction = BooleanExtractionBuffer::default();
-        let mut contours = FlatContoursBuffer::default();
-
-        for path in self {
-            if path.len() < 3 {
-                continue;
+        match style.math {
+            MathMode::Integer => {
+                build_outline_overlay_with_math::<I, IntegerMath, _, _>(self, style, options)
             }
-            let area = path.clone().area_two();
-            if area == I::Wide::ZERO {
-                continue;
-            }
-            let (builder, direction, fill) = if area > I::Wide::ZERO {
-                (
-                    &mut outer_builder,
-                    ContourDirection::CounterClockwise,
-                    FillRule::Positive,
-                )
-            } else {
-                (
-                    &mut inner_builder,
-                    ContourDirection::Clockwise,
-                    FillRule::Negative,
-                )
-            };
-            segments.clear();
-            builder.build(path, &mut segments);
-
-            contour_overlay.options.output_direction = direction;
-            contour_overlay.clear();
-            contour_overlay.add_segments(&segments);
-            if let Some(graph) = contour_overlay.build_graph_view(fill) {
-                graph.extract_contours_into(OverlayRule::Subject, &mut extraction, &mut contours);
-                overlay.add_flat_buffer(&contours, ShapeType::Subject);
-            }
+            MathMode::Float => build_outline_overlay_with_math::<I, FloatMath, _, _>(self, style, options),
         }
-        overlay
     }
+}
+
+fn build_outline_overlay_with_math<I, M, Paths, Path>(
+    paths: Paths,
+    style: &IntOutlineStyle<I>,
+    options: IntOverlayOptions<I::WideUInt>,
+) -> Overlay<I>
+where
+    I: OverlayInt,
+    M: MeshMath<I>,
+    Paths: IntoIterator<Item = Path>,
+    Path: ExactSizeIterator<Item = IntPoint<I>> + Clone,
+{
+    let mut outer_builder = OutlineBuilder::new(style.outer_offset, Join::<I, M>::new(style.join));
+    let mut inner_builder = OutlineBuilder::new(style.inner_offset, Join::<I, M>::new(style.join));
+
+    let mut overlay = Overlay::new_custom(0, options, Default::default());
+    let mut contour_options = options;
+
+    // Contours below the threshold can join into a larger surviving result.
+    contour_options.min_output_area = I::WideUInt::ZERO;
+
+    let mut contour_overlay = Overlay::new_custom(0, contour_options, Default::default());
+    let mut segments = Vec::new();
+    let mut extraction = BooleanExtractionBuffer::default();
+    let mut contours = FlatContoursBuffer::default();
+
+    for path in paths {
+        if path.len() < 3 {
+            continue;
+        }
+        let area = path.clone().area_two();
+        if area == I::Wide::ZERO {
+            continue;
+        }
+        let (builder, direction, fill) = if area > I::Wide::ZERO {
+            (
+                &mut outer_builder,
+                ContourDirection::CounterClockwise,
+                FillRule::Positive,
+            )
+        } else {
+            (
+                &mut inner_builder,
+                ContourDirection::Clockwise,
+                FillRule::Negative,
+            )
+        };
+        segments.clear();
+        builder.build(path, &mut segments);
+
+        contour_overlay.options.output_direction = direction;
+        contour_overlay.clear();
+        contour_overlay.add_segments(&segments);
+        if let Some(graph) = contour_overlay.build_graph_view(fill) {
+            graph.extract_contours_into(OverlayRule::Subject, &mut extraction, &mut contours);
+            overlay.add_flat_buffer(&contours, ShapeType::Subject);
+        }
+    }
+    overlay
 }
 
 #[cfg(test)]

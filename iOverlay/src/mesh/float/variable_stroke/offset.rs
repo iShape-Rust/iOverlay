@@ -1,12 +1,12 @@
 use crate::core::integer::OverlayInt;
+use crate::core::{fill_rule::FillRule, overlay_rule::OverlayRule};
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
 use crate::mesh::float::variable_stroke::resource::VariableStrokeSource;
 use crate::mesh::float::variable_stroke::style::VariableStrokeStyle;
-use crate::mesh::int::variable_stroke::offset::IntVariableStrokeOffset;
+use crate::mesh::int::variable_stroke::build::build_variable_overlay_iter;
 use crate::mesh::int::variable_stroke::{IntStrokeVertex, IntVariableStrokeStyle};
 use alloc::vec;
-use alloc::vec::Vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -295,27 +295,23 @@ where
 
     fn int_style(&self) -> IntVariableStrokeStyle {
         IntVariableStrokeStyle {
+            math: self.style.math,
             arc: crate::mesh::int::arc::ArcOptions {
                 max_step: Angle::from_radians(self.style.round_angle),
                 ..Default::default()
             },
         }
     }
-    fn int_paths<S: VariableStrokeSource<P> + ?Sized>(&self, source: &S) -> Vec<Vec<IntStrokeVertex<I>>> {
-        source
-            .iter_variable_paths()
-            .map(|path| {
-                path.iter()
-                    .map(|v| {
-                        let radius = self.adapter.round_len_to_int(v.radius()).to_wide();
-                        IntStrokeVertex::new(
-                            self.adapter.float_to_int(&v.point),
-                            I::from_wide(radius + radius),
-                        )
-                    })
-                    .collect()
+    fn int_paths<'a, S: VariableStrokeSource<P> + ?Sized>(
+        &'a self,
+        source: &'a S,
+    ) -> impl Iterator<Item = impl Iterator<Item = IntStrokeVertex<I>> + 'a> + 'a {
+        source.iter_variable_paths().map(|path| {
+            path.iter().map(|v| {
+                let radius = self.adapter.round_len_to_int(v.radius()).to_wide();
+                IntStrokeVertex::new(self.adapter.float_to_int(&v.point), I::from_wide(radius + radius))
             })
-            .collect()
+        })
     }
 
     fn build<S: VariableStrokeSource<P> + ?Sized>(
@@ -327,10 +323,14 @@ where
             return vec![];
         }
 
-        let paths = self.int_paths(source);
-        let shapes = paths
-            .variable_stroke_custom(self.int_style(), options.int_with_adapter(&self.adapter))
-            .expect("valid integer variable stroke");
+        let shapes = build_variable_overlay_iter(
+            self.int_paths(source),
+            self.int_style(),
+            options.int_with_adapter(&self.adapter),
+            #[cfg(feature = "variable_stroke_debug")]
+            None,
+        )
+        .overlay(OverlayRule::Subject, FillRule::Positive);
         let mut float = shapes.to_float(&self.adapter);
 
         if options.clean_result {
@@ -354,15 +354,15 @@ where
             return;
         }
 
-        let paths = self.int_paths(source);
         let mut int_output = FlatContoursBuffer::<I>::with_capacity(0);
-        paths
-            .variable_stroke_custom_into(
-                self.int_style(),
-                options.int_with_adapter(&self.adapter),
-                &mut int_output,
-            )
-            .expect("valid integer variable stroke");
+        build_variable_overlay_iter(
+            self.int_paths(source),
+            self.int_style(),
+            options.int_with_adapter(&self.adapter),
+            #[cfg(feature = "variable_stroke_debug")]
+            None,
+        )
+        .overlay_into(OverlayRule::Subject, FillRule::Positive, &mut int_output);
 
         let iter = int_output
             .points
@@ -391,12 +391,15 @@ where
             };
         }
 
-        let paths = self.int_paths(source);
-        let result = paths
-            .variable_stroke_debug(self.int_style(), options.int_with_adapter(&self.adapter))
-            .expect("valid integer variable stroke");
-        let edges = result
-            .edges
+        let mut edges = alloc::vec::Vec::new();
+        let shapes = build_variable_overlay_iter(
+            self.int_paths(source),
+            self.int_style(),
+            options.int_with_adapter(&self.adapter),
+            Some(&mut edges),
+        )
+        .overlay(OverlayRule::Subject, FillRule::Positive);
+        let edges = edges
             .into_iter()
             .map(
                 |edge| crate::mesh::float::variable_stroke::VariableStrokeDebugEdge {
@@ -408,7 +411,6 @@ where
                 },
             )
             .collect();
-        let shapes = result.shapes;
         let mut shapes = shapes.to_float(&self.adapter);
 
         if options.clean_result {

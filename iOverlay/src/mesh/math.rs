@@ -1,4 +1,4 @@
-/// Arithmetic used to construct stroke offsets, joins, and caps.
+/// Arithmetic used to construct outline offsets, strokes, and variable-width strokes.
 ///
 /// Both modes retain integer coordinates and use the same integer boolean engine.
 /// They can produce different rounded vertices and arc tessellations.
@@ -11,7 +11,8 @@ pub enum MathMode {
     /// Fixed-point directions and integer trigonometry. This is the default.
     #[default]
     Integer,
-    /// f64 normalization and trigonometry. Directions are stored as UnitIntVector
+    /// f64 normalization, trigonometry, and variable-width tangent contacts.
+    /// Directions are stored as UnitIntVector
     /// without a norm check, then scaled with integer arithmetic. Their length
     /// may slightly exceed one. Cross-platform bitwise reproducibility is not
     /// promised. Arc rotation_precision is ignored.

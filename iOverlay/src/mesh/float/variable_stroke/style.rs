@@ -1,3 +1,4 @@
+use crate::mesh::math::MathMode;
 use core::f64::consts::PI;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -26,12 +27,19 @@ impl<P: FloatPointCompatible> StrokeVertex<P> {
 pub struct VariableStrokeStyle<T: FloatNumber> {
     /// Maximum angular step used to approximate round joins and caps, in radians.
     pub round_angle: T,
+    /// Arithmetic used to construct tangent contacts and arcs.
+    pub math: MathMode,
 }
 
 impl<T: FloatNumber> VariableStrokeStyle<T> {
     #[inline]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn math(mut self, math: MathMode) -> Self {
+        self.math = math;
+        self
     }
 
     #[inline]
@@ -44,6 +52,7 @@ impl<T: FloatNumber> VariableStrokeStyle<T> {
     pub(super) fn normalized(self) -> Self {
         Self {
             round_angle: Self::normalize_angle(self.round_angle),
+            math: self.math,
         }
     }
 
@@ -58,6 +67,7 @@ impl<T: FloatNumber> Default for VariableStrokeStyle<T> {
     fn default() -> Self {
         Self {
             round_angle: T::from_float(0.1),
+            math: MathMode::Integer,
         }
     }
 }

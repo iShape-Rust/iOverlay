@@ -64,6 +64,8 @@ pub struct OutlineStyle<T: FloatNumber> {
     pub outer_offset: T,
     pub inner_offset: T,
     pub join: LineJoin<T>,
+    /// Arithmetic used to construct offsets and joins.
+    pub math: MathMode,
 }
 
 impl<P: FloatPointCompatible> LineCap<P> {
@@ -239,6 +241,12 @@ impl<T: FloatNumber> OutlineStyle<T> {
         }
     }
 
+    /// Selects construction arithmetic; boolean operations stay integer.
+    pub fn math(mut self, math: MathMode) -> Self {
+        self.math = math;
+        self
+    }
+
     /// Sets the offset distance.
     pub fn offset(mut self, offset: T) -> Self {
         self.outer_offset = offset;
@@ -271,6 +279,7 @@ impl<T: FloatNumber> Default for OutlineStyle<T> {
             outer_offset: T::from_float(1.0),
             inner_offset: T::from_float(1.0),
             join: LineJoin::Bevel,
+            math: MathMode::Integer,
         }
     }
 }

@@ -1,5 +1,6 @@
+use super::math::VariableStrokeMath;
 use super::style::IntStrokeVertex;
-use crate::mesh::int::math::{mul_div, point};
+use crate::mesh::int::math::point;
 use i_float::int::{
     number::{int::IntNumber, uint::UIntNumber, wide_int::WideIntNumber},
     point::IntPoint,
@@ -22,7 +23,10 @@ pub(super) struct Section<I: IntNumber> {
     pub(super) radius_trend: RadiusTrend,
 }
 impl<I: IntNumber> Section<I> {
-    pub(super) fn try_new(a: &IntStrokeVertex<I>, b: &IntStrokeVertex<I>) -> Option<Self> {
+    pub(super) fn try_new<M: VariableStrokeMath<I>>(
+        a: &IntStrokeVertex<I>,
+        b: &IntStrokeVertex<I>,
+    ) -> Option<Self> {
         let ra = a.radius();
         let rb = b.radius();
         if a.point == b.point || ra.max(rb) <= I::ONE {
@@ -34,32 +38,14 @@ impl<I: IntNumber> Section<I> {
         if (delta * delta).to_uint() >= sq {
             return None;
         }
-        // Keep fractional bits of sqrt(length² - delta²). Taking an unscaled
-        // integer root would noticeably shrink wide strokes on short sections.
-        // Using sq to choose the shift also bounds every numerator by sq << shift.
-        let shift = (sq.leading_zeros() - 1) / 2;
-        let tangent = I::Wide::from_uint(((sq - (delta * delta).to_uint()) << (2 * shift)).isqrt());
-        let denominator = I::Wide::from_uint(sq << shift);
-        let dx = (delta * v.x) << shift;
-        let dy = (delta * v.y) << shift;
-        let left_x = dx - tangent * v.y;
-        let left_y = dy + tangent * v.x;
-        let right_x = dx + tangent * v.y;
-        let right_y = dy - tangent * v.x;
-        let contact = |p, r: I, x, y| {
-            point(
-                p,
-                mul_div::<I>(r.to_wide(), x, denominator),
-                mul_div::<I>(r.to_wide(), y, denominator),
-            )
-        };
+        let [al, ar, bl, br] = M::tangent_offsets(v, ra, rb);
         Some(Self {
             a: a.point,
             b: b.point,
-            a_left: contact(a.point, ra, left_x, left_y),
-            a_right: contact(a.point, ra, right_x, right_y),
-            b_left: contact(b.point, rb, left_x, left_y),
-            b_right: contact(b.point, rb, right_x, right_y),
+            a_left: point(a.point, al.x, al.y),
+            a_right: point(a.point, ar.x, ar.y),
+            b_left: point(b.point, bl.x, bl.y),
+            b_right: point(b.point, br.x, br.y),
             radius_trend: if ra < rb {
                 RadiusTrend::Increasing
             } else if ra > rb {
@@ -68,5 +54,36 @@ impl<I: IntNumber> Section<I> {
                 RadiusTrend::Constant
             },
         })
+    }
+    pub(super) fn covers_circle(&self, center: IntPoint<I>, radius: I) -> bool {
+        let points = [self.a_left, self.b_left, self.b_right, self.a_right];
+        let radius = radius.to_wide().to_uint();
+        let first_edge = points[1] - points[0];
+        let orientation = first_edge.cross_product(points[2] - points[1]);
+        if orientation == I::Wide::ZERO {
+            return false;
+        }
+
+        for index in 0..points.len() {
+            let a = points[index];
+            let b = points[(index + 1) % points.len()];
+            let edge = b - a;
+            let side = edge.cross_product(center - a);
+            let interior_distance = if orientation > I::Wide::ZERO { side } else { -side };
+            if interior_distance < I::Wide::ZERO {
+                return false;
+            }
+
+            let length_sqr = edge.sqr_length();
+            let mut length = length_sqr.isqrt();
+            if length * length < length_sqr {
+                length += I::WideUInt::ONE;
+            }
+            if interior_distance.to_uint() < radius * length {
+                return false;
+            }
+        }
+
+        true
     }
 }
