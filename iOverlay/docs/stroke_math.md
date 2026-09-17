@@ -2,6 +2,12 @@
 
 Both `StrokeStyle` and `IntStrokeStyle` accept `.math(MathMode::Float)` from `i_overlay::mesh::math`. `Integer` remains the default. This prototype selects math for constant-width stroke only; outline and variable-width stroke retain their current integer arithmetic.
 
+Integer miter construction clamps the requested minimum interior angle to at
+least 5 degrees and clips sharper corners. Interior angles above 175 degrees
+use bevel joins. This uses the turn angle already computed for the join, without
+additional normalization or trigonometry. Float mode retains its existing angle
+policy, including ordinary miter intersections at nearly straight corners.
+
 ```rust
 use i_overlay::mesh::float::{stroke::offset::StrokeOffset, style::StrokeStyle};
 use i_overlay::mesh::math::MathMode;

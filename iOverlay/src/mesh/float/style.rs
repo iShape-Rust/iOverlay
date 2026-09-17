@@ -33,6 +33,8 @@ pub enum LineJoin<T: FloatNumber> {
     /// Creates a sharp corner where two lines meet.
     /// The corner is limited by a miter, where the parameter `Angle`
     /// is a minimum sharp angle
+    /// With Integer construction math, the effective minimum is at least
+    /// 5 degrees, and interior angles above 175 degrees use bevel joins.
     Miter(T),
     /// Creates an arc corner where two lines meet.
     /// The arc is approximated using a group of segments, where the parameter `Angle`

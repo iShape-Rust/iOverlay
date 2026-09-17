@@ -9,6 +9,9 @@ pub(crate) struct IntegerMath;
 
 impl<I: IntNumber> MeshMath<I> for IntegerMath {
     type Arc = IntegerArc<I>;
+    // Five degrees: avoid amplifying direction and grid rounding errors when
+    // intersecting nearly parallel offset lines.
+    const MITER_STABILITY_ANGLE: u32 = (1u32 << 31) / 36;
     #[inline]
     fn sin_cos(angle: Angle) -> (i32, i32) {
         angle.sin_cos()

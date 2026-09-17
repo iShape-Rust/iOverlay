@@ -9,7 +9,10 @@ pub enum IntLineJoin {
     #[default]
     Bevel,
     /// Clipped miter, limited by the minimum interior angle.
-    /// The angle is clamped to 0.01*pi..=0.99*pi.
+    /// Integer math clamps the minimum interior angle to at least 5 degrees
+    /// and uses bevel joins for interior angles above 175 degrees.
+    /// Float math clamps the minimum to 0.01*pi (1.8 degrees), without the
+    /// near-straight bevel cutoff. Both clamp the maximum below pi.
     Miter(Angle),
     /// Rounded join with reusable integer rotation settings.
     Round(ArcOptions),

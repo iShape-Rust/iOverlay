@@ -22,11 +22,9 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
             IntLineJoin::Bevel => Self::Bevel,
             IntLineJoin::Round(options) => Self::Round(M::Arc::new(options)),
             IntLineJoin::Miter(angle) => {
-                let min_angle = (1u32 << 31) / 100;
+                let min_angle = ((1u32 << 31) / 100).max(M::MITER_STABILITY_ANGLE);
                 let max_angle = (1u32 << 31) - 1;
-                let minimum = angle
-                    .bits()
-                    .clamp(min_angle, max_angle);
+                let minimum = angle.bits().clamp(min_angle, max_angle);
                 let (sin, cos) = M::sin_cos(Angle::from_bits(minimum / 2));
                 Self::Miter { minimum, sin, cos }
             }
@@ -93,6 +91,12 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
                 }
                 let turn = M::angle_between(incoming, outgoing).bits();
                 let turn = turn.min(turn.wrapping_neg());
+                if turn < M::MITER_STABILITY_ANGLE {
+                    // Almost straight: rounded offset points need not lie on
+                    // intersecting rays near the vertex. Close the gap directly.
+                    segments.push_non_degenerate(a, b);
+                    return;
+                }
                 if (1u32 << 31) - turn < *minimum {
                     let extension = mul_div::<I>(
                         abs(radius),

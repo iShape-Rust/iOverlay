@@ -6,6 +6,9 @@ use i_float::int::{
 /// Construction arithmetic only; coordinates and topology remain integer.
 pub(crate) trait MeshMath<I: IntNumber>: Copy {
     type Arc: ArcMath<UnitIntVector<I>>;
+    /// Minimum interior angle and turn for ordinary miter intersections, in
+    /// Angle bits. Zero preserves the unrestricted near-straight behavior.
+    const MITER_STABILITY_ANGLE: u32;
     fn sin_cos(angle: Angle) -> (i32, i32);
     fn angle_between(from: UnitIntVector<I>, to: UnitIntVector<I>) -> Angle;
 
