@@ -1,7 +1,7 @@
+use crate::app::design::{controls, select, slider};
 use crate::app::main::{AppMessage, EditorApp};
 use crate::app::outline::content::OutlineMessage;
-use iced::widget::{pick_list, slider, Column, Container, Row, Space, Text};
-use iced::{Alignment, Length, Padding};
+use eframe::egui;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum JoinOption {
@@ -30,109 +30,44 @@ impl std::fmt::Display for JoinOption {
 }
 
 impl EditorApp {
-    pub(crate) fn outline_control(&self) -> Column<'_, AppMessage> {
-        let outer_offset_list = Row::new()
-            .push(
-                Text::new("Outer Offset:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    slider(
-                        -50.0f32..=50.0f32,
-                        self.state.outline.outer_offset,
-                        on_update_outer_offset,
-                    )
-                    .step(0.01f32),
-                )
-                .width(410)
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-        let inner_offset_list = Row::new()
-            .push(
-                Text::new("Inner Offset:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    slider(
-                        -50.0f32..=50.0f32,
-                        self.state.outline.inner_offset,
-                        on_update_inner_offset,
-                    )
-                    .step(0.01f32),
-                )
-                .width(410)
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-
-        let mut join_pick_list = Row::new()
-            .push(
-                Text::new("Line Join:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    pick_list(
-                        &JoinOption::ALL[..],
-                        Some(self.state.outline.join),
-                        on_select_join,
-                    )
-                    .width(Length::Fixed(160.0)),
-                )
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-
-        if self.state.outline.join != JoinOption::Bevel {
-            let slider = slider(1..=100, self.state.outline.join_value, on_update_join_value)
-                .default(50)
-                .shift_step(5);
-
-            join_pick_list = join_pick_list.push(
-                Container::new(slider)
-                    .padding(Padding::new(0.0).left(20.0))
-                    .width(250)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            );
-        }
-
-        Column::new()
-            .push(outer_offset_list)
-            .push(inner_offset_list)
-            .push(
-                Space::new()
-                    .width(Length::Shrink)
-                    .height(Length::Fixed(4.0)),
-            )
-            .push(join_pick_list)
+    pub(crate) fn outline_control(&mut self, ui: &mut egui::Ui) {
+        controls(ui, "outline_controls", |ui| {
+            let mut outer_offset = self.state.outline.outer_offset;
+            if slider(
+                ui,
+                "Outer Offset",
+                egui::Slider::new(&mut outer_offset, -50.0..=50.0).step_by(0.01),
+            ) {
+                self.update(AppMessage::Outline(
+                    OutlineMessage::OuterOffsetValueUpdated(outer_offset),
+                ));
+            }
+            let mut inner_offset = self.state.outline.inner_offset;
+            if slider(
+                ui,
+                "Inner Offset",
+                egui::Slider::new(&mut inner_offset, -50.0..=50.0).step_by(0.01),
+            ) {
+                self.update(AppMessage::Outline(
+                    OutlineMessage::InnerOffsetValueUpdated(inner_offset),
+                ));
+            }
+            let mut join = self.state.outline.join;
+            if select(ui, "Line Join", &mut join, &JoinOption::ALL) {
+                self.update(AppMessage::Outline(OutlineMessage::JoinSelected(join)));
+            }
+            if self.state.outline.join != JoinOption::Bevel {
+                let mut join_value = self.state.outline.join_value;
+                if slider(
+                    ui,
+                    "Join Detail",
+                    egui::Slider::new(&mut join_value, 1..=100),
+                ) {
+                    self.update(AppMessage::Outline(OutlineMessage::JoinValueUpdated(
+                        join_value,
+                    )));
+                }
+            }
+        });
     }
-}
-
-fn on_update_outer_offset(value: f32) -> AppMessage {
-    AppMessage::Outline(OutlineMessage::OuterOffsetValueUpdated(value))
-}
-
-fn on_update_inner_offset(value: f32) -> AppMessage {
-    AppMessage::Outline(OutlineMessage::InnerOffsetValueUpdated(value))
-}
-
-fn on_select_join(option: JoinOption) -> AppMessage {
-    AppMessage::Outline(OutlineMessage::JoinSelected(option))
-}
-
-fn on_update_join_value(value: u8) -> AppMessage {
-    AppMessage::Outline(OutlineMessage::JoinValueUpdated(value))
 }

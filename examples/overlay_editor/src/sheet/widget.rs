@@ -1,257 +1,169 @@
-use crate::geom::camera::Camera;
-use crate::sheet::state::SheetState;
-use iced::advanced::graphics::color::pack;
-use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
-use iced::advanced::graphics::Mesh;
-use iced::advanced::layout::{self, Layout};
-use iced::advanced::widget::tree;
-use iced::advanced::widget::{Tree, Widget};
-use iced::advanced::{renderer, Clipboard, Shell};
-use iced::{mouse, Event};
-use iced::{Color, Point, Transformation};
-use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector};
+use crate::{
+    app::design::Design,
+    geom::camera::Camera,
+    point_editor::{point::EditorPoint, state::PointsEditorState, widget::PointEditUpdate},
+    sheet::state::SheetState,
+};
+use eframe::egui::{self, Color32, CursorIcon, Painter, Sense, Stroke, Vec2};
 
-pub(crate) struct SheetWidget<'a, Message> {
-    camera: Camera,
-    grid_color: Color,
-    on_size: Box<dyn Fn(Size) -> Message + 'a>,
-    on_zoom: Box<dyn Fn(Camera) -> Message + 'a>,
-    on_drag: Box<dyn Fn(Vector<f32>) -> Message + 'a>,
-}
+pub(crate) struct SheetWidget;
 
-impl<'a, Message: 'a> SheetWidget<'a, Message> {
-    pub(crate) fn new(
-        camera: Camera,
-        grid_color: Color,
-        on_size: impl Fn(Size) -> Message + 'a,
-        on_zoom: impl Fn(Camera) -> Message + 'a,
-        on_drag: impl Fn(Vector<f32>) -> Message + 'a,
-    ) -> Self {
-        Self {
-            camera,
-            grid_color,
-            on_size: Box::new(on_size),
-            on_zoom: Box::new(on_zoom),
-            on_drag: Box::new(on_drag),
-        }
-    }
-
-    pub(super) fn is_size_changed(&self, size: Size) -> bool {
-        let w = (size.width - self.camera.size.width).abs();
-        let h = (size.height - self.camera.size.height).abs();
-        w > 0.01 || h > 0.01
-    }
-
-    fn line_mesh(&self, min_x: f32, min_y: f32, max_x: f32, max_y: f32, opacity: f32) -> Mesh {
-        let color_pack = pack(self.grid_color.scale_alpha(opacity));
-        let mut vertices = Vec::with_capacity(4);
-        let mut indices = Vec::with_capacity(6);
-
-        vertices.push(SolidVertex2D {
-            position: [min_x, min_y],
-            color: color_pack,
+impl SheetWidget {
+    pub(crate) fn show(
+        ui: &mut egui::Ui,
+        camera: &mut Camera,
+        points: &[EditorPoint],
+        sheet: &mut SheetState,
+        editor: &mut PointsEditorState,
+    ) -> (Painter, Option<PointEditUpdate>) {
+        let (response, painter) = ui.allocate_painter(
+            ui.available_size().max(Vec2::splat(1.0)),
+            Sense::CLICK | Sense::DRAG,
+        );
+        painter.rect_filled(response.rect, 0.0, Color32::from_rgb(18, 18, 18));
+        let mut update = None;
+        let (cursor, pressed, down, released, scroll) = ui.input(|i| {
+            (
+                i.pointer.interact_pos(),
+                i.pointer.primary_pressed(),
+                i.pointer.primary_down(),
+                i.pointer.primary_released(),
+                i.smooth_scroll_delta.y,
+            )
         });
-        vertices.push(SolidVertex2D {
-            position: [min_x, max_y],
-            color: color_pack,
-        });
-        vertices.push(SolidVertex2D {
-            position: [max_x, max_y],
-            color: color_pack,
-        });
-        vertices.push(SolidVertex2D {
-            position: [max_x, min_y],
-            color: color_pack,
-        });
-
-        indices.push(0);
-        indices.push(1);
-        indices.push(2);
-
-        indices.push(0);
-        indices.push(2);
-        indices.push(3);
-
-        Mesh::Solid {
-            buffers: Indexed { vertices, indices },
-            transformation: Transformation::IDENTITY,
-            clip_bounds: Rectangle::INFINITE,
+        if let Some(pos) = cursor {
+            let local = pos - response.rect.min;
+            if response.hovered() {
+                editor.hover(*camera, points, local);
+                if pressed && !editor.press(*camera, points, local) {
+                    sheet.press(*camera, local);
+                }
+                if scroll != 0.0 && !down {
+                    SheetState::zoom(camera, local, scroll);
+                }
+            } else {
+                editor.hover = None;
+            }
+            if down || released {
+                if editor.is_dragging() {
+                    update = editor.drag(*camera, points, local);
+                } else {
+                    sheet.drag(camera, local);
+                }
+            }
+            if response.hovered() || editor.is_dragging() {
+                response.on_hover_cursor(if editor.selected().is_some() {
+                    CursorIcon::PointingHand
+                } else {
+                    CursorIcon::Grab
+                });
+            }
         }
-    }
-}
-
-impl<Message> Widget<Message, Theme, Renderer> for SheetWidget<'_, Message> {
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<SheetState>()
-    }
-
-    fn state(&self) -> tree::State {
-        tree::State::new(SheetState::default())
-    }
-
-    fn size(&self) -> Size<Length> {
-        Size {
-            width: Length::Fill,
-            height: Length::Fill,
+        if released || !down {
+            editor.release();
+            sheet.release();
         }
+        Self::grid(&painter, *camera);
+        (painter, update)
     }
 
-    fn layout(
-        &mut self,
-        _tree: &mut Tree,
-        _renderer: &Renderer,
-        limits: &layout::Limits,
-    ) -> layout::Node {
-        layout::Node::new(limits.max())
-    }
-
-    fn update(
-        &mut self,
-        tree: &mut Tree,
-        event: &Event,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
-        shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
-    ) {
-        let bounds = layout.bounds();
-        let size = bounds.size();
-        if self.is_size_changed(size) {
-            shell.publish((self.on_size)(size));
-        }
-
-        let mouse_event = if let Event::Mouse(mouse_event) = event {
-            mouse_event
-        } else {
+    fn grid(painter: &Painter, camera: Camera) {
+        if camera.scale <= 20.0 {
             return;
+        }
+        let alpha = ((camera.scale - 20.0) / 50.0).min(1.0) * 0.5;
+        let stroke = Stroke::new(1.0_f32, Design::negative_color().gamma_multiply(alpha));
+        let rect = painter.clip_rect();
+        let top_left = camera.view_to_world(Vec2::ZERO);
+        let bottom_right = camera.view_to_world(rect.size());
+        // Index from the first visible line: never increment large f32 world coordinates by one.
+        let first_x = camera.world_to_view(Vec2::new(top_left.x.ceil(), 0.0)).x;
+        let first_y = camera.world_to_view(Vec2::new(0.0, top_left.y.floor())).y;
+        for i in 0..=((bottom_right.x - top_left.x).abs().ceil() as usize).min(4096) {
+            let x = rect.left() + first_x + i as f32 * camera.scale;
+            painter.line_segment(
+                [egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())],
+                stroke,
+            );
+        }
+        for i in 0..=((top_left.y - bottom_right.y).abs().ceil() as usize).min(4096) {
+            let y = rect.top() + first_y + i as f32 * camera.scale;
+            painter.line_segment(
+                [egui::pos2(rect.left(), y), egui::pos2(rect.right(), y)],
+                stroke,
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::point_editor::point::MultiIndex;
+    use i_triangle::i_overlay::i_float::int::{point::IntPoint, rect::IntRect};
+
+    fn button(pos: egui::Pos2, pressed: bool) -> egui::Event {
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        }
+    }
+
+    #[test]
+    fn pointer_drag_edits_points_without_panning_and_background_drag_pans() {
+        let ctx = egui::Context::default();
+        let mut camera = Camera::new(IntRect::new(-100, 100, -100, 100), Vec2::new(800.0, 600.0));
+        let mut points = vec![EditorPoint {
+            pos: IntPoint::new(0, 0),
+            index: MultiIndex {
+                group_index: 0,
+                path_index: 0,
+                point_index: 0,
+            },
+        }];
+        let mut sheet = SheetState::default();
+        let mut editor = PointsEditorState::default();
+        let mut frame = |events: Vec<egui::Event>| {
+            let _ = ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        Vec2::new(800.0, 600.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ui| {
+                    let (_, update) =
+                        SheetWidget::show(ui, &mut camera, &points, &mut sheet, &mut editor);
+                    if let Some(update) = update {
+                        points[update.index] = update.point;
+                    }
+                },
+            );
+            (camera, points[0].pos)
         };
-        let state = tree.state.downcast_mut::<SheetState>();
-        match mouse_event {
-            mouse::Event::CursorMoved { position } => {
-                if bounds.contains(*position) {
-                    let view_cursor = *position - bounds.position();
-                    if let Some(drag) = state.mouse_move(self.camera, view_cursor) {
-                        shell.publish((self.on_drag)(drag));
-                        shell.capture_event();
-                        return;
-                    }
-                }
-            }
-            mouse::Event::ButtonPressed(mouse::Button::Left) => {
-                let position = cursor.position().unwrap_or(Point::ORIGIN);
-                if bounds.contains(position) {
-                    let view_cursor = position - bounds.position();
-                    state.mouse_press(self.camera, view_cursor);
-                    shell.capture_event();
-                    return;
-                }
-            }
-            mouse::Event::ButtonReleased(mouse::Button::Left) => {
-                state.mouse_release();
-                shell.capture_event();
-                return;
-            }
-            mouse::Event::WheelScrolled { delta } => {
-                let position = cursor.position().unwrap_or(Point::ORIGIN);
-                if bounds.contains(position) {
-                    let cursor = position - bounds.position();
-                    if let Some(scale) =
-                        state.mouse_wheel_scrolled(self.camera, bounds.size(), *delta, cursor)
-                    {
-                        shell.publish((self.on_zoom)(scale));
-                        shell.capture_event();
-                        return;
-                    }
-                }
-            }
-            _ => {
-                // println!("other mouse event: {:?}", mouse_event);
-            }
-        }
-    }
-
-    fn draw(
-        &self,
-        _tree: &Tree,
-        renderer: &mut Renderer,
-        _theme: &Theme,
-        _style: &renderer::Style,
-        layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        _viewport: &Rectangle,
-    ) {
-        const MIN_SCALE: f32 = 20.0;
-        let scale = self.camera.scale - MIN_SCALE;
-        if scale <= 0.0 {
-            return;
-        }
-        const SCALE_RANGE: f32 = 50.0;
-        const INVERT_RANGE: f32 = 1.0 / SCALE_RANGE;
-
-        // normalize scale
-        let s = (scale * INVERT_RANGE).min(1.0);
-        // stroke radius
-        let r = 1.0;
-
-        use iced::advanced::graphics::mesh::Renderer as _;
-        use iced::advanced::Renderer as _;
-
-        let rect = layout.bounds();
-        renderer.with_layer(rect, |renderer| {
-            let view_min = Vector::new(0.0, 0.0);
-            let view_max = Vector::new(rect.width, rect.height);
-
-            let world_min = self.camera.view_to_world(view_min);
-            let world_max = self.camera.view_to_world(view_max);
-
-            let round_world_min_x = world_min.x.ceil();
-            let round_world_min_y = world_min.y.ceil();
-
-            let round_world_max_x = world_max.x.trunc();
-            let round_world_max_y = world_max.y.trunc();
-
-            let nfx = (round_world_max_x - round_world_min_x + 0.001)
-                .round()
-                .abs();
-            let nfy = (round_world_max_y - round_world_min_y + 0.001)
-                .round()
-                .abs();
-
-            let nx = nfx as usize;
-            let ny = nfy as usize;
-
-            let vr_mesh = self.line_mesh(-r, view_min.y, r, view_max.y, s);
-            let hz_mesh = self.line_mesh(view_min.x, -r, view_max.x, r, s);
-
-            let round_view_min = self
-                .camera
-                .world_to_view(Vector::new(round_world_min_x, round_world_min_y));
-            let round_view_max = self
-                .camera
-                .world_to_view(Vector::new(round_world_max_x, round_world_max_y));
-
-            let dx = (round_view_max.x - round_view_min.x) / nfx;
-            let dy = (round_view_max.y - round_view_min.y) / nfy;
-
-            let mut position = Vector::new(round_view_min.x + rect.x, view_min.y + rect.y);
-            for _ in 0..=nx {
-                renderer.with_translation(position, |renderer| renderer.draw_mesh(vr_mesh.clone()));
-                position.x += dx;
-            }
-
-            let mut position = Vector::new(view_min.x + rect.x, round_view_min.y + rect.y);
-            for _ in 0..=ny {
-                renderer.with_translation(position, |renderer| renderer.draw_mesh(hz_mesh.clone()));
-                position.y += dy;
-            }
-        });
-    }
-}
-
-impl<'a, Message: 'a> From<SheetWidget<'a, Message>> for Element<'a, Message> {
-    fn from(sheet: SheetWidget<'a, Message>) -> Self {
-        Self::new(sheet)
+        frame(vec![]);
+        let center = egui::pos2(400.0, 300.0);
+        frame(vec![egui::Event::PointerMoved(center)]);
+        frame(vec![button(center, true)]);
+        let moved = center + Vec2::new(30.0, -15.0);
+        let (after, point) = frame(vec![egui::Event::PointerMoved(moved)]);
+        assert_eq!(after.pos, Vec2::ZERO);
+        assert_eq!(point, IntPoint::new(20, 10));
+        frame(vec![button(moved, false)]);
+        let background = egui::pos2(700.0, 500.0);
+        frame(vec![egui::Event::PointerMoved(background)]);
+        frame(vec![button(background, true)]);
+        let (after, point) = frame(vec![egui::Event::PointerMoved(
+            background + Vec2::new(30.0, 15.0),
+        )]);
+        assert_eq!(after.pos, Vec2::new(-20.0, 10.0));
+        assert_eq!(point, IntPoint::new(20, 10));
+        frame(vec![button(background + Vec2::new(30.0, 15.0), false)]);
+        let (after, _) = frame(vec![egui::Event::PointerMoved(background)]);
+        assert_eq!(after.pos, Vec2::new(-20.0, 10.0));
     }
 }

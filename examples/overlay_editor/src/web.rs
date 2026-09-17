@@ -1,64 +1,78 @@
-use std::panic;
-use std::sync::Once;
+use crate::{app::main::EditorApp, data::resource::AppResource};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct WebApp {}
+pub struct WebApp {
+    runner: eframe::WebRunner,
+}
 
-static INIT_LOGGER: Once = Once::new();
-
-#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 impl WebApp {
     #[wasm_bindgen(constructor)]
     pub fn create() -> Self {
-        Self {}
+        console_error_panic_hook::set_once();
+        let _ = console_log::init_with_level(log::Level::Debug);
+        Self {
+            runner: eframe::WebRunner::new(),
+        }
     }
 
-    #[wasm_bindgen]
-    pub fn start(
-        &mut self,
+    /// Keeps the existing five JSON arguments. Await the returned Promise to report startup errors.
+    pub async fn start(
+        &self,
         boolean_data: String,
         string_data: String,
         stroke_data: String,
         variable_stroke_data: String,
         outline_data: String,
-    ) {
-        use iced::application;
-        use log::info;
-
-        use crate::app::main::EditorApp;
-        use crate::data::resource::AppResource;
-
-        panic::set_hook(Box::new(console_error_panic_hook::hook));
-        INIT_LOGGER.call_once(|| {
-            console_log::init_with_level(log::Level::Debug).expect("error initializing log");
-        });
-
-        info!("wasm start");
-
-        let app_initializer = move || {
-            info!("wasm init");
-            let app_resource = AppResource::with_content(
-                &boolean_data,
-                &string_data,
-                &stroke_data,
-                &variable_stroke_data,
-                &outline_data,
-            );
-            let app = EditorApp::with_resource(app_resource);
-
-            (app, iced::Task::none())
+    ) -> Result<(), JsValue> {
+        let document = web_sys::window()
+            .and_then(|window| window.document())
+            .ok_or_else(|| JsValue::from_str("Browser document is unavailable"))?;
+        let canvas = match document.get_element_by_id("overlay-editor-canvas") {
+            Some(element) => element.dyn_into::<web_sys::HtmlCanvasElement>()?,
+            None => {
+                let canvas = document
+                    .create_element("canvas")?
+                    .dyn_into::<web_sys::HtmlCanvasElement>()?;
+                canvas.set_id("overlay-editor-canvas");
+                canvas.style().set_property("width", "100vw")?;
+                canvas.style().set_property("height", "100vh")?;
+                canvas.style().set_property("display", "block")?;
+                let body = document
+                    .body()
+                    .ok_or_else(|| JsValue::from_str("Browser body is unavailable"))?;
+                body.style().set_property("margin", "0")?;
+                body.append_child(&canvas)?;
+                canvas
+            }
         };
+        let resource = AppResource::with_content(
+            &boolean_data,
+            &string_data,
+            &stroke_data,
+            &variable_stroke_data,
+            &outline_data,
+        );
+        self.runner
+            .start(
+                canvas,
+                eframe::WebOptions::default(),
+                Box::new(move |cc| {
+                    cc.egui_ctx.set_visuals(eframe::egui::Visuals::dark());
+                    Ok(Box::new(EditorApp::with_resource(resource)))
+                }),
+            )
+            .await
+    }
 
-        application(app_initializer, EditorApp::update, EditorApp::view)
-            .resizable(true)
-            .centered()
-            .title("iOverlay Editor")
-            .subscription(EditorApp::subscription)
-            .run()
-            .unwrap();
+    pub fn destroy(&self) {
+        self.runner.destroy();
+    }
+}
 
-        info!("wasm app run");
+impl Default for WebApp {
+    fn default() -> Self {
+        Self::create()
     }
 }

@@ -1,6 +1,5 @@
 use crate::app::boolean::control::ModeOption;
 use crate::app::boolean::workspace::WorkspaceState;
-use crate::app::design;
 use crate::app::fill_option::FillOption;
 use crate::app::main::{AppMessage, EditorApp};
 use crate::app::solver_option::SolverOption;
@@ -8,12 +7,10 @@ use crate::data::boolean::BooleanResource;
 use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
+use eframe::egui::{self, Vec2};
 use i_triangle::i_overlay::core::overlay::Overlay;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use i_triangle::i_overlay::i_shape::int::count::PointsCount;
-use iced::widget::scrollable;
-use iced::widget::{Button, Column, Container, Row, Space, Text};
-use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
 
 pub(crate) struct BooleanState {
@@ -22,7 +19,7 @@ pub(crate) struct BooleanState {
     pub(crate) mode: ModeOption,
     pub(crate) solver: SolverOption,
     pub(crate) workspace: WorkspaceState,
-    pub(crate) size: Size,
+    pub(crate) size: Vec2,
     pub(crate) cameras: HashMap<usize, Camera>,
 }
 
@@ -33,65 +30,33 @@ pub(crate) enum BooleanMessage {
     ModeSelected(ModeOption),
     SolverSelected(SolverOption),
     PointEdited(PointEditUpdate),
-    WorkspaceSized(Size),
-    WorkspaceZoomed(Camera),
-    WorkspaceDragged(Vector<f32>),
+    WorkspaceSized(Vec2),
 }
 
 impl EditorApp {
-    fn boolean_sidebar(&self) -> Column<'_, AppMessage> {
-        let count = self.app_resource.boolean.count;
-        let mut column =
-            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0)));
-        for index in 0..count {
-            let is_selected = self.state.boolean.test == index;
-
-            column = column.push(
-                Container::new(
-                    Button::new(
-                        Text::new(format!("test_{}", index))
-                            .style(if is_selected {
-                                design::style_sidebar_text_selected
-                            } else {
-                                design::style_sidebar_text
-                            })
-                            .size(14),
-                    )
-                    .width(Length::Fill)
-                    .on_press(AppMessage::Bool(BooleanMessage::TestSelected(index)))
-                    .style(if is_selected {
-                        design::style_sidebar_button_selected
-                    } else {
-                        design::style_sidebar_button
-                    }),
-                )
-                .padding(self.design.action_padding()),
-            );
-        }
-
-        column
-    }
-
-    pub(crate) fn boolean_content(&self) -> Row<'_, AppMessage> {
-        Row::new()
-            .push(
-                scrollable(
-                    Container::new(self.boolean_sidebar())
-                        .width(Length::Fixed(160.0))
-                        .height(Length::Shrink)
-                        .align_x(Alignment::Start)
-                        .padding(Padding::new(0.0).right(8))
-                        .style(design::style_sidebar_background),
-                )
-                .direction(scrollable::Direction::Vertical(
-                    scrollable::Scrollbar::new()
-                        .width(4)
-                        .margin(0)
-                        .scroller_width(4)
-                        .anchor(scrollable::Anchor::Start),
-                )),
-            )
-            .push(self.boolean_workspace())
+    pub(crate) fn boolean_content(&mut self, ui: &mut egui::Ui) {
+        egui::Panel::left("boolean_tests")
+            .exact_size(150.0)
+            .resizable(false)
+            .show_inside(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for index in 0..self.app_resource.boolean.count {
+                        let response = ui.selectable_label(
+                            self.state.boolean.test == index,
+                            format!("test_{index}"),
+                        );
+                        if response.clicked() {
+                            response.surrender_focus();
+                            self.update(AppMessage::Bool(BooleanMessage::TestSelected(index)));
+                        }
+                    }
+                });
+            });
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            self.boolean_control(ui);
+            ui.separator();
+            self.boolean_workspace(ui);
+        });
     }
 
     pub(crate) fn boolean_update(&mut self, message: BooleanMessage) {
@@ -102,8 +67,6 @@ impl EditorApp {
             BooleanMessage::ModeSelected(mode) => self.boolean_update_mode(mode),
             BooleanMessage::PointEdited(update) => self.boolean_update_point(update),
             BooleanMessage::WorkspaceSized(size) => self.boolean_update_size(size),
-            BooleanMessage::WorkspaceZoomed(zoom) => self.boolean_update_zoom(zoom),
-            BooleanMessage::WorkspaceDragged(drag) => self.boolean_update_drag(drag),
         }
     }
 
@@ -119,7 +82,7 @@ impl EditorApp {
     }
 
     pub(crate) fn boolean_next_test(&mut self) {
-        let next_test = self.state.boolean.test + 1;
+        let next_test = self.state.boolean.test.saturating_add(1);
         if next_test < self.app_resource.boolean.count {
             self.boolean_set_test(next_test);
         }
@@ -132,7 +95,7 @@ impl EditorApp {
         }
     }
 
-    fn boolean_update_size(&mut self, size: Size) {
+    fn boolean_update_size(&mut self, size: Vec2) {
         self.state.boolean.size = size;
         let points = &self.state.boolean.workspace.points;
         if self.state.boolean.workspace.camera.is_empty() && !points.is_empty() {
@@ -170,7 +133,7 @@ impl BooleanState {
             solver: SolverOption::Auto,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(resource.count),
-            size: Size::ZERO,
+            size: Vec2::ZERO,
         };
 
         state.load_test(0, resource);
@@ -197,13 +160,15 @@ impl BooleanState {
 
             self.cameras.insert(self.test, self.workspace.camera);
             let mut camera = *self.cameras.get(&index).unwrap_or(&Camera::empty());
-            if camera.is_empty() && self.size.width > 0.001 {
+            if camera.is_empty() && self.size.x > 0.001 {
                 let rect = IntRect::with_iter(editor_points.iter().map(|p| &p.pos))
                     .unwrap_or(IntRect::new(-10_000, 10_000, -10_000, 10_000));
                 camera = Camera::new(rect, self.size);
             }
 
             self.workspace.camera = camera;
+            self.workspace.sheet_state = Default::default();
+            self.workspace.point_state = Default::default();
 
             self.test = index;
         }

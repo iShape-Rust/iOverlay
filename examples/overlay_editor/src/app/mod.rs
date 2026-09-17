@@ -1,5 +1,5 @@
 mod boolean;
-mod design;
+pub(crate) mod design;
 mod fill_option;
 pub mod main;
 mod outline;

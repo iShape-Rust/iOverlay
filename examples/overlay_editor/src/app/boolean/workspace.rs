@@ -1,19 +1,18 @@
 use crate::app::boolean::content::BooleanMessage;
 use crate::app::boolean::control::ModeOption;
-use crate::app::design::{style_sheet_background, Design};
+use crate::app::design::Design;
 use crate::app::main::{AppMessage, EditorApp};
 use crate::draw::shape::ShapeWidget;
 use crate::draw::vectors::VectorsWidget;
 use crate::geom::camera::Camera;
 use crate::point_editor::point::EditorPoint;
-use crate::point_editor::widget::{PointEditUpdate, PointsEditorWidget};
+use crate::point_editor::{state::PointsEditorState, widget::PointsEditorWidget};
+use crate::sheet::state::SheetState;
 use crate::sheet::widget::SheetWidget;
+use eframe::egui;
 use i_triangle::i_overlay::i_shape::int::count::IntShapes as RawIntShapes;
 use i_triangle::i_overlay::i_shape::int::path::IntPaths as RawIntPaths;
 use i_triangle::i_overlay::vector::edge::DataVectorEdge;
-use iced::widget::Container;
-use iced::widget::Stack;
-use iced::{Length, Padding, Size, Vector};
 
 type IntPaths = RawIntPaths<i32>;
 type IntShapes = RawIntShapes<i32>;
@@ -21,6 +20,8 @@ type VectorEdge = DataVectorEdge<i32>;
 
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
+    pub(crate) sheet_state: SheetState,
+    pub(crate) point_state: PointsEditorState,
     pub(crate) subj: IntPaths,
     pub(crate) clip: IntPaths,
     pub(crate) solution: IntShapes,
@@ -29,161 +30,107 @@ pub(crate) struct WorkspaceState {
 }
 
 impl EditorApp {
-    pub(crate) fn boolean_workspace(&self) -> Container<'_, AppMessage> {
-        Container::new({
-            let mut stack = Stack::new();
-            stack = stack.push(
-                Container::new(SheetWidget::new(
-                    self.state.boolean.workspace.camera,
-                    Design::negative_color().scale_alpha(0.5),
-                    on_update_size,
-                    on_update_zoom,
-                    on_update_drag,
-                ))
-                .width(Length::Fill)
-                .height(Length::Fill),
-            );
-            if self.state.boolean.workspace.camera.is_not_empty() {
-                match self.state.boolean.mode {
-                    ModeOption::Edit => {
-                        stack = stack
-                            .push(
-                                Container::new(ShapeWidget::with_paths(
-                                    &self.state.boolean.workspace.subj,
-                                    self.state.boolean.workspace.camera,
-                                    Some(self.state.boolean.fill.fill_rule()),
-                                    Some(Design::subject_color().scale_alpha(0.2)),
-                                    Some(Design::subject_color()),
-                                    2.0,
-                                ))
-                                .width(Length::Fill)
-                                .height(Length::Fill),
-                            )
-                            .push(
-                                Container::new(ShapeWidget::with_paths(
-                                    &self.state.boolean.workspace.clip,
-                                    self.state.boolean.workspace.camera,
-                                    Some(self.state.boolean.fill.fill_rule()),
-                                    Some(Design::clip_color().scale_alpha(0.2)),
-                                    Some(Design::clip_color()),
-                                    2.0,
-                                ))
-                                .width(Length::Fill)
-                                .height(Length::Fill),
-                            )
-                    }
-                    ModeOption::Debug => {
-                        stack = stack.push(
-                            Container::new(VectorsWidget::with_vectors(
-                                &self.state.boolean.workspace.vectors,
-                                self.state.boolean.workspace.camera,
-                                Design::subject_color(),
-                                Design::clip_color(),
-                                Design::both_color(),
-                                2.0,
-                            ))
-                            .width(Length::Fill)
-                            .height(Length::Fill),
-                        )
-                    }
-                    _ => {
-                        stack = stack
-                            .push(
-                                Container::new(ShapeWidget::with_paths(
-                                    &self.state.boolean.workspace.subj,
-                                    self.state.boolean.workspace.camera,
-                                    Some(self.state.boolean.fill.fill_rule()),
-                                    None,
-                                    Some(Design::subject_color()),
-                                    1.0,
-                                ))
-                                .width(Length::Fill)
-                                .height(Length::Fill),
-                            )
-                            .push(
-                                Container::new(ShapeWidget::with_paths(
-                                    &self.state.boolean.workspace.clip,
-                                    self.state.boolean.workspace.camera,
-                                    Some(self.state.boolean.fill.fill_rule()),
-                                    None,
-                                    Some(Design::clip_color()),
-                                    1.0,
-                                ))
-                                .width(Length::Fill)
-                                .height(Length::Fill),
-                            )
-                            .push(
-                                Container::new(ShapeWidget::with_shapes(
-                                    &self.state.boolean.workspace.solution,
-                                    self.state.boolean.workspace.camera,
-                                    None,
-                                    Some(Design::solution_color().scale_alpha(0.2)),
-                                    Some(Design::solution_color()),
-                                    2.0,
-                                ))
-                                .width(Length::Fill)
-                                .height(Length::Fill),
-                            )
-                    }
-                }
-                stack = stack.push(
-                    Container::new(
-                        PointsEditorWidget::new(
-                            &self.state.boolean.workspace.points,
-                            self.state.boolean.workspace.camera,
-                            on_update_point,
-                        )
-                        .set_drag_color(Design::accent_color())
-                        .set_hover_color(Design::negative_color()),
+    pub(crate) fn boolean_workspace(&mut self, ui: &mut egui::Ui) {
+        self.update(AppMessage::Bool(BooleanMessage::WorkspaceSized(
+            ui.available_size(),
+        )));
+        let workspace = &mut self.state.boolean.workspace;
+        let (painter, update) = SheetWidget::show(
+            ui,
+            &mut workspace.camera,
+            &workspace.points,
+            &mut workspace.sheet_state,
+            &mut workspace.point_state,
+        );
+        if let Some(update) = update {
+            self.update(AppMessage::Bool(BooleanMessage::PointEdited(update)));
+            ui.ctx().request_repaint();
+        }
+        let workspace = &self.state.boolean.workspace;
+        if workspace.camera.is_not_empty() {
+            match self.state.boolean.mode {
+                ModeOption::Edit => {
+                    ShapeWidget::with_paths(
+                        &workspace.subj,
+                        workspace.camera,
+                        Some(self.state.boolean.fill.fill_rule()),
+                        Some(Design::subject_color().gamma_multiply(0.2)),
+                        Some(Design::subject_color()),
+                        2.0,
                     )
-                    .width(Length::Fill)
-                    .height(Length::Fill),
-                );
+                    .paint(&painter);
+                    ShapeWidget::with_paths(
+                        &workspace.clip,
+                        workspace.camera,
+                        Some(self.state.boolean.fill.fill_rule()),
+                        Some(Design::clip_color().gamma_multiply(0.2)),
+                        Some(Design::clip_color()),
+                        2.0,
+                    )
+                    .paint(&painter);
+                }
+                ModeOption::Debug => {
+                    VectorsWidget::with_vectors(
+                        &workspace.vectors,
+                        workspace.camera,
+                        Design::subject_color(),
+                        Design::clip_color(),
+                        Design::both_color(),
+                        2.0,
+                    )
+                    .paint(&painter);
+                }
+                _ => {
+                    ShapeWidget::with_paths(
+                        &workspace.subj,
+                        workspace.camera,
+                        Some(self.state.boolean.fill.fill_rule()),
+                        None,
+                        Some(Design::subject_color()),
+                        1.0,
+                    )
+                    .paint(&painter);
+                    ShapeWidget::with_paths(
+                        &workspace.clip,
+                        workspace.camera,
+                        Some(self.state.boolean.fill.fill_rule()),
+                        None,
+                        Some(Design::clip_color()),
+                        1.0,
+                    )
+                    .paint(&painter);
+                    ShapeWidget::with_shapes(
+                        &workspace.solution,
+                        workspace.camera,
+                        None,
+                        Some(Design::solution_color().gamma_multiply(0.2)),
+                        Some(Design::solution_color()),
+                        2.0,
+                    )
+                    .paint(&painter);
+                }
             }
-
-            stack.push(
-                Container::new(self.boolean_control())
-                    .width(Length::Shrink)
-                    .height(Length::Shrink)
-                    .padding(Padding::new(8.0)),
-            )
-        })
-        .style(style_sheet_background)
+        }
+        PointsEditorWidget::paint(
+            &painter,
+            workspace.camera,
+            &workspace.points,
+            &workspace.point_state,
+        );
     }
-
-    pub(super) fn boolean_update_point(&mut self, update: PointEditUpdate) {
+    pub(super) fn boolean_update_point(
+        &mut self,
+        update: crate::point_editor::widget::PointEditUpdate,
+    ) {
         self.state.boolean.boolean_update_point(update);
     }
-
-    pub(super) fn boolean_update_zoom(&mut self, camera: Camera) {
-        self.state.boolean.workspace.camera = camera;
-    }
-
-    pub(super) fn boolean_update_drag(&mut self, new_pos: Vector<f32>) {
-        self.state.boolean.workspace.camera.pos = new_pos;
-    }
 }
-
-fn on_update_point(event: PointEditUpdate) -> AppMessage {
-    AppMessage::Bool(BooleanMessage::PointEdited(event))
-}
-
-fn on_update_size(size: Size) -> AppMessage {
-    AppMessage::Bool(BooleanMessage::WorkspaceSized(size))
-}
-
-fn on_update_zoom(zoom: Camera) -> AppMessage {
-    AppMessage::Bool(BooleanMessage::WorkspaceZoomed(zoom))
-}
-
-fn on_update_drag(drag: Vector<f32>) -> AppMessage {
-    AppMessage::Bool(BooleanMessage::WorkspaceDragged(drag))
-}
-
 impl Default for WorkspaceState {
     fn default() -> Self {
         WorkspaceState {
             camera: Camera::empty(),
+            sheet_state: Default::default(),
+            point_state: Default::default(),
             subj: vec![],
             clip: vec![],
             solution: vec![],
