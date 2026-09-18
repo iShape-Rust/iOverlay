@@ -13,9 +13,10 @@ use alloc::vec;
 use i_shape::flat::buffer::FlatContoursBuffer;
 
 use crate::segm::build::BuildSegments;
-use i_shape::int::count::PointsCount;
+use i_float::int::number::uint::UIntNumber;
 use i_shape::int::path::ContourExtension;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
+use i_shape::source::int::resource::IntShapeResource;
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
 /// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
@@ -35,39 +36,15 @@ pub trait Simplify<I: IntNumber> {
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I>;
 }
 
-impl<I> Simplify<I> for [IntPoint<I>]
+impl<I, R> Simplify<I> for R
 where
     I: OverlayInt,
+    R: IntShapeResource<I> + ?Sized,
 {
     #[inline]
     fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
-        match Overlay::new_custom(self.len(), options, Default::default()).simplify_contour(self, fill_rule) {
-            Some(shapes) => shapes,
-            None => vec![vec![self.to_vec()]],
-        }
-    }
-}
-
-impl<I> Simplify<I> for [IntContour<I>]
-where
-    I: OverlayInt,
-{
-    #[inline]
-    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
-        match Overlay::new_custom(self.len(), options, Default::default()).simplify_shape(self, fill_rule) {
-            Some(shapes) => shapes,
-            None => vec![self.to_vec()],
-        }
-    }
-}
-
-impl<I> Simplify<I> for [IntShape<I>]
-where
-    I: OverlayInt,
-{
-    #[inline]
-    fn simplify(&self, fill_rule: FillRule, options: IntOverlayOptions<I::WideUInt>) -> IntShapes<I> {
-        Overlay::new_custom(self.points_count(), options, Default::default()).simplify_shapes(self, fill_rule)
+        let capacity = self.iter_paths().map(|path| path.len()).sum();
+        Overlay::new_custom(capacity, options, Default::default()).simplify_source(self, fill_rule)
     }
 }
 
@@ -81,6 +58,25 @@ impl<I> Overlay<I>
 where
     I: OverlayInt,
 {
+    /// Simplifies a resource, reusing this overlay's storage and configuration.
+    /// A single contour uses the fast path when no output area filter is requested.
+    pub fn simplify_source<R: IntShapeResource<I> + ?Sized>(
+        &mut self,
+        resource: &R,
+        fill_rule: FillRule,
+    ) -> IntShapes<I> {
+        let mut paths = resource.iter_paths();
+        if let Some(contour) = paths.next() {
+            if paths.next().is_none() && self.options.min_output_area == I::WideUInt::ZERO {
+                return self
+                    .simplify_contour(contour, fill_rule)
+                    .unwrap_or_else(|| vec![vec![contour.to_vec()]]);
+            }
+        }
+        self.reinit_with_subj(resource);
+        self.overlay(OverlayRule::Subject, fill_rule)
+    }
+
     /// Fast-path simplification for a single contour.
     ///
     /// Skips full overlay if the contour is already simple (no splits, no loops, no collinear issues).

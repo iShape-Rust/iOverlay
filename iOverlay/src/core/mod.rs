@@ -14,4 +14,5 @@ pub mod point_location;
 pub mod predicate;
 pub mod relate;
 pub mod simplify;
+pub mod single;
 pub mod solver;

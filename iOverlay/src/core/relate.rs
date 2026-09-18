@@ -13,6 +13,7 @@ use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntContour, IntShape};
+use i_shape::source::int::resource::IntShapeResource;
 
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
@@ -60,6 +61,57 @@ where
             split_solver: SplitSolver::new(),
             sweep_runner: SweepRunner::new(),
         }
+    }
+
+    /// Creates a predicate overlay from closed subject and clip paths using even-odd fill.
+    pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        Self::from_subj_and_clip_custom(subj, clip, FillRule::EvenOdd, Default::default())
+    }
+
+    /// Creates a predicate overlay with a custom fill rule and solver.
+    pub fn from_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        fill_rule: FillRule,
+        solver: Solver,
+    ) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        let capacity = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .map(|path| path.len())
+            .sum();
+        let mut overlay = Self::new(capacity);
+        overlay.fill_rule = fill_rule;
+        overlay.solver = solver;
+        overlay.add_source(subj, ShapeType::Subject);
+        overlay.add_source(clip, ShapeType::Clip);
+        overlay
+    }
+
+    /// Adds all resource paths as closed subject or clip contours.
+    pub fn add_source<R: IntShapeResource<I> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
+        for contour in resource.iter_paths() {
+            self.add_contour(contour, shape_type);
+        }
+    }
+
+    /// Replaces geometry while retaining allocated storage, fill rule, and solver.
+    pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        self.clear();
+        self.add_source(subj, ShapeType::Subject);
+        self.add_source(clip, ShapeType::Clip);
     }
 
     fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, I, Output = T>>(&mut self, handler: H) -> T {
@@ -171,6 +223,85 @@ where
     #[inline]
     pub fn clear(&mut self) {
         self.segments.clear();
+    }
+}
+
+/// One-shot spatial predicates on closed integer shape resources using even-odd fill.
+/// Use [`PredicateOverlay::from_subj_and_clip_custom`] for another fill rule or solver.
+///
+/// ```
+/// use i_overlay::core::relate::IntRelate;
+/// use i_overlay::i_float::int::point::IntPoint;
+/// let square = [IntPoint::new(0, 0), IntPoint::new(10, 0),
+///               IntPoint::new(10, 10), IntPoint::new(0, 10)];
+/// assert!(square.intersects(&square[..]));
+/// ```
+pub trait IntRelate<R, I>
+where
+    R: IntShapeResource<I> + ?Sized,
+    I: OverlayInt,
+{
+    /// Returns true if the resources share any point.
+    fn intersects(&self, other: &R) -> bool;
+
+    /// Returns true if the interiors overlap.
+    fn interiors_intersect(&self, other: &R) -> bool;
+
+    /// Returns true if boundaries intersect but interiors do not.
+    fn touches(&self, other: &R) -> bool;
+
+    /// Returns true if the resources intersect by point coincidence only.
+    fn point_intersects(&self, other: &R) -> bool;
+
+    /// Returns true if this resource is completely within the other.
+    fn within(&self, other: &R) -> bool;
+
+    /// Returns true if the resources have no shared points.
+    fn disjoint(&self, other: &R) -> bool;
+
+    /// Returns true if this resource completely covers the other.
+    fn covers(&self, other: &R) -> bool;
+}
+
+impl<R0, R1, I> IntRelate<R1, I> for R0
+where
+    R0: IntShapeResource<I> + ?Sized,
+    R1: IntShapeResource<I> + ?Sized,
+    I: OverlayInt,
+{
+    #[inline]
+    fn intersects(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).intersects()
+    }
+
+    #[inline]
+    fn interiors_intersect(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).interiors_intersect()
+    }
+
+    #[inline]
+    fn touches(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).touches()
+    }
+
+    #[inline]
+    fn point_intersects(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).point_intersects()
+    }
+
+    #[inline]
+    fn within(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).within()
+    }
+
+    #[inline]
+    fn disjoint(&self, other: &R1) -> bool {
+        !PredicateOverlay::from_subj_and_clip(self, other).intersects()
+    }
+
+    #[inline]
+    fn covers(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(other, self).within()
     }
 }
 

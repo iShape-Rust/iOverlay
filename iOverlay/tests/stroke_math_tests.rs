@@ -61,7 +61,7 @@ fn float_math_preserves_local_geometry_at_large_i64_origins() {
     let translated = path.map(|p| IntPoint::new(p.x + shift, p.y - shift));
     for join in [
         IntLineJoin::Bevel,
-        IntLineJoin::Miter(Angle::from_radians(0.1)),
+        IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()),
         IntLineJoin::Round(ArcOptions::default()),
     ] {
         let style = IntStrokeStyle::new(400)

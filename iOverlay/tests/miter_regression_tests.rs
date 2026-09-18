@@ -14,7 +14,7 @@ fn miter_on_nearly_collinear_path_stays_near_input() {
         IntPoint::new(7_914_439, 12_537),
     ];
     let width = 200_000;
-    let style = IntStrokeStyle::new(width).line_join(IntLineJoin::Miter(Angle::from_radians(0.1)));
+    let style = IntStrokeStyle::new(width).line_join(IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()));
 
     path.validate_stroke(&style).unwrap();
     let shapes = path.stroke(&style, false).unwrap();
@@ -41,7 +41,8 @@ fn nearly_collinear_shrink_outline_stays_inside_input_bounds() {
         IntPoint::new(7_914_439, 12_537),
         IntPoint::new(-2_000_000, 6_000_000),
     ];
-    let style = IntOutlineStyle::new(-100_000).line_join(IntLineJoin::Miter(Angle::from_radians(0.1)));
+    let style =
+        IntOutlineStyle::new(-100_000).line_join(IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()));
     contour.validate_outline(&style).unwrap();
     let shapes = contour.outline(&style).unwrap();
     assert_eq!(shapes.len(), 1);
@@ -66,7 +67,7 @@ fn only_integer_math_bevels_turns_below_five_degrees() {
                 let bevel = path.stroke(&base, false).unwrap();
                 let miter = path
                     .stroke(
-                        &base.line_join(IntLineJoin::Miter(Angle::from_radians(0.1))),
+                        &base.line_join(IntLineJoin::Miter(Angle::from_radians(0.1).unwrap())),
                         false,
                     )
                     .unwrap();
@@ -93,7 +94,7 @@ fn only_integer_math_clips_corners_sharper_than_five_degrees() {
     for math in [MathMode::Integer, MathMode::Float] {
         let style = IntStrokeStyle::new(20_000)
             .math(math)
-            .line_join(IntLineJoin::Miter(Angle::from_radians(0.01)));
+            .line_join(IntLineJoin::Miter(Angle::from_radians(0.01).unwrap()));
         path.validate_stroke(&style).unwrap();
         let shapes = path.stroke(&style, false).unwrap();
         let max_x = shapes.iter().flatten().flatten().map(|p| p.x).max().unwrap();

@@ -40,7 +40,7 @@ macro_rules! area_checks {
                 for offset in [-200, 0, 200] {
                     let style = IntOutlineStyle::new(offset)
                         .math(math)
-                        .line_join(IntLineJoin::Miter(Angle::from_radians(0.1)));
+                        .line_join(IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()));
                     square.validate_outline(&style).unwrap();
                     let shapes = square.outline(&style).unwrap();
                     let side = 4000.0 + 2.0 * offset as f64;
@@ -62,7 +62,7 @@ macro_rules! area_checks {
                     IntStrokeVertex::new(IntPoint::new(2400, 3200), 400),
                 ];
                 let style = IntVariableStrokeStyle::new().math(math).arc(ArcOptions {
-                    max_step: Angle::from_radians(0.03),
+                    max_step: Angle::from_radians(0.03).unwrap(),
                     ..Default::default()
                 });
                 path.validate_variable_stroke().unwrap();
@@ -101,7 +101,7 @@ fn float_math_preserves_local_geometry_at_large_origins() {
     let translated = outline.map(|p| IntPoint::new(p.x + shift, p.y - shift));
     for join in [
         IntLineJoin::Bevel,
-        IntLineJoin::Miter(Angle::from_radians(0.1)),
+        IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()),
         IntLineJoin::Round(ArcOptions::default()),
     ] {
         let style = IntOutlineStyle::new(400).math(MathMode::Float).line_join(join);
@@ -153,7 +153,7 @@ fn float_adapters_forward_math_and_replace_flat_output() {
         let int_style = IntOutlineStyle::new(400)
             .math(math)
             .line_join(IntLineJoin::Round(ArcOptions {
-                max_step: Angle::from_radians(0.1),
+                max_step: Angle::from_radians(0.1).unwrap(),
                 ..Default::default()
             }));
         // The adapter may translate the origin, so compare translation-invariant areas.
@@ -245,7 +245,7 @@ fn outline_preserves_hole_roles_in_both_modes() {
         for offset in [-200, 0, 200] {
             let style = IntOutlineStyle::new(offset)
                 .math(math)
-                .line_join(IntLineJoin::Miter(Angle::from_radians(0.1)));
+                .line_join(IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()));
             let shapes = paths.outline(&style).unwrap();
             assert_eq!(shapes.len(), 1);
             assert_eq!(shapes[0].len(), 2);
@@ -264,7 +264,7 @@ fn outline_bounds_use_the_selected_miter_limit() {
         IntPoint::new(0, 1000),
     ];
     // Integer math clamps to 5 degrees; Float uses the requested 1.8 degrees.
-    let style = IntOutlineStyle::new(300).line_join(IntLineJoin::Miter(Angle::from_radians(0.01)));
+    let style = IntOutlineStyle::new(300).line_join(IntLineJoin::Miter(Angle::from_radians(0.01).unwrap()));
     assert!(path.validate_outline(&style.math(MathMode::Integer)).is_ok());
     assert!(path.validate_outline(&style.math(MathMode::Float)).is_err());
 }

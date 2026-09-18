@@ -11,6 +11,14 @@ use i_float::int::angle::Angle;
 use i_float::int::number::int::IntNumber;
 use i_float::int::point::IntPoint;
 
+pub(super) fn angle_from_radians<T: FloatNumber>(radians: T) -> Angle {
+    Angle::from_radians(radians).unwrap_or_else(|| {
+        // Normalization clamps infinities, but preserves NaN. Use the same
+        // minimum as floating-point joins and caps instead of panicking.
+        Angle::from_radians(T::from_float(0.01 * PI)).expect("minimum style angle is finite")
+    })
+}
+
 /// The endpoint style of a line.
 #[derive(Debug, Clone)]
 pub enum LineCap<P: FloatPointCompatible> {
@@ -84,9 +92,9 @@ impl<T: FloatNumber> From<&LineJoin<T>> for IntLineJoin {
     fn from(join: &LineJoin<T>) -> Self {
         match join.clone().normalize() {
             LineJoin::Bevel => IntLineJoin::Bevel,
-            LineJoin::Miter(a) => IntLineJoin::Miter(Angle::from_radians(a)),
+            LineJoin::Miter(a) => IntLineJoin::Miter(angle_from_radians(a)),
             LineJoin::Round(a) => IntLineJoin::Round(ArcOptions {
-                max_step: Angle::from_radians(a),
+                max_step: angle_from_radians(a),
                 ..ArcOptions::default()
             }),
         }
@@ -165,7 +173,7 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
             LineCap::Butt => IntLineCap::Butt,
             LineCap::Square => IntLineCap::Square,
             LineCap::Round(a) => IntLineCap::Round(ArcOptions {
-                max_step: Angle::from_radians(a),
+                max_step: angle_from_radians(a),
                 ..ArcOptions::default()
             }),
             LineCap::Custom(points) => IntLineCap::Custom(

@@ -2,6 +2,7 @@ use crate::core::integer::OverlayInt;
 use crate::core::{fill_rule::FillRule, overlay_rule::OverlayRule};
 use crate::float::overlay::OverlayOptions;
 use crate::float::scale::FixedScaleOverlayError;
+use crate::mesh::float::style::angle_from_radians;
 use crate::mesh::float::variable_stroke::resource::VariableStrokeSource;
 use crate::mesh::float::variable_stroke::style::VariableStrokeStyle;
 use crate::mesh::int::variable_stroke::build::build_variable_overlay_iter;
@@ -11,7 +12,6 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
 use i_float::float::rect::FloatRect;
-use i_float::int::angle::Angle;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
@@ -297,7 +297,7 @@ where
         IntVariableStrokeStyle {
             math: self.style.math,
             arc: crate::mesh::int::arc::ArcOptions {
-                max_step: Angle::from_radians(self.style.round_angle),
+                max_step: angle_from_radians(self.style.round_angle),
                 ..Default::default()
             },
         }

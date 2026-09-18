@@ -65,7 +65,7 @@ fn benchmark<I: OverlayInt>() {
         }
         for join in [
             IntLineJoin::Bevel,
-            IntLineJoin::Miter(Angle::from_radians(0.1)),
+            IntLineJoin::Miter(Angle::from_radians(0.1).unwrap()),
             IntLineJoin::Round(ArcOptions::default()),
         ] {
             for math in [MathMode::Integer, MathMode::Float] {
