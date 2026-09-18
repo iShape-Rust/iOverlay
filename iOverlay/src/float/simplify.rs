@@ -42,7 +42,7 @@ pub trait SimplifyShape<P: FloatPointCompatible> {
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    /// - Returns: A collection of Shapes<P> that represents the simplified geometry.
+    /// - Returns: A collection of `Shapes<P>` that represents the simplified geometry.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     fn simplify_shape_custom(

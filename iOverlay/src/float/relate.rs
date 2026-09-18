@@ -10,7 +10,7 @@ use i_shape::source::float::resource::ShapeResource;
 /// Float-coordinate wrapper for spatial predicate evaluation.
 ///
 /// `FloatPredicateOverlay` handles conversion from floating-point coordinates to
-/// the internal integer representation, then delegates to [`PredicateOverlay`](crate::core::relate::PredicateOverlay)
+/// the internal integer representation, then delegates to [`PredicateOverlay`]
 /// for efficient predicate evaluation.
 ///
 /// # Example
