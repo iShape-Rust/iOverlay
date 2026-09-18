@@ -204,17 +204,19 @@ impl<I: IntNumber, D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<I
             }
         }
 
-        let mut buffer = vec![self[0]; n];
+        let mut buffer = Vec::with_capacity(n);
         node = nodes[first];
 
         let mut e0 = &self[node.index];
-        for item in buffer.iter_mut().take(n) {
+        for _ in 0..n {
             node = nodes[node.next];
             let e1 = &self[node.index];
-            item.a = e0.b;
-            item.b = e1.b;
-            item.fill = e1.fill;
-            item.data = e1.data;
+            buffer.push(DataVectorEdge {
+                a: e0.b,
+                b: e1.b,
+                fill: e1.fill,
+                data: e1.data,
+            });
 
             e0 = e1;
         }
