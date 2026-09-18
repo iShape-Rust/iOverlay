@@ -129,10 +129,7 @@ impl<I: IntNumber> PointFilter<I> for DropCollinear {
 impl<I: IntNumber, C: Send> Segment<C, I> {
     #[inline]
     pub(crate) fn with_ab(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C) -> Self {
-        debug_assert!(
-            p0 != p1,
-            "zero-length edges must be filtered before construction"
-        );
+        debug_assert!(p0 != p1, "zero-length edges must be filtered before construction");
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },

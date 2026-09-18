@@ -5,17 +5,13 @@ use i_overlay::float::overlay::FloatOverlay;
 
 fn check_subject_near_scale_boundary<I: OverlayInt>(side: f64, grid_step: f64) {
     let subject = [[0.0, 0.0], [side, side], [0.0, side]];
-    let clip = [
-        [side - grid_step, side],
-        [side, side - grid_step],
-        [side, side],
-    ];
+    let clip = [[side - grid_step, side], [side, side - grid_step], [side, side]];
 
     // Both inputs have the same combined bounds as the subject alone. The
     // small clip crosses its diagonal near the top-right corner. Extracting
     // Subject must preserve that triangle, regardless of the clip.
-    let expected = FloatOverlay::<[f64; 2], I>::from_subj(&subject)
-        .overlay(OverlayRule::Subject, FillRule::NonZero);
+    let expected =
+        FloatOverlay::<[f64; 2], I>::from_subj(&subject).overlay(OverlayRule::Subject, FillRule::NonZero);
     assert_eq!(expected.len(), 1);
     let actual = FloatOverlay::<[f64; 2], I>::from_subj_and_clip(&subject, &clip)
         .overlay(OverlayRule::Subject, FillRule::NonZero);
