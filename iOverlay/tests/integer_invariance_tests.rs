@@ -42,8 +42,9 @@ fn boolean_results_ignore_contour_start_direction_and_operand_order() {
         reversed_b.rotate_left(case % b.len());
         for fill in [FillRule::EvenOdd, FillRule::NonZero] {
             for rule in [OverlayRule::Intersect, OverlayRule::Union, OverlayRule::Xor] {
-                let expected = canonical(Overlay::with_contour(&a, &b).overlay(rule, fill));
-                let actual = canonical(Overlay::with_contour(&reversed_b, &reversed_a).overlay(rule, fill));
+                let expected = canonical(Overlay::from_subj_and_clip(&a, &b).overlay(rule, fill));
+                let actual =
+                    canonical(Overlay::from_subj_and_clip(&reversed_b, &reversed_a).overlay(rule, fill));
                 assert_eq!(
                     actual, expected,
                     "case={case}, fill={fill:?}, rule={rule:?}, a={a:?}, b={b:?}"
@@ -79,11 +80,11 @@ fn adding_rectangles_after_extraction_matches_a_fresh_overlay() {
         let b = rectangle();
         let c = rectangle();
         for solver in [Solver::LIST, Solver::TREE, Solver::FRAG] {
-            let mut reused = Overlay::with_contour(&a, &b);
+            let mut reused = Overlay::from_subj_and_clip(&a, &b);
             reused.solver = solver;
             reused.overlay(OverlayRule::Intersect, FillRule::EvenOdd);
             reused.add_contour(&c, ShapeType::Subject);
-            let mut fresh = Overlay::with_contour(&a, &b);
+            let mut fresh = Overlay::from_subj_and_clip(&a, &b);
             fresh.solver = solver;
             fresh.add_contour(&c, ShapeType::Subject);
             assert_eq!(

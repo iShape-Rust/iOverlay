@@ -93,7 +93,7 @@ where
         contour_overlay.add_segments(&segments);
         if let Some(graph) = contour_overlay.build_graph_view(fill) {
             graph.extract_contours_into(OverlayRule::Subject, &mut extraction, &mut contours);
-            overlay.add_flat_buffer(&contours, ShapeType::Subject);
+            overlay.add_source(&contours, ShapeType::Subject);
         }
     }
     overlay

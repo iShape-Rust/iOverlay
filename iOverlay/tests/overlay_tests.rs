@@ -28,7 +28,7 @@ mod tests {
         };
 
         fn overlay(test: &BooleanTest, options: IntOverlayOptions<u64>, solver: Solver) -> Overlay<i32> {
-            Overlay::with_contours_custom(&test.subj_paths, &test.clip_paths, options, solver)
+            Overlay::from_subj_and_clip_custom(&test.subj_paths, &test.clip_paths, options, solver)
         }
 
         let mut buffer = Default::default();
@@ -96,8 +96,12 @@ mod tests {
     #[allow(dead_code)]
     fn debug_execute(index: usize, overlay_rule: OverlayRule, fill_rule: FillRule, solver: Solver) {
         let test = BooleanTest::load(index);
-        let mut overlay =
-            Overlay::with_contours_custom(&test.subj_paths, &test.clip_paths, Default::default(), solver);
+        let mut overlay = Overlay::from_subj_and_clip_custom(
+            &test.subj_paths,
+            &test.clip_paths,
+            Default::default(),
+            solver,
+        );
         let graph = overlay.build_graph_view(fill_rule).unwrap();
         let result = graph.extract_shapes(overlay_rule, &mut Default::default());
 
@@ -128,7 +132,7 @@ mod tests {
     #[allow(dead_code)]
     fn print_json(index: usize, fill_rule: FillRule) {
         let test = BooleanTest::load(index);
-        let mut overlay = Overlay::with_contours(&test.subj_paths, &test.clip_paths);
+        let mut overlay = Overlay::from_subj_and_clip(&test.subj_paths, &test.clip_paths);
         let mut buffer = overlay.boolean_buffer.take().unwrap_or_default();
         let graph = overlay.build_graph_view(fill_rule).unwrap();
 

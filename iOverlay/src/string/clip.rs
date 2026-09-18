@@ -201,7 +201,7 @@ where
     #[inline]
     fn clip_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule, clip_rule: ClipRule) -> Vec<IntPath<I>> {
         let mut overlay = StringOverlay::from_shape(self);
-        overlay.add_string_paths(paths);
+        overlay.add_string_source(paths);
         overlay.clip_string_lines(fill_rule, clip_rule)
     }
 }

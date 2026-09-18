@@ -26,7 +26,7 @@ mod tests {
         let results: Vec<_> = [Solver::LIST, Solver::TREE, Solver::AUTO, Solver::FRAG]
             .into_iter()
             .map(|solver| {
-                let shapes = Overlay::with_contours_custom(&subj, &[], Default::default(), solver)
+                let shapes = Overlay::from_subj_custom(&subj, Default::default(), solver)
                     .overlay(OverlayRule::Subject, FillRule::EvenOdd);
                 let area2: i64 = shapes
                     .iter()
@@ -59,17 +59,29 @@ mod tests {
             let subj_paths = many_squares(IntPoint::new(0, 0), 20, 30, n);
             let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
-            let list_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::LIST)
-                    .overlay(rule, fill);
+            let list_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::LIST,
+            )
+            .overlay(rule, fill);
 
-            let tree_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::TREE)
-                    .overlay(rule, fill);
+            let tree_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::TREE,
+            )
+            .overlay(rule, fill);
 
-            let frag_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::FRAG)
-                    .overlay(rule, fill);
+            let frag_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::FRAG,
+            )
+            .overlay(rule, fill);
 
             assert_eq!(list_result, tree_result);
             assert_eq!(list_result, frag_result);
@@ -85,17 +97,29 @@ mod tests {
             let subj_paths = repeat_xy(square(0, 0, 2), 0, 0, 10, 10, n);
             let clip_paths = repeat_xy(romb(0, 0, 4), 5, 5, 10, 10, n - 1);
 
-            let list_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::LIST)
-                    .overlay(rule, fill);
+            let list_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::LIST,
+            )
+            .overlay(rule, fill);
 
-            let tree_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::TREE)
-                    .overlay(rule, fill);
+            let tree_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::TREE,
+            )
+            .overlay(rule, fill);
 
-            let frag_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::FRAG)
-                    .overlay(rule, fill);
+            let frag_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::FRAG,
+            )
+            .overlay(rule, fill);
 
             assert_eq!(list_result, tree_result);
             assert_eq!(list_result, frag_result);
@@ -112,17 +136,29 @@ mod tests {
             let subj_paths = many_lines_x(20, n);
             let clip_paths = many_lines_y(20, n);
 
-            let list_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::LIST)
-                    .overlay(rule, fill);
+            let list_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::LIST,
+            )
+            .overlay(rule, fill);
 
-            let tree_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::TREE)
-                    .overlay(rule, fill);
+            let tree_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::TREE,
+            )
+            .overlay(rule, fill);
 
-            let frag_result =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), Solver::FRAG)
-                    .overlay(rule, fill);
+            let frag_result = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                Solver::FRAG,
+            )
+            .overlay(rule, fill);
 
             assert_eq!(list_result, tree_result);
             assert_eq!(list_result, frag_result);
@@ -138,17 +174,17 @@ mod tests {
             let contours = discrete_spiral(n, 4);
 
             let mut list_overlay = Overlay::new(n * 8);
-            list_overlay.add_contours(&contours, ShapeType::Subject);
+            list_overlay.add_source(&contours, ShapeType::Subject);
 
             let list_result = list_overlay.overlay(rule, fill);
 
             let mut tree_overlay = Overlay::new(n * 8);
-            tree_overlay.add_contours(&contours, ShapeType::Subject);
+            tree_overlay.add_source(&contours, ShapeType::Subject);
 
             let tree_result = tree_overlay.overlay(rule, fill);
 
             let mut frag_overlay = Overlay::new(n * 8);
-            frag_overlay.add_contours(&contours, ShapeType::Subject);
+            frag_overlay.add_source(&contours, ShapeType::Subject);
 
             let frag_result = frag_overlay.overlay(rule, fill);
 

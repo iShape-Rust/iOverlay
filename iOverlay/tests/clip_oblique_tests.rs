@@ -94,7 +94,7 @@ fn oblique_clipping_preserves_exact_coverage_at_large_translations() {
                             inside != invert
                         })
                         .collect();
-                    let mut overlay = StringOverlay::with_shape_contour(&contour);
+                    let mut overlay = StringOverlay::from_shape(&contour);
                     overlay.add_string_lines(&lines);
                     let result = overlay.clip_string_lines_with_solver(
                         FillRule::NonZero,

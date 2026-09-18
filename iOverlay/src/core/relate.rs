@@ -196,6 +196,7 @@ where
     /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_contours(&mut self, contours: &[IntContour<I>], shape_type: ShapeType) {
         for contour in contours.iter() {
             self.add_contour(contour, shape_type);
@@ -206,17 +207,19 @@ where
     /// - `shape`: A reference to a `IntShape<I>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_shape(&mut self, shape: &IntShape<I>, shape_type: ShapeType) {
-        self.add_contours(shape, shape_type);
+        self.add_source(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
     /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>], shape_type: ShapeType) {
         for shape in shapes.iter() {
-            self.add_contours(shape, shape_type);
+            self.add_source(shape, shape_type);
         }
     }
 
@@ -381,6 +384,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_add_contours() {
         let mut overlay = PredicateOverlay::new(16);
         let contours = vec![square(0, 0, 5), square(10, 10, 5)];
@@ -390,6 +394,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_add_shape() {
         let mut overlay = PredicateOverlay::new(16);
         let shape = vec![square(0, 0, 10)];
@@ -399,6 +404,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_add_shapes() {
         let mut overlay = PredicateOverlay::new(16);
         let shapes = vec![vec![square(0, 0, 5)], vec![square(20, 20, 5)]];
@@ -564,7 +570,7 @@ mod tests {
         // are still correctly tracked for point coincidence detection.
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
         assert!(
             overlay.intersects(),
@@ -577,7 +583,7 @@ mod tests {
         // Same setup: diamond corners touch the hole boundary but don't overlap
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
         assert!(overlay.touches(), "diamond touching hole boundary should touch");
     }
@@ -587,7 +593,7 @@ mod tests {
         // Same setup: diamond only touches at boundary points, interiors don't overlap
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
         assert!(
             !overlay.interiors_intersect(),
@@ -601,7 +607,7 @@ mod tests {
         // Diamond centered at (15,15) with radius 2 (corners at 13,15,17,15 etc)
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 2), ShapeType::Clip);
         assert!(!overlay.intersects(), "diamond inside hole should not intersect");
         assert!(!overlay.touches(), "diamond inside hole should not touch");
@@ -622,7 +628,7 @@ mod tests {
         ];
 
         let mut overlay = PredicateOverlay::new(32);
-        overlay.add_shape(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
+        overlay.add_source(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
         overlay.add_contour(&diamond_touching_corner, ShapeType::Clip);
 
         assert!(
@@ -647,7 +653,7 @@ mod tests {
         ];
 
         let mut overlay = PredicateOverlay::new(32);
-        overlay.add_shape(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
+        overlay.add_source(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
         overlay.add_contour(&diamond_outside, ShapeType::Clip);
 
         assert!(

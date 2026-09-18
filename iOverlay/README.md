@@ -214,7 +214,7 @@ let subject = int_shape![
     [[20, 20], [80, 20], [80, 80], [20, 80]],
 ];
 
-let mut overlay = Overlay::with_contours(&subject, &[]);
+let mut overlay = Overlay::from_subj(&subject);
 let result = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::EvenOdd);
 
 assert_eq!(result.shapes.shape_ranges.len(), 2);

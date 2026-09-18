@@ -48,7 +48,7 @@ fn ogc_contour_marking_completes_a_closed_tour() {
             ],
         ]
         .map(|path| path.map(|p| IntPoint::new(p[0], p[1])).to_vec());
-        let mut overlay = Overlay::with_contours(&paths, &[]);
+        let mut overlay = Overlay::from_subj(&paths);
         overlay.options.ogc = true;
         assert!(
             !overlay

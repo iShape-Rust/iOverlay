@@ -45,7 +45,7 @@ fn ogc_area_filter_matches_filtering_resolved_contours() {
             .map(|_| (0..3 + case % 8).map(|_| IntPoint::new(next(), next())).collect())
             .collect();
         for clockwise in [false, true] {
-            let mut overlay = Overlay::with_contours(&paths, &[]);
+            let mut overlay = Overlay::from_subj(&paths);
             overlay.options.ogc = true;
             overlay.options.output_direction = if clockwise {
                 ContourDirection::Clockwise

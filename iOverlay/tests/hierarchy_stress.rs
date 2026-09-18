@@ -3,8 +3,8 @@ use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::hierarchy::{ChildLink, FlatShapeHierarchy};
 use i_overlay::core::overlay::{ContourDirection, Overlay};
 use i_overlay::core::overlay_rule::OverlayRule;
-use i_shape::int::path::ContourExtension;
 use i_shape::int::area::UnsafeArea;
+use i_shape::int::path::ContourExtension;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 #[test]
@@ -56,7 +56,7 @@ fn run_stress_case(seed: u64) {
         (subject, clip, OverlayRule::Xor)
     };
 
-    let mut overlay = Overlay::with_contours(&subject, &clip);
+    let mut overlay = Overlay::from_subj_and_clip(&subject, &clip);
     if seed & 2 != 0 {
         overlay.options.output_direction = ContourDirection::Clockwise;
     }

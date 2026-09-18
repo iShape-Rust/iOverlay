@@ -70,8 +70,9 @@ fn normalized_overlay<I: OverlayInt + TryFrom<i32> + Into<i64>>(
             .map(|p| IntPoint::new(I::try_from(p[0]).ok().unwrap(), I::try_from(p[1]).ok().unwrap()))
             .collect()
     };
-    let output = Overlay::with_contour_custom(&convert(subj), &convert(clip), Default::default(), solver)
-        .overlay(rule, FillRule::EvenOdd);
+    let output =
+        Overlay::from_subj_and_clip_custom(&convert(subj), &convert(clip), Default::default(), solver)
+            .overlay(rule, FillRule::EvenOdd);
     let mut output: Vec<Vec<Vec<[i64; 2]>>> = output
         .into_iter()
         .map(|shape| {
@@ -179,7 +180,7 @@ fn hypothesis_predicates_agree_with_boolean_results_on_dense_inputs() {
             FillRule::Positive,
             FillRule::Negative,
         ] {
-            let mut overlay = Overlay::with_contour(&subj, &clip);
+            let mut overlay = Overlay::from_subj_and_clip(&subj, &clip);
             let intersection = overlay.overlay(OverlayRule::Intersect, fill_rule);
             let difference = overlay.overlay(OverlayRule::Difference, fill_rule);
             let subject = overlay.overlay(OverlayRule::Subject, fill_rule);

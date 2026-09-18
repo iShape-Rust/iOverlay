@@ -198,9 +198,9 @@ mod tests {
             [[40, 40], [60, 40], [60, 60], [40, 60]],
         ];
 
-        let mut overlay = Overlay::with_contours(&subject, &[]);
+        let mut overlay = Overlay::from_subj(&subject);
         let hierarchy = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::EvenOdd);
-        let mut regular_overlay = Overlay::with_contours(&subject, &[]);
+        let mut regular_overlay = Overlay::from_subj(&subject);
         let regular_shapes = regular_overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 
         assert_eq!(hierarchy.shapes.to_shapes(), regular_shapes);
@@ -232,7 +232,7 @@ mod tests {
             [[60, 60], [70, 60], [70, 70], [60, 70]],
         ];
 
-        let mut overlay = Overlay::with_contours(&subject, &[]);
+        let mut overlay = Overlay::from_subj(&subject);
         let hierarchy = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::EvenOdd);
 
         assert_eq!(hierarchy.shapes.shape_ranges, vec![0..2, 2..3, 3..4]);
@@ -263,7 +263,7 @@ mod tests {
             [[200, 0], [210, 0], [210, 10], [200, 10]],
         ];
 
-        let mut overlay = Overlay::with_contours(&subject, &[]);
+        let mut overlay = Overlay::from_subj(&subject);
         overlay.options.output_direction = ContourDirection::Clockwise;
         let hierarchy = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::EvenOdd);
 

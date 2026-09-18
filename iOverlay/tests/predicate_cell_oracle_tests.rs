@@ -68,8 +68,8 @@ fn predicates_match_filled_cells_after_contour_cancellation() {
         }
         let mut overlay = PredicateOverlay::new(0);
         overlay.solver = [Solver::LIST, Solver::TREE, Solver::FRAG][case % 3];
-        overlay.add_contours(&contours[0], ShapeType::Subject);
-        overlay.add_contours(&contours[1], ShapeType::Clip);
+        overlay.add_source(&contours[0], ShapeType::Subject);
+        overlay.add_source(&contours[1], ShapeType::Clip);
         for rule in [
             FillRule::EvenOdd,
             FillRule::NonZero,

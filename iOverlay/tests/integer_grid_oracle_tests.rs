@@ -85,7 +85,7 @@ fn rectangle_overlays_match_independent_cell_winding() {
         };
         let a = rects(1 + case % 7);
         let b = rects(1 + case % 5);
-        let mut overlay = Overlay::with_contours(
+        let mut overlay = Overlay::from_subj_and_clip(
             &a.iter().map(Rect::contour).collect::<Vec<_>>(),
             &b.iter().map(Rect::contour).collect::<Vec<_>>(),
         );

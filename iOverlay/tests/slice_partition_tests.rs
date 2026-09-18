@@ -50,7 +50,7 @@ fn grid_cuts_partition_subject_without_gaps_or_overlaps() {
                 }
             }
         }
-        let mut overlay = StringOverlay::with_shape_contour(&subject);
+        let mut overlay = StringOverlay::from_shape(&subject);
         overlay.add_string_lines(&cuts);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
         let result = graph.extract_shapes(StringRule::Slice);
@@ -94,7 +94,7 @@ fn interior_self_crossing_cuts_preserve_subject_area() {
         if case % 2 == 0 {
             cut.push(cut[0]);
         }
-        let mut overlay = StringOverlay::with_shape_contour(&subject);
+        let mut overlay = StringOverlay::from_shape(&subject);
         overlay.add_string_path(&cut);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
         let result = graph.extract_shapes(StringRule::Slice);

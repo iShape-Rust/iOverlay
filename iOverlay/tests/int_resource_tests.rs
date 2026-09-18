@@ -1,3 +1,6 @@
+// These tests intentionally compare the legacy constructors with the resource API.
+#![allow(deprecated)]
+
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::integer::OverlayInt;
 use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};

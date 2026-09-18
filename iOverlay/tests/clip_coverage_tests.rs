@@ -71,7 +71,7 @@ fn grid_clipping_preserves_directed_coverage() {
                         inside != invert
                     })
                     .collect();
-                let mut overlay = StringOverlay::with_shape_contour(&subject);
+                let mut overlay = StringOverlay::from_shape(&subject);
                 overlay.add_string_lines(&lines);
                 let result = overlay.clip_string_lines(
                     FillRule::NonZero,
@@ -171,7 +171,7 @@ fn clipping_overlapping_contours_uses_the_resolved_boundary() {
                             inside != invert
                         })
                         .collect();
-                    let mut overlay = StringOverlay::with_shape_contours(&contours);
+                    let mut overlay = StringOverlay::from_shape(&contours);
                     overlay.add_string_lines(&lines);
                     let actual = overlay.clip_string_lines(
                         fill,

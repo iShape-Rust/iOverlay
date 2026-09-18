@@ -38,7 +38,7 @@ mod tests {
                     let subj = create_star::<I>(1.0, r, 7, a, scale);
 
                     if let Some(graph) =
-                        Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
+                        Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
                             .build_graph_view(FillRule::NonZero)
                     {
                         graph.validate();
@@ -66,8 +66,9 @@ mod tests {
             let mut a = 0.0;
             while a < 4.0 * PI {
                 let subj = create_star::<I>(200.0, 30.0, 7, a, scale);
-                if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
-                    .build_graph_view(FillRule::NonZero)
+                if let Some(graph) =
+                    Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
+                        .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
@@ -92,8 +93,9 @@ mod tests {
 
             while a < 2.0 * PI {
                 let subj = create_star::<I>(202.5, 33.75, 24, a, scale);
-                if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
-                    .build_graph_view(FillRule::NonZero)
+                if let Some(graph) =
+                    Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
+                        .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
@@ -118,8 +120,9 @@ mod tests {
 
             while a < 4.0 * PI {
                 let subj = create_star::<I>(100.0, 10.0, 17, a, scale);
-                if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
-                    .build_graph_view(FillRule::NonZero)
+                if let Some(graph) =
+                    Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
+                        .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
@@ -144,8 +147,9 @@ mod tests {
 
             while a < 0.000_001 {
                 let subj = create_star::<I>(202.5, 33.75, 24, a, scale);
-                if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
-                    .build_graph_view(FillRule::NonZero)
+                if let Some(graph) =
+                    Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
+                        .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
@@ -170,7 +174,7 @@ mod tests {
 
         // println!("subj {:?}", subj);
         for &solver in SOLVERS.iter() {
-            if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
+            if let Some(graph) = Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
                 .build_graph_view(FillRule::NonZero)
             {
                 graph.validate();
@@ -194,8 +198,9 @@ mod tests {
 
             while a < 0.000_001 {
                 let subj = create_star::<I>(100.0, 50.0, 24, a, scale);
-                if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
-                    .build_graph_view(FillRule::NonZero)
+                if let Some(graph) =
+                    Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
+                        .build_graph_view(FillRule::NonZero)
                 {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
@@ -276,7 +281,7 @@ mod tests {
                 while a < 2.0 * PI {
                     let subj = create_star::<I>(r0, r, 4, a, scale);
                     if let Some(graph) =
-                        Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
+                        Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
                             .build_graph_view(FillRule::NonZero)
                     {
                         graph.validate();
@@ -305,7 +310,7 @@ mod tests {
         let r = 1.01;
         let subj = create_star::<I>(1.0, r, 7, a, scale);
 
-        if let Some(graph) = Overlay::with_contours_custom(&subj, &clip, Default::default(), solver)
+        if let Some(graph) = Overlay::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
             .build_graph_view(FillRule::NonZero)
         {
             graph.validate();
@@ -411,7 +416,7 @@ mod tests {
             }
 
             let mut overlay = Overlay::new_custom(4, Default::default(), Default::default());
-            overlay.add_contours(&subj_paths, ShapeType::Subject);
+            overlay.add_source(&subj_paths, ShapeType::Subject);
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());

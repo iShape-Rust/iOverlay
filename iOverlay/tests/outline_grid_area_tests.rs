@@ -66,7 +66,7 @@ fn outward_outline_expands_half_grid_cell_components() {
 #[test]
 fn integer_overlay_preserves_half_grid_cell_contours() {
     let triangle = vec![IntPoint::new(0, 0), IntPoint::new(1, 0), IntPoint::new(0, 1)];
-    let result = Overlay::with_contour(&triangle, &[]).overlay(OverlayRule::Subject, FillRule::Positive);
+    let result = Overlay::from_subj(&triangle).overlay(OverlayRule::Subject, FillRule::Positive);
     assert_eq!(result.len(), 1);
     assert_eq!(result[0][0].len(), 3);
     let mut hole = triangle;
@@ -80,7 +80,7 @@ fn integer_overlay_preserves_half_grid_cell_contours() {
         ],
         hole,
     ];
-    let result = Overlay::with_contours(&shape, &[]).overlay(OverlayRule::Subject, FillRule::Positive);
+    let result = Overlay::from_subj(&shape).overlay(OverlayRule::Subject, FillRule::Positive);
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].len(), 2);
 }

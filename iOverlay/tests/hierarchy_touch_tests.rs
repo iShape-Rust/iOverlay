@@ -25,7 +25,7 @@ fn hierarchy_preserves_links_and_honors_collinear_output_option() {
                     ogc,
                     ..Default::default()
                 };
-                let mut overlay = Overlay::with_contours_custom(&subject, &[], options, Default::default());
+                let mut overlay = Overlay::from_subj_custom(&subject, options, Default::default());
                 let hierarchy = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::NonZero);
                 let shapes = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
@@ -65,7 +65,7 @@ fn island_touching_hole_boundary_keeps_its_parent() {
                 contour(&[[2, 2], [2, 18], [18, 18], [18, 2]]),
                 contour(&island),
             ];
-            let mut overlay = Overlay::with_contours(&subject, &[]);
+            let mut overlay = Overlay::from_subj(&subject);
             overlay.options.ogc = true;
             overlay.options.output_direction = if clockwise {
                 ContourDirection::Clockwise
@@ -112,7 +112,7 @@ fn holes_sharing_one_vertex_keep_their_own_islands() {
             if reversed_input_order {
                 subject.reverse();
             }
-            let mut overlay = Overlay::with_contours(&subject, &[]);
+            let mut overlay = Overlay::from_subj(&subject);
             overlay.options.ogc = true;
             overlay.options.output_direction = if clockwise {
                 ContourDirection::Clockwise

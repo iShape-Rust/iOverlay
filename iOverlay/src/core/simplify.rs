@@ -163,14 +163,15 @@ where
             return self.simplify_contour(&shape[0], fill_rule);
         }
         self.clear();
-        self.add_contours(shape, ShapeType::Subject);
+        self.add_source(shape, ShapeType::Subject);
         Some(self.overlay(OverlayRule::Subject, fill_rule))
     }
 
     #[inline]
+    #[deprecated(note = "Use `simplify_source` instead.")]
     pub fn simplify_shapes(&mut self, shapes: &[IntShape<I>], fill_rule: FillRule) -> IntShapes<I> {
         self.clear();
-        self.add_shapes(shapes, ShapeType::Subject);
+        self.add_source(shapes, ShapeType::Subject);
         self.overlay(OverlayRule::Subject, fill_rule)
     }
 
@@ -199,7 +200,7 @@ where
                 return;
             }
         } else {
-            self.add_flat_buffer(flat_buffer, ShapeType::Subject);
+            self.add_source(flat_buffer, ShapeType::Subject);
             self.split_solver.split_segments(&mut self.segments, &self.solver);
             if self.segments.is_empty() {
                 flat_buffer.clear_and_reserve(0, 0);

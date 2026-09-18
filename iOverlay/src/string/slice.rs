@@ -69,7 +69,7 @@ where
     #[inline]
     fn slice_by_paths(&self, paths: &[IntPath<I>], fill_rule: FillRule) -> IntShapes<I> {
         let mut overlay = StringOverlay::from_shape(self);
-        overlay.add_string_paths(paths);
+        overlay.add_string_source(paths);
         overlay
             .build_graph_view(fill_rule)
             .map(|graph| graph.extract_shapes(StringRule::Slice))

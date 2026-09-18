@@ -45,7 +45,7 @@ fn check<I: OverlayInt + TryFrom<i64> + Into<i64>>(
     let clip: Vec<_> = clip.iter().map(|p| contour::<I>(p)).collect();
     let expected = canonical(expected);
     for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
-        let result = Overlay::<I>::with_contours_custom(&subj, &clip, Default::default(), solver)
+        let result = Overlay::<I>::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
             .overlay(rule, FillRule::EvenOdd);
         // Also exercise the wide area accumulator at the maximum square size.
         for shape in &result {
@@ -321,7 +321,7 @@ fn spiral_vector_area_at_coordinate_limits() {
         ]);
         let input = vec![contour::<I>(&points)];
         for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
-            let mut overlay = Overlay::<I>::with_contours_custom(&input, &[], Default::default(), solver);
+            let mut overlay = Overlay::<I>::from_subj_custom(&input, Default::default(), solver);
             // Sum the nine rectangular runs of the corridor, subtracting their
             // corner overlaps. Check filtering at the exact area and one above.
             let area = I::MAX.to_wide() * I::Wide::from_u32(9) - I::Wide::from_u32(56);
@@ -368,7 +368,7 @@ fn fragment_radius_at_coordinate_limits() {
                     },
                     ..Solver::FRAG
                 };
-                let actual = Overlay::<I>::with_contours_custom(&input, &[], Default::default(), solver)
+                let actual = Overlay::<I>::from_subj_custom(&input, Default::default(), solver)
                     .overlay(OverlayRule::Subject, FillRule::EvenOdd);
                 let actual = actual
                     .iter()
@@ -419,14 +419,14 @@ fn seeded_boundary_overlays_match_a_wider_engine() {
             ];
             let rule = rules[case % rules.len()];
             for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
-                let wide = Overlay::<i64>::with_contours_custom(
+                let wide = Overlay::<i64>::from_subj_and_clip_custom(
                     &[contour::<i64>(&subject)],
                     &[contour::<i64>(&clip)],
                     Default::default(),
                     solver,
                 )
                 .overlay(rule, FillRule::EvenOdd);
-                let narrow = Overlay::<I>::with_contours_custom(
+                let narrow = Overlay::<I>::from_subj_and_clip_custom(
                     &[contour::<I>(&subject)],
                     &[contour::<I>(&clip)],
                     Default::default(),

@@ -44,7 +44,7 @@ fn orthogonal_miter_offsets_match_cell_dilation_and_erosion() {
                 }
             }
         }
-        let mut overlay = Overlay::with_contours(&contours, &[]);
+        let mut overlay = Overlay::from_subj(&contours);
         overlay.options.ogc = true;
         let subject = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
         let source: Vec<Vec<Vec<_>>> = subject

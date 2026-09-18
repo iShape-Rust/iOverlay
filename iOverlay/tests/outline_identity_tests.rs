@@ -67,7 +67,7 @@ fn ogc_output_preserves_geometry_through_zero_outline() {
                     .collect()
             })
             .collect();
-        let mut overlay = Overlay::with_contours(&paths, &[]);
+        let mut overlay = Overlay::from_subj(&paths);
         overlay.options.ogc = true;
         let source = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
         for shape in &source {

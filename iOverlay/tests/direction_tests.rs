@@ -101,7 +101,7 @@ mod tests {
         ];
 
         // test default behavior
-        let r = Overlay::with_contours(&path, &[]).overlay(OverlayRule::Subject, FillRule::NonZero);
+        let r = Overlay::from_subj(&path).overlay(OverlayRule::Subject, FillRule::NonZero);
         assert!(r[0][0].area_two() > 0i64);
         assert!(r[0][1].area_two() < 0i64);
     }

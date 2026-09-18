@@ -22,7 +22,7 @@ fn check_hole_direction(clockwise: bool) {
     for shift in 0..7 {
         let mut path = touching_hole();
         path.rotate_left(shift);
-        let mut overlay = Overlay::with_contour(&path, &[]);
+        let mut overlay = Overlay::from_subj(&path);
         overlay.options.ogc = true;
         overlay.options.output_direction = if clockwise {
             ContourDirection::Clockwise
@@ -55,11 +55,11 @@ fn clockwise_ogc_leftmost_touching_hole_has_opposite_winding() {
 
 #[test]
 fn ogc_leftmost_touching_hole_survives_nonzero_roundtrip() {
-    let mut overlay = Overlay::with_contour(&touching_hole(), &[]);
+    let mut overlay = Overlay::from_subj(&touching_hole());
     overlay.options.ogc = true;
     let shapes = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
     let contours: Vec<_> = shapes.into_iter().flatten().collect();
-    let result = Overlay::with_contours(&contours, &[]).overlay(OverlayRule::Subject, FillRule::NonZero);
+    let result = Overlay::from_subj(&contours).overlay(OverlayRule::Subject, FillRule::NonZero);
     let area: i64 = result.iter().flatten().map(|p| double_area(p)).sum();
     assert_eq!(
         area, 10,
@@ -69,8 +69,7 @@ fn ogc_leftmost_touching_hole_survives_nonzero_roundtrip() {
 
 #[test]
 fn ordinary_extraction_preserves_leftmost_touching_hole_area() {
-    let shapes =
-        Overlay::with_contour(&touching_hole(), &[]).overlay(OverlayRule::Subject, FillRule::NonZero);
+    let shapes = Overlay::from_subj(&touching_hole()).overlay(OverlayRule::Subject, FillRule::NonZero);
     let area: i64 = shapes.iter().flatten().map(|p| double_area(p)).sum();
     assert_eq!(area, 10);
 }
@@ -109,7 +108,7 @@ fn check_shared_leftmost_holes(input: &[Vec<IntPoint>], expected: &[Vec<IntPoint
     for solver in [Solver::LIST, Solver::TREE, Solver::FRAG] {
         for fill in [FillRule::EvenOdd, FillRule::NonZero] {
             for clockwise in [false, true] {
-                let mut overlay = Overlay::with_contours(input, &[]);
+                let mut overlay = Overlay::from_subj(input);
                 overlay.options.ogc = true;
                 overlay.options.output_direction = if clockwise {
                     ContourDirection::Clockwise
@@ -150,7 +149,7 @@ fn check_shared_leftmost_holes(input: &[Vec<IntPoint>], expected: &[Vec<IntPoint
                     "{context}"
                 );
 
-                let mut reused = Overlay::with_contours(&shapes[0], &[]);
+                let mut reused = Overlay::from_subj(&shapes[0]);
                 reused.options.ogc = true;
                 reused.solver = solver;
                 let roundtrip = reused.overlay(OverlayRule::Subject, FillRule::NonZero);

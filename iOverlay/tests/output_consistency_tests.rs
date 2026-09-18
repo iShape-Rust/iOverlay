@@ -30,7 +30,7 @@ fn flat_and_vector_outputs_match_shapes_with_area_filtering() {
         let a: Vec<_> = (0..3 + case % 8).map(|_| IntPoint::new(next(), next())).collect();
         let b: Vec<_> = (0..3 + case % 9).map(|_| IntPoint::new(next(), next())).collect();
         for threshold in [0, 1, 10, 50] {
-            let mut regular = Overlay::with_contour(&a, &b);
+            let mut regular = Overlay::from_subj_and_clip(&a, &b);
             regular.options.min_output_area = threshold;
             regular.options.preserve_output_collinear = case % 2 == 0;
             regular.options.output_direction = if case % 3 == 0 {

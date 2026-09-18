@@ -24,7 +24,7 @@ fn area_two(path: &[IntPoint]) -> i64 {
 
 #[test]
 fn slice_minimum_area_removes_small_piece() {
-    let mut overlay = StringOverlay::with_shape_contour(&square());
+    let mut overlay = StringOverlay::from_shape(&square());
     overlay.add_string_line([IntPoint::new(1, -1), IntPoint::new(1, 11)]);
     let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
     let unfiltered = graph.extract_shapes(StringRule::Slice);
@@ -51,7 +51,7 @@ fn slice_minimum_area_removes_small_piece() {
 
 #[test]
 fn slice_minimum_area_above_subject_area_returns_empty() {
-    let mut overlay = StringOverlay::with_shape_contour(&square());
+    let mut overlay = StringOverlay::from_shape(&square());
     let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
     let mut options = IntOverlayOptions::default();
     options.min_output_area = 1000;
@@ -64,7 +64,7 @@ fn slice_minimum_area_above_subject_area_returns_empty() {
 
 #[test]
 fn slice_small_area_threshold_preserves_large_loops_and_holes() {
-    let mut overlay = StringOverlay::with_shape_contour(&square());
+    let mut overlay = StringOverlay::from_shape(&square());
     overlay.add_string_path(&[
         IntPoint::new(0, 0),
         IntPoint::new(3, 3),

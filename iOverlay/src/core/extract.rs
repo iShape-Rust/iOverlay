@@ -610,7 +610,7 @@ mod tests {
         ];
 
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
 
         let shapes_0 = overlay
             .build_graph_view(FillRule::NonZero)
