@@ -4,7 +4,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
-use i_float::int::point::IntPoint;
 use i_float::int::vector::IntVector;
 
 /// Simplifies vector contours by removing collinear points when possible.
@@ -205,7 +204,7 @@ impl<I: IntNumber, D: OverlayEdgeData> VectorSimpleContour for [DataVectorEdge<I
             }
         }
 
-        let mut buffer = vec![DataVectorEdge::new(0, IntPoint::ZERO, IntPoint::ZERO, self[0].data); n];
+        let mut buffer = vec![self[0]; n];
         node = nodes[first];
 
         let mut e0 = &self[node.index];
@@ -265,8 +264,9 @@ fn direction<I: IntNumber, D>(edge: &DataVectorEdge<I, D>) -> IntVector<I> {
 mod tests {
     use crate::core::edge_data::{EdgeDataMerge, OverlayEdgeData};
     use crate::vector::edge::DataVectorEdge;
-    use crate::vector::simplify::{IntPoint, VectorSimplify};
+    use crate::vector::simplify::VectorSimplify;
     use alloc::vec;
+    use i_float::int::point::IntPoint;
     use i_float::int_pnt;
 
     #[derive(Clone, Copy, PartialEq)]
