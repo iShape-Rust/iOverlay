@@ -3,6 +3,7 @@ use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::hierarchy::{ChildLink, FlatShapeHierarchy};
 use i_overlay::core::overlay::{ContourDirection, Overlay};
 use i_overlay::core::overlay_rule::OverlayRule;
+use i_shape::int::area::UnsafeArea;
 use i_shape::int::path::ContourExtension;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -55,7 +56,7 @@ fn run_stress_case(seed: u64) {
         (subject, clip, OverlayRule::Xor)
     };
 
-    let mut overlay = Overlay::with_contours(&subject, &clip);
+    let mut overlay = Overlay::from_subj_and_clip(&subject, &clip);
     if seed & 2 != 0 {
         overlay.options.output_direction = ContourDirection::Clockwise;
     }
@@ -119,7 +120,7 @@ fn assert_hierarchy_matches_containment(hierarchy: &FlatShapeHierarchy<i32>, see
                     continue;
                 }
 
-                let area = contour.unsafe_area().unsigned_abs();
+                let area = contour.iter().copied().unsafe_area().unsigned_abs();
                 if parent.is_none_or(|candidate| area < candidate.0) {
                     parent = Some((area, parent_shape_index, parent_contour_index));
                 }

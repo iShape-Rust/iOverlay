@@ -402,7 +402,7 @@ mod tests {
         ];
         let mut buffer = Default::default();
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions::keep_all_points();
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
@@ -411,7 +411,7 @@ mod tests {
 
         debug_assert!(shapes[0][0].len() == 6);
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions::default();
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
@@ -429,7 +429,7 @@ mod tests {
         ];
 
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions::default();
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
@@ -448,7 +448,7 @@ mod tests {
         ];
 
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
 
         let shapes_0 = overlay
             .build_graph_view(FillRule::NonZero)
@@ -475,7 +475,7 @@ mod tests {
             [[1, 3], [1, 4], [2, 4], [2, 3]]
         ];
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions::default();
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
@@ -493,7 +493,7 @@ mod tests {
             [[0, 0], [3, 0], [3, -3], [2, -3], [2, 0], [-1, 0], [-1, 3], [-2, 3], [-2, 2], [0, 2], [0, 1], [-3, 1], [-3, 4], [0, 4]],
         ];
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions::default();
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
@@ -516,7 +516,7 @@ mod tests {
             [[7, 1], [11, 1], [11, 5], [7, 5]],
         ];
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions::default();
         let shapes = overlay
             .build_graph_view(FillRule::NonZero)
@@ -535,7 +535,7 @@ mod tests {
         ];
 
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         overlay.options = IntOverlayOptions {
             preserve_input_collinear: false,
             output_direction: ContourDirection::CounterClockwise,

@@ -38,6 +38,7 @@ For specialized geometry, see [iCurve](https://github.com/iShape-Rust/iCurve) fo
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
 - [Integer Coordinate Limits](#integer-coordinate-limits)
+- [Floating-Point Coordinate Limits](#floating-point-coordinate-limits)
 - [FAQ](#faq)
 - [License](#license)
 
@@ -214,7 +215,7 @@ let subject = int_shape![
     [[20, 20], [80, 20], [80, 80], [20, 80]],
 ];
 
-let mut overlay = Overlay::with_contours(&subject, &[]);
+let mut overlay = Overlay::from_subj(&subject);
 let result = overlay.overlay_hierarchy(OverlayRule::Subject, FillRule::EvenOdd);
 
 assert_eq!(result.shapes.shape_ranges.len(), 2);
@@ -490,12 +491,53 @@ println!("result: {:?}", result);
 
 ## Buffering
 
+Outline, stroke, and variable-width stroke geometry is built by `mesh::int`.
+The `mesh::float` APIs select a scale, convert input and styles, delegate
+construction to the integer core, and convert the result back. Fixed-scale
+methods retain the supplied grid. Integer rounding and CORDIC arc subdivision can change individual vertices
+compared with the former float builders.
+
+Use `IntOutlineOffset`, `IntStrokeOffset`, or `IntVariableStrokeOffset` from the
+corresponding `mesh::int::{outline,stroke,variable_stroke}::offset` module.
+Outline and stroke styles live in `mesh::int::style`; variable-width vertices and
+styles live in `mesh::int::variable_stroke`. Bevel, clipped miter, and round joins
+are supported. Stroke caps can be butt, square, round, or custom; variable-width
+strokes use round caps and joins. Round geometry uses `ArcOptions`, including
+configurable CORDIC rotation precision (default: 5).
+
+Integer construction math limits miter joins to a minimum interior angle of
+5 degrees, clipping sharper corners. Float construction math retains its
+1.8-degree minimum. In both modes, almost straight corners with interior angles
+above 175 degrees use bevel joins by default to avoid unstable intersections of
+rounded offset lines. Stroke and outline styles expose `.miter_min_turn(angle)`
+to configure this minimum turn independently of the sharp-corner clipping angle:
+use `Angle` in the integer API or radians in the float API. The default is 5 degrees
+for both math modes. Zero disables this guard; smaller values allow less stable
+intersections.
+
+Integer distances use input coordinate units without automatic rescaling.
+Stroke radius is `ceil(max(width, 0) / 2)`; radii at most 1 are degenerate.
+Use `validate_outline(&style)`, `validate_stroke(&style)`, or
+`validate_variable_stroke()` for an optional conservative coordinate-range check.
+Construction requires input and temporary coordinates to stay in the safe range.
+All three APIs provide `*_into` methods that replace a reusable flat output buffer.
+
+Constant-width stroke also offers float construction math through
+`StrokeStyle::math(MathMode::Float)` or `IntStrokeStyle::math(MathMode::Float)`,
+with `MathMode` in `mesh::math`. Directions are stored as `UnitIntVector`; integer
+coordinates and boolean operations are retained. `Integer` remains the default.
+
+Choose `MathMode::Integer` for cross-platform deterministic construction;
+otherwise prefer `MathMode::Float` for higher precision and generally better speed.
+Outline and variable-width stroke currently use Integer only.
+See [stroke construction math](docs/stroke_math.md).
+
 ### Offsetting a Path
 <img src="readme/example_offseting_path.svg" alt="Path Example" style="width:400px;">
 
 ```rust
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
+use i_overlay::mesh::float::stroke::offset::StrokeOffset;
+use i_overlay::mesh::float::style::{LineCap, LineJoin, StrokeStyle};
 
 let path = [
     [ 2.0, 1.0],
@@ -523,8 +565,8 @@ println!("result: {:?}", shapes);
 <img src="readme/example_offseting_polygon.svg" alt="Path Example" style="width:400px;">
 
 ```rust
-use i_overlay::mesh::outline::offset::OutlineOffset;
-use i_overlay::mesh::style::{LineJoin, OutlineStyle};
+use i_overlay::mesh::float::outline::offset::OutlineOffset;
+use i_overlay::mesh::float::style::{LineJoin, OutlineStyle};
 
 let shape = vec![
     vec![
@@ -600,8 +642,24 @@ to all inputs and solver strategies. Integer APIs do not check them; exceeding
 these bounds can cause overflow or incorrect results. Use a wider engine or rescale
 larger inputs. See the [range derivation and arithmetic audit](readme/integer_range.md) for details.
 
-For float APIs, the limits apply after conversion. An explicit conservative budget
-is `FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)`.
+For float APIs, the limits apply after conversion. Automatic conversion and checked
+fixed-scale methods use `FloatPointAdapter::CONSERVATIVE_COORDINATE_BITS`
+(`I::BITS - 3`), reserving an extra bit for rounding inside the arithmetic range.
+Custom adapters must respect the integer range; use
+`FloatPointAdapter::new_conservative(rect)` for the same budget.
+
+## Floating-Point Coordinate Limits
+
+Input coordinates must be finite, with absolute values at most `2^60` for `f32`
+or `2^500` for `f64`. Stroke and outline bounds, including padding for widths,
+offsets, joins, and caps, must also fit these limits.
+
+Infallible APIs panic on invalid bounds. Fixed-scale APIs return
+`FixedScaleOverlayError::InvalidRect`. Scales must be positive and finite, have a
+finite reciprocal in the input scalar type, and fit the coordinate budget.
+A scale whose reciprocal overflows returns `ScaleTooSmall`; one exceeding the
+budget returns `ScaleTooLarge`. Coordinate limits do not themselves limit scales.
+Empty valid inputs remain supported.
 
 ## FAQ
 ### 1. When should I use `FloatOverlay`, `SingleFloatOverlay`, or `FloatOverlayGraph`?

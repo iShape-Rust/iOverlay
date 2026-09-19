@@ -1,9 +1,6 @@
-pub(crate) mod math;
-mod miter;
-pub mod outline;
+pub mod float;
+pub mod int;
+pub mod math;
 mod overlay;
-mod rotator;
-pub mod stroke;
-pub mod style;
 mod subject;
-pub mod variable_stroke;
+mod uniq_iter;

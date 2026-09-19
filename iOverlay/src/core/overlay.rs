@@ -18,8 +18,8 @@ use crate::vector::edge::{DataVectorEdge, VectorShape};
 use alloc::vec::Vec;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::point::IntPoint;
-use i_shape::int::count::PointsCount;
 use i_shape::int::shape::{IntContour, IntShape, IntShapes};
+use i_shape::source::int::resource::IntShapeResource;
 
 use super::graph::{OverlayGraph, OverlayNode};
 
@@ -110,14 +110,87 @@ where
         }
     }
 
+    /// Creates an overlay from subject and clip resources, which may use different storage types.
+    /// Paths are interpreted as closed contours; fill rules determine their interiors.
+    /// Accepts contours, shapes, collections of shapes, borrowed paths, and flat buffers
+    /// through [`IntShapeResource`], without copying them into intermediate containers.
+    pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        Self::from_subj_and_clip_custom(subj, clip, Default::default(), Default::default())
+    }
+
+    /// Creates an overlay from resources with custom output options and solver.
+    pub fn from_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        options: IntOverlayOptions<I::WideUInt>,
+        solver: Solver,
+    ) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        let capacity = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .map(|path| path.len())
+            .sum();
+        let mut overlay = Self::new_custom(capacity, options, solver);
+        overlay.add_source(subj, ShapeType::Subject);
+        overlay.add_source(clip, ShapeType::Clip);
+        overlay
+    }
+
+    /// Creates an overlay from a subject resource, interpreting each path as a closed contour.
+    pub fn from_subj<R: IntShapeResource<I> + ?Sized>(subj: &R) -> Self {
+        Self::from_subj_custom(subj, Default::default(), Default::default())
+    }
+
+    /// Creates a subject-only overlay with custom output options and solver.
+    pub fn from_subj_custom<R: IntShapeResource<I> + ?Sized>(
+        subj: &R,
+        options: IntOverlayOptions<I::WideUInt>,
+        solver: Solver,
+    ) -> Self {
+        let capacity = subj.iter_paths().map(|path| path.len()).sum();
+        let mut overlay = Self::new_custom(capacity, options, solver);
+        overlay.add_source(subj, ShapeType::Subject);
+        overlay
+    }
+
+    /// Adds all resource paths as closed contours without intermediate storage.
+    pub fn add_source<R: IntShapeResource<I> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
+        for contour in resource.iter_paths() {
+            self.add_contour(contour, shape_type);
+        }
+    }
+
+    /// Replaces the geometry while retaining allocated storage, options, and solver.
+    pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        self.clear();
+        self.add_source(subj, ShapeType::Subject);
+        self.add_source(clip, ShapeType::Clip);
+    }
+
+    /// Replaces the geometry with a subject resource, retaining storage and configuration.
+    pub fn reinit_with_subj<R: IntShapeResource<I> + ?Sized>(&mut self, subj: &R) {
+        self.clear();
+        self.add_source(subj, ShapeType::Subject);
+    }
+
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
     /// - `subj`: An array of contours that together define the subject.
     /// - `clip`: An array of contours that together define the clip.
+    #[deprecated(note = "Use `from_subj_and_clip` instead.")]
     pub fn with_contour(subj: &[IntPoint<I>], clip: &[IntPoint<I>]) -> Self {
-        let mut overlay = Self::new(subj.len() + clip.len());
-        overlay.add_contour(subj, ShapeType::Subject);
-        overlay.add_contour(clip, ShapeType::Clip);
-        overlay
+        Self::from_subj_and_clip(subj, clip)
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
@@ -125,26 +198,22 @@ where
     /// - `clip`: An array of contours that together define the clip.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
+    #[deprecated(note = "Use `from_subj_and_clip_custom` instead.")]
     pub fn with_contour_custom(
         subj: &[IntPoint<I>],
         clip: &[IntPoint<I>],
         options: IntOverlayOptions<I::WideUInt>,
         solver: Solver,
     ) -> Self {
-        let mut overlay = Self::new_custom(subj.len() + clip.len(), options, solver);
-        overlay.add_contour(subj, ShapeType::Subject);
-        overlay.add_contour(clip, ShapeType::Clip);
-        overlay
+        Self::from_subj_and_clip_custom(subj, clip, options, solver)
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
     /// - `subj`: An array of contours that together define the subject shape.
     /// - `clip`: An array of contours that together define the clip shape.
+    #[deprecated(note = "Use `from_subj_and_clip` instead.")]
     pub fn with_contours(subj: &[IntContour<I>], clip: &[IntContour<I>]) -> Self {
-        let mut overlay = Self::new(subj.points_count() + clip.points_count());
-        overlay.add_contours(subj, ShapeType::Subject);
-        overlay.add_contours(clip, ShapeType::Clip);
-        overlay
+        Self::from_subj_and_clip(subj, clip)
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip contours.
@@ -152,26 +221,22 @@ where
     /// - `clip`: An array of contours that together define the clip shape.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
+    #[deprecated(note = "Use `from_subj_and_clip_custom` instead.")]
     pub fn with_contours_custom(
         subj: &[IntContour<I>],
         clip: &[IntContour<I>],
         options: IntOverlayOptions<I::WideUInt>,
         solver: Solver,
     ) -> Self {
-        let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
-        overlay.add_contours(subj, ShapeType::Subject);
-        overlay.add_contours(clip, ShapeType::Clip);
-        overlay
+        Self::from_subj_and_clip_custom(subj, clip, options, solver)
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip shapes.
     /// - `subj`: An array of shapes to be used as the subject in the overlay operation.
     /// - `clip`: An array of shapes to be used as the clip in the overlay operation.
+    #[deprecated(note = "Use `from_subj_and_clip` instead.")]
     pub fn with_shapes(subj: &[IntShape<I>], clip: &[IntShape<I>]) -> Self {
-        let mut overlay = Self::new(subj.points_count() + clip.points_count());
-        overlay.add_shapes(subj, ShapeType::Subject);
-        overlay.add_shapes(clip, ShapeType::Clip);
-        overlay
+        Self::from_subj_and_clip(subj, clip)
     }
 
     /// Creates a new `Overlay` instance and initializes it with subject and clip shapes.
@@ -179,16 +244,14 @@ where
     /// - `clip`: An array of shapes to be used as the clip in the overlay operation.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
+    #[deprecated(note = "Use `from_subj_and_clip_custom` instead.")]
     pub fn with_shapes_options(
         subj: &[IntShape<I>],
         clip: &[IntShape<I>],
         options: IntOverlayOptions<I::WideUInt>,
         solver: Solver,
     ) -> Self {
-        let mut overlay = Self::new_custom(subj.points_count() + clip.points_count(), options, solver);
-        overlay.add_shapes(subj, ShapeType::Subject);
-        overlay.add_shapes(clip, ShapeType::Clip);
-        overlay
+        Self::from_subj_and_clip_custom(subj, clip, options, solver)
     }
 
     /// Adds a path to the overlay using an iterator, allowing for more flexible path input.
@@ -218,6 +281,7 @@ where
     /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_contours(&mut self, contours: &[IntContour<I>], shape_type: ShapeType) {
         for contour in contours.iter() {
             self.add_contour(contour, shape_type);
@@ -228,17 +292,19 @@ where
     /// - `shape`: A reference to a `IntShape<I>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_shape(&mut self, shape: &IntShape<I>, shape_type: ShapeType) {
-        self.add_contours(shape, shape_type);
+        self.add_source(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
     /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>], shape_type: ShapeType) {
         for shape in shapes.iter() {
-            self.add_contours(shape, shape_type);
+            self.add_source(shape, shape_type);
         }
     }
 
@@ -251,6 +317,7 @@ where
     /// - `buffer`: A buffer of `IntShapes<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_flat_buffer(&mut self, buffer: &FlatContoursBuffer<I>, shape_type: ShapeType) {
         for range in buffer.ranges.iter() {
             let contour = &buffer.points[range.clone()];
@@ -346,7 +413,7 @@ where
     ///
     /// let left_rect = [int_pnt!(0, 0), int_pnt!(0, 10), int_pnt!(10, 10), int_pnt!(10, 0)];
     /// let right_rect = [int_pnt!(10, 0), int_pnt!(10, 10), int_pnt!(20, 10), int_pnt!(20, 0)];
-    /// let mut overlay = Overlay::with_contour(&left_rect, &right_rect);
+    /// let mut overlay = Overlay::from_subj_and_clip(&left_rect, &right_rect);
     ///
     /// let result = overlay.overlay(OverlayRule::Union, FillRule::EvenOdd);
     /// ```
@@ -502,7 +569,7 @@ mod tests {
             IntPoint::new(0, 10),
         ]];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 1);
@@ -529,7 +596,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 1);
@@ -556,7 +623,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::EvenOdd);
 
         assert_eq!(result.len(), 1);
@@ -585,7 +652,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -617,7 +684,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -643,7 +710,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -681,7 +748,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -707,7 +774,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -733,7 +800,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -759,7 +826,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 2);
@@ -785,7 +852,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -810,7 +877,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -835,7 +902,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -860,7 +927,7 @@ mod tests {
             ],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -877,7 +944,7 @@ mod tests {
             vec![IntPoint::new(0, 0), IntPoint::new(-2, 0), IntPoint::new(0, 2)],
         ];
 
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 1);
@@ -889,7 +956,7 @@ mod tests {
     fn test_empty_input() {
         let subj: &[IntContour<i32>] = &[];
 
-        let mut overlay = Overlay::with_contours(subj, &[]);
+        let mut overlay = Overlay::from_subj(subj);
         let result = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
 
         assert_eq!(result.len(), 0);

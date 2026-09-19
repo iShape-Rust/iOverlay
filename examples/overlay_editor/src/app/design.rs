@@ -1,150 +1,76 @@
-use iced::widget::button;
-use iced::widget::container;
-use iced::widget::rule;
-use iced::widget::text;
-use iced::{border, Background, Color, Padding, Theme};
+use eframe::egui::{self, Color32};
 
-pub(super) struct Design {
-    pub(super) action_separator: f32,
-}
+pub(crate) struct Design;
 
 impl Design {
-    pub(crate) fn solution_color() -> Color {
-        Color::from_rgb8(32, 199, 32)
+    pub(crate) fn solution_color() -> Color32 {
+        Color32::from_rgb(32, 199, 32)
     }
-
-    pub(crate) fn subject_color() -> Color {
-        Color::from_rgb8(255, 51, 51)
+    pub(crate) fn subject_color() -> Color32 {
+        Color32::from_rgb(255, 51, 51)
     }
-
-    pub(crate) fn clip_color() -> Color {
-        Color::from_rgb8(26, 142, 255)
+    pub(crate) fn clip_color() -> Color32 {
+        Color32::from_rgb(26, 142, 255)
     }
-
-    pub(crate) fn negative_color() -> Color {
-        if Theme::Dark.extended_palette().is_dark {
-            Color::from_rgb8(224, 224, 224)
-        } else {
-            Color::from_rgb8(32, 32, 32)
-        }
+    pub(crate) fn negative_color() -> Color32 {
+        Color32::from_rgb(224, 224, 224)
     }
-
-    pub(crate) fn accent_color() -> Color {
-        Color::from_rgb8(255, 140, 0)
+    pub(crate) fn accent_color() -> Color32 {
+        Color32::from_rgb(255, 140, 0)
     }
-
-    pub(crate) fn both_color() -> Color {
-        Color::from_rgb8(76, 217, 100)
-    }
-
-    pub(super) fn new() -> Self {
-        Self {
-            action_separator: 3.0,
-        }
-    }
-
-    pub(super) fn action_padding(&self) -> Padding {
-        Padding {
-            top: self.action_separator,
-            right: 2.0 * self.action_separator,
-            bottom: self.action_separator,
-            left: 2.0 * self.action_separator,
-        }
+    pub(crate) fn both_color() -> Color32 {
+        Color32::from_rgb(76, 217, 100)
     }
 }
 
-// Sidebar
+const CONTROL_WIDTH: f32 = 232.0;
 
-pub(super) fn style_sidebar_button(theme: &Theme, status: button::Status) -> button::Style {
-    let palette = theme.extended_palette();
-    let text_color = theme.palette().text;
-    let base = button::Style {
-        background: Some(Background::Color(Color::TRANSPARENT)),
-        text_color,
-        border: border::rounded(6),
-        ..button::Style::default()
-    };
-
-    match status {
-        button::Status::Pressed | button::Status::Hovered => button::Style {
-            background: Some(Background::Color(
-                palette.background.weak.color.scale_alpha(0.2),
-            )),
-            ..base
-        },
-        button::Status::Disabled | button::Status::Active => base,
-    }
+pub(crate) fn controls(ui: &mut egui::Ui, id: &str, content: impl FnOnce(&mut egui::Ui)) {
+    ui.scope(|ui| {
+        ui.spacing_mut().item_spacing = egui::vec2(8.0, 6.0);
+        ui.spacing_mut().interact_size = egui::vec2(64.0, 26.0);
+        ui.spacing_mut().slider_width = 160.0;
+        egui::Grid::new(id)
+            .num_columns(2)
+            .min_col_width(130.0)
+            .min_row_height(26.0)
+            .spacing([16.0, 6.0])
+            .show(ui, content);
+    });
 }
 
-pub(super) fn style_sidebar_button_selected(
-    theme: &Theme,
-    status: button::Status,
-) -> button::Style {
-    let palette = theme.extended_palette();
-    let base = button::Style {
-        background: Some(Background::Color(palette.primary.strong.color)),
-        text_color: palette.primary.strong.text,
-        border: border::rounded(6),
-        ..button::Style::default()
-    };
-
-    match status {
-        button::Status::Pressed | button::Status::Active => base,
-        button::Status::Hovered => button::Style {
-            background: Some(Background::Color(palette.primary.base.color)),
-            ..base
-        },
-        button::Status::Disabled => button::Style {
-            background: Some(Background::Color(Color::TRANSPARENT)),
-            ..base
-        },
-    }
+pub(crate) fn slider(ui: &mut egui::Ui, label: &str, slider: egui::Slider<'_>) -> bool {
+    let label = ui.label(label);
+    let changed = ui.add(slider).labelled_by(label.id).changed();
+    ui.end_row();
+    changed
 }
 
-pub(super) fn style_sidebar_text(theme: &Theme) -> text::Style {
-    let palette = theme.palette();
-    text::Style {
-        color: Some(palette.text.scale_alpha(0.7)),
-    }
+pub(crate) fn checkbox(ui: &mut egui::Ui, label: &str, value: &mut bool) -> bool {
+    let label = ui.label(label);
+    let changed = ui.checkbox(value, "").labelled_by(label.id).changed();
+    ui.end_row();
+    changed
 }
 
-pub(super) fn style_sidebar_text_selected(theme: &Theme) -> text::Style {
-    let palette = theme.palette();
-    text::Style {
-        color: Some(palette.text),
-    }
-}
-
-pub(super) fn style_sidebar_background(theme: &Theme) -> container::Style {
-    container::Style::default().background(
-        theme
-            .extended_palette()
-            .background
-            .weak
-            .color
-            .scale_alpha(0.1),
-    )
-}
-
-pub(super) fn style_separator(theme: &Theme) -> rule::Style {
-    let color = if theme.extended_palette().is_dark {
-        Color::from_rgba(0.0, 0.0, 0.0, 0.8)
-    } else {
-        Color::from_rgba(1.0, 1.0, 1.0, 0.8)
-    };
-
-    rule::Style {
-        color,
-        radius: border::Radius::new(0),
-        fill_mode: rule::FillMode::Padded(0),
-        snap: true,
-    }
-}
-
-pub(super) fn style_sheet_background(theme: &Theme) -> container::Style {
-    if theme.extended_palette().is_dark {
-        container::Style::default().background(Color::BLACK.scale_alpha(0.4))
-    } else {
-        container::Style::default().background(Color::WHITE.scale_alpha(0.4))
-    }
+pub(crate) fn select<T: Copy + PartialEq + std::fmt::Display>(
+    ui: &mut egui::Ui,
+    label: &str,
+    value: &mut T,
+    options: &[T],
+) -> bool {
+    let before = *value;
+    let label_response = ui.label(label);
+    egui::ComboBox::from_id_salt(label)
+        .width(CONTROL_WIDTH)
+        .selected_text(value.to_string())
+        .show_ui(ui, |ui| {
+            for &option in options {
+                ui.selectable_value(value, option, option.to_string());
+            }
+        })
+        .response
+        .labelled_by(label_response.id);
+    ui.end_row();
+    *value != before
 }

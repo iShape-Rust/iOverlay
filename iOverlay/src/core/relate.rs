@@ -13,6 +13,7 @@ use crate::split::solver::SplitSolver;
 use alloc::vec::Vec;
 use i_float::int::point::IntPoint;
 use i_shape::int::shape::{IntContour, IntShape};
+use i_shape::source::int::resource::IntShapeResource;
 
 /// Overlay structure optimized for spatial predicate evaluation.
 ///
@@ -60,6 +61,57 @@ where
             split_solver: SplitSolver::new(),
             sweep_runner: SweepRunner::new(),
         }
+    }
+
+    /// Creates a predicate overlay from closed subject and clip paths using even-odd fill.
+    pub fn from_subj_and_clip<R0, R1>(subj: &R0, clip: &R1) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        Self::from_subj_and_clip_custom(subj, clip, FillRule::EvenOdd, Default::default())
+    }
+
+    /// Creates a predicate overlay with a custom fill rule and solver.
+    pub fn from_subj_and_clip_custom<R0, R1>(
+        subj: &R0,
+        clip: &R1,
+        fill_rule: FillRule,
+        solver: Solver,
+    ) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        let capacity = subj
+            .iter_paths()
+            .chain(clip.iter_paths())
+            .map(|path| path.len())
+            .sum();
+        let mut overlay = Self::new(capacity);
+        overlay.fill_rule = fill_rule;
+        overlay.solver = solver;
+        overlay.add_source(subj, ShapeType::Subject);
+        overlay.add_source(clip, ShapeType::Clip);
+        overlay
+    }
+
+    /// Adds all resource paths as closed subject or clip contours.
+    pub fn add_source<R: IntShapeResource<I> + ?Sized>(&mut self, resource: &R, shape_type: ShapeType) {
+        for contour in resource.iter_paths() {
+            self.add_contour(contour, shape_type);
+        }
+    }
+
+    /// Replaces geometry while retaining allocated storage, fill rule, and solver.
+    pub fn reinit_with_subj_and_clip<R0, R1>(&mut self, subj: &R0, clip: &R1)
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        self.clear();
+        self.add_source(subj, ShapeType::Subject);
+        self.add_source(clip, ShapeType::Clip);
     }
 
     fn evaluate<T: Default, H: FillHandler<ShapeCountBoolean, I, Output = T>>(&mut self, handler: H) -> T {
@@ -144,6 +196,7 @@ where
     /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added paths in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_contours(&mut self, contours: &[IntContour<I>], shape_type: ShapeType) {
         for contour in contours.iter() {
             self.add_contour(contour, shape_type);
@@ -154,23 +207,104 @@ where
     /// - `shape`: A reference to a `IntShape<I>` instance to be added.
     /// - `shape_type`: Specifies the role of the added shape in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_shape(&mut self, shape: &IntShape<I>, shape_type: ShapeType) {
-        self.add_contours(shape, shape_type);
+        self.add_source(shape, shape_type);
     }
 
     /// Adds multiple shapes to the overlay as either subject or clip shapes.
     /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     /// - `shape_type`: Specifies the role of the added shapes in the overlay operation, either as `Subject` or `Clip`.
     #[inline]
+    #[deprecated(note = "Use `add_source` instead.")]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>], shape_type: ShapeType) {
         for shape in shapes.iter() {
-            self.add_contours(shape, shape_type);
+            self.add_source(shape, shape_type);
         }
     }
 
     #[inline]
     pub fn clear(&mut self) {
         self.segments.clear();
+    }
+}
+
+/// One-shot spatial predicates on closed integer shape resources using even-odd fill.
+/// Use [`PredicateOverlay::from_subj_and_clip_custom`] for another fill rule or solver.
+///
+/// ```
+/// use i_overlay::core::relate::IntRelate;
+/// use i_overlay::i_float::int::point::IntPoint;
+/// let square = [IntPoint::new(0, 0), IntPoint::new(10, 0),
+///               IntPoint::new(10, 10), IntPoint::new(0, 10)];
+/// assert!(square.intersects(&square[..]));
+/// ```
+pub trait IntRelate<R, I>
+where
+    R: IntShapeResource<I> + ?Sized,
+    I: OverlayInt,
+{
+    /// Returns true if the resources share any point.
+    fn intersects(&self, other: &R) -> bool;
+
+    /// Returns true if the interiors overlap.
+    fn interiors_intersect(&self, other: &R) -> bool;
+
+    /// Returns true if boundaries intersect but interiors do not.
+    fn touches(&self, other: &R) -> bool;
+
+    /// Returns true if the resources intersect by point coincidence only.
+    fn point_intersects(&self, other: &R) -> bool;
+
+    /// Returns true if this resource is completely within the other.
+    fn within(&self, other: &R) -> bool;
+
+    /// Returns true if the resources have no shared points.
+    fn disjoint(&self, other: &R) -> bool;
+
+    /// Returns true if this resource completely covers the other.
+    fn covers(&self, other: &R) -> bool;
+}
+
+impl<R0, R1, I> IntRelate<R1, I> for R0
+where
+    R0: IntShapeResource<I> + ?Sized,
+    R1: IntShapeResource<I> + ?Sized,
+    I: OverlayInt,
+{
+    #[inline]
+    fn intersects(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).intersects()
+    }
+
+    #[inline]
+    fn interiors_intersect(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).interiors_intersect()
+    }
+
+    #[inline]
+    fn touches(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).touches()
+    }
+
+    #[inline]
+    fn point_intersects(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).point_intersects()
+    }
+
+    #[inline]
+    fn within(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(self, other).within()
+    }
+
+    #[inline]
+    fn disjoint(&self, other: &R1) -> bool {
+        !PredicateOverlay::from_subj_and_clip(self, other).intersects()
+    }
+
+    #[inline]
+    fn covers(&self, other: &R1) -> bool {
+        PredicateOverlay::from_subj_and_clip(other, self).within()
     }
 }
 
@@ -250,6 +384,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_add_contours() {
         let mut overlay = PredicateOverlay::new(16);
         let contours = vec![square(0, 0, 5), square(10, 10, 5)];
@@ -259,6 +394,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_add_shape() {
         let mut overlay = PredicateOverlay::new(16);
         let shape = vec![square(0, 0, 10)];
@@ -268,6 +404,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_add_shapes() {
         let mut overlay = PredicateOverlay::new(16);
         let shapes = vec![vec![square(0, 0, 5)], vec![square(20, 20, 5)]];
@@ -433,7 +570,7 @@ mod tests {
         // are still correctly tracked for point coincidence detection.
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
         assert!(
             overlay.intersects(),
@@ -446,7 +583,7 @@ mod tests {
         // Same setup: diamond corners touch the hole boundary but don't overlap
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
         assert!(overlay.touches(), "diamond touching hole boundary should touch");
     }
@@ -456,7 +593,7 @@ mod tests {
         // Same setup: diamond only touches at boundary points, interiors don't overlap
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 5), ShapeType::Clip);
         assert!(
             !overlay.interiors_intersect(),
@@ -470,7 +607,7 @@ mod tests {
         // Diamond centered at (15,15) with radius 2 (corners at 13,15,17,15 etc)
         let mut overlay = PredicateOverlay::new(32);
         let doughnut_shape = doughnut(0, 0, 30, 10, 10, 10);
-        overlay.add_shape(&doughnut_shape, ShapeType::Subject);
+        overlay.add_source(&doughnut_shape, ShapeType::Subject);
         overlay.add_contour(&diamond(15, 15, 2), ShapeType::Clip);
         assert!(!overlay.intersects(), "diamond inside hole should not intersect");
         assert!(!overlay.touches(), "diamond inside hole should not touch");
@@ -491,7 +628,7 @@ mod tests {
         ];
 
         let mut overlay = PredicateOverlay::new(32);
-        overlay.add_shape(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
+        overlay.add_source(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
         overlay.add_contour(&diamond_touching_corner, ShapeType::Clip);
 
         assert!(
@@ -516,7 +653,7 @@ mod tests {
         ];
 
         let mut overlay = PredicateOverlay::new(32);
-        overlay.add_shape(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
+        overlay.add_source(&doughnut(0, 0, 30, 10, 10, 10), ShapeType::Subject);
         overlay.add_contour(&diamond_outside, ShapeType::Clip);
 
         assert!(

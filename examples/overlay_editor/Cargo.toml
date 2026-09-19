@@ -10,26 +10,19 @@ lto = false
 codegen-units = 1
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-
-#iced = {  path = "../../../../iced", features = ["wgpu", "advanced"] }
-iced = { version = "0.14.0", features = ["wgpu", "advanced", "fira-sans"] }
-
+eframe = { version = "0.34.3", default-features = false, features = ["default_fonts", "wgpu", "x11", "wayland"] }
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
-
-wasm-bindgen = "~0.2.95"
-
-log = "0.4.22"
-console_log = "^1.0.0"
-console_error_panic_hook = "^0"
-
-#i_mesh = "^0.5.0"
-#i_triangle = { version = "^0.44.0", features = ["serde"] }
-
-i_triangle = { path = "../../../../iShape/iTriangle/iTriangle", default-features = true, features = ["serde"] }
+i_triangle = { path = "../../../../iShape/iTriangle/iTriangle", features = ["serde"] }
 i_mesh = { path = "../../../../iShape/iMesh/iMesh" }
 
-#ICED_BACKEND=wgpu cargo r -r
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["Window", "Document", "HtmlCanvasElement", "HtmlElement", "CssStyleDeclaration", "Node"] }
+log = "0.4"
+console_log = "1.0"
+console_error_panic_hook = "0.1"

@@ -9,7 +9,7 @@ use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Paths;
 use i_shape::float::adapter::ShapeToFloat;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// The `FloatStringOverlay` struct is a builder for overlaying geometric shapes by converting
 /// floating-point geometry to integer space. It provides methods for adding paths and shapes,
@@ -32,8 +32,9 @@ where
     ///
     /// - `adapter`: A `FloatPointAdapter` instance responsible for coordinate conversion between
     ///   float and integer values, ensuring accuracy during geometric transformations.
-    ///   Use `FloatPointAdapter::with_scale` to set a fixed scale, or `FloatPointAdapter::new`
-    ///   for automatic scaling based on bounds.
+    ///   Use `FloatPointAdapter::with_scale` to set a fixed scale, or
+    ///   `FloatPointAdapter::new_conservative(rect)` for automatic
+    ///   scaling. Custom scales must respect the integer coordinate range.
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
@@ -63,7 +64,7 @@ where
         R1: ShapeResource<P>,
     {
         let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::with_iter_conservative(iter);
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -86,7 +87,7 @@ where
         R1: ShapeResource<P>,
     {
         let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
+        let adapter = FloatPointAdapter::try_with_iter_and_scale_conservative(iter, scale)?;
 
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());

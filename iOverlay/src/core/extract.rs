@@ -16,7 +16,7 @@ use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
 use i_float::int::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::int::path::ContourExtension;
+use i_shape::int::area::UnsafeArea;
 use i_shape::int::shape::{IntContour, IntShapes};
 use i_shape::int::simple::Simplify;
 
@@ -337,7 +337,7 @@ impl<I: IntNumber> GraphContour<I> for IntContour<I> {
         if min_output_area == I::WideUInt::ZERO {
             return true;
         }
-        let area = self.unsafe_area();
+        let area = self.iter().copied().unsafe_area();
         let abs_area = area.unsigned_abs() >> 1;
 
         abs_area >= min_output_area
@@ -610,7 +610,7 @@ mod tests {
         ];
 
         let mut buffer = Default::default();
-        let mut overlay = Overlay::with_contours(&subj, &[]);
+        let mut overlay = Overlay::from_subj(&subj);
 
         let shapes_0 = overlay
             .build_graph_view(FillRule::NonZero)

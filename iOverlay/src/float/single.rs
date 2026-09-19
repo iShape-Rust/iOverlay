@@ -4,7 +4,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::float::overlay::FloatOverlay;
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Shapes;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Trait `SingleFloatOverlay` provides methods for overlay operations between various geometric entities.
 /// This trait supports boolean operations on contours, shapes, and collections of shapes, using customizable overlay and build rules.

@@ -1,6 +1,6 @@
 use crate::core::solver::Solver;
 use i_float::int::number::int::IntNumber;
-use i_float::int::number::wide_int::WideIntNumber;
+use i_float::int::number::uint::UIntNumber;
 
 pub(super) struct SnapRadius {
     current: usize,
@@ -13,9 +13,9 @@ impl SnapRadius {
     }
 
     /// Squared-distance threshold for snapping to an existing endpoint.
-    pub(super) fn radius_squared<I: IntNumber>(&self) -> I::Wide {
+    pub(super) fn radius_squared<I: IntNumber>(&self) -> I::WideUInt {
         let exponent = self.current.min((2 * (I::BITS - 4)) as usize) as u32;
-        I::Wide::ONE << exponent
+        I::WideUInt::ONE << exponent
     }
 }
 
@@ -49,7 +49,7 @@ mod tests {
                     current: $exponent - 1,
                     step: 1,
                 };
-                let limit: <$int as i_float::int::number::int::IntNumber>::Wide = 1 << $exponent;
+                let limit: <$int as i_float::int::number::int::IntNumber>::WideUInt = 1 << $exponent;
                 assert_eq!(snap.radius_squared::<$int>(), limit / 2);
                 snap.increment();
                 assert_eq!(snap.radius_squared::<$int>(), limit);

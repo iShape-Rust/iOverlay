@@ -81,7 +81,12 @@ where
     }
 
     #[inline]
-    fn process(&mut self, radius_squared: I::Wide, buffer: &mut FragmentBuffer<I>, _solver: &Solver) -> bool {
+    fn process(
+        &mut self,
+        radius_squared: I::WideUInt,
+        buffer: &mut FragmentBuffer<I>,
+        _solver: &Solver,
+    ) -> bool {
         #[cfg(feature = "allow_multithreading")]
         {
             if _solver.multithreading.is_some() {
@@ -93,7 +98,7 @@ where
     }
 
     #[inline]
-    fn serial_split(&mut self, radius_squared: I::Wide, buffer: &mut FragmentBuffer<I>) -> bool {
+    fn serial_split(&mut self, radius_squared: I::WideUInt, buffer: &mut FragmentBuffer<I>) -> bool {
         let mut is_any_round = false;
         for group in buffer.groups.iter_mut() {
             if group.is_empty() {
@@ -106,7 +111,7 @@ where
     }
 
     #[cfg(feature = "allow_multithreading")]
-    fn parallel_split(&mut self, radius_squared: I::Wide, buffer: &mut FragmentBuffer<I>) -> bool {
+    fn parallel_split(&mut self, radius_squared: I::WideUInt, buffer: &mut FragmentBuffer<I>) -> bool {
         use rayon::iter::IntoParallelRefMutIterator;
         use rayon::iter::ParallelIterator;
 
@@ -152,7 +157,7 @@ where
     }
 
     fn bin_split(
-        radius_squared: I::Wide,
+        radius_squared: I::WideUInt,
         fragments: &mut [Fragment<I>],
         marks: &mut Vec<LineMark<I>>,
     ) -> bool {
@@ -227,7 +232,7 @@ where
     fn cross_fragments(
         fi: &Fragment<I>,
         fj: &Fragment<I>,
-        radius_squared: I::Wide,
+        radius_squared: I::WideUInt,
         marks: &mut Vec<LineMark<I>>,
     ) -> bool {
         // Fragments select candidate pairs; marks belong to the complete segments.

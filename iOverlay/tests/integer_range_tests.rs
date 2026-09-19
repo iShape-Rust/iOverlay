@@ -45,7 +45,7 @@ fn check<I: OverlayInt + TryFrom<i64> + Into<i64>>(
     let clip: Vec<_> = clip.iter().map(|p| contour::<I>(p)).collect();
     let expected = canonical(expected);
     for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
-        let result = Overlay::<I>::with_contours_custom(&subj, &clip, Default::default(), solver)
+        let result = Overlay::<I>::from_subj_and_clip_custom(&subj, &clip, Default::default(), solver)
             .overlay(rule, FillRule::EvenOdd);
         // Also exercise the wide area accumulator at the maximum square size.
         for shape in &result {
@@ -82,7 +82,7 @@ fn boundaries<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
     let hi = half - 1;
     let outer = square(lo, hi);
     check::<I>(
-        &[outer.clone()],
+        core::slice::from_ref(&outer),
         &[],
         OverlayRule::Subject,
         vec![vec![outer.clone()]],
@@ -91,17 +91,22 @@ fn boundaries<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
     // Keep unit-size features at both inclusive endpoints.
     for a in [lo, hi - 1] {
         let small = square(a, a + 1);
-        check::<I>(&[small.clone()], &[], OverlayRule::Subject, vec![vec![small]]);
+        check::<I>(
+            core::slice::from_ref(&small),
+            &[],
+            OverlayRule::Subject,
+            vec![vec![small.clone()]],
+        );
     }
 
     let inner = square(-half / 2, half / 2);
     let mut hole = inner.clone();
     hole.reverse();
     check::<I>(
-        &[outer.clone()],
+        core::slice::from_ref(&outer),
         &[inner],
         OverlayRule::Difference,
-        vec![vec![outer, hole]],
+        vec![vec![outer.clone(), hole]],
     );
 
     // Issue #88's steep edge, stretched to the maximum supported span.
@@ -185,13 +190,18 @@ fn i64_boundaries() {
 fn issue_88_with_a_wider_engine_or_rescaled_coordinates() {
     let triangle = vec![[0, 0], [129, -23169], [0, 9854]];
     check::<i32>(
-        &[triangle.clone()],
+        core::slice::from_ref(&triangle),
         &[],
         OverlayRule::Subject,
         vec![vec![triangle.clone()]],
     );
     let scaled: Contour = triangle.iter().map(|p| [p[0] / 2, p[1] / 2]).collect();
-    check::<i16>(&[scaled.clone()], &[], OverlayRule::Subject, vec![vec![scaled]]);
+    check::<i16>(
+        core::slice::from_ref(&scaled),
+        &[],
+        OverlayRule::Subject,
+        vec![vec![scaled.clone()]],
+    );
 }
 
 #[test]
@@ -221,7 +231,7 @@ fn conservative_float_scale_keeps_rounded_i16_span_in_range() {
     use i_float::float::rect::FloatRect;
 
     let half_extent = 1.99999;
-    let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent);
+    let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent).unwrap();
     let min = [-half_extent, -half_extent];
     let max = [half_extent, half_extent];
 
@@ -252,7 +262,7 @@ fn explicit_float_coordinate_budget() {
         let limit = 1_i64 << (I::BITS - 3);
         // Power-of-two, non-power-of-two, and sub-unit bounds exercise scale rounding.
         for half_extent in [1.0, 1.5, 0.25] {
-            let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent);
+            let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent).unwrap();
             let adapter = FloatPointAdapter::<[f64; 2], I>::with_coordinate_bits(rect, I::BITS - 3);
             let points = vec![
                 [-half_extent, -half_extent],
@@ -321,7 +331,7 @@ fn spiral_vector_area_at_coordinate_limits() {
         ]);
         let input = vec![contour::<I>(&points)];
         for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
-            let mut overlay = Overlay::<I>::with_contours_custom(&input, &[], Default::default(), solver);
+            let mut overlay = Overlay::<I>::from_subj_custom(&input, Default::default(), solver);
             // Sum the nine rectangular runs of the corridor, subtracting their
             // corner overlaps. Check filtering at the exact area and one above.
             let area = I::MAX.to_wide() * I::Wide::from_u32(9) - I::Wide::from_u32(56);
@@ -368,7 +378,7 @@ fn fragment_radius_at_coordinate_limits() {
                     },
                     ..Solver::FRAG
                 };
-                let actual = Overlay::<I>::with_contours_custom(&input, &[], Default::default(), solver)
+                let actual = Overlay::<I>::from_subj_custom(&input, Default::default(), solver)
                     .overlay(OverlayRule::Subject, FillRule::EvenOdd);
                 let actual = actual
                     .iter()
@@ -419,14 +429,14 @@ fn seeded_boundary_overlays_match_a_wider_engine() {
             ];
             let rule = rules[case % rules.len()];
             for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
-                let wide = Overlay::<i64>::with_contours_custom(
+                let wide = Overlay::<i64>::from_subj_and_clip_custom(
                     &[contour::<i64>(&subject)],
                     &[contour::<i64>(&clip)],
                     Default::default(),
                     solver,
                 )
                 .overlay(rule, FillRule::EvenOdd);
-                let narrow = Overlay::<I>::with_contours_custom(
+                let narrow = Overlay::<I>::from_subj_and_clip_custom(
                     &[contour::<I>(&subject)],
                     &[contour::<I>(&clip)],
                     Default::default(),

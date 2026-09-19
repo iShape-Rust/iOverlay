@@ -1,218 +1,46 @@
-use crate::geom::camera::Camera;
-use crate::point_editor::point::EditorPoint;
-use crate::point_editor::state::PointsEditorState;
-use crate::point_editor::state::SelectState;
-use iced::advanced::layout::{self, Layout};
-use iced::advanced::widget::tree;
-use iced::advanced::widget::tree::State;
-use iced::advanced::widget::{Tree, Widget};
-use iced::advanced::{renderer, Clipboard, Shell};
-use iced::{mouse, Color, Event, Point};
-use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
+use crate::{
+    app::design::Design,
+    geom::camera::Camera,
+    point_editor::{point::EditorPoint, state::PointsEditorState},
+};
+use eframe::egui::{Painter, Shape, Stroke, Vec2};
 
 #[derive(Debug, Clone)]
 pub(crate) struct PointEditUpdate {
-    pub(crate) point: EditorPoint,
     pub(crate) index: usize,
+    pub(crate) point: EditorPoint,
 }
 
-pub(crate) struct PointsEditorWidget<'a, Message> {
-    pub(super) points: &'a Vec<EditorPoint>,
-    pub(super) camera: Camera,
-    main_color: Color,
-    drag_color: Color,
-    hover_color: Color,
-    pub(super) mesh_radius: f32,
-    pub(super) hover_radius: f32,
-    on_update: Box<dyn Fn(PointEditUpdate) -> Message + 'a>,
-}
+pub(crate) struct PointsEditorWidget;
 
-impl<'a, Message> PointsEditorWidget<'a, Message> {
-    pub(crate) fn new(
-        points: &'a Vec<EditorPoint>,
+impl PointsEditorWidget {
+    pub(crate) fn paint(
+        painter: &Painter,
         camera: Camera,
-        on_update: impl Fn(PointEditUpdate) -> Message + 'a,
-    ) -> Self {
-        let binding = Theme::Dark;
-        let palette = binding.extended_palette();
-
-        let (main_color, hover_color, drag_color) = if palette.is_dark {
-            (
-                Color::WHITE,
-                palette.primary.base.color,
-                palette.primary.weak.color,
-            )
-        } else {
-            (
-                Color::BLACK,
-                palette.primary.base.color,
-                palette.primary.weak.color,
-            )
-        };
-
-        Self {
-            points,
-            camera,
-            mesh_radius: 4.0,
-            hover_radius: 12.0,
-            main_color,
-            hover_color,
-            drag_color,
-            on_update: Box::new(on_update),
-        }
-    }
-
-    pub(crate) fn set_hover_color(mut self, color: Color) -> Self {
-        self.hover_color = color;
-        self
-    }
-
-    pub(crate) fn set_drag_color(mut self, color: Color) -> Self {
-        self.drag_color = color;
-        self
-    }
-}
-
-impl<Message> Widget<Message, Theme, Renderer> for PointsEditorWidget<'_, Message> {
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<PointsEditorState>()
-    }
-
-    fn state(&self) -> State {
-        State::new(PointsEditorState::default())
-    }
-
-    fn size(&self) -> Size<Length> {
-        Size {
-            width: Length::Fill,
-            height: Length::Fill,
-        }
-    }
-
-    fn layout(
-        &mut self,
-        tree: &mut Tree,
-        _renderer: &Renderer,
-        limits: &layout::Limits,
-    ) -> layout::Node {
-        if let State::Some(state_box) = &mut tree.state {
-            state_box
-                .downcast_mut::<PointsEditorState>()
-                .unwrap()
-                .update_mesh(
-                    self.mesh_radius,
-                    self.main_color,
-                    self.hover_color,
-                    self.drag_color,
-                )
-        };
-
-        layout::Node::new(limits.max())
-    }
-
-    fn update(
-        &mut self,
-        tree: &mut Tree,
-        event: &Event,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
-        shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
+        points: &[EditorPoint],
+        state: &PointsEditorState,
     ) {
-        let bounds = layout.bounds();
-
-        let mouse_event = if let Event::Mouse(mouse_event) = event {
-            mouse_event
-        } else {
-            return;
-        };
-
-        let state = tree.state.downcast_mut::<PointsEditorState>();
-        match mouse_event {
-            mouse::Event::CursorMoved { position } => {
-                if bounds.contains(*position) {
-                    let view_cursor = *position - bounds.position();
-                    if let Some(updated_point) = state.mouse_move(&*self, view_cursor) {
-                        shell.publish((self.on_update)(updated_point));
-                        shell.capture_event();
-                    }
-                }
-            }
-            mouse::Event::ButtonPressed(mouse::Button::Left) => {
-                let position = cursor.position().unwrap_or(Point::ORIGIN);
-                if bounds.contains(position) {
-                    let view_cursor = position - bounds.position();
-                    if state.mouse_press(&*self, view_cursor) {
-                        shell.capture_event();
-                    }
-                }
-            }
-            mouse::Event::ButtonReleased(mouse::Button::Left) => {
-                let position = cursor.position().unwrap_or(Point::ORIGIN);
-                let view_cursor = position - bounds.position();
-                if state.mouse_release(&*self, view_cursor) {
-                    shell.capture_event();
-                }
-            }
-            _ => {}
+        for (index, point) in points.iter().enumerate() {
+            let selected = state.selected() == Some(index);
+            let color = if selected && state.is_dragging() {
+                Design::accent_color()
+            } else if selected {
+                Design::negative_color()
+            } else {
+                Design::subject_color()
+            };
+            let radius = if selected { 5.0 } else { 4.0 };
+            let p = painter.clip_rect().min + camera.int_world_to_view(point.pos);
+            painter.add(Shape::convex_polygon(
+                vec![
+                    p + Vec2::new(-radius, 0.0),
+                    p + Vec2::new(0.0, -radius),
+                    p + Vec2::new(radius, 0.0),
+                    p + Vec2::new(0.0, radius),
+                ],
+                color,
+                Stroke::NONE,
+            ));
         }
-    }
-
-    fn draw(
-        &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
-        _theme: &Theme,
-        _style: &renderer::Style,
-        layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        _viewport: &Rectangle,
-    ) {
-        let state = tree.state.downcast_ref::<PointsEditorState>();
-
-        let mesh = if let Some(mesh) = &state.mesh_cache {
-            mesh
-        } else {
-            return;
-        };
-
-        use iced::advanced::graphics::mesh::Renderer as _;
-        use iced::advanced::Renderer as _;
-
-        let bounds = layout.bounds();
-        renderer.with_layer(bounds, |renderer| {
-            let offset = layout.position() - Point::new(self.mesh_radius, self.mesh_radius);
-
-            for (index, p) in self.points.iter().enumerate() {
-                let position = self.camera.world_to_screen(offset, p.pos);
-                let mesh = match &state.select {
-                    SelectState::Hover(hover_index) => {
-                        if index == *hover_index {
-                            mesh.hover.clone()
-                        } else {
-                            mesh.main.clone()
-                        }
-                    }
-                    SelectState::Drag(drag) => {
-                        if index == drag.index {
-                            mesh.drag.clone()
-                        } else {
-                            mesh.main.clone()
-                        }
-                    }
-                    SelectState::None => mesh.main.clone(),
-                };
-
-                renderer.with_translation(position, |renderer| renderer.draw_mesh(mesh));
-            }
-        });
-    }
-}
-
-impl<'a, Message: 'a> From<PointsEditorWidget<'a, Message>> for Element<'a, Message> {
-    fn from(editor: PointsEditorWidget<'a, Message>) -> Self {
-        Self::new(editor)
     }
 }

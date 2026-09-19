@@ -1,82 +1,42 @@
 use crate::geom::camera::Camera;
-use iced::mouse::ScrollDelta;
-use iced::{Size, Vector};
+use eframe::egui::Vec2;
 
-struct Drag {
-    start_screen: Vector<f32>,
-    start_world: Vector<f32>,
-}
-
-enum DragState {
-    Drag(Drag),
-    None,
-}
-
-pub(super) struct SheetState {
-    drag_state: DragState,
+#[derive(Default)]
+pub(crate) struct SheetState {
+    drag: Option<(Vec2, Vec2)>,
 }
 
 impl SheetState {
-    pub(super) fn mouse_press(&mut self, camera: Camera, view_cursor: Vector<f32>) {
-        self.drag_state = DragState::Drag(Drag {
-            start_screen: view_cursor,
-            start_world: camera.pos,
-        });
+    pub(crate) fn press(&mut self, camera: Camera, cursor: Vec2) {
+        self.drag = Some((cursor, camera.pos));
     }
-
-    pub(super) fn mouse_release(&mut self) {
-        self.drag_state = DragState::None;
+    pub(crate) fn release(&mut self) {
+        self.drag = None;
     }
-
-    pub(super) fn mouse_move(
-        &mut self,
-        camera: Camera,
-        view_cursor: Vector<f32>,
-    ) -> Option<Vector<f32>> {
-        if let DragState::Drag(drag) = &self.drag_state {
-            let translate = drag.start_screen - view_cursor;
-            let world_dist = camera.view_distance_to_world(translate);
-            let new_pos = Vector::new(
-                drag.start_world.x + world_dist.x,
-                drag.start_world.y + world_dist.y,
-            );
-            Some(new_pos)
-        } else {
-            None
+    pub(crate) fn drag(&self, camera: &mut Camera, cursor: Vec2) {
+        if let Some((start, pos)) = self.drag {
+            camera.pos = pos + camera.view_distance_to_world(start - cursor);
         }
     }
-
-    pub(super) fn mouse_wheel_scrolled(
-        &mut self,
-        camera: Camera,
-        viewport_size: Size,
-        delta: ScrollDelta,
-        view_cursor: Vector<f32>,
-    ) -> Option<Camera> {
-        if let ScrollDelta::Pixels { x: _, y } = delta {
-            let s = 1.0 + y / viewport_size.height;
-            let mut new_camera = camera;
-            new_camera.set_scale(s * camera.scale);
-
-            let world_pos = camera.view_to_world(view_cursor);
-            let new_view_pos = new_camera.world_to_view(world_pos);
-
-            let view_distance = view_cursor - new_view_pos;
-            let world_distance = new_camera.view_distance_to_world(view_distance);
-
-            new_camera.pos = new_camera.pos - world_distance;
-
-            Some(new_camera)
-        } else {
-            None
-        }
+    pub(crate) fn zoom(camera: &mut Camera, cursor: Vec2, delta: f32) {
+        let world = camera.view_to_world(cursor);
+        camera.set_scale(camera.scale * (delta * 0.002).exp());
+        camera.pos += world - camera.view_to_world(cursor);
     }
 }
 
-impl Default for SheetState {
-    fn default() -> Self {
-        Self {
-            drag_state: DragState::None,
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use i_triangle::i_overlay::i_float::int::rect::IntRect;
+    #[test]
+    fn zoom_preserves_world_position_under_pointer() {
+        let mut camera = Camera::new(IntRect::new(-100, 100, -100, 100), Vec2::new(800.0, 600.0));
+        let cursor = Vec2::new(137.0, 251.0);
+        let before = camera.view_to_world(cursor);
+        SheetState::zoom(&mut camera, cursor, 120.0);
+        assert!((camera.view_to_world(cursor) - before).length() < 1e-4);
+        SheetState::zoom(&mut camera, cursor, -1e6);
+        assert!(camera.scale > 0.0 && camera.i_scale.is_finite());
     }
 }

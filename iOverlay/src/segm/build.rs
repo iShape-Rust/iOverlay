@@ -129,6 +129,7 @@ impl<I: IntNumber> PointFilter<I> for DropCollinear {
 impl<I: IntNumber, C: Send> Segment<C, I> {
     #[inline]
     pub(crate) fn with_ab(p0: IntPoint<I>, p1: IntPoint<I>, direct: C, invert: C) -> Self {
+        debug_assert!(p0 != p1, "zero-length edges must be filtered before construction");
         if p0 < p1 {
             Self {
                 x_segment: XSegment { a: p0, b: p1 },
@@ -154,6 +155,32 @@ mod tests {
     use crate::segm::segment::Segment;
     use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
+
+    #[test]
+    fn repeated_path_points_do_not_create_zero_length_segments() {
+        let points = [
+            IntPoint::new(0, 0),
+            IntPoint::new(1, 0),
+            IntPoint::new(2, 0),
+            IntPoint::new(1, 1),
+        ];
+        // All six-point paths on this grid include duplicates or collinear runs.
+        for mut code in 0..4_usize.pow(6) {
+            let path: [_; 6] = core::array::from_fn(|_| {
+                let p = points[code % 4];
+                code /= 4;
+                p
+            });
+            for keep in [false, true] {
+                let mut segments = Vec::<Segment<ShapeCountBoolean, i32>>::new();
+                segments.append_path_iter(path.into_iter(), ShapeType::Subject, keep);
+                assert!(
+                    segments.iter().all(|s| s.x_segment.a < s.x_segment.b),
+                    "path={path:?}, keep={keep}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn test_0() {

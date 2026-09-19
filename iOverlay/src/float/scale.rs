@@ -8,13 +8,18 @@ use crate::float::relate::FloatPredicateOverlay;
 use i_float::adapter::{FloatPointAdapter, FloatPointAdapterScaleError};
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
+use i_float::float::rect::FloatRectError;
 use i_shape::base::data::Shapes;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FixedScaleOverlayError {
+    /// Input or padded bounds violate the floating-point coordinate contract.
+    InvalidRect(FloatRectError),
     /// Requested scale is larger than the safe adapter scale for the input bounds.
     ScaleTooLarge,
+    /// Scale has a non-finite reciprocal in the input scalar type.
+    ScaleTooSmall,
     /// Requested scale is zero or negative.
     ScaleNonPositive,
     /// Requested scale is NaN or infinite.
@@ -31,6 +36,9 @@ impl FixedScaleOverlayError {
         if s <= 0.0 {
             return Err(Self::ScaleNonPositive);
         }
+        if !(T::ONE / scale).is_finite() {
+            return Err(Self::ScaleTooSmall);
+        }
         Ok(s)
     }
 }
@@ -39,10 +47,18 @@ impl From<FloatPointAdapterScaleError> for FixedScaleOverlayError {
     #[inline]
     fn from(error: FloatPointAdapterScaleError) -> Self {
         match error {
+            FloatPointAdapterScaleError::InvalidRect(error) => Self::InvalidRect(error),
+            FloatPointAdapterScaleError::ScaleTooSmall => Self::ScaleTooSmall,
             FloatPointAdapterScaleError::ScaleTooLarge => Self::ScaleTooLarge,
             FloatPointAdapterScaleError::ScaleNonPositive => Self::ScaleNonPositive,
             FloatPointAdapterScaleError::ScaleNotFinite => Self::ScaleNotFinite,
         }
+    }
+}
+
+impl From<FloatRectError> for FixedScaleOverlayError {
+    fn from(error: FloatRectError) -> Self {
+        Self::InvalidRect(error)
     }
 }
 
@@ -177,7 +193,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
+        let adapter = FloatPointAdapter::try_with_iter_and_scale_conservative(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -213,7 +229,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
+        let adapter = FloatPointAdapter::try_with_iter_and_scale_conservative(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -286,7 +302,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
+        let adapter = FloatPointAdapter::try_with_iter_and_scale_conservative(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
@@ -318,7 +334,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
+        let adapter = FloatPointAdapter::try_with_iter_and_scale_conservative(iter, scale)?;
 
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());

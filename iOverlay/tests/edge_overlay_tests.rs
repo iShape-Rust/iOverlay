@@ -10,6 +10,52 @@ mod tests {
     use i_overlay::segm::boolean::ShapeCountBoolean;
     use i_overlay::vector::edge::DataVectorEdge;
 
+    #[test]
+    fn simplifying_collinear_edges_preserves_data_store() {
+        #[derive(Clone, Copy, PartialEq, Eq)]
+        struct StoredData(usize);
+
+        impl OverlayEdgeData for StoredData {
+            // Maps each data index to its reversed counterpart.
+            type Store = Vec<usize>;
+
+            fn reversed(self, store: &mut Self::Store) -> Self {
+                Self(store[self.0])
+            }
+
+            fn merge(ctx: EdgeDataMerge<ShapeCountBoolean, Self>, _: &mut Self::Store) -> Self {
+                ctx.lhs_data
+            }
+        }
+
+        // A rectangle with one redundant vertex on its bottom edge.
+        let path = [
+            int_pnt!(0, 0),
+            int_pnt!(5, 0),
+            int_pnt!(10, 0),
+            int_pnt!(10, 10),
+            int_pnt!(0, 10),
+        ];
+        let mut overlay = EdgeOverlay::<i32, StoredData>::new(path.len());
+        overlay.data_store_mut().push(0);
+        overlay.options.preserve_output_collinear = false;
+        for i in 0..path.len() {
+            overlay.add_edge(
+                InputEdge {
+                    a: path[i],
+                    b: path[(i + 1) % path.len()],
+                    data: StoredData(0),
+                },
+                ShapeType::Subject,
+            );
+        }
+
+        let shapes = overlay.build_vector_shapes(OverlayRule::Subject, FillRule::NonZero);
+        assert_eq!(shapes.len(), 1);
+        assert_eq!(shapes[0].len(), 1);
+        assert_eq!(shapes[0][0].len(), 4);
+    }
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     enum Color {
         Red,

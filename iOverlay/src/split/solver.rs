@@ -85,7 +85,7 @@ where
         ei: &XSegment<I>,
         ej: &XSegment<I>,
         marks: &mut Vec<LineMark<I>>,
-        radius_squared: I::Wide,
+        radius_squared: I::WideUInt,
     ) -> bool {
         let cross = if let Some(cross) = CrossSolver::<I>::cross(ei, ej, radius_squared) {
             cross
@@ -298,6 +298,56 @@ where
         if y0 > y1 {
             // reverse the order to sort the range in descending order by the y-coordinate.
             marks.reverse();
+        }
+    }
+}
+
+#[cfg(test)]
+mod non_degenerate_tests {
+    use super::*;
+    use crate::segm::boolean::ShapeCountBoolean;
+    use i_float::int::point::IntPoint;
+
+    #[test]
+    fn grid_intersections_do_not_create_zero_length_segments() {
+        let points: Vec<_> = (-2..=2)
+            .flat_map(|x| (-2..=2).map(move |y| IntPoint::new(x, y)))
+            .collect();
+        let mut edges = Vec::new();
+        for (i, &a) in points.iter().enumerate() {
+            for &b in &points[i + 1..] {
+                edges.push(Segment::<ShapeCountBoolean, i32>::subject(a, b));
+            }
+        }
+        let mut splitter = SplitSolver::new();
+        let mut buffer = Vec::new();
+        for (i, &a) in edges.iter().enumerate() {
+            for &b in &edges[i + 1..] {
+                for radius_squared in [1, 2, 4, 16] {
+                    splitter.marks.clear();
+                    SplitSolver::cross(
+                        0,
+                        1,
+                        &a.x_segment,
+                        &b.x_segment,
+                        &mut splitter.marks,
+                        radius_squared,
+                    );
+                    let mut segments = alloc::vec![a, b];
+                    for mark in &splitter.marks {
+                        let edge = segments[mark.index].x_segment;
+                        assert!(
+                            mark.point != edge.a && mark.point != edge.b,
+                            "endpoint split: {edge:?}, {:?}",
+                            mark.point
+                        );
+                    }
+                    // Multiple intersections can produce the same mark.
+                    splitter.marks.extend_from_within(..);
+                    splitter.apply(&mut segments, &mut buffer, &Solver::LIST, &mut ());
+                    assert!(segments.iter().all(|s| s.x_segment.a < s.x_segment.b));
+                }
+            }
         }
     }
 }

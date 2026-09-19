@@ -6,7 +6,7 @@ use crate::float::string_overlay::FloatStringOverlay;
 use crate::string::clip::ClipRule;
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Paths;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Trait for clipping float string paths by float shapes.
 ///

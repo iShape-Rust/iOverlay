@@ -40,8 +40,8 @@ mod tests {
         let clip_paths = many_squares(IntPoint::new(15, 15), 20, 30, n - 1);
 
         let mut overlay = Overlay::new(8 * n * n);
-        overlay.add_contours(&subj_paths, ShapeType::Subject);
-        overlay.add_contours(&clip_paths, ShapeType::Clip);
+        overlay.add_source(&subj_paths, ShapeType::Subject);
+        overlay.add_source(&clip_paths, ShapeType::Clip);
 
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
         let result = graph.extract_shapes(rule, &mut Default::default());

@@ -37,6 +37,7 @@ impl VariableStrokeTest {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn tests_count(folder: &str) -> usize {
         let folder_path = PathBuf::from(folder);
         match std::fs::read_dir(folder_path) {

@@ -246,7 +246,7 @@ mod tests {
     }
 
     fn clip_path(shape: &[IntPoint<i32>], path: &[IntPoint<i32>], invert: bool) -> Vec<Vec<IntPoint<i32>>> {
-        let mut overlay = StringOverlay::with_shape_contour(shape);
+        let mut overlay = StringOverlay::from_shape(shape);
         overlay.add_string_path(path);
         overlay.clip_string_lines(FillRule::NonZero, clip_rule(invert))
     }

@@ -5,7 +5,7 @@ use crate::core::solver::Solver;
 use crate::float::overlay::{FloatOverlay, OverlayOptions};
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::base::data::Shapes;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Trait `Simplify` provides a method to simplify geometric shapes by reducing the number of points in contours or shapes
 /// while preserving overall shape and topology. The method applies a minimum area threshold and a build rule to
@@ -42,7 +42,7 @@ pub trait SimplifyShape<P: FloatPointCompatible> {
     /// Simplifies the shape or collection of points, contours, or shapes, based on a specified minimum area threshold.
     /// - `options`: Adjust custom behavior.
     /// - `solver`: Type of solver to use.
-    /// - Returns: A collection of Shapes<P> that represents the simplified geometry.
+    /// - Returns: A collection of `Shapes<P>` that represents the simplified geometry.
     ///
     /// Note: Outer boundary paths have a **main_direction** order, and holes have an opposite to **main_direction** order.
     fn simplify_shape_custom(

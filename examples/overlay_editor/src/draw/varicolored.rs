@@ -1,249 +1,49 @@
-use crate::geom::camera::Camera;
-use crate::geom::vector::VectorExt;
-use i_mesh::path::butt::ButtStrokeBuilder;
-use i_mesh::path::style::StrokeStyle;
-use i_triangle::float::builder::TriangulationBuilder;
-use i_triangle::float::triangulation::Triangulation;
-use i_triangle::i_overlay::i_float::float::point::FloatPoint;
-use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::IntPaths as RawIntPaths;
-use i_triangle::i_overlay::i_shape::int::shape::IntShapes as RawIntShapes;
-use i_triangle::int::triangulatable::IntTriangulatable;
-use i_triangle::int::triangulation::IntTriangulation;
-use iced::advanced::graphics::color::pack;
-use iced::advanced::graphics::mesh::{Indexed, SolidVertex2D};
-use iced::advanced::graphics::Mesh;
-use iced::advanced::layout::{self, Layout};
-use iced::advanced::renderer;
-use iced::advanced::widget::{Tree, Widget};
-use iced::{mouse, Color, Transformation, Vector};
-use iced::{Element, Length, Rectangle, Renderer, Size, Theme};
-
-type IntPaths = RawIntPaths<i32>;
-type IntShapes = RawIntShapes<i32>;
+use crate::{draw::shape::ShapeWidget, geom::camera::Camera};
+use eframe::egui::{Color32, Painter};
+use i_triangle::i_overlay::i_shape::int::shape::IntShapes;
 
 pub(crate) struct VaricoloredWidget {
-    fill: Vec<Mesh>,
-    stroke: Vec<Mesh>,
+    shapes: Vec<ShapeWidget>,
 }
 
 impl VaricoloredWidget {
-    const SHAPE_COLOR_STORE: [[u8; 3]; 12] = [
-        [255, 149, 0],   // Orange
-        [88, 86, 214],   // Purple
-        [255, 45, 85],   // Pink
-        [90, 200, 250],  // Blue
-        [76, 217, 100],  // Green
-        [255, 204, 0],   // Yellow
-        [142, 142, 147], // Gray
-        [255, 59, 48],   // Red
-        [52, 199, 89],   // Green
-        [0, 122, 255],   // Blue
-        [175, 82, 222],  // Indigo
-        [255, 214, 10],  // Teal
+    const COLORS: [[u8; 3]; 12] = [
+        [255, 149, 0],
+        [88, 86, 214],
+        [255, 45, 85],
+        [90, 200, 250],
+        [76, 217, 100],
+        [255, 204, 0],
+        [142, 142, 147],
+        [255, 59, 48],
+        [52, 199, 89],
+        [0, 122, 255],
+        [175, 82, 222],
+        [255, 214, 10],
     ];
-
-    pub(crate) fn with_shapes(shapes: &IntShapes, camera: Camera, stroke_width: f32) -> Self {
-        let offset = Self::offset_for_shapes(shapes, camera);
-
-        let mut fill = Vec::new();
-        let mut stroke = Vec::new();
-        for (index, shape) in shapes.iter().enumerate() {
-            let data = Self::SHAPE_COLOR_STORE[index % Self::SHAPE_COLOR_STORE.len()];
-            let color = Color::from_rgb8(data[0], data[1], data[2]);
-
-            if let Some(mesh) =
-                Self::fill_mesh_for_paths(shape, camera, offset, color.scale_alpha(0.2))
-            {
-                fill.push(mesh);
-            }
-            if let Some(mesh) =
-                Self::stroke_mesh_for_paths(shape, camera, offset, color, stroke_width)
-            {
-                stroke.push(mesh);
-            }
-        }
-
-        Self { fill, stroke }
-    }
-
-    fn fill_mesh_for_paths(
-        paths: &IntPaths,
-        camera: Camera,
-        offset: Vector<f32>,
-        color: Color,
-    ) -> Option<Mesh> {
-        if paths.is_empty() {
-            return None;
-        }
-
-        let triangulation = paths.triangulate().into_triangulation();
-        Self::fill_mesh_for_triangulation(triangulation, camera, offset, color)
-    }
-
-    fn fill_mesh_for_triangulation(
-        triangulation: IntTriangulation<i32, usize>,
-        camera: Camera,
-        offset: Vector<f32>,
-        color: Color,
-    ) -> Option<Mesh> {
-        if triangulation.indices.is_empty() {
-            return None;
-        }
-        let color_pack = pack(color);
-        let vertices = triangulation
-            .points
-            .iter()
-            .map(|&p| {
-                let v = camera.int_world_to_view(p);
-                SolidVertex2D {
-                    position: [v.x - offset.x, v.y - offset.y],
-                    color: color_pack,
-                }
-            })
-            .collect();
-
-        let indices = triangulation.indices.iter().map(|&i| i as u32).collect();
-
-        Some(Mesh::Solid {
-            buffers: Indexed { vertices, indices },
-            transformation: Transformation::translate(offset.x, offset.y),
-            clip_bounds: Rectangle::INFINITE,
-        })
-    }
-
-    fn stroke_mesh_for_paths(
-        paths: &IntPaths,
-        camera: Camera,
-        offset: Vector<f32>,
-        color: Color,
-        width: f32,
-    ) -> Option<Mesh> {
-        if paths.is_empty() {
-            return None;
-        }
-        let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
-
-        let mut builder = TriangulationBuilder::default();
-
-        for path in paths.iter() {
-            let world_path: Vec<_> = path
+    pub(crate) fn with_shapes(shapes: &IntShapes<i32>, camera: Camera, width: f32) -> Self {
+        Self {
+            shapes: shapes
                 .iter()
-                .map(|&p| {
-                    let v = camera.int_world_to_view(p);
-                    FloatPoint::new(v.x, v.y)
+                .enumerate()
+                .map(|(index, paths)| {
+                    let [r, g, b] = Self::COLORS[index % Self::COLORS.len()];
+                    let color = Color32::from_rgb(r, g, b);
+                    ShapeWidget::with_paths(
+                        paths,
+                        camera,
+                        None,
+                        Some(color.gamma_multiply(0.2)),
+                        Some(color),
+                        width,
+                    )
                 })
-                .collect();
-
-            let sub_triangulation: Triangulation<FloatPoint<f32>, usize> =
-                stroke_builder.build_closed_path_mesh(&world_path);
-
-            builder.append(sub_triangulation);
-        }
-
-        let r = 0.5 * width;
-        let offset = Vector::new(offset.x - r, offset.y - r);
-
-        let triangulation = builder.build();
-
-        Self::stroke_mesh_for_triangulation(triangulation, offset, color)
-    }
-
-    fn stroke_mesh_for_triangulation(
-        triangulation: Triangulation<FloatPoint<f32>, usize>,
-        offset: Vector<f32>,
-        color: Color,
-    ) -> Option<Mesh> {
-        if triangulation.indices.is_empty() {
-            return None;
-        }
-        let color_pack = pack(color);
-        let vertices = triangulation
-            .points
-            .iter()
-            .map(|&p| SolidVertex2D {
-                position: [p.x - offset.x, p.y - offset.y],
-                color: color_pack,
-            })
-            .collect();
-
-        let indices = triangulation.indices.iter().map(|&i| i as u32).collect();
-
-        Some(Mesh::Solid {
-            buffers: Indexed { vertices, indices },
-            transformation: Transformation::translate(offset.x, offset.y),
-            clip_bounds: Rectangle::INFINITE,
-        })
-    }
-
-    fn offset_for_shapes(shapes: &IntShapes, camera: Camera) -> Vector<f32> {
-        if shapes.is_empty() {
-            return Vector::new(0.0, 0.0);
-        }
-
-        let mut min_x = i32::MAX;
-        let mut max_y = i32::MIN;
-
-        for p in shapes.iter().flatten().flatten() {
-            min_x = min_x.min(p.x);
-            max_y = max_y.max(p.y);
-        }
-
-        camera.int_world_to_view(IntPoint::new(min_x, max_y))
-    }
-}
-
-impl<Message> Widget<Message, Theme, Renderer> for VaricoloredWidget {
-    fn size(&self) -> Size<Length> {
-        Size {
-            width: Length::Fill,
-            height: Length::Fill,
+                .collect(),
         }
     }
-
-    fn layout(
-        &mut self,
-        _tree: &mut Tree,
-        _renderer: &Renderer,
-        limits: &layout::Limits,
-    ) -> layout::Node {
-        layout::Node::new(limits.max())
-    }
-
-    fn draw(
-        &self,
-        _tree: &Tree,
-        renderer: &mut Renderer,
-        _theme: &Theme,
-        _style: &renderer::Style,
-        layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        _viewport: &Rectangle,
-    ) {
-        use iced::advanced::graphics::mesh::Renderer as _;
-        use iced::advanced::Renderer as _;
-
-        let bounds = layout.bounds();
-        renderer.with_layer(bounds, |renderer| {
-            let offset = Vector::point(layout.position());
-
-            renderer.with_translation(offset, |renderer| {
-                for mesh in self.fill.iter() {
-                    renderer.draw_mesh(mesh.clone())
-                }
-            });
-
-            renderer.with_translation(offset, |renderer| {
-                for mesh in self.stroke.iter() {
-                    renderer.draw_mesh(mesh.clone())
-                }
-            });
-        });
-    }
-}
-
-impl<'a, Message: 'a> From<VaricoloredWidget> for Element<'a, Message> {
-    fn from(editor: VaricoloredWidget) -> Self {
-        Self::new(editor)
+    pub(crate) fn paint(self, painter: &Painter) {
+        for shape in self.shapes {
+            shape.paint(painter);
+        }
     }
 }

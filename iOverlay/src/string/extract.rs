@@ -255,7 +255,7 @@ mod tests {
             IntPoint::new(5, -5),
         ];
 
-        let mut overlay = StringOverlay::with_shape(&paths);
+        let mut overlay = StringOverlay::from_shape(&paths);
         overlay.add_string_contour(&window);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
 
@@ -280,7 +280,7 @@ mod tests {
             IntPoint::new(5, -5),
         ];
 
-        let mut overlay = StringOverlay::<i64>::with_shape(&paths);
+        let mut overlay = StringOverlay::<i64>::from_shape(&paths);
         overlay.add_string_contour(&window);
         let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
 

@@ -5,12 +5,12 @@ use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
-use i_shape::source::resource::ShapeResource;
+use i_shape::source::float::resource::ShapeResource;
 
 /// Float-coordinate wrapper for spatial predicate evaluation.
 ///
 /// `FloatPredicateOverlay` handles conversion from floating-point coordinates to
-/// the internal integer representation, then delegates to [`PredicateOverlay`](crate::core::relate::PredicateOverlay)
+/// the internal integer representation, then delegates to [`PredicateOverlay`]
 /// for efficient predicate evaluation.
 ///
 /// # Example
@@ -81,7 +81,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -106,7 +106,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::<_, I>::with_iter(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 

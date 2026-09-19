@@ -1,16 +1,14 @@
-use crate::app::design;
 use crate::app::main::{AppMessage, EditorApp};
 use crate::app::variable_stroke::workspace::WorkspaceState;
 use crate::data::variable_stroke::VariableStrokeResource;
 use crate::geom::camera::Camera;
 use crate::point_editor::point::PathsToEditorPoints;
 use crate::point_editor::widget::PointEditUpdate;
+use eframe::egui::{self, Vec2};
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_triangle::i_overlay::i_float::int::rect::IntRect;
-use i_triangle::i_overlay::mesh::variable_stroke::offset::VariableStrokeOffset;
-use i_triangle::i_overlay::mesh::variable_stroke::{StrokeVertex, VariableStrokeStyle};
-use iced::widget::{scrollable, Button, Column, Container, Row, Space, Text};
-use iced::{Alignment, Length, Padding, Size, Vector};
+use i_triangle::i_overlay::mesh::float::variable_stroke::offset::VariableStrokeOffset;
+use i_triangle::i_overlay::mesh::float::variable_stroke::{StrokeVertex, VariableStrokeStyle};
 use std::collections::HashMap;
 use std::fmt::Write;
 
@@ -25,7 +23,7 @@ pub(crate) struct VariableStrokeState {
     pub(crate) width_scale: f32,
     pub(crate) round_angle: u8,
     pub(crate) workspace: WorkspaceState,
-    pub(crate) size: Size,
+    pub(crate) size: Vec2,
     pub(crate) cameras: HashMap<usize, Camera>,
 }
 
@@ -35,66 +33,35 @@ pub(crate) enum VariableStrokeMessage {
     WidthScaleUpdated(f32),
     RoundAngleUpdated(u8),
     PointEdited(PointEditUpdate),
-    WorkspaceSized(Size),
-    WorkspaceZoomed(Camera),
-    WorkspaceDragged(Vector<f32>),
+    WorkspaceSized(Vec2),
 }
 
 impl EditorApp {
-    fn variable_stroke_sidebar(&self) -> Column<'_, AppMessage> {
-        let count = self.app_resource.variable_stroke.count;
-        let mut column =
-            Column::new().push(Space::new().width(Length::Fill).height(Length::Fixed(2.0)));
-        for index in 0..count {
-            let is_selected = self.state.variable_stroke.test == index;
-            column = column.push(
-                Container::new(
-                    Button::new(
-                        Text::new(format!("test_{}", index))
-                            .style(if is_selected {
-                                design::style_sidebar_text_selected
-                            } else {
-                                design::style_sidebar_text
-                            })
-                            .size(14),
-                    )
-                    .width(Length::Fill)
-                    .on_press(AppMessage::VariableStroke(
-                        VariableStrokeMessage::TestSelected(index),
-                    ))
-                    .style(if is_selected {
-                        design::style_sidebar_button_selected
-                    } else {
-                        design::style_sidebar_button
-                    }),
-                )
-                .padding(self.design.action_padding()),
-            );
-        }
-
-        column
-    }
-
-    pub(crate) fn variable_stroke_content(&self) -> Row<'_, AppMessage> {
-        Row::new()
-            .push(
-                scrollable(
-                    Container::new(self.variable_stroke_sidebar())
-                        .width(Length::Fixed(180.0))
-                        .height(Length::Shrink)
-                        .align_x(Alignment::Start)
-                        .padding(Padding::new(0.0).right(8))
-                        .style(design::style_sidebar_background),
-                )
-                .direction(scrollable::Direction::Vertical(
-                    scrollable::Scrollbar::new()
-                        .width(4)
-                        .margin(0)
-                        .scroller_width(4)
-                        .anchor(scrollable::Anchor::Start),
-                )),
-            )
-            .push(self.variable_stroke_workspace())
+    pub(crate) fn variable_stroke_content(&mut self, ui: &mut egui::Ui) {
+        egui::Panel::left("variable_stroke_tests")
+            .exact_size(150.0)
+            .resizable(false)
+            .show_inside(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for index in 0..self.app_resource.variable_stroke.count {
+                        let response = ui.selectable_label(
+                            self.state.variable_stroke.test == index,
+                            format!("test_{index}"),
+                        );
+                        if response.clicked() {
+                            response.surrender_focus();
+                            self.update(AppMessage::VariableStroke(
+                                VariableStrokeMessage::TestSelected(index),
+                            ));
+                        }
+                    }
+                });
+            });
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            self.variable_stroke_control(ui);
+            ui.separator();
+            self.variable_stroke_workspace(ui);
+        });
     }
 
     pub(crate) fn variable_stroke_update(&mut self, message: VariableStrokeMessage) {
@@ -108,8 +75,6 @@ impl EditorApp {
             }
             VariableStrokeMessage::PointEdited(update) => self.variable_stroke_update_point(update),
             VariableStrokeMessage::WorkspaceSized(size) => self.variable_stroke_update_size(size),
-            VariableStrokeMessage::WorkspaceZoomed(zoom) => self.variable_stroke_update_zoom(zoom),
-            VariableStrokeMessage::WorkspaceDragged(drag) => self.variable_stroke_update_drag(drag),
         }
     }
 
@@ -125,7 +90,7 @@ impl EditorApp {
     }
 
     pub(crate) fn variable_stroke_next_test(&mut self) {
-        let next_test = self.state.variable_stroke.test + 1;
+        let next_test = self.state.variable_stroke.test.saturating_add(1);
         if next_test < self.app_resource.variable_stroke.count {
             self.variable_stroke_set_test(next_test);
         }
@@ -138,7 +103,7 @@ impl EditorApp {
         }
     }
 
-    fn variable_stroke_update_size(&mut self, size: Size) {
+    fn variable_stroke_update_size(&mut self, size: Vec2) {
         self.state.variable_stroke.size = size;
         let points = &self.state.variable_stroke.workspace.points;
         if self.state.variable_stroke.workspace.camera.is_empty() && !points.is_empty() {
@@ -170,7 +135,7 @@ impl VariableStrokeState {
             round_angle: 12,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(resource.count),
-            size: Size::ZERO,
+            size: Vec2::ZERO,
         };
 
         state.set_test(0, resource);
@@ -215,13 +180,15 @@ impl VariableStrokeState {
             .feed_edit_points(0, editor_points);
 
         let mut camera = *self.cameras.get(&index).unwrap_or(&Camera::empty());
-        if camera.is_empty() && self.size.width > 0.001 {
+        if camera.is_empty() && self.size.x > 0.001 {
             let rect = IntRect::with_iter(editor_points.iter().map(|p| &p.pos))
                 .unwrap_or(IntRect::new(-10_000, 10_000, -10_000, 10_000));
             camera = Camera::new(rect, self.size);
         }
 
         self.workspace.camera = camera;
+        self.workspace.sheet_state = Default::default();
+        self.workspace.point_state = Default::default();
         self.test = index;
     }
 

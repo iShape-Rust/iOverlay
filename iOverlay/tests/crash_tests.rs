@@ -42,7 +42,7 @@ mod tests {
         };
 
         let mut overlay = Overlay::new_custom(4, Default::default(), solver);
-        overlay.add_contours(&subj, ShapeType::Subject);
+        overlay.add_source(&subj, ShapeType::Subject);
         if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
             graph.validate();
             let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());
@@ -53,10 +53,10 @@ mod tests {
     #[test]
     fn test_01() {
         let subj = [
-            [-117.04171489206965, 1820.3621519926919],
-            [4619.6817058891429, -2133.11539650432],
-            [1902.5599837294722, -133.53167784432389],
-            [-3572.1275050425684, 3909.4677532724309],
+            [-117.04171489206965, 1_820.362_151_992_692],
+            [4_619.681_705_889_143, -2133.11539650432],
+            [1902.5599837294722, -133.531_677_844_323_9],
+            [-3572.1275050425684, 3_909.467_753_272_431],
             [3047.0491344383845, -4087.6336157702817],
         ];
 
@@ -91,7 +91,7 @@ mod tests {
         ];
         for &solver in SOLVERS.iter() {
             let mut overlay = Overlay::new_custom(4, Default::default(), solver);
-            overlay.add_contours(&subj_paths, ShapeType::Subject);
+            overlay.add_source(&subj_paths, ShapeType::Subject);
             if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
                 graph.validate();
                 let result = graph.extract_shapes(OverlayRule::Subject, &mut Default::default());

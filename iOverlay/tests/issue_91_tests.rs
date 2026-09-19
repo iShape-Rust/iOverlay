@@ -51,7 +51,7 @@ fn overlay(
         let x = 100 + 40 * i as i32;
         contours.push(contour(&[[x, 100], [x + 10, 100], [x + 10, 110], [x, 110]]));
     }
-    let mut overlay = Overlay::with_contours(&contours, &[]);
+    let mut overlay = Overlay::from_subj(&contours);
     overlay.options.ogc = ogc;
     overlay.options.preserve_output_collinear = preserve_collinear;
     overlay.options.output_direction = if clockwise {

@@ -9,7 +9,7 @@ use crate::core::overlay_rule::OverlayRule;
 use crate::core::solver::Solver;
 use crate::float::graph::FloatOverlayGraph;
 use crate::float::hierarchy::FloatFlatShapeHierarchy;
-use crate::i_shape::source::resource::ShapeResource;
+use crate::i_shape::source::float::resource::ShapeResource;
 use core::marker::PhantomData;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
@@ -112,7 +112,7 @@ where
     #[inline]
     pub fn new_empty(options: OverlayOptions<P::Scalar, I>, solver: Solver, capacity: usize) -> Self {
         let clean_result = options.clean_result;
-        let adapter = FloatPointAdapter::new(FloatRect::zero());
+        let adapter = FloatPointAdapter::new_conservative(FloatRect::zero());
         let overlay = Overlay::new_custom(capacity, options.int_default(), solver);
         Self {
             overlay,
@@ -150,7 +150,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -179,7 +179,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -199,7 +199,7 @@ where
         R: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
         Self::with_adapter(adapter, subj_capacity).unsafe_add_source(subj, ShapeType::Subject)
@@ -218,7 +218,7 @@ where
         R: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = FloatPointAdapter::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
 
         Self::new_custom(adapter, options, solver, subj_capacity).unsafe_add_source(subj, ShapeType::Subject)
@@ -299,7 +299,7 @@ where
         self.clear();
 
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        self.update_adapter(FloatPointAdapter::with_iter(iter));
+        self.update_adapter(FloatPointAdapter::with_iter_conservative(iter));
         self.add_source(subj, ShapeType::Subject);
         self.add_source(clip, ShapeType::Clip);
     }
@@ -323,7 +323,7 @@ where
     {
         self.clear();
         let iter = subj.iter_paths().flatten();
-        self.update_adapter(FloatPointAdapter::with_iter(iter));
+        self.update_adapter(FloatPointAdapter::with_iter_conservative(iter));
         self.add_source(subj, ShapeType::Subject);
     }
 

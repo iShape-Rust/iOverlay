@@ -1,7 +1,7 @@
+use crate::app::design::{checkbox, controls, select, slider};
 use crate::app::main::{AppMessage, EditorApp};
 use crate::app::stroke::content::StrokeMessage;
-use iced::widget::{checkbox, pick_list, slider, Column, Container, Row, Space, Text};
-use iced::{Alignment, Length, Padding};
+use eframe::egui;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum CapOption {
@@ -63,189 +63,72 @@ impl std::fmt::Display for JoinOption {
 }
 
 impl EditorApp {
-    pub(crate) fn stroke_control(&self) -> Column<'_, AppMessage> {
-        let width_list = Row::new()
-            .push(
-                Text::new("Stroke Width:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    slider(0.1f32..=10.0f32, self.state.stroke.width, on_update_width)
-                        .step(0.01f32),
-                )
-                .width(160)
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-
-        let mut start_cap_pick_list = Row::new()
-            .push(
-                Text::new("Start Cap:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    pick_list(
-                        &CapOption::ALL[..],
-                        Some(self.state.stroke.start_cap),
-                        on_select_start_cap,
-                    )
-                    .width(Length::Fixed(160.0)),
-                )
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-
-        if self.state.stroke.start_cap == CapOption::Round {
-            let slider = slider(
-                1..=100,
-                self.state.stroke.start_cap_value,
-                on_update_start_cap_value,
-            )
-            .default(50)
-            .shift_step(5);
-
-            start_cap_pick_list = start_cap_pick_list.push(
-                Container::new(slider)
-                    .padding(Padding::new(0.0).left(20.0))
-                    .width(250)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            );
-        }
-
-        let mut end_cap_pick_list = Row::new()
-            .push(
-                Text::new("End Cap:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    pick_list(
-                        &CapOption::ALL[..],
-                        Some(self.state.stroke.end_cap),
-                        on_select_end_cap,
-                    )
-                    .width(Length::Fixed(160.0)),
-                )
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-
-        if self.state.stroke.end_cap == CapOption::Round {
-            let slider = slider(
-                1..=100,
-                self.state.stroke.end_cap_value,
-                on_update_end_cap_value,
-            )
-            .default(50)
-            .shift_step(5);
-
-            end_cap_pick_list = end_cap_pick_list.push(
-                Container::new(slider)
-                    .padding(Padding::new(0.0).left(20.0))
-                    .width(250)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            );
-        }
-
-        let mut join_pick_list = Row::new()
-            .push(
-                Text::new("Line Join:")
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            )
-            .push(
-                Container::new(
-                    pick_list(
-                        &JoinOption::ALL[..],
-                        Some(self.state.stroke.join),
-                        on_select_join,
-                    )
-                    .width(Length::Fixed(160.0)),
-                )
-                .height(Length::Fill)
-                .align_y(Alignment::Center),
-            )
-            .height(Length::Fixed(40.0));
-
-        if self.state.stroke.join != JoinOption::Bevel {
-            let slider = slider(1..=100, self.state.stroke.join_value, on_update_join_value)
-                .default(50)
-                .shift_step(5);
-
-            join_pick_list = join_pick_list.push(
-                Container::new(slider)
-                    .padding(Padding::new(0.0).left(20.0))
-                    .width(250)
-                    .height(Length::Fill)
-                    .align_y(Alignment::Center),
-            );
-        }
-
-        Column::new()
-            .push(width_list)
-            .push(start_cap_pick_list)
-            .push(
-                Space::new()
-                    .width(Length::Shrink)
-                    .height(Length::Fixed(4.0)),
-            )
-            .push(end_cap_pick_list)
-            .push(
-                Space::new()
-                    .width(Length::Shrink)
-                    .height(Length::Fixed(4.0)),
-            )
-            .push(join_pick_list)
-            .push(
-                checkbox(self.state.stroke.is_closed)
-                    .label("Is Closed")
-                    .on_toggle(on_set_is_closed),
-            )
+    pub(crate) fn stroke_control(&mut self, ui: &mut egui::Ui) {
+        controls(ui, "stroke_controls", |ui| {
+            let mut width = self.state.stroke.width;
+            if slider(
+                ui,
+                "Stroke Width",
+                egui::Slider::new(&mut width, 0.1..=10.0).step_by(0.01),
+            ) {
+                self.update(AppMessage::Stroke(StrokeMessage::WidthValueUpdated(width)));
+            }
+            let mut start_cap = self.state.stroke.start_cap;
+            if select(ui, "Start Cap", &mut start_cap, &CapOption::ALL) {
+                self.update(AppMessage::Stroke(StrokeMessage::StartCapSelected(
+                    start_cap,
+                )));
+            }
+            if self.state.stroke.start_cap == CapOption::Round {
+                let mut start_cap_value = self.state.stroke.start_cap_value;
+                if slider(
+                    ui,
+                    "Start Cap Detail",
+                    egui::Slider::new(&mut start_cap_value, 1..=100),
+                ) {
+                    self.update(AppMessage::Stroke(StrokeMessage::StartCapValueUpdated(
+                        start_cap_value,
+                    )));
+                }
+            }
+            let mut end_cap = self.state.stroke.end_cap;
+            if select(ui, "End Cap", &mut end_cap, &CapOption::ALL) {
+                self.update(AppMessage::Stroke(StrokeMessage::EndCapSelected(end_cap)));
+            }
+            if self.state.stroke.end_cap == CapOption::Round {
+                let mut end_cap_value = self.state.stroke.end_cap_value;
+                if slider(
+                    ui,
+                    "End Cap Detail",
+                    egui::Slider::new(&mut end_cap_value, 1..=100),
+                ) {
+                    self.update(AppMessage::Stroke(StrokeMessage::EndCapValueUpdated(
+                        end_cap_value,
+                    )));
+                }
+            }
+            let mut join = self.state.stroke.join;
+            if select(ui, "Line Join", &mut join, &JoinOption::ALL) {
+                self.update(AppMessage::Stroke(StrokeMessage::JoinSelected(join)));
+            }
+            if self.state.stroke.join != JoinOption::Bevel {
+                let mut join_value = self.state.stroke.join_value;
+                if slider(
+                    ui,
+                    "Join Detail",
+                    egui::Slider::new(&mut join_value, 1..=100),
+                ) {
+                    self.update(AppMessage::Stroke(StrokeMessage::JoinValueUpdated(
+                        join_value,
+                    )));
+                }
+            }
+            let mut is_closed = self.state.stroke.is_closed;
+            if checkbox(ui, "Is Closed", &mut is_closed) {
+                self.update(AppMessage::Stroke(StrokeMessage::IsClosedUpdated(
+                    is_closed,
+                )));
+            }
+        });
     }
-}
-
-fn on_update_width(value: f32) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::WidthValueUpdated(value))
-}
-
-fn on_set_is_closed(value: bool) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::IsClosedUpdated(value))
-}
-
-fn on_select_start_cap(option: CapOption) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::StartCapSelected(option))
-}
-
-fn on_update_start_cap_value(value: u8) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::StartCapValueUpdated(value))
-}
-
-fn on_select_end_cap(option: CapOption) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::EndCapSelected(option))
-}
-
-fn on_update_end_cap_value(value: u8) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::EndCapValueUpdated(value))
-}
-
-fn on_select_join(option: JoinOption) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::JoinSelected(option))
-}
-
-fn on_update_join_value(value: u8) -> AppMessage {
-    AppMessage::Stroke(StrokeMessage::JoinValueUpdated(value))
 }

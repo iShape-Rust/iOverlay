@@ -16,9 +16,9 @@ use crate::string::line::IntLine;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use i_float::int::point::IntPoint;
-use i_shape::int::count::PointsCount;
 use i_shape::int::path::IntPath;
 use i_shape::int::shape::{IntContour, IntShape};
+use i_shape::source::int::resource::IntShapeResource;
 
 /// Integer polygon and string overlay builder.
 ///
@@ -61,40 +61,104 @@ where
         }
     }
 
+    /// Creates an overlay from polygon paths, interpreted as closed contours.
+    pub fn from_shape<R: IntShapeResource<I> + ?Sized>(shape: &R) -> Self {
+        Self::from_shape_custom(shape, Default::default())
+    }
+
+    /// Creates a polygon overlay with custom output options.
+    pub fn from_shape_custom<R: IntShapeResource<I> + ?Sized>(
+        shape: &R,
+        options: IntOverlayOptions<I::WideUInt>,
+    ) -> Self {
+        let capacity = shape.iter_paths().map(|path| path.len()).sum();
+        let mut overlay = Self::with_options(capacity, options);
+        overlay.add_shape_source(shape);
+        overlay
+    }
+
+    /// Creates an overlay from closed polygon contours and open string paths.
+    /// String paths are not implicitly closed, regardless of their storage type.
+    pub fn from_shape_and_string<R0, R1>(shape: &R0, string: &R1) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        Self::from_shape_and_string_custom(shape, string, Default::default())
+    }
+
+    /// Creates an overlay from closed polygon contours and open strings with custom options.
+    pub fn from_shape_and_string_custom<R0, R1>(
+        shape: &R0,
+        string: &R1,
+        options: IntOverlayOptions<I::WideUInt>,
+    ) -> Self
+    where
+        R0: IntShapeResource<I> + ?Sized,
+        R1: IntShapeResource<I> + ?Sized,
+    {
+        let capacity = shape
+            .iter_paths()
+            .chain(string.iter_paths())
+            .map(|path| path.len())
+            .sum();
+        let mut overlay = Self::with_options(capacity, options);
+        overlay.add_shape_source(shape);
+        overlay.add_string_source(string);
+        overlay
+    }
+
+    /// Adds resource paths as closed polygon contours.
+    pub fn add_shape_source<R: IntShapeResource<I> + ?Sized>(&mut self, resource: &R) {
+        for contour in resource.iter_paths() {
+            self.add_shape_contour(contour);
+        }
+    }
+
+    /// Adds resource paths as open strings, without a closing edge.
+    pub fn add_string_source<R: IntShapeResource<I> + ?Sized>(&mut self, resource: &R) {
+        for path in resource.iter_paths() {
+            self.add_string_path(path);
+        }
+    }
+
+    /// Adds resource paths as closed strings, including the last-to-first edge.
+    pub fn add_string_contour_source<R: IntShapeResource<I> + ?Sized>(&mut self, resource: &R) {
+        for contour in resource.iter_paths() {
+            self.add_string_contour(contour);
+        }
+    }
+
     /// Creates a new `StringOverlay` instance and initializes it with a single shape contour.
     /// - `contour`: An array of points that form a closed path.
     #[inline]
+    #[deprecated(note = "Use `from_shape` instead.")]
     pub fn with_shape_contour(contour: &[IntPoint<I>]) -> Self {
-        let mut overlay = Self::new(contour.len());
-        overlay.add_shape_contour(contour);
-        overlay
+        Self::from_shape(contour)
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with multiple shape contours.
     /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
     #[inline]
+    #[deprecated(note = "Use `from_shape` instead.")]
     pub fn with_shape_contours(contours: &[IntContour<I>]) -> Self {
-        let mut overlay = Self::new(contours.points_count());
-        overlay.add_shape_contours(contours);
-        overlay
+        Self::from_shape(contours)
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with s shape.
     /// - `shape`: An `IntShape<I>` instances to be added to the overlay.
     #[inline]
+    #[deprecated(note = "Use `from_shape` instead.")]
     pub fn with_shape(shape: &[IntContour<I>]) -> Self {
-        let mut overlay = Self::new(shape.points_count());
-        overlay.add_shape_contours(shape);
-        overlay
+        Self::from_shape(shape)
     }
 
     /// Creates a new `StringOverlay` instance and initializes it with subject and clip shapes.
     /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     #[inline]
+    #[deprecated(note = "Use `from_shape` instead.")]
     pub fn with_shapes(shapes: &[IntShape<I>]) -> Self {
-        let mut overlay = Self::new(shapes.points_count());
-        overlay.add_shapes(shapes);
-        overlay
+        Self::from_shape(shapes)
     }
 
     /// Adds a path to the overlay using an iterator, allowing for more flexible path input.
@@ -115,6 +179,7 @@ where
 
     /// Adds multiple paths to the overlay as shape paths.
     /// - `contours`: An array of `IntContour<I>` instances to be added to the overlay.
+    #[deprecated(note = "Use `add_shape_source` instead.")]
     pub fn add_shape_contours(&mut self, contours: &[IntContour<I>]) {
         for contour in contours.iter() {
             self.add_shape_contour(contour);
@@ -124,9 +189,10 @@ where
     /// Adds a list of shape to the overlay.
     /// - `shapes`: An array of `IntShape<I>` instances to be added to the overlay.
     #[inline]
+    #[deprecated(note = "Use `add_shape_source` instead.")]
     pub fn add_shapes(&mut self, shapes: &[IntShape<I>]) {
         for shape in shapes {
-            self.add_shape_contours(shape);
+            self.add_shape_source(shape);
         }
     }
 
@@ -207,6 +273,7 @@ where
     /// Adds a string line paths to the overlay.
     /// - `paths`: A collection of paths, each representing a string line.
     #[inline]
+    #[deprecated(note = "Use `add_string_source` instead.")]
     pub fn add_string_paths(&mut self, paths: &[IntPath<I>]) {
         for path in paths {
             self.add_string_path(path);
@@ -216,6 +283,7 @@ where
     /// Adds a string line contours to the overlay.
     /// - `contours`: A collection of contours, each representing a string line closed path.
     #[inline]
+    #[deprecated(note = "Use `add_string_contour_source` instead.")]
     pub fn add_string_contours(&mut self, contours: &[IntContour<I>]) {
         for contour in contours {
             self.add_string_contour(contour);

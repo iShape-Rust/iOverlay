@@ -6,7 +6,7 @@ mod tests {
     use i_overlay::core::overlay::ShapeType;
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::float::overlay::FloatOverlay;
-    use i_shape::source::resource::ShapeResource;
+    use i_shape::source::float::resource::ShapeResource;
 
     #[test]
     fn test_adapter_with_rect() {
@@ -18,8 +18,10 @@ mod tests {
             [s * 1.0, s * 0.0],
         ]];
 
-        let adapter_100 = FloatPointAdapter::<_, i32>::new(FloatRect::new(-100.0, 100.0, -100.0, 100.0));
-        let adapter_1000 = FloatPointAdapter::<_, i32>::new(FloatRect::new(-1000.0, 1000.0, -1000.0, 1000.0));
+        let adapter_100 =
+            FloatPointAdapter::<_, i32>::new(FloatRect::new(-100.0, 100.0, -100.0, 100.0).unwrap());
+        let adapter_1000 =
+            FloatPointAdapter::<_, i32>::new(FloatRect::new(-1000.0, 1000.0, -1000.0, 1000.0).unwrap());
 
         let subj_100 = FloatOverlay::with_adapter(adapter_100, shape.len())
             .unsafe_add_source(&shape, ShapeType::Subject)
@@ -50,15 +52,18 @@ mod tests {
             [s * 1.0, s * 0.0],
         ]];
 
-        let rect = FloatRect::with_iter(shape.iter_paths().flatten()).unwrap();
+        let rect = FloatRect::with_iter(shape.iter_paths().flatten())
+            .unwrap()
+            .unwrap();
         let buffer_rect = FloatRect::new(
             rect.min_x - 0.1,
             rect.max_x + 0.1,
             rect.min_y - 0.1,
             rect.max_y + 0.1,
-        );
+        )
+        .unwrap();
 
-        let adapter_100 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect.clone(), 100.0);
+        let adapter_100 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect, 100.0);
         let adapter_1000 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect, 1000.0);
 
         let subj_100 = FloatOverlay::with_adapter(adapter_100, shape.len())
