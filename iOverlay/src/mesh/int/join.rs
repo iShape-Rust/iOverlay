@@ -12,21 +12,31 @@ use i_float::int::{point::IntPoint, unit_vector::UnitIntVector};
 
 pub(super) enum Join<I: IntNumber, M: MeshMath<I> = IntegerMath> {
     Bevel,
-    Miter { minimum: u32, sin: i32, cos: i32 },
+    Miter {
+        minimum: u32,
+        min_turn: u32,
+        sin: i32,
+        cos: i32,
+    },
     Round(M::Arc),
 }
 
 impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
-    pub(super) fn new(style: IntLineJoin) -> Self {
+    pub(super) fn new(style: IntLineJoin, min_turn: Angle) -> Self {
         match style {
             IntLineJoin::Bevel => Self::Bevel,
             IntLineJoin::Round(options) => Self::Round(M::Arc::new(options)),
             IntLineJoin::Miter(angle) => {
-                let min_angle = ((1u32 << 31) / 100).max(M::MITER_STABILITY_ANGLE);
+                let min_angle = ((1u32 << 31) / 100).max(M::MIN_MITER_ANGLE);
                 let max_angle = (1u32 << 31) - 1;
                 let minimum = angle.bits().clamp(min_angle, max_angle);
                 let (sin, cos) = M::sin_cos(Angle::from_bits(minimum / 2));
-                Self::Miter { minimum, sin, cos }
+                Self::Miter {
+                    minimum,
+                    min_turn: min_turn.bits().min(1u32 << 31),
+                    sin,
+                    cos,
+                }
             }
         }
     }
@@ -38,7 +48,8 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
         }
         match style {
             IntLineJoin::Miter(_) => {
-                let Self::Miter { sin, .. } = Self::new(style) else {
+                // The near-straight cutoff does not change the miter reach limit.
+                let Self::Miter { sin, .. } = Self::new(style, Angle::from_bits(0)) else {
                     unreachable!()
                 };
                 mul_div::<I>(radius, I::Wide::from_u32(1 << 30), I::Wide::from_u32(sin as u32)) + I::Wide::TWO
@@ -81,7 +92,12 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
                 }
                 segments.push_non_degenerate(previous, b);
             }
-            Self::Miter { minimum, sin, cos } => {
+            Self::Miter {
+                minimum,
+                min_turn,
+                sin,
+                cos,
+            } => {
                 let va = vector(incoming);
                 let vb = vector(outgoing);
                 let cross = va.cross_product(vb);
@@ -91,7 +107,7 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
                 }
                 let turn = M::angle_between(incoming, outgoing).bits();
                 let turn = turn.min(turn.wrapping_neg());
-                if turn < M::MITER_STABILITY_ANGLE {
+                if turn < *min_turn {
                     // Almost straight: rounded offset points need not lie on
                     // intersecting rays near the vertex. Close the gap directly.
                     segments.push_non_degenerate(a, b);

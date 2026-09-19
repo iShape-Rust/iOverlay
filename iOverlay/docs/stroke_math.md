@@ -17,16 +17,24 @@ Both input APIs support either math mode, and both modes retain integer
 coordinates and boolean operations internally.
 
 Integer miter construction clamps the requested minimum interior angle to at
-least 5 degrees and clips sharper corners. Interior angles above 175 degrees
-use bevel joins. This uses the turn angle already computed for the join, without
-additional normalization or trigonometry. Float mode retains its existing angle
-policy, including ordinary miter intersections at nearly straight corners.
+least 5 degrees and clips sharper corners. In both math modes, interior angles
+above 175 degrees use bevel joins by default to avoid unstable intersections of rounded
+offset lines. This uses the turn angle already computed for the join, without
+additional normalization or trigonometry. Float mode retains its existing
+minimum interior angle for sharp corners.
 For `IntLineJoin::Miter`, the lower limit on the requested minimum is 5 degrees in
 Integer mode or 0.01*pi (1.8 degrees) in Float mode; the upper limit is one
 `Angle` unit below pi. The floating-point `LineJoin::Miter` style first clamps
 its parameter to 0.01*pi..=0.99*pi (1.8..=178.2 degrees), before the selected
 math mode applies its construction limits. Angular thresholds are quantized to
 the `Angle` representation.
+
+Stroke and outline styles provide `.miter_min_turn(angle)` for the near-straight
+bevel cutoff, independent of the sharp-corner clipping limit. It defaults to
+5 degrees in both math modes. Integer styles accept `Angle`; float styles accept
+radians. Construction clamps the cutoff to 0..=pi; float NaN uses the default.
+Zero disables the cutoff, and smaller values allow less stable intersections of
+rounded offset lines. Bevel and round joins ignore this setting.
 
 ```rust
 use i_overlay::mesh::float::{stroke::offset::StrokeOffset, style::StrokeStyle};
@@ -57,7 +65,8 @@ does not eliminate coordinate quantization or rounding-sensitive intersections.
 
 The modes may produce different rounded vertices and arc tessellations. Float
 mode does not promise cross-platform bitwise reproducibility. Code using
-exhaustive style struct literals must supply the `math` field.
+exhaustive stroke and outline style struct literals must supply the `math` and
+`miter_min_turn` fields.
 
 Variable-width strokes also select the tangent-contact calculation through a
 private `VariableStrokeMath` extension of `MeshMath`. Integer mode retains the
@@ -76,7 +85,7 @@ uses the same traversal and records the same emitted geometry. The style-free
 ## Validation
 
 - Integer mesh/arc/outline regression tests exercise the default construction mode.
-- Miter regressions cover almost straight strokes and shrinking outlines, the 175-degree bevel cutoff, and the 5-degree clipping floor, with separate Float controls.
+- Miter regressions cover almost straight strokes, including translated Float inputs near the coordinate limit, shrinking outlines, the shared 175-degree bevel cutoff, and the Integer-only 5-degree clipping floor.
 - Both math modes cover constant-width round-stroke vertex disks, path reversal, coarse caps, empty paths, duplicates, and reused flat output.
 - Float arc tests check ordered samples, maximum angular gaps, approximate unit length within a numerical tolerance, and allocation reuse for i16/i32/i64.
 - Large-origin i64 tests translate the input by 2^60 and compare the translated-back stroke.

@@ -19,6 +19,16 @@ pub(super) fn angle_from_radians<T: FloatNumber>(radians: T) -> Angle {
     })
 }
 
+pub(super) fn miter_min_turn_angle<T: FloatNumber>(radians: T) -> Angle {
+    let angle = radians.to_f64();
+    let angle = if angle.is_nan() {
+        PI / 36.0
+    } else {
+        angle.clamp(0.0, PI)
+    };
+    angle_from_radians(angle)
+}
+
 /// The endpoint style of a line.
 #[derive(Debug, Clone)]
 pub enum LineCap<P: FloatPointCompatible> {
@@ -42,8 +52,8 @@ pub enum LineJoin<T: FloatNumber> {
     /// The parameter is the minimum interior angle in radians, clamped to
     /// 0.01*pi..=0.99*pi (1.8..=178.2 degrees) before integer conversion.
     /// With Integer construction math, the effective minimum is at least
-    /// 5 degrees, and interior angles above 175 degrees use bevel joins.
-    /// Float construction math uses the converted angle without that cutoff.
+    /// 5 degrees. Both math modes default to bevel joins for turns below
+    /// 5 degrees; the style's `miter_min_turn` configures this cutoff independently.
     Miter(T),
     /// Creates an arc corner where two lines meet.
     /// The arc is approximated using a group of segments, where the parameter `Angle`
@@ -62,6 +72,11 @@ pub struct StrokeStyle<P: FloatPointCompatible> {
     pub end_cap: LineCap<P>,
     /// The join style where two lines meet.
     pub join: LineJoin<P::Scalar>,
+    /// Miter turns below this angle in radians use bevel joins in both math modes.
+    /// Defaults to 5 degrees (pi/36); clamped to 0..=pi, with NaN using the default.
+    /// Zero disables the cutoff. Smaller values allow less stable intersections.
+    /// Ignored for bevel and round joins.
+    pub miter_min_turn: P::Scalar,
     /// Arithmetic for stroke construction. Integer remains the default.
     pub math: MathMode,
 }
@@ -72,6 +87,11 @@ pub struct OutlineStyle<T: FloatNumber> {
     pub outer_offset: T,
     pub inner_offset: T,
     pub join: LineJoin<T>,
+    /// Miter turns below this angle in radians use bevel joins in both math modes.
+    /// Defaults to 5 degrees (pi/36); clamped to 0..=pi, with NaN using the default.
+    /// Zero disables the cutoff. Smaller values allow less stable intersections.
+    /// Ignored for bevel and round joins.
+    pub miter_min_turn: T,
     /// Arithmetic used to construct offsets and joins.
     pub math: MathMode,
 }
@@ -161,6 +181,12 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
         self
     }
 
+    /// Sets the near-straight bevel cutoff in radians, independently of the miter clipping angle.
+    pub fn miter_min_turn(mut self, angle: P::Scalar) -> Self {
+        self.miter_min_turn = angle;
+        self
+    }
+
     /// Selects construction arithmetic; the final boolean operation stays integer.
     pub fn math(mut self, math: MathMode) -> Self {
         self.math = math;
@@ -195,6 +221,7 @@ impl<P: FloatPointCompatible> StrokeStyle<P> {
             start_cap: cap(&self.start_cap),
             end_cap: cap(&self.end_cap),
             join: IntLineJoin::from(&self.join),
+            miter_min_turn: miter_min_turn_angle(self.miter_min_turn),
             math: self.math,
         }
     }
@@ -234,6 +261,7 @@ impl<P: FloatPointCompatible> Default for StrokeStyle<P> {
             start_cap: LineCap::Butt,
             end_cap: LineCap::Butt,
             join: LineJoin::Bevel,
+            miter_min_turn: P::Scalar::from_float(PI / 36.0),
             math: MathMode::Integer,
         }
     }
@@ -279,6 +307,12 @@ impl<T: FloatNumber> OutlineStyle<T> {
         self.join = join;
         self
     }
+
+    /// Sets the near-straight bevel cutoff in radians, independently of the miter clipping angle.
+    pub fn miter_min_turn(mut self, angle: T) -> Self {
+        self.miter_min_turn = angle;
+        self
+    }
 }
 
 impl<T: FloatNumber> Default for OutlineStyle<T> {
@@ -287,6 +321,7 @@ impl<T: FloatNumber> Default for OutlineStyle<T> {
             outer_offset: T::from_float(1.0),
             inner_offset: T::from_float(1.0),
             join: LineJoin::Bevel,
+            miter_min_turn: T::from_float(PI / 36.0),
             math: MathMode::Integer,
         }
     }

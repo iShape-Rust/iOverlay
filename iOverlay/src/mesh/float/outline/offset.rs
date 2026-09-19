@@ -412,6 +412,7 @@ where
                 outer_offset: style.outer_offset,
                 inner_offset: style.inner_offset,
                 join: style.join.clone(),
+                miter_min_turn: style.miter_min_turn,
                 math: style.math,
             },
             adapter,
@@ -429,6 +430,7 @@ where
             outer_offset: self.adapter.round_len_to_int(self.style.outer_offset),
             inner_offset: self.adapter.round_len_to_int(self.style.inner_offset),
             join: (&self.style.join).into(),
+            miter_min_turn: super::super::style::miter_min_turn_angle(self.style.miter_min_turn),
             math: self.style.math,
         }
     }

@@ -1,4 +1,4 @@
-use super::backend::MeshMath;
+use super::backend::{DEFAULT_MITER_MIN_TURN, MeshMath};
 use super::{direction, vector};
 use crate::mesh::int::arc::IntegerArc;
 use i_float::int::number::{int::IntNumber, wide_int::WideIntNumber};
@@ -9,9 +9,7 @@ pub(crate) struct IntegerMath;
 
 impl<I: IntNumber> MeshMath<I> for IntegerMath {
     type Arc = IntegerArc<I>;
-    // Five degrees: avoid amplifying direction and grid rounding errors when
-    // intersecting nearly parallel offset lines.
-    const MITER_STABILITY_ANGLE: u32 = (1u32 << 31) / 36;
+    const MIN_MITER_ANGLE: u32 = DEFAULT_MITER_MIN_TURN;
     #[inline]
     fn sin_cos(angle: Angle) -> (i32, i32) {
         angle.sin_cos()

@@ -19,7 +19,7 @@ impl<I: IntNumber, M: MeshMath<I>> StrokeBuilder<I, M> {
     pub(super) fn new(style: &IntStrokeStyle<I>) -> Self {
         Self {
             radius: stroke_radius(style),
-            join: Join::new(style.join),
+            join: Join::new(style.join, style.miter_min_turn),
             start: Cap::new(&style.start_cap),
             end: Cap::new(&style.end_cap),
             sections: Vec::new(),

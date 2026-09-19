@@ -9,7 +9,7 @@ pub(crate) struct FloatMath;
 
 impl<I: IntNumber> MeshMath<I> for FloatMath {
     type Arc = FloatArc<I>;
-    const MITER_STABILITY_ANGLE: u32 = 0;
+    const MIN_MITER_ANGLE: u32 = 0;
     fn sin_cos(angle: Angle) -> (i32, i32) {
         angle.sin_cos_with_float()
     }

@@ -506,9 +506,14 @@ strokes use round caps and joins. Round geometry uses `ArcOptions`, including
 configurable CORDIC rotation precision (default: 5).
 
 Integer construction math limits miter joins to a minimum interior angle of
-5 degrees, clipping sharper corners. Almost straight corners with interior
-angles above 175 degrees use bevel joins to avoid unstable intersections of
-rounded offset lines. Float construction math retains its existing angle policy.
+5 degrees, clipping sharper corners. Float construction math retains its
+1.8-degree minimum. In both modes, almost straight corners with interior angles
+above 175 degrees use bevel joins by default to avoid unstable intersections of
+rounded offset lines. Stroke and outline styles expose `.miter_min_turn(angle)`
+to configure this minimum turn independently of the sharp-corner clipping angle:
+use `Angle` in the integer API or radians in the float API. The default is 5 degrees
+for both math modes. Zero disables this guard; smaller values allow less stable
+intersections.
 
 Integer distances use input coordinate units without automatic rescaling.
 Stroke radius is `ceil(max(width, 0) / 2)`; radii at most 1 are degenerate.

@@ -50,8 +50,14 @@ where
     Paths: IntoIterator<Item = Path>,
     Path: ExactSizeIterator<Item = IntPoint<I>> + Clone,
 {
-    let mut outer_builder = OutlineBuilder::new(style.outer_offset, Join::<I, M>::new(style.join));
-    let mut inner_builder = OutlineBuilder::new(style.inner_offset, Join::<I, M>::new(style.join));
+    let mut outer_builder = OutlineBuilder::new(
+        style.outer_offset,
+        Join::<I, M>::new(style.join, style.miter_min_turn),
+    );
+    let mut inner_builder = OutlineBuilder::new(
+        style.inner_offset,
+        Join::<I, M>::new(style.join, style.miter_min_turn),
+    );
 
     let mut overlay = Overlay::new_custom(0, options, Default::default());
     let mut contour_options = options;
