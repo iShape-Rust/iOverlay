@@ -29,11 +29,11 @@ fn orthogonal_miter_offsets_match_cell_dilation_and_erosion() {
     for case in 0..200 {
         let mut cells = [[false; 6]; 6];
         let mut contours = Vec::new();
-        for x in 0..6 {
-            for y in 0..6 {
+        for (x, column) in cells.iter_mut().enumerate() {
+            for (y, cell) in column.iter_mut().enumerate() {
                 seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
-                cells[x][y] = (seed >> 32) % 100 < 20 + case % 65;
-                if cells[x][y] {
+                *cell = (seed >> 32) % 100 < 20 + case % 65;
+                if *cell {
                     let (x, y) = (4 * x as i32, 4 * y as i32);
                     contours.push(vec![
                         IntPoint::new(x, y),

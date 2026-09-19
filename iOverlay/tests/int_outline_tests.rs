@@ -92,8 +92,10 @@ fn area_filter_runs_after_union() {
     let style = IntOutlineStyle::new(0);
     let expected = source.outline(&style).unwrap();
     assert_eq!(expected.area(), 12 * 1024 * 1024);
-    let mut options = IntOverlayOptions::default();
-    options.min_output_area = 10 * 1024 * 1024;
+    let mut options = IntOverlayOptions {
+        min_output_area: 10 * 1024 * 1024,
+        ..Default::default()
+    };
     assert_eq!(source.outline_custom(&style, options).unwrap(), expected);
     options.min_output_area = 13 * 1024 * 1024;
     assert!(source.outline_custom(&style, options).unwrap().is_empty());
@@ -108,8 +110,8 @@ fn resource_forms_and_flat_output_agree() {
     contours.set_with_shapes(&shapes);
     let flat_shapes = FlatShapesBuffer {
         points: path.clone(),
-        contour_ranges: vec![0..4],
-        shape_ranges: vec![0..1],
+        contour_ranges: core::iter::once(0..4).collect(),
+        shape_ranges: core::iter::once(0..1).collect(),
     };
     let style = IntOutlineStyle::new(1024);
     let expected = path.outline(&style).unwrap();

@@ -46,7 +46,7 @@ fn check_engines<I: OverlayInt + core::fmt::Debug>() {
     let mut flat_contours = FlatContoursBuffer::default();
     flat_contours.set_with_shape(&contours);
     let mut flat_shapes = FlatShapesBuffer::default();
-    flat_shapes.set_with_shapes(&vec![vec![clip.to_vec()]]);
+    flat_shapes.set_with_shapes(&[vec![clip.to_vec()]]);
     for rule in [
         OverlayRule::Union,
         OverlayRule::Intersect,

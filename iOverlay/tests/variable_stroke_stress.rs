@@ -82,7 +82,7 @@ fn random_variable_stroke_path(rng: &mut StressRng) -> Vec<StrokeVertex<[f32; 2]
         };
         path.push(StrokeVertex::new(point, width));
 
-        if index + 1 == count || rng.next_u32() % 20 == 0 {
+        if index + 1 == count || rng.next_u32().is_multiple_of(20) {
             continue;
         }
 

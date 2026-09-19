@@ -66,12 +66,13 @@ where
         fill_rule: FillRule,
     ) -> IntShapes<I> {
         let mut paths = resource.iter_paths();
-        if let Some(contour) = paths.next() {
-            if paths.next().is_none() && self.options.min_output_area == I::WideUInt::ZERO {
-                return self
-                    .simplify_contour(contour, fill_rule)
-                    .unwrap_or_else(|| vec![vec![contour.to_vec()]]);
-            }
+        if let Some(contour) = paths.next()
+            && paths.next().is_none()
+            && self.options.min_output_area == I::WideUInt::ZERO
+        {
+            return self
+                .simplify_contour(contour, fill_rule)
+                .unwrap_or_else(|| vec![vec![contour.to_vec()]]);
         }
         self.reinit_with_subj(resource);
         self.overlay(OverlayRule::Subject, fill_rule)

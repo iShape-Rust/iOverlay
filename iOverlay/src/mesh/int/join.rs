@@ -59,6 +59,7 @@ impl<I: IntNumber, M: MeshMath<I>> Join<I, M> {
     }
 
     /// Joins the two outward offset rays, in boundary traversal order.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn add(
         &mut self,
         center: IntPoint<I>,

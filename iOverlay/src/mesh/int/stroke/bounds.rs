@@ -14,10 +14,10 @@ use i_shape::source::int::resource::IntShapeResource;
 
 pub(super) trait StrokeBounds<I: OverlayInt>: IntShapeResource<I> {
     fn validate_stroke_bounds(&self, style: &IntStrokeStyle<I>) -> Result<(), IntStrokeError> {
-        if let Some(rect) = IntRect::with_iter(self.iter_paths().flatten()) {
-            if !crate::mesh::int::bounds::expanded_is_safe(rect, stroke_padding(style)) {
-                return Err(IntStrokeError::CoordinateOutOfRange);
-            }
+        if let Some(rect) = IntRect::with_iter(self.iter_paths().flatten())
+            && !crate::mesh::int::bounds::expanded_is_safe(rect, stroke_padding(style))
+        {
+            return Err(IntStrokeError::CoordinateOutOfRange);
         }
         Ok(())
     }

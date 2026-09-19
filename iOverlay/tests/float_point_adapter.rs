@@ -63,7 +63,7 @@ mod tests {
         )
         .unwrap();
 
-        let adapter_100 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect.clone(), 100.0);
+        let adapter_100 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect, 100.0);
         let adapter_1000 = FloatPointAdapter::<_, i32>::with_scale(buffer_rect, 1000.0);
 
         let subj_100 = FloatOverlay::with_adapter(adapter_100, shape.len())

@@ -82,7 +82,7 @@ fn boundaries<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
     let hi = half - 1;
     let outer = square(lo, hi);
     check::<I>(
-        &[outer.clone()],
+        core::slice::from_ref(&outer),
         &[],
         OverlayRule::Subject,
         vec![vec![outer.clone()]],
@@ -91,17 +91,22 @@ fn boundaries<I: OverlayInt + TryFrom<i64> + Into<i64>>() {
     // Keep unit-size features at both inclusive endpoints.
     for a in [lo, hi - 1] {
         let small = square(a, a + 1);
-        check::<I>(&[small.clone()], &[], OverlayRule::Subject, vec![vec![small]]);
+        check::<I>(
+            core::slice::from_ref(&small),
+            &[],
+            OverlayRule::Subject,
+            vec![vec![small.clone()]],
+        );
     }
 
     let inner = square(-half / 2, half / 2);
     let mut hole = inner.clone();
     hole.reverse();
     check::<I>(
-        &[outer.clone()],
+        core::slice::from_ref(&outer),
         &[inner],
         OverlayRule::Difference,
-        vec![vec![outer, hole]],
+        vec![vec![outer.clone(), hole]],
     );
 
     // Issue #88's steep edge, stretched to the maximum supported span.
@@ -185,13 +190,18 @@ fn i64_boundaries() {
 fn issue_88_with_a_wider_engine_or_rescaled_coordinates() {
     let triangle = vec![[0, 0], [129, -23169], [0, 9854]];
     check::<i32>(
-        &[triangle.clone()],
+        core::slice::from_ref(&triangle),
         &[],
         OverlayRule::Subject,
         vec![vec![triangle.clone()]],
     );
     let scaled: Contour = triangle.iter().map(|p| [p[0] / 2, p[1] / 2]).collect();
-    check::<i16>(&[scaled.clone()], &[], OverlayRule::Subject, vec![vec![scaled]]);
+    check::<i16>(
+        core::slice::from_ref(&scaled),
+        &[],
+        OverlayRule::Subject,
+        vec![vec![scaled.clone()]],
+    );
 }
 
 #[test]

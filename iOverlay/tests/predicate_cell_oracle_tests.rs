@@ -14,7 +14,10 @@ fn filled(count: i32, rule: FillRule) -> bool {
     }
 }
 
-fn closure(cells: &BTreeSet<(i32, i32)>) -> (BTreeSet<(i32, i32)>, BTreeSet<(i32, i32, i32, i32)>) {
+type Vertices = BTreeSet<(i32, i32)>;
+type Edges = BTreeSet<(i32, i32, i32, i32)>;
+
+fn closure(cells: &BTreeSet<(i32, i32)>) -> (Vertices, Edges) {
     let mut vertices = BTreeSet::new();
     let mut edges = BTreeSet::new();
     for &(x, y) in cells {

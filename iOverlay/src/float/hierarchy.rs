@@ -227,8 +227,8 @@ mod tests {
                     IntPoint::new(10, 10),
                     IntPoint::new(0, 10),
                 ],
-                contour_ranges: vec![0..4],
-                shape_ranges: vec![0..1],
+                contour_ranges: core::iter::once(0..4).collect(),
+                shape_ranges: core::iter::once(0..1).collect(),
             },
             links: vec![],
         };
