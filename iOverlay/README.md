@@ -38,6 +38,7 @@ For specialized geometry, see [iCurve](https://github.com/iShape-Rust/iCurve) fo
   - [LineCap](#linecap)
   - [LineJoin](#linejoin)
 - [Integer Coordinate Limits](#integer-coordinate-limits)
+- [Floating-Point Coordinate Limits](#floating-point-coordinate-limits)
 - [FAQ](#faq)
 - [License](#license)
 
@@ -636,8 +637,23 @@ to all inputs and solver strategies. Integer APIs do not check them; exceeding
 these bounds can cause overflow or incorrect results. Use a wider engine or rescale
 larger inputs. See the [range derivation and arithmetic audit](readme/integer_range.md) for details.
 
-For float APIs, the limits apply after conversion. An explicit conservative budget
-is `FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)`.
+For float APIs, the limits apply after conversion. Automatic conversion and checked
+fixed-scale methods use a conservative budget of `I::BITS - 3` coordinate bits.
+Custom adapters must respect the integer range; use
+`FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)` for the same budget.
+
+## Floating-Point Coordinate Limits
+
+Input coordinates must be finite, with absolute values at most `2^60` for `f32`
+or `2^500` for `f64`. Stroke and outline bounds, including padding for widths,
+offsets, joins, and caps, must also fit these limits.
+
+Infallible APIs panic on invalid bounds. Fixed-scale APIs return
+`FixedScaleOverlayError::InvalidRect`. Scales must be positive and finite, have a
+finite reciprocal in the input scalar type, and fit the coordinate budget.
+A scale whose reciprocal overflows returns `ScaleTooSmall`; one exceeding the
+budget returns `ScaleTooLarge`. Coordinate limits do not themselves limit scales.
+Empty valid inputs remain supported.
 
 ## FAQ
 ### 1. When should I use `FloatOverlay`, `SingleFloatOverlay`, or `FloatOverlayGraph`?

@@ -26,7 +26,8 @@ fn normalized_area(shapes: &[Vec<Vec<[f64; 2]>>], scale: f64) -> f64 {
 
 #[test]
 fn float_overlay_preserves_rectangles_at_extreme_scales() {
-    for exponent in [600, -600] {
+    // Leave room for the rectangle width within the inclusive 2^500 limit.
+    for exponent in [496, -600] {
         let scale = 2.0_f64.powi(exponent);
         let rectangle = [
             [0.0, -scale],
@@ -46,7 +47,7 @@ fn float_overlay_preserves_rectangles_at_extreme_scales() {
 #[test]
 #[ignore = "Known extreme-scale mesh bug; deferred by request"]
 fn stroke_preserves_relative_area_across_coordinate_scales() {
-    for exponent in [0, 400, -400, 600, -600] {
+    for exponent in [0, 400, -400, 496, -600] {
         let scale = 2.0_f64.powi(exponent);
         let path = [[0.0, 0.0], [10.0 * scale, 0.0]];
         let shapes = path.stroke(StrokeStyle::new(2.0 * scale), false);
@@ -74,7 +75,8 @@ fn stroke_preserves_relative_area_at_small_coordinates() {
 #[test]
 #[ignore = "Known extreme-scale mesh bug; deferred by request"]
 fn f32_stroke_preserves_relative_area_at_large_coordinates() {
-    check_f32_stroke(80);
+    // The path and stroke padding must fit within 2^60.
+    check_f32_stroke(56);
 }
 
 #[test]
@@ -105,7 +107,7 @@ fn check_f32_stroke(exponent: i32) {
 #[test]
 #[ignore = "Known extreme-scale mesh bug; deferred by request"]
 fn bevel_outline_preserves_relative_area_at_large_coordinates() {
-    let scale = 2.0_f64.powi(600);
+    let scale = 2.0_f64.powi(496);
     let path = [
         [0.0, 0.0],
         [10.0 * scale, 0.0],
@@ -123,7 +125,7 @@ fn bevel_outline_preserves_relative_area_at_large_coordinates() {
 #[test]
 #[ignore = "Known extreme-scale mesh bug; deferred by request"]
 fn outline_preserves_relative_area_across_coordinate_scales() {
-    for exponent in [0, 400, -400, 600, -600] {
+    for exponent in [0, 400, -400, 496, -600] {
         let scale = 2.0_f64.powi(exponent);
         let path = [
             [0.0, 0.0],

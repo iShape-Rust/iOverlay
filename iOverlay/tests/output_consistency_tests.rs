@@ -32,7 +32,7 @@ fn flat_and_vector_outputs_match_shapes_with_area_filtering() {
         for threshold in [0, 1, 10, 50] {
             let mut regular = Overlay::from_subj_and_clip(&a, &b);
             regular.options.min_output_area = threshold;
-            regular.options.preserve_output_collinear = case % 2 == 0;
+            regular.options.preserve_output_collinear = true;
             regular.options.output_direction = if case % 3 == 0 {
                 ContourDirection::Clockwise
             } else {

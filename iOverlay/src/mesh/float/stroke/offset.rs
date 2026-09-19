@@ -9,7 +9,7 @@ use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
+use i_float::float::rect::{FloatRect, FloatRectError};
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
@@ -343,7 +343,7 @@ where
     where
         I: OverlayInt + 'static,
     {
-        match StrokeSolver::<P, I>::prepare(self, style) {
+        match StrokeSolver::<P, I>::prepare(self, style).expect("Invalid offset bounds") {
             Some(solver) => solver.build(self, is_closed_path, options),
             None => vec![],
         }
@@ -358,7 +358,7 @@ where
     ) where
         I: OverlayInt + 'static,
     {
-        match StrokeSolver::<P, I>::prepare(self, style) {
+        match StrokeSolver::<P, I>::prepare(self, style).expect("Invalid offset bounds") {
             Some(solver) => solver.build_into(self, is_closed_path, options, output),
             None => output.clear_and_reserve(0, 0),
         }
@@ -399,7 +399,8 @@ where
     where
         I: OverlayInt + 'static,
     {
-        let mut solver = match StrokeSolver::<P, I>::prepare(self, style) {
+        FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match StrokeSolver::<P, I>::prepare(self, style)? {
             Some(solver) => solver,
             None => return Ok(vec![]),
         };
@@ -418,7 +419,8 @@ where
     where
         I: OverlayInt + 'static,
     {
-        let mut solver = match StrokeSolver::<P, I>::prepare(self, style) {
+        FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match StrokeSolver::<P, I>::prepare(self, style)? {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -442,23 +444,27 @@ where
     P: 'static + FloatPointCompatible,
     I: OverlayInt + 'static,
 {
-    fn prepare<S: ShapeResource<P>>(source: &S, style: StrokeStyle<P>) -> Option<Self> {
+    fn prepare<S: ShapeResource<P>>(
+        source: &S,
+        style: StrokeStyle<P>,
+    ) -> Result<Option<Self>, FloatRectError> {
         if source.iter_paths().next().is_none() {
-            return None;
+            return Ok(None);
         }
 
         let r = P::Scalar::from_float(0.5 * style.width.to_f64());
         let a = style.padding();
 
-        let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
-        rect.add_offset(a);
-        let adapter = FloatPointAdapter::<P, I>::new(rect);
+        let mut rect = FloatRect::with_iter(source.iter_paths().flatten())?.unwrap_or(FloatRect::zero());
+        rect.add_offset(a)?;
+        let adapter = FloatPointAdapter::<P, I>::with_coordinate_bits(rect, I::BITS - 3);
 
-        Some(Self { r, style, adapter })
+        Ok(Some(Self { r, style, adapter }))
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
-        self.adapter = FloatPointAdapter::try_with_scale(*self.adapter.rect(), scale)?;
+        self.adapter =
+            FloatPointAdapter::try_with_scale_and_coordinate_bits(*self.adapter.rect(), scale, I::BITS - 3)?;
         Ok(())
     }
 

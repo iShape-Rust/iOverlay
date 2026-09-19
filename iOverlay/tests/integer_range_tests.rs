@@ -221,7 +221,7 @@ fn conservative_float_scale_keeps_rounded_i16_span_in_range() {
     use i_float::float::rect::FloatRect;
 
     let half_extent = 1.99999;
-    let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent);
+    let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent).unwrap();
     let min = [-half_extent, -half_extent];
     let max = [half_extent, half_extent];
 
@@ -252,7 +252,7 @@ fn explicit_float_coordinate_budget() {
         let limit = 1_i64 << (I::BITS - 3);
         // Power-of-two, non-power-of-two, and sub-unit bounds exercise scale rounding.
         for half_extent in [1.0, 1.5, 0.25] {
-            let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent);
+            let rect = FloatRect::new(-half_extent, half_extent, -half_extent, half_extent).unwrap();
             let adapter = FloatPointAdapter::<[f64; 2], I>::with_coordinate_bits(rect, I::BITS - 3);
             let points = vec![
                 [-half_extent, -half_extent],

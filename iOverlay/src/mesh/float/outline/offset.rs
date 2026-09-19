@@ -10,7 +10,7 @@ use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
+use i_float::float::rect::{FloatRect, FloatRectError};
 use i_float::int::number::int::IntNumber;
 use i_shape::base::data::Shapes;
 use i_shape::flat::buffer::FlatContoursBuffer;
@@ -293,7 +293,7 @@ where
     where
         I: OverlayInt + 'static,
     {
-        if let Some(solver) = OutlineSolver::<P, I>::prepare(self, style) {
+        if let Some(solver) = OutlineSolver::<P, I>::prepare(self, style).expect("Invalid offset bounds") {
             solver.build(self, options)
         } else {
             vec![]
@@ -308,7 +308,7 @@ where
     ) where
         I: OverlayInt + 'static,
     {
-        if let Some(solver) = OutlineSolver::<P, I>::prepare(self, style) {
+        if let Some(solver) = OutlineSolver::<P, I>::prepare(self, style).expect("Invalid offset bounds") {
             solver.build_into(self, options, output)
         } else {
             output.clear_and_reserve(0, 0)
@@ -348,7 +348,7 @@ where
         I: OverlayInt + 'static,
     {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::<P, I>::prepare(self, style) {
+        let mut solver = match OutlineSolver::<P, I>::prepare(self, style)? {
             Some(solver) => solver,
             None => return Ok(vec![]),
         };
@@ -367,7 +367,7 @@ where
         I: OverlayInt + 'static,
     {
         let s = FixedScaleOverlayError::validate_scale(scale)?;
-        let mut solver = match OutlineSolver::<P, I>::prepare(self, style) {
+        let mut solver = match OutlineSolver::<P, I>::prepare(self, style)? {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -390,21 +390,24 @@ where
     P: FloatPointCompatible + 'static,
     I: OverlayInt + 'static,
 {
-    fn prepare<S: ShapeResource<P>>(source: &S, style: &OutlineStyle<P::Scalar>) -> Option<Self> {
+    fn prepare<S: ShapeResource<P>>(
+        source: &S,
+        style: &OutlineStyle<P::Scalar>,
+    ) -> Result<Option<Self>, FloatRectError> {
         if source.iter_paths().next().is_none() {
-            return None;
+            return Ok(None);
         }
 
         let additional_offset = P::Scalar::from_float(
             (style.outer_offset.to_f64().abs() + style.inner_offset.to_f64().abs())
                 * style.join.padding_factor(),
         );
-        let mut rect = FloatRect::with_iter(source.iter_paths().flatten()).unwrap_or(FloatRect::zero());
-        rect.add_offset(additional_offset);
+        let mut rect = FloatRect::with_iter(source.iter_paths().flatten())?.unwrap_or(FloatRect::zero());
+        rect.add_offset(additional_offset)?;
 
-        let adapter = FloatPointAdapter::<P, I>::new(rect);
+        let adapter = FloatPointAdapter::<P, I>::with_coordinate_bits(rect, I::BITS - 3);
 
-        Some(Self {
+        Ok(Some(Self {
             style: OutlineStyle {
                 outer_offset: style.outer_offset,
                 inner_offset: style.inner_offset,
@@ -412,12 +415,13 @@ where
                 math: style.math,
             },
             adapter,
-        })
+        }))
     }
 
     fn apply_scale(&mut self, scale: f64) -> Result<(), FixedScaleOverlayError> {
         let s = P::Scalar::from_float(scale);
-        self.adapter = FloatPointAdapter::try_with_scale(*self.adapter.rect(), s)?;
+        self.adapter =
+            FloatPointAdapter::try_with_scale_and_coordinate_bits(*self.adapter.rect(), s, I::BITS - 3)?;
         Ok(())
     }
 

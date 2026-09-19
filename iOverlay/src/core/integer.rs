@@ -20,7 +20,9 @@
 //! ## Floating-point conversion
 //!
 //! These limits concern the integer coordinates after conversion, not the
-//! original floating-point coordinates. For an explicit conservative bound,
+//! original floating-point coordinates, which have their own [limits](crate::float).
+//! Automatic float APIs and checked fixed-scale APIs use `I::BITS - 3` coordinate
+//! bits. For a custom adapter with the same conservative bound,
 //! use [`FloatPointAdapter::with_coordinate_bits`](i_float::adapter::FloatPointAdapter::with_coordinate_bits)
 //! with `coordinate_bits = I::BITS - 3`. This bounds the converted magnitude by
 //! `2^(N - 3)` (8,192 for `i16`), with both endpoints included. A custom unchecked

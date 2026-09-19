@@ -272,7 +272,6 @@ mod tests {
     use crate::vector::edge::DataVectorEdge;
     use crate::vector::simplify::VectorSimplify;
     use alloc::vec;
-    use i_float::int::point::IntPoint;
     use i_float::int_pnt;
 
     #[derive(Clone, Copy, PartialEq)]

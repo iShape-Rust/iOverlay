@@ -11,7 +11,7 @@ use alloc::vec;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
+use i_float::float::rect::{FloatRect, FloatRectError};
 use i_float::int::number::int::IntNumber;
 use i_float::int::number::uint::UIntNumber;
 use i_float::int::number::wide_int::WideIntNumber;
@@ -120,7 +120,7 @@ where
     where
         I: OverlayInt + 'static,
     {
-        match VariableStrokeSolver::<P, I>::prepare(self, style) {
+        match VariableStrokeSolver::<P, I>::prepare(self, style).expect("Invalid offset bounds") {
             Some(solver) => solver.build(self, options),
             None => vec![],
         }
@@ -134,7 +134,7 @@ where
     ) where
         I: OverlayInt + 'static,
     {
-        match VariableStrokeSolver::<P, I>::prepare(self, style) {
+        match VariableStrokeSolver::<P, I>::prepare(self, style).expect("Invalid offset bounds") {
             Some(solver) => solver.build_into(self, options, output),
             None => output.clear_and_reserve(0, 0),
         }
@@ -172,7 +172,8 @@ where
     where
         I: OverlayInt + 'static,
     {
-        let mut solver = match VariableStrokeSolver::<P, I>::prepare(self, style) {
+        FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match VariableStrokeSolver::<P, I>::prepare(self, style)? {
             Some(solver) => solver,
             None => return Ok(vec![]),
         };
@@ -190,7 +191,8 @@ where
     where
         I: OverlayInt + 'static,
     {
-        let mut solver = match VariableStrokeSolver::<P, I>::prepare(self, style) {
+        FixedScaleOverlayError::validate_scale(scale)?;
+        let mut solver = match VariableStrokeSolver::<P, I>::prepare(self, style)? {
             Some(solver) => solver,
             None => {
                 output.clear_and_reserve(0, 0);
@@ -218,7 +220,7 @@ where
     P: FloatPointCompatible + 'static,
 {
     fn variable_stroke_debug(&self, style: VariableStrokeStyle<P::Scalar>) -> VariableStrokeDebugResult<P> {
-        match VariableStrokeSolver::<P, i32>::prepare(self, style) {
+        match VariableStrokeSolver::<P, i32>::prepare(self, style).expect("Invalid offset bounds") {
             Some(solver) => solver.build_debug(self, Default::default()),
             None => VariableStrokeDebugResult {
                 edges: vec![],
@@ -250,7 +252,7 @@ where
     fn prepare<S: VariableStrokeSource<P> + ?Sized>(
         source: &S,
         style: VariableStrokeStyle<P::Scalar>,
-    ) -> Option<Self> {
+    ) -> Result<Option<Self>, FloatRectError> {
         let mut max_radius = P::Scalar::ZERO;
         let mut paths_count = 0;
         let mut points_count = 0;
@@ -265,31 +267,34 @@ where
             for vertex in path {
                 max_radius = max_radius.max(vertex.radius());
                 if let Some(rect) = rect.as_mut() {
-                    rect.add_point(&vertex.point);
+                    rect.add_point(&vertex.point)?;
                 } else {
-                    rect = Some(FloatRect::with_point(vertex.point));
+                    rect = Some(FloatRect::with_point(vertex.point)?);
                 }
             }
         }
 
         if paths_count == 0 || points_count < 2 || max_radius <= P::Scalar::ZERO {
-            return None;
+            return Ok(None);
         }
 
         let style = style.normalized();
-        let mut rect = rect?;
-        rect.add_offset(P::Scalar::from_float(1.1) * max_radius);
-        let adapter = FloatPointAdapter::<P, I>::new(rect);
+        let Some(mut rect) = rect else {
+            return Ok(None);
+        };
+        rect.add_offset(P::Scalar::from_float(1.1) * max_radius)?;
+        let adapter = FloatPointAdapter::<P, I>::with_coordinate_bits(rect, I::BITS - 3);
 
-        Some(Self {
+        Ok(Some(Self {
             max_radius,
             style,
             adapter,
-        })
+        }))
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
-        self.adapter = FloatPointAdapter::try_with_scale(*self.adapter.rect(), scale)?;
+        self.adapter =
+            FloatPointAdapter::try_with_scale_and_coordinate_bits(*self.adapter.rect(), scale, I::BITS - 3)?;
         Ok(())
     }
 

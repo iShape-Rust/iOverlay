@@ -232,8 +232,10 @@ mod tests {
             },
             links: vec![],
         };
-        let adapter =
-            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-10.0, 20.0, -10.0, 20.0), 1.0);
+        let adapter = FloatPointAdapter::<[f64; 2], i32>::with_scale(
+            FloatRect::new(-10.0, 20.0, -10.0, 20.0).unwrap(),
+            1.0,
+        );
 
         let hierarchy = FloatFlatShapeHierarchy::from_int(int_hierarchy, &adapter, true, true);
 
@@ -284,8 +286,10 @@ mod tests {
                 },
             ],
         };
-        let adapter =
-            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-10.0, 30.0, -10.0, 30.0), 1.0);
+        let adapter = FloatPointAdapter::<[f64; 2], i32>::with_scale(
+            FloatRect::new(-10.0, 30.0, -10.0, 30.0).unwrap(),
+            1.0,
+        );
 
         let hierarchy = FloatFlatShapeHierarchy::from_int(int_hierarchy, &adapter, true, false);
 
@@ -326,8 +330,10 @@ mod tests {
                 child_shape_index: 1,
             }],
         };
-        let adapter =
-            FloatPointAdapter::<[f64; 2], i32>::with_scale(FloatRect::new(-10.0, 20.0, -10.0, 20.0), 1.0);
+        let adapter = FloatPointAdapter::<[f64; 2], i32>::with_scale(
+            FloatRect::new(-10.0, 20.0, -10.0, 20.0).unwrap(),
+            1.0,
+        );
 
         let hierarchy = FloatFlatShapeHierarchy::from_int(int_hierarchy, &adapter, true, false);
 

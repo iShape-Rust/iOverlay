@@ -1,6 +1,7 @@
 use crate::core::fill_rule::FillRule;
 use crate::core::integer::OverlayInt;
 use crate::core::solver::Solver;
+use crate::float::adapter::{adapter_with_iter, adapter_with_iter_and_scale};
 use crate::float::scale::FixedScaleOverlayError;
 use crate::float::string_graph::FloatStringGraph;
 use crate::string::clip::ClipRule;
@@ -32,8 +33,9 @@ where
     ///
     /// - `adapter`: A `FloatPointAdapter` instance responsible for coordinate conversion between
     ///   float and integer values, ensuring accuracy during geometric transformations.
-    ///   Use `FloatPointAdapter::with_scale` to set a fixed scale, or `FloatPointAdapter::new`
-    ///   for automatic scaling based on bounds.
+    ///   Use `FloatPointAdapter::with_scale` to set a fixed scale, or
+    ///   `FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)` for automatic
+    ///   scaling. Custom scales must respect the integer coordinate range.
     /// - `capacity`: Initial capacity for storing segments, ideally matching the total number of
     ///   segments for efficient memory allocation.
     #[inline]
@@ -63,7 +65,7 @@ where
         R1: ShapeResource<P>,
     {
         let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter(iter);
+        let adapter = adapter_with_iter(iter);
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -86,7 +88,7 @@ where
         R1: ShapeResource<P>,
     {
         let iter = shape.iter_paths().chain(string.iter_paths()).flatten();
-        let adapter = FloatPointAdapter::with_iter_and_scale_checked(iter, scale)?;
+        let adapter = adapter_with_iter_and_scale(iter, scale)?;
 
         let shape_capacity = shape.iter_paths().fold(0, |s, c| s + c.len());
         let string_capacity = string.iter_paths().fold(0, |s, c| s + c.len());
