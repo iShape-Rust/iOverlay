@@ -130,30 +130,19 @@ where
         contour: &[IntPoint<I>],
     ) -> ContourFillDirection {
         let contour_clockwise = contour.is_clockwise_ordered();
-        let output_clockwise = output_direction == Clockwise;
+        // Fill is determined by the input winding, independently of output orientation.
+        let filled = match fill_rule {
+            FillRule::EvenOdd | FillRule::NonZero => true,
+            FillRule::Positive => !contour_clockwise,
+            FillRule::Negative => contour_clockwise,
+        };
 
-        match fill_rule {
-            FillRule::EvenOdd | FillRule::NonZero => {
-                if contour_clockwise != output_clockwise {
-                    ContourFillDirection::Reverse
-                } else {
-                    ContourFillDirection::Correct
-                }
-            }
-            FillRule::Positive => {
-                if contour_clockwise == output_clockwise {
-                    ContourFillDirection::Correct
-                } else {
-                    ContourFillDirection::Empty
-                }
-            }
-            FillRule::Negative => {
-                if contour_clockwise != output_clockwise {
-                    ContourFillDirection::Correct
-                } else {
-                    ContourFillDirection::Empty
-                }
-            }
+        if !filled {
+            ContourFillDirection::Empty
+        } else if contour_clockwise != (output_direction == Clockwise) {
+            ContourFillDirection::Reverse
+        } else {
+            ContourFillDirection::Correct
         }
     }
 

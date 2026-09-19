@@ -41,7 +41,11 @@ mod tests {
                 .collect();
             assert_eq!(
                 bottom,
-                vec![(0, 5, SUBJ_LEFT), (5, 10, SUBJ_LEFT | CLIP_LEFT), (10, 15, CLIP_LEFT)],
+                vec![
+                    (0, 5, SUBJ_LEFT),
+                    (5, 10, SUBJ_LEFT | CLIP_LEFT),
+                    (10, 15, CLIP_LEFT)
+                ],
                 "redundant_vertex={redundant_vertex}"
             );
             assert_eq!(shapes[0][0].len(), 8);
