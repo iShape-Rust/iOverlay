@@ -457,14 +457,13 @@ where
 
         let mut rect = FloatRect::with_iter(source.iter_paths().flatten())?.unwrap_or(FloatRect::zero());
         rect.add_offset(a)?;
-        let adapter = FloatPointAdapter::<P, I>::with_coordinate_bits(rect, I::BITS - 3);
+        let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
 
         Ok(Some(Self { r, style, adapter }))
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
-        self.adapter =
-            FloatPointAdapter::try_with_scale_and_coordinate_bits(*self.adapter.rect(), scale, I::BITS - 3)?;
+        self.adapter = FloatPointAdapter::try_with_scale_conservative(*self.adapter.rect(), scale)?;
         Ok(())
     }
 

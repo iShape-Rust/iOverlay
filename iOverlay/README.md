@@ -638,9 +638,10 @@ these bounds can cause overflow or incorrect results. Use a wider engine or resc
 larger inputs. See the [range derivation and arithmetic audit](readme/integer_range.md) for details.
 
 For float APIs, the limits apply after conversion. Automatic conversion and checked
-fixed-scale methods use a conservative budget of `I::BITS - 3` coordinate bits.
+fixed-scale methods use `FloatPointAdapter::CONSERVATIVE_COORDINATE_BITS`
+(`I::BITS - 3`), reserving an extra bit for rounding inside the arithmetic range.
 Custom adapters must respect the integer range; use
-`FloatPointAdapter::with_coordinate_bits(rect, I::BITS - 3)` for the same budget.
+`FloatPointAdapter::new_conservative(rect)` for the same budget.
 
 ## Floating-Point Coordinate Limits
 

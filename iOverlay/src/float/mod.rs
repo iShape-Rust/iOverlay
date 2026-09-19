@@ -3,12 +3,13 @@
 //! their padding, must also fit. Infallible APIs panic on invalid bounds;
 //! fixed-scale APIs return an error. Empty valid input remains supported.
 //!
-//! Automatic conversion uses `I::BITS - 3` coordinate bits. Fixed-scale APIs
+//! Automatic conversion uses the conservative coordinate budget
+//! (`FloatPointAdapter::CONSERVATIVE_COORDINATE_BITS`, or `I::BITS - 3`),
+//! reserving an extra bit for rounding inside the arithmetic range. Fixed-scale APIs
 //! enforce the same budget and require a positive finite scale with a finite
 //! reciprocal in the input scalar type. Custom adapters remain the caller's
 //! responsibility; see the integer coordinate contract in [`crate::core::integer`].
 
-pub(crate) mod adapter;
 pub mod clip;
 pub mod graph;
 pub mod hierarchy;

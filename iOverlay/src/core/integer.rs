@@ -21,12 +21,13 @@
 //!
 //! These limits concern the integer coordinates after conversion, not the
 //! original floating-point coordinates, which have their own [limits](crate::float).
-//! Automatic float APIs and checked fixed-scale APIs use `I::BITS - 3` coordinate
-//! bits. For a custom adapter with the same conservative bound,
-//! use [`FloatPointAdapter::with_coordinate_bits`](i_float::adapter::FloatPointAdapter::with_coordinate_bits)
-//! with `coordinate_bits = I::BITS - 3`. This bounds the converted magnitude by
-//! `2^(N - 3)` (8,192 for `i16`), with both endpoints included. A custom unchecked
-//! scale must respect the integer range too.
+//! Automatic float APIs and checked fixed-scale APIs use the adapter's
+//! conservative coordinate budget, `CONSERVATIVE_COORDINATE_BITS = I::BITS - 3`.
+//! This reserves an extra bit for rounding inside the arithmetic range.
+//! For a custom adapter with the same budget, use
+//! [`FloatPointAdapter::new_conservative`](i_float::adapter::FloatPointAdapter::new_conservative).
+//! Converted magnitudes are bounded by `2^(N - 3)` (8,192 for `i16`), including
+//! both endpoints. A custom unchecked scale must respect the integer range too.
 
 use i_float::int::number::int::IntNumber;
 use i_key_sort::sort::key::SortKey;

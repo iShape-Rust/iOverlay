@@ -95,7 +95,7 @@ fn automatic_i16_budget_and_fixed_scale_rejection() {
 }
 
 #[test]
-#[should_panic(expected = "Invalid overlay bounds")]
+#[should_panic(expected = "Invalid adapter bounds")]
 fn infallible_overlay_rejects_invalid_bounds() {
     let _ = FloatOverlay::with_subj(&[[f64::NAN, 0.0]]);
 }

@@ -283,7 +283,7 @@ where
             return Ok(None);
         };
         rect.add_offset(P::Scalar::from_float(1.1) * max_radius)?;
-        let adapter = FloatPointAdapter::<P, I>::with_coordinate_bits(rect, I::BITS - 3);
+        let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
 
         Ok(Some(Self {
             max_radius,
@@ -293,8 +293,7 @@ where
     }
 
     fn apply_scale(&mut self, scale: P::Scalar) -> Result<(), FixedScaleOverlayError> {
-        self.adapter =
-            FloatPointAdapter::try_with_scale_and_coordinate_bits(*self.adapter.rect(), scale, I::BITS - 3)?;
+        self.adapter = FloatPointAdapter::try_with_scale_conservative(*self.adapter.rect(), scale)?;
         Ok(())
     }
 

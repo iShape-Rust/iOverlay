@@ -3,7 +3,6 @@ use crate::core::integer::OverlayInt;
 use crate::core::overlay::ShapeType;
 use crate::core::relate::PredicateOverlay;
 use crate::core::solver::Solver;
-use crate::float::adapter::adapter_with_iter;
 use i_float::adapter::FloatPointAdapter;
 use i_float::float::compatible::FloatPointCompatible;
 use i_shape::source::float::resource::ShapeResource;
@@ -82,7 +81,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = adapter_with_iter::<_, I>(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
@@ -107,7 +106,7 @@ where
         R1: ShapeResource<P> + ?Sized,
     {
         let iter = subj.iter_paths().chain(clip.iter_paths()).flatten();
-        let adapter = adapter_with_iter::<_, I>(iter);
+        let adapter = FloatPointAdapter::<_, I>::with_iter_conservative(iter);
         let subj_capacity = subj.iter_paths().fold(0, |s, c| s + c.len());
         let clip_capacity = clip.iter_paths().fold(0, |s, c| s + c.len());
 
