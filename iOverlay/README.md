@@ -83,7 +83,7 @@ iOverlay supports:
 
 ```toml
 [dependencies]
-i_overlay = { version = "^8.1", features = ["allow_multithreading"] }
+i_overlay = { version = "^9", features = ["allow_multithreading"] }
 ```
 
 <img src="readme/average_relative_time.svg" alt="Average relative time for iOverlay Rust solvers" style="max-width:860px;width:100%;">
@@ -98,7 +98,7 @@ See the detailed reports: [Performance Comparison](https://ishape-rust.github.io
 Add the following to your Cargo.toml:
 ```toml
 [dependencies]
-i_overlay = "^8.1"
+i_overlay = "^9"
 ```
 
 Read full [documentation](https://ishape-rust.github.io/iShape-js/overlay/doc.html)
