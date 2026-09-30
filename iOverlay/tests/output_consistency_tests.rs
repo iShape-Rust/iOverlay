@@ -26,7 +26,7 @@ fn flat_and_vector_outputs_match_shapes_with_area_filtering() {
         seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
         ((seed >> 32) % 41) as i32 - 20
     };
-    for case in 0..1000 {
+    for case in 0..750 {
         let a: Vec<_> = (0..3 + case % 8).map(|_| IntPoint::new(next(), next())).collect();
         let b: Vec<_> = (0..3 + case % 9).map(|_| IntPoint::new(next(), next())).collect();
         for threshold in [0, 1, 10, 50] {

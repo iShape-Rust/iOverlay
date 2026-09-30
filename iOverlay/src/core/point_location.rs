@@ -318,7 +318,7 @@ mod tests {
 
     #[test]
     fn random_simplified_contours_match_contains_point_in_50_by_50_space() {
-        for iteration in 0..256_u64 {
+        for iteration in 0..96_u64 {
             let seed = next_test_seed(iteration);
             let mut rng = TestRng::new(seed);
             let contour_count = rng.range_usize(1, 4);

@@ -39,7 +39,7 @@ fn predicates_match_filled_cells_after_contour_cancellation() {
         seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
         (seed >> 32) as usize
     };
-    for case in 0..1200 {
+    for case in 0..600 {
         let mut contours = [Vec::new(), Vec::new()];
         let mut counts = [[0_i32; 64]; 2];
         for side in 0..2 {

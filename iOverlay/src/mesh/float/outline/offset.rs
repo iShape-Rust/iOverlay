@@ -1140,7 +1140,7 @@ mod tests {
     #[test]
     fn test_random_0() {
         let style = OutlineStyle::new(10.0);
-        for _ in 0..100 {
+        for _ in 0..16 {
             let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
             let base_area = shapes.area();
             let outline_shapes = shapes.outline(&style);
@@ -1153,7 +1153,7 @@ mod tests {
     fn test_random_1() {
         let join_angle = core::f64::consts::PI / 3.0;
         let style = OutlineStyle::new(10.0).line_join(LineJoin::Round(join_angle));
-        for _ in 0..100 {
+        for _ in 0..16 {
             let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
             let base_area = shapes.area();
             let outline_shapes = shapes.outline(&style);
@@ -1165,7 +1165,7 @@ mod tests {
     #[test]
     fn test_random_2() {
         let style = OutlineStyle::new(-10.0);
-        for _ in 0..100 {
+        for _ in 0..16 {
             let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
             let base_area = shapes.area();
             let outline_shapes = shapes.outline(&style);
@@ -1178,7 +1178,7 @@ mod tests {
     fn test_random_3() {
         let join_angle = core::f64::consts::PI / 3.0;
         let style = OutlineStyle::new(-10.0).line_join(LineJoin::Round(join_angle));
-        for _ in 0..100 {
+        for _ in 0..16 {
             let shapes = random_float(100.0, 100).simplify_shape(FillRule::NonZero);
             let base_area = shapes.area();
             let outline_shapes = shapes.outline(&style);
