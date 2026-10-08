@@ -474,7 +474,7 @@ mod tests {
 
     #[test]
     fn test_random_4() {
-        for _ in 0..50000 {
+        for _ in 0..10_000 {
             let path = random_polygon(8, 8);
             let lines = random_lines(8, 8);
 

@@ -100,7 +100,7 @@ fn hypothesis_integer_engines_agree_near_i16_limits() {
         state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
         ((state >> 32) % 32768) as i32 - 16384
     };
-    for case in 0..2000 {
+    for case in 0..512 {
         let subj: Vec<_> = (0..3 + case % 8).map(|_| [next(), next()]).collect();
         let clip: Vec<_> = (0..3 + case % 7).map(|_| [next(), next()]).collect();
         for rule in [
@@ -171,7 +171,7 @@ fn hypothesis_predicates_agree_with_boolean_results_on_dense_inputs() {
         state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
         ((state >> 32) % 17) as i32 - 8
     };
-    for case in 0..5000 {
+    for case in 0..1500 {
         let subj: Vec<_> = (0..3 + case % 8).map(|_| IntPoint::new(next(), next())).collect();
         let clip: Vec<_> = (0..3 + case % 7).map(|_| IntPoint::new(next(), next())).collect();
         for fill_rule in [

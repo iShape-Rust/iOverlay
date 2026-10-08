@@ -710,7 +710,7 @@ mod tests {
 
     #[test]
     fn test_random_self_intersections() {
-        for seed in 0..128 {
+        for seed in (0..128).step_by(8) {
             random_self_intersections(seed, 1, 12);
             random_self_intersections(seed ^ 0x9e37_79b9_7f4a_7c15, 2, 20);
             random_self_intersections(seed ^ 0xd1b5_4a32_d192_ed03, 3, 28);

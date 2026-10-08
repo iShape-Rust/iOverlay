@@ -47,7 +47,7 @@ jobs:
           tool: cargo-tarpaulin
       - name: Run coverage
         working-directory: iOverlay
-        run: cargo tarpaulin --out Lcov
+        run: cargo tarpaulin --features allow_multithreading --out Lcov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
