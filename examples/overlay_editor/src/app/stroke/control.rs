@@ -69,7 +69,7 @@ impl EditorApp {
             if slider(
                 ui,
                 "Stroke Width",
-                egui::Slider::new(&mut width, 0.1..=10.0).step_by(0.01),
+                egui::Slider::new(&mut width, 0.1..=100.0).step_by(0.01),
             ) {
                 self.update(AppMessage::Stroke(StrokeMessage::WidthValueUpdated(width)));
             }

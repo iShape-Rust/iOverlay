@@ -35,9 +35,11 @@ impl<I: IntNumber, M: MeshMath<I>> JoinBuilder<I> for Join<I, M> {
             )
         };
         if cross >= I::Wide::ZERO {
-            segments.push_non_degenerate(b.a_left, a.b_left);
+            segments.push_non_degenerate(b.a_left, b.a);
+            segments.push_non_degenerate(a.b, a.b_left);
         } else {
-            segments.push_non_degenerate(a.b_right, b.a_right);
+            segments.push_non_degenerate(a.b_right, a.b);
+            segments.push_non_degenerate(b.a, b.a_right);
         }
         self.add(
             a.b,
