@@ -74,7 +74,15 @@ where
 {
     let mut builder = VariableStrokeBuilder::<I, M>::new(style);
     let mut segments = Vec::new();
-    for (_index, path) in paths.into_iter().enumerate() {
+    #[cfg(feature = "variable_stroke_debug")]
+    let paths = paths.into_iter().enumerate();
+    #[cfg(not(feature = "variable_stroke_debug"))]
+    let paths = paths.into_iter();
+
+    for path in paths {
+        #[cfg(feature = "variable_stroke_debug")]
+        let (_index, path) = path;
+
         #[cfg(debug_assertions)]
         let path = path.into_iter().inspect(|vertex| {
             debug_assert!(
