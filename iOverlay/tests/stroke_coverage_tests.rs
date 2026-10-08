@@ -25,6 +25,84 @@ fn contains(shapes: &[Vec<Vec<[f64; 2]>>], p: [f64; 2]) -> bool {
     })
 }
 
+#[test]
+fn wide_strokes_cover_short_segment_rectangles() {
+    // Issue #95: the inner join must not cut triangles out of either segment's rectangle.
+    for math in [MathMode::Integer, MathMode::Float] {
+        for join in [LineJoin::Bevel, LineJoin::Round(0.05), LineJoin::Miter(0.1)] {
+            for radius in [0.5, 1.025, 2.0, 3.0] {
+                for sign in [-1.0, 1.0] {
+                    for reversed in [false, true] {
+                        let mut path = [[0.0, 0.0], [1.0, 0.0], [1.0, sign]];
+                        if reversed {
+                            path.reverse();
+                        }
+                        let style = StrokeStyle::new(2.0 * radius)
+                            .math(math)
+                            .line_join(join.clone())
+                            .start_cap(LineCap::Butt)
+                            .end_cap(LineCap::Butt);
+                        let shapes = path.stroke(style, false);
+                        let context =
+                            format!("{math:?}, {join:?}, radius={radius}, sign={sign}, reversed={reversed}");
+                        assert_eq!(shapes.len(), 1, "{context}");
+                        assert_eq!(shapes[0].len(), 1, "{context}");
+
+                        for i in 0..10 {
+                            for j in 0..10 {
+                                let along = (i as f64 + 0.5) / 10.0;
+                                let across = radius * (2.0 * (j as f64 + 0.5) / 10.0 - 1.0);
+                                for point in [[along, across], [1.0 + across, sign * along]] {
+                                    assert!(
+                                        contains(&shapes, point),
+                                        "uncovered rectangle: {point:?}, {context}"
+                                    );
+                                }
+                            }
+                        }
+                        if radius > 1.0 {
+                            // Sample the triangles near the caps, even just above the failure threshold.
+                            let d = 0.25 * (radius - 1.0);
+                            for point in [[-d, sign * d], [1.0 - d, sign * (1.0 + d)]] {
+                                assert!(
+                                    contains(&shapes, point),
+                                    "uncovered overhang: {point:?}, {context}"
+                                );
+                            }
+                        }
+                        if matches!(join, LineJoin::Bevel | LineJoin::Miter(_)) {
+                            let area: f64 = shapes
+                                .iter()
+                                .flatten()
+                                .map(|contour| {
+                                    contour
+                                        .iter()
+                                        .zip(contour.iter().cycle().skip(1))
+                                        .take(contour.len())
+                                        .map(|(a, b)| a[0] * b[1] - a[1] * b[0])
+                                        .sum::<f64>()
+                                        * 0.5
+                                })
+                                .sum();
+                            let join_area = if matches!(join, LineJoin::Bevel) {
+                                0.5 * radius * radius
+                            } else {
+                                radius * radius
+                            };
+                            // Two segment rectangles, minus their overlap, plus the outer join.
+                            let expected_area = 4.0 * radius - radius.min(1.0).powi(2) + join_area;
+                            assert!(
+                                (area - expected_area).abs() < 1e-6,
+                                "area={area}, expected={expected_area}, {context}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn assert_vertex_disks_covered(shapes: &[Vec<Vec<[f64; 2]>>], path: &[StrokeVertex<[f64; 2]>], case: usize) {
     for (index, vertex) in path.iter().enumerate() {
         for sample in 0..16 {
