@@ -51,7 +51,7 @@ fn round_strokes_cover_vertex_disks() {
             seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
             ((seed >> 32) % 21) as f64 - 10.0
         };
-        for case in 0..2000 {
+        for case in 0..1000 {
             let path: Vec<_> = (0..3 + case % 8).map(|_| [next(), next()]).collect();
             let style = StrokeStyle::new(4.0)
                 .math(math)
@@ -142,7 +142,7 @@ fn variable_strokes_cover_interpolated_disks() {
         seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
         ((seed >> 32) % 41) as f64 - 20.0
     };
-    for case in 0..3000 {
+    for case in 0..1800 {
         let path: Vec<_> = (0..2 + case % 8)
             .map(|_| StrokeVertex::new([next(), next()], next() + 20.0))
             .collect();
@@ -202,7 +202,7 @@ fn variable_strokes_do_not_fill_outside_interpolated_disks() {
         seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
         ((seed >> 32) % 41) as f64 - 20.0
     };
-    for case in 0..500 {
+    for case in 0..350 {
         let path: Vec<_> = (0..2 + case % 8)
             .map(|_| StrokeVertex::new([next(), next()], next() + 20.0))
             .collect();

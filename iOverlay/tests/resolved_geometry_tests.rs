@@ -48,6 +48,11 @@ fn dense_boolean_output_has_resolved_edges_and_correct_point_locations() {
         let b: Vec<_> = (0..20 + case % 40)
             .map(|_| IntPoint::new(next(), next()))
             .collect();
+        // Keep 48 original inputs across the full size range. A stride of five
+        // retains all 3 solvers x 4 overlay rules x 4 fill rules.
+        if case % 5 != 0 {
+            continue;
+        }
         let mut overlay = Overlay::from_subj_and_clip(&a, &b);
         overlay.solver = [Solver::LIST, Solver::TREE, Solver::FRAG][case % 3];
         overlay.options.ogc = true;

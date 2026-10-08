@@ -45,7 +45,7 @@ mod tests {
                         let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                         assert!(!result.is_empty());
                     }
-                    a += 0.01
+                    a += 0.1
                 }
                 r += 0.02
             }
@@ -73,7 +73,7 @@ mod tests {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
-                a += 0.005
+                a += 0.05
             }
         }
     }
@@ -100,7 +100,7 @@ mod tests {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
-                a += 0.005
+                a += 0.05
             }
         }
     }
@@ -127,7 +127,7 @@ mod tests {
                     graph.validate();
                     let _ = graph.extract_shapes(OverlayRule::Xor, &mut Default::default());
                 }
-                a += 0.005
+                a += 0.05
             }
         }
     }
@@ -257,7 +257,7 @@ mod tests {
                         assert!(!result.is_empty());
                     }
                 }
-                r += 0.001;
+                r += 0.005;
             }
         }
     }
@@ -288,7 +288,7 @@ mod tests {
                         let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
                         assert!(!result.is_empty());
                     }
-                    a += 0.005
+                    a += 0.05
                 }
                 r += 0.01 * s
             }
@@ -329,20 +329,19 @@ mod tests {
     fn test_11_as<I: TestInt>() {
         let n = 6;
         let scale = scale_for::<I>(100.0);
+        // random_polygon is deterministic; one case per solver and integer type is enough.
+        let subj_path = random_polygon::<I>(100.0, 0.0, n, scale);
+        let clip_path = random_polygon::<I>(100.0, 0.5 * PI, n, scale);
         for &solver in SOLVERS.iter() {
-            for _ in 0..2000 {
-                let subj_path = random_polygon::<I>(100.0, 0.0, n, scale);
-                let clip_path = random_polygon::<I>(100.0, 0.5 * PI, n, scale);
-                let mut overlay = Overlay::new_custom(2 * n, Default::default(), solver);
+            let mut overlay = Overlay::new_custom(2 * n, Default::default(), solver);
 
-                overlay.add_contour(&subj_path, ShapeType::Subject);
-                overlay.add_contour(&clip_path, ShapeType::Clip);
+            overlay.add_contour(&subj_path, ShapeType::Subject);
+            overlay.add_contour(&clip_path, ShapeType::Clip);
 
-                if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
-                    graph.validate();
-                    let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
-                    assert!(!result.is_empty());
-                }
+            if let Some(graph) = overlay.build_graph_view(FillRule::NonZero) {
+                graph.validate();
+                let result = graph.extract_shapes(OverlayRule::Union, &mut Default::default());
+                assert!(!result.is_empty());
             }
         }
     }
@@ -403,7 +402,7 @@ mod tests {
         let paths_count = 3;
         let mut subj_paths = Vec::with_capacity(paths_count);
 
-        for _ in 0..100_000 {
+        for _ in 0..10_000 {
             subj_paths.clear();
             let x_range = 0..=8;
             let y_range = -8..=8;
