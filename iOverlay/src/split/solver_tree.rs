@@ -64,8 +64,13 @@ where
 
             for (i, si) in segments.iter().enumerate() {
                 let time = si.x_segment.a.x;
-                let si_range = si.x_segment.y_range().into();
+                let si_y_range = si.x_segment.y_range();
+                let si_range = si_y_range.clone().into();
                 for sj in tree.iter_by_range(si_range, time) {
+                    if sj.x_segment.is_not_intersect_y_range(&si_y_range) {
+                        continue;
+                    }
+
                     let (this_index, scan_index, this, scan) = if si.x_segment < sj.x_segment {
                         (i, sj.id, &si.x_segment, &sj.x_segment)
                     } else {
