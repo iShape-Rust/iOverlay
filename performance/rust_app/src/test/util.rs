@@ -1,21 +1,17 @@
-use i_key_sort::sort::key::SortKey;
 use i_overlay::i_float::float::point::FloatPoint;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::base::data::Contour;
 use i_overlay::i_shape::int::path::IntPath;
-use i_tree::{Expiration, LayoutNumber};
 use std::f64::consts::PI;
 
 pub(super) struct Util;
 
-pub(crate) trait OverlayInt: IntNumber + Expiration + LayoutNumber + SortKey {}
-
-impl<I> OverlayInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
+pub(crate) use super::runner::Engine as OverlayInt;
 
 impl Util {
     pub(super) fn skip_if_out_of_range<I: IntNumber>(n: usize, max_abs_coord: usize) -> bool {
-        let max = I::MAX.to_usize();
+        let max = I::MAX.to_usize() / 2;
         if max_abs_coord <= max {
             return false;
         }

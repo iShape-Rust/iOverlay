@@ -1,4 +1,6 @@
-use crate::test::util::{OverlayInt, Util};
+use super::data::Fixture;
+use super::util::OverlayInt;
+use super::util::Util;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
@@ -102,7 +104,6 @@ multithreading off
 
 */
 
-// A grid of not overlapping squares.
 impl NotOverlapTest {
     pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         // 1000
@@ -129,9 +130,13 @@ impl NotOverlapTest {
         let start = Instant::now();
 
         for _i in 0..sq_it_count {
-            let _ =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                    .overlay(rule, FillRule::NonZero);
+            let _ = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            )
+            .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();
@@ -140,5 +145,23 @@ impl NotOverlapTest {
         let polygons_count = n * n + (n - 1) * (n - 1);
 
         println!("{:.1}     - {:.6}", polygons_count, time);
+    }
+
+    pub(crate) fn geometry(n: usize, line: bool) -> Fixture {
+        if line {
+            let mut f = Fixture {
+                subj: vec![],
+                clip: vec![],
+                rule: OverlayRule::Union,
+            };
+            for i in 0..n as i64 {
+                f.subj.push(super::data::rect(32 * i, 0, 8, 8));
+                f.clip.push(super::data::rect(32 * i + 16, 12, 8, 8));
+            }
+            return f;
+        }
+        let subj = Util::many_squares(IntPoint::new(0i64, 0), 10, 30, n);
+        let clip = Util::many_squares(IntPoint::new(15i64, 15), 10, 30, n - 1);
+        Fixture::from_int(subj, clip, OverlayRule::Union)
     }
 }

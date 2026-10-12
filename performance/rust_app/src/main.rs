@@ -12,6 +12,7 @@ use i_overlay::core::solver::{MultithreadOptions, Precision, Solver, Strategy};
 use std::collections::HashMap;
 use std::env;
 
+mod config;
 mod test;
 
 #[derive(Clone, Copy)]
@@ -49,10 +50,10 @@ fn main() {
     while let Some(arg) = args_iter.next() {
         if let Some(key) = arg.strip_prefix("--").or_else(|| arg.strip_prefix('-')) {
             // If the next argument is also a key, store a boolean flag; otherwise, store the value.
-            let value = if args_iter.peek().map_or(false, |a| a.starts_with('-')) {
+            let value = if args_iter.peek().is_some_and(|a| a.starts_with('-')) {
                 "true".to_string()
             } else {
-                args_iter.next().unwrap()
+                args_iter.next().unwrap_or_else(|| "true".to_string())
             };
             args_map.insert(key.to_owned(), value);
         }
@@ -68,6 +69,23 @@ fn main() {
             let count = 4096;
             args_map.insert("count".to_string(), count.to_string());
         }
+    }
+
+    if args_map
+        .get("benchmark")
+        .is_some_and(|value| value == "true")
+    {
+        let args = args_map
+            .iter()
+            .filter(|(key, _)| key.as_str() != "benchmark")
+            .flat_map(|(key, value)| [format!("--{key}"), value.clone()]);
+        let result =
+            config::parse(args).and_then(|c| c.map(test::runner::run_benchmark).unwrap_or(Ok(())));
+        if let Err(error) = result {
+            eprintln!("error: {error}");
+            std::process::exit(2);
+        }
+        return;
     }
 
     let test_key = args_map.get("test").expect("Test number is not set");
@@ -95,7 +113,17 @@ fn main() {
     };
 
     let solver = Solver {
-        strategy: Strategy::Auto,
+        strategy: match args_map
+            .get("strategy")
+            .map(String::as_str)
+            .unwrap_or("auto")
+        {
+            "auto" => Strategy::Auto,
+            "list" => Strategy::List,
+            "tree" => Strategy::Tree,
+            "frag" => Strategy::Frag,
+            value => panic!("Unknown strategy: {value}. Use auto, list, tree, or frag"),
+        },
         precision: Precision::HIGH,
         multithreading,
     };
@@ -155,6 +183,11 @@ fn run_selected_test_with_int<I: test::util::OverlayInt>(
             8 => {
                 run_test_8::<I>(solver);
             }
+            9..=13 => {
+                for count in [2, 4, 8, 16, 32, 64] {
+                    test::runner::run_selected::<I>(test, count, args_map, solver);
+                }
+            }
             _ => {
                 println!("Test is not found");
             }
@@ -191,6 +224,9 @@ fn run_selected_test_with_int<I: test::util::OverlayInt>(
             }
             8 => {
                 WindMillTest::run::<I>(count, OverlayRule::Intersect, solver, 1.0);
+            }
+            9..=13 => {
+                test::runner::run_selected::<I>(test, count, args_map, solver);
             }
             _ => {
                 println!("Test is not found");
@@ -252,7 +288,7 @@ fn run_test_6<I: test::util::OverlayInt>(solver: Solver) {
     let mut n = 1;
     for _ in 1..11 {
         CorrosionTest::run::<I>(n, OverlayRule::Difference, solver, 100.0);
-        n = n << 1;
+        n <<= 1;
     }
 }
 
@@ -261,7 +297,7 @@ fn run_test_7<I: test::util::OverlayInt>(solver: Solver) {
     let mut n = 1;
     for _ in 1..11 {
         ConcentricTest::run::<I>(n, OverlayRule::Intersect, solver, 100.0);
-        n = n << 1;
+        n <<= 1;
     }
 }
 
@@ -270,7 +306,7 @@ fn run_test_8<I: test::util::OverlayInt>(solver: Solver) {
     let mut n = 1;
     for _ in 1..11 {
         WindMillTest::run::<I>(n, OverlayRule::Difference, solver, 100.0);
-        n = n << 1;
+        n <<= 1;
     }
     WindMillTest::validate::<I>(100, OverlayRule::Difference, solver);
 }

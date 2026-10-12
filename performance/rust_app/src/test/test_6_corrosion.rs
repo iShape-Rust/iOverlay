@@ -1,13 +1,15 @@
-use crate::test::util::OverlayInt;
+use super::data::Fixture;
+use super::runner::Engine;
+use super::util::OverlayInt;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::core::solver::Solver;
 use i_overlay::float::overlay::FloatOverlay;
 use std::f64::consts::PI;
 use std::time::Instant;
+type FloatGeometry = (Vec<Vec<[f64; 2]>>, Vec<Vec<[f64; 2]>>);
 
 pub(crate) struct CorrosionTest;
-
 /*
 test 6
 CorrosionTest
@@ -92,11 +94,10 @@ i64
 512     - 5.351266
 */
 
-// A series of concentric squares, each progressively larger than the last.
 impl CorrosionTest {
     pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         // 500
-        let (subj_paths, clip_paths) = Self::geometry(100.0, n);
+        let (subj_paths, clip_paths) = Self::float_geometry(100.0, n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
         let sq_it_count = it_count * it_count;
@@ -118,7 +119,11 @@ impl CorrosionTest {
         println!("{}     - {:.6}", n, time);
     }
 
-    fn geometry(size: f64, count: usize) -> (Vec<Vec<[f64; 2]>>, Vec<Vec<[f64; 2]>>) {
+    pub(crate) fn geometry<I: Engine>(n: usize) -> Fixture {
+        let (subj, clip) = Self::float_geometry(100.0, n);
+        Fixture::from_float::<I>(subj, clip, OverlayRule::Difference)
+    }
+    fn float_geometry(size: f64, count: usize) -> FloatGeometry {
         let subj_radius = 0.4 * size;
         let subj_step = size;
 
@@ -137,13 +142,11 @@ impl CorrosionTest {
 
         let mut paths = Vec::with_capacity(count);
         for i in 0..count {
-            let mut index = i;
             let mut x = -offset;
-            for _ in 0..count {
+            for index in i..i + count {
                 let count = (index % 5) + 3;
                 paths.push(Self::shape([x, y], radius, count));
                 x += step;
-                index += 1;
             }
             y += step;
         }

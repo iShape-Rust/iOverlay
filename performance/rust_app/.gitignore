@@ -1,0 +1,3 @@
+# This executable pins its dependency resolution independently of the library.
+!Cargo.lock
+results/

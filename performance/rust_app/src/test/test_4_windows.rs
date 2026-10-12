@@ -1,4 +1,6 @@
-use crate::test::util::{OverlayInt, Util};
+use super::data::Fixture;
+use super::util::OverlayInt;
+use super::util::Util;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
@@ -92,7 +94,6 @@ i64
 
 */
 
-// A grid of square frames, each with a smaller square cutout in the center.
 impl WindowsTest {
     pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
         // 500
@@ -112,9 +113,13 @@ impl WindowsTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                    .overlay(rule, FillRule::NonZero);
+            let _ = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            )
+            .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();
@@ -123,5 +128,11 @@ impl WindowsTest {
         let polygons_count = 2 * n * n;
 
         println!("{}     - {:.6}", polygons_count, time);
+    }
+
+    pub(crate) fn geometry(n: usize) -> Fixture {
+        let x = n as i64 * 30 / 2;
+        let (subj, clip) = Util::many_windows(IntPoint::new(-x, -x), 20, 10, 30, n);
+        Fixture::from_int(subj, clip, OverlayRule::Difference)
     }
 }

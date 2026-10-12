@@ -40,7 +40,7 @@ impl<I: IntNumber> FragmentBuffer<I> {
             let i0 = self.layout.index(s.a.x);
             if s.a.x < s.b.x {
                 let i1 = self.layout.index(s.b.x - I::ONE);
-                for count in counts.iter_mut().take(i1).skip(i0) {
+                for count in counts.iter_mut().take(i1 + 1).skip(i0) {
                     *count += 1;
                 }
             } else {
@@ -304,10 +304,67 @@ mod tests {
     use crate::geom::x_segment::XSegment;
     use crate::split::grid_layout::vec;
     use crate::split::grid_layout::{FragmentBuffer, GridLayout};
+    use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
     use i_float::int::rect::IntRect;
     use i_float::triangle::Triangle;
     use rand::RngExt;
+
+    fn check_fragment_reservation<I: crate::core::integer::OverlayInt>() {
+        // Column width is two. Include one column, several columns, exact
+        // endpoints, both slopes, and verticals on and off a border.
+        for (edge, bins, border) in [
+            ([0, 1, 1, 1], vec![0], false),
+            ([1, 1, 2, 1], vec![0], false),
+            ([1, 0, 2, 3], vec![0], false),
+            ([0, 1, 8, 1], vec![0, 1, 2, 3], false),
+            ([1, 0, 9, 5], vec![0, 1, 2, 3, 4], false),
+            ([1, 5, 9, 0], vec![0, 1, 2, 3, 4], false),
+            ([0, 0, 0, 3], vec![0], false),
+            ([3, 0, 3, 3], vec![1], false),
+            ([4, 0, 4, 3], vec![2], true),
+            ([12, 0, 12, 3], vec![6], true),
+        ] {
+            let [ax, ay, bx, by] = edge.map(I::from_usize);
+            let segment = XSegment {
+                a: IntPoint::new(ax, ay),
+                b: IntPoint::new(bx, by),
+            };
+            let mut buffer = FragmentBuffer::new(GridLayout {
+                min_x: I::ZERO,
+                max_x: I::from_usize(12),
+                power: 1,
+            });
+            for count in [37, 113] {
+                buffer.init_fragment_buffer(core::iter::repeat_n(segment, count));
+                let capacities: Vec<_> = buffer.groups.iter().map(Vec::capacity).collect();
+                for &bin in &bins {
+                    assert!(capacities[bin] >= count);
+                }
+                for index in 0..count {
+                    buffer.add_segment(index, segment);
+                }
+                for (bin, group) in buffer.groups.iter().enumerate() {
+                    assert_eq!(group.len(), if bins.contains(&bin) { count } else { 0 });
+                    assert_eq!(group.capacity(), capacities[bin]);
+                }
+                assert_eq!(buffer.on_border.len(), if border { count } else { 0 });
+                buffer.clear();
+                assert!(buffer.on_border.is_empty());
+                assert!(buffer.groups.iter().all(Vec::is_empty));
+            }
+        }
+    }
+
+    #[test]
+    fn fragment_reservation_i32() {
+        check_fragment_reservation::<i32>();
+    }
+
+    #[test]
+    fn fragment_reservation_i64() {
+        check_fragment_reservation::<i64>();
+    }
 
     #[test]
     fn i64_column_positions_with_large_shift() {

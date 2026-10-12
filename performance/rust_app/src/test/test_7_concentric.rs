@@ -1,13 +1,15 @@
-use crate::test::util::OverlayInt;
+use super::data::Fixture;
+use super::runner::Engine;
+use super::util::OverlayInt;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
 use i_overlay::core::solver::Solver;
 use i_overlay::float::overlay::FloatOverlay;
 use std::f64::consts::PI;
 use std::time::Instant;
+type FloatGeometry = (Vec<Vec<[f64; 2]>>, Vec<Vec<[f64; 2]>>);
 
 pub(crate) struct ConcentricTest;
-
 /*
 test 7
 ConcentricTest
@@ -94,10 +96,9 @@ i64
 
 */
 
-// A series of concentric squares, each progressively larger than the last.
 impl ConcentricTest {
     pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
-        let (subj_paths, clip_paths) = Self::geometry(100.0, n);
+        let (subj_paths, clip_paths) = Self::float_geometry(100.0, n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
         let sq_it_count = it_count * it_count;
@@ -119,7 +120,11 @@ impl ConcentricTest {
         println!("{}     - {:.6}", n, time);
     }
 
-    fn geometry(size: f64, count: usize) -> (Vec<Vec<[f64; 2]>>, Vec<Vec<[f64; 2]>>) {
+    pub(crate) fn geometry<I: Engine>(n: usize) -> Fixture {
+        let (subj, clip) = Self::float_geometry(100.0, n);
+        Fixture::from_float::<I>(subj, clip, OverlayRule::Intersect)
+    }
+    fn float_geometry(size: f64, count: usize) -> FloatGeometry {
         let mut clip = Vec::with_capacity(count);
         let mut subj = Vec::with_capacity(count);
 

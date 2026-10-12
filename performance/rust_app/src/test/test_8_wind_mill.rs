@@ -1,4 +1,6 @@
-use crate::test::util::{OverlayInt, Util};
+use super::data::Fixture;
+use super::util::OverlayInt;
+use super::util::Util;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
@@ -9,7 +11,6 @@ use i_overlay::i_shape::int::shape::IntContour;
 use std::time::Instant;
 
 pub(crate) struct WindMillTest;
-
 /*
 test 8
 WindMillTest
@@ -99,7 +100,7 @@ impl WindMillTest {
             return;
         }
 
-        let (subj_paths, clip_paths) = Self::geometry(I::from_usize(80), n);
+        let (subj_paths, clip_paths) = Self::int_geometry(I::from_usize(80), n);
 
         let it_count = ((scale / (n as f64)) as usize).max(1);
         let sq_it_count = it_count * it_count;
@@ -107,9 +108,13 @@ impl WindMillTest {
         let start = Instant::now();
 
         for _ in 0..sq_it_count {
-            let _ =
-                Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                    .overlay(rule, FillRule::NonZero);
+            let _ = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            )
+            .overlay(rule, FillRule::NonZero);
         }
 
         let duration = start.elapsed();
@@ -119,17 +124,28 @@ impl WindMillTest {
     }
 
     pub(crate) fn validate<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver) {
-        let (subj_paths, clip_paths) = Self::geometry(I::from_usize(80), n);
+        let (subj_paths, clip_paths) = Self::int_geometry(I::from_usize(80), n);
 
-        let res =
-            Overlay::with_contours_custom(&subj_paths, &clip_paths, Default::default(), solver)
-                .overlay(rule, FillRule::NonZero);
+        let res = Overlay::from_subj_and_clip_custom(
+            &subj_paths,
+            &clip_paths,
+            Default::default(),
+            solver,
+        )
+        .overlay(rule, FillRule::NonZero);
 
         assert_eq!(res.len(), n * n);
         println!("result validation PASS");
     }
 
-    fn geometry<I: IntNumber>(size: I, count: usize) -> (Vec<IntContour<I>>, Vec<IntContour<I>>) {
+    pub(crate) fn geometry(n: usize) -> Fixture {
+        let (subj, clip) = Self::int_geometry(80i64, n);
+        Fixture::from_int(subj, clip, OverlayRule::Intersect)
+    }
+    fn int_geometry<I: IntNumber>(
+        size: I,
+        count: usize,
+    ) -> (Vec<IntContour<I>>, Vec<IntContour<I>>) {
         let mut subj_paths = Vec::with_capacity(4 * count * count);
         let mut clip_paths = Vec::with_capacity(4 * count * count);
 

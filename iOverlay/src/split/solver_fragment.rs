@@ -144,10 +144,10 @@ where
             return false;
         }
 
-        if self.marks.capacity() < size {
-            let additional = size - self.marks.capacity();
-            self.marks.reserve(additional);
-        }
+        self.marks.reserve(size);
+
+        #[cfg(test)]
+        assert!(self.marks.capacity() - self.marks.len() >= size);
 
         for mut result in results.into_iter() {
             self.marks.append(&mut result.marks);
@@ -258,6 +258,70 @@ mod tests {
     use crate::split::solver::SplitSolver;
     use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
+
+    #[cfg(feature = "allow_multithreading")]
+    fn check_parallel_mark_merge<I: crate::core::integer::OverlayInt + core::fmt::Debug>() {
+        use crate::split::grid_layout::FragmentBuffer;
+        use i_float::int::number::uint::UIntNumber;
+
+        let mut splitter = SplitSolver::<I>::new();
+        splitter.marks.reserve(64);
+        // Derive the input from the actual capacity, without assuming the
+        // allocator gives exactly the requested amount. The merge must reserve
+        // all marks before append, also when a reused empty Vec is too small.
+        let count = splitter.marks.capacity() * 3 / 4;
+        for count in [count, count * 3] {
+            splitter.marks.clear();
+            let mut edges = Vec::new();
+            for y in 1..=count {
+                edges.push(XSegment {
+                    a: IntPoint::new(I::ZERO, I::from_usize(y)),
+                    b: IntPoint::new(I::from_usize(100), I::from_usize(y)),
+                });
+            }
+            edges.push(XSegment {
+                a: IntPoint::new(I::from_usize(25), I::ZERO),
+                b: IntPoint::new(I::from_usize(25), I::from_usize(count + 1)),
+            });
+            let mut buffer =
+                FragmentBuffer::new(GridLayout::new(edges.iter().copied(), edges.len()).unwrap());
+            buffer.init_fragment_buffer(edges.iter().copied());
+            for (index, edge) in edges.into_iter().enumerate() {
+                buffer.add_segment(index, edge);
+            }
+            splitter.parallel_split(I::WideUInt::ONE, &mut buffer);
+            assert_eq!(splitter.marks.len(), 2 * count);
+            splitter
+                .marks
+                .sort_unstable_by_key(|mark| (mark.index, mark.point));
+            for (index, mark) in splitter.marks[..count].iter().enumerate() {
+                assert_eq!(mark.index, index);
+                assert_eq!(
+                    mark.point,
+                    IntPoint::new(I::from_usize(25), I::from_usize(index + 1))
+                );
+            }
+            for (index, mark) in splitter.marks[count..].iter().enumerate() {
+                assert_eq!(mark.index, count);
+                assert_eq!(
+                    mark.point,
+                    IntPoint::new(I::from_usize(25), I::from_usize(index + 1))
+                );
+            }
+        }
+    }
+
+    #[cfg(feature = "allow_multithreading")]
+    #[test]
+    fn parallel_mark_merge_i32() {
+        check_parallel_mark_merge::<i32>();
+    }
+
+    #[cfg(feature = "allow_multithreading")]
+    #[test]
+    fn parallel_mark_merge_i64() {
+        check_parallel_mark_merge::<i64>();
+    }
 
     #[test]
     fn collinear_overlap_starts_in_a_later_column() {
