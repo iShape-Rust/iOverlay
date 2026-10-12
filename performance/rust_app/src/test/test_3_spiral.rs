@@ -1,13 +1,9 @@
-use crate::test::util::{OverlayInt, Util};
-use i_overlay::core::fill_rule::FillRule;
+use super::data::Fixture;
+use super::runner::Engine;
+use super::util::Util;
 use i_overlay::core::overlay_rule::OverlayRule;
-use i_overlay::core::solver::Solver;
-use i_overlay::float::overlay::FloatOverlay;
-use i_overlay::i_float::float::point::FloatPoint;
-use std::time::Instant;
 
 pub(crate) struct SpiralTest;
-
 /*
 test 3
 SpiralTest
@@ -153,31 +149,54 @@ multithreading off
 
  */
 
-// Two irregular self-intersecting polygons are generated, the vertices of which are defined by a fixed radius and angle.
 impl SpiralTest {
-    pub(crate) fn run<I: OverlayInt>(n: usize, solver: Solver, scale: f64) {
-        // 1000
-        let subj_path = Util::spiral(n, 100.0);
-
-        let it_count = ((scale / (n as f64)) as usize).max(1);
-        let sq_it_count = it_count * it_count;
-
-        let start = Instant::now();
-
-        for _ in 0..sq_it_count {
-            let _ = FloatOverlay::<FloatPoint<f64>, I>::from_subj_custom(
-                &subj_path,
-                Default::default(),
-                solver,
-            )
-            .overlay(OverlayRule::Subject, FillRule::NonZero);
+    pub(crate) fn geometry<I: Engine>(n: usize, integer: bool) -> Fixture {
+        if integer {
+            return Self::integer_geometry(n);
         }
-
-        let duration = start.elapsed();
-        let time = duration.as_secs_f64() / sq_it_count as f64;
-
-        let polygons_count = n;
-
-        println!("{}     - {:.6}", polygons_count, time);
+        let path = Util::spiral(n, 100.0)
+            .into_iter()
+            .map(|p| [p.x, p.y])
+            .collect();
+        Fixture::from_float::<I>(vec![path], vec![], OverlayRule::Subject)
+    }
+    fn integer_geometry(size: usize) -> Fixture {
+        let n = size as i64;
+        let mut f = Fixture {
+            subj: vec![],
+            clip: vec![],
+            rule: OverlayRule::Difference,
+        };
+        // Square spiral ribbon: offset each orthogonal turn by 2 units.
+        let directions = [(1, 0), (0, 1), (-1, 0), (0, -1)];
+        let mut center = vec![(0, 0)];
+        for i in 0..size {
+            let (dx, dy) = directions[i % 4];
+            let step = 16 * (i as i64 / 2 + 1);
+            let (x, y) = *center.last().unwrap();
+            center.push((x + dx * step, y + dy * step));
+        }
+        let mut left = Vec::new();
+        let mut right = Vec::new();
+        for (i, &(x, y)) in center.iter().enumerate() {
+            let before = directions[i.saturating_sub(1) % 4];
+            let after = directions[i.min(size - 1) % 4];
+            let normal = if i == 0 {
+                (-after.1, after.0)
+            } else if i == size {
+                (-before.1, before.0)
+            } else {
+                (-before.1 - after.1, before.0 + after.0)
+            };
+            left.push((x + 2 * normal.0, y + 2 * normal.1));
+            right.push((x - 2 * normal.0, y - 2 * normal.1));
+        }
+        right.reverse();
+        left.extend(right);
+        f.subj.push(left);
+        f.clip
+            .push(super::data::rect(-4, -16 * n - 4, 8, 32 * n + 8));
+        f.rule = OverlayRule::Difference;
+        f
     }
 }
