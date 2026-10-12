@@ -1,7 +1,12 @@
 use super::data::Fixture;
+use super::util::OverlayInt;
 use super::util::Util;
+use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay::Overlay;
 use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::core::solver::Solver;
 use i_overlay::i_float::int::point::IntPoint;
+use std::time::Instant;
 
 pub(crate) struct CheckerboardTest;
 /*
@@ -95,6 +100,53 @@ multithreading off
  */
 
 impl CheckerboardTest {
+    pub(crate) fn run<I: OverlayInt>(n: usize, rule: OverlayRule, solver: Solver, scale: f64) {
+        // 1000
+        if Util::skip_if_out_of_range::<I>(n, 30 * n + 20) {
+            return;
+        }
+
+        let subj_paths = Util::many_squares(
+            IntPoint::new(I::ZERO, I::ZERO),
+            I::from_usize(20),
+            I::from_usize(30),
+            n,
+        );
+        let clip_paths = Util::many_squares(
+            IntPoint::new(I::from_usize(15), I::from_usize(15)),
+            I::from_usize(20),
+            I::from_usize(30),
+            n - 1,
+        );
+
+        let it_count = ((scale / (n as f64)) as usize).max(1);
+        let sq_it_count = it_count * it_count;
+
+        let start = Instant::now();
+
+        for _i in 0..sq_it_count {
+            let _ = Overlay::from_subj_and_clip_custom(
+                &subj_paths,
+                &clip_paths,
+                Default::default(),
+                solver,
+            )
+            .overlay(rule, FillRule::NonZero);
+        }
+
+        let duration = start.elapsed();
+        let time = duration.as_secs_f64() / sq_it_count as f64;
+
+        let polygons_count = n * n + (n - 1) * (n - 1);
+        let count_log = (polygons_count as f64).log10();
+        let time_log = time.log10();
+
+        println!(
+            "{}({} {:.1})     - {:.6}({:.1})",
+            n, polygons_count, count_log, time, time_log
+        );
+    }
+
     pub(crate) fn geometry(n: usize) -> Fixture {
         let subj = Util::many_squares(IntPoint::new(0i64, 0), 20, 30, n);
         let clip = Util::many_squares(IntPoint::new(15i64, 15), 20, 30, n - 1);

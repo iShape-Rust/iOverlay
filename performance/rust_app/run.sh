@@ -1,4 +1,3 @@
 #!/bin/bash
-set -euo pipefail
-cd "$(dirname "$0")"
-cargo run --release --locked --bin rust_app -- "$@"
+
+target/release/rust_app --multithreading false --complex true --test 0 --int all

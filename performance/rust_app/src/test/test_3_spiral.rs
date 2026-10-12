@@ -1,7 +1,13 @@
 use super::data::Fixture;
 use super::runner::Engine;
+use super::util::OverlayInt;
 use super::util::Util;
+use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay_rule::OverlayRule;
+use i_overlay::core::solver::Solver;
+use i_overlay::float::overlay::FloatOverlay;
+use i_overlay::i_float::float::point::FloatPoint;
+use std::time::Instant;
 
 pub(crate) struct SpiralTest;
 /*
@@ -150,6 +156,32 @@ multithreading off
  */
 
 impl SpiralTest {
+    pub(crate) fn run<I: OverlayInt>(n: usize, solver: Solver, scale: f64) {
+        // 1000
+        let subj_path = Util::spiral(n, 100.0);
+
+        let it_count = ((scale / (n as f64)) as usize).max(1);
+        let sq_it_count = it_count * it_count;
+
+        let start = Instant::now();
+
+        for _ in 0..sq_it_count {
+            let _ = FloatOverlay::<FloatPoint<f64>, I>::from_subj_custom(
+                &subj_path,
+                Default::default(),
+                solver,
+            )
+            .overlay(OverlayRule::Subject, FillRule::NonZero);
+        }
+
+        let duration = start.elapsed();
+        let time = duration.as_secs_f64() / sq_it_count as f64;
+
+        let polygons_count = n;
+
+        println!("{}     - {:.6}", polygons_count, time);
+    }
+
     pub(crate) fn geometry<I: Engine>(n: usize, integer: bool) -> Fixture {
         if integer {
             return Self::integer_geometry(n);

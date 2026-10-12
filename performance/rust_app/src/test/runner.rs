@@ -8,6 +8,7 @@ use i_overlay::core::{
 };
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::{path::IntPaths, shape::IntShapes};
+use std::collections::HashMap;
 use std::{
     hint::black_box,
     io::{self, Write},
@@ -320,6 +321,98 @@ pub fn run<I: Engine>(
         }
     }
     Ok(true)
+}
+
+pub fn run_selected<I: Engine>(
+    id: usize,
+    count: usize,
+    args_map: &HashMap<String, String>,
+    solver: Solver,
+) {
+    let args = args_map
+        .iter()
+        .filter(|(key, _)| {
+            !["test", "count", "complex", "int", "benchmark", "strategy"].contains(&key.as_str())
+        })
+        .flat_map(|(key, value)| [format!("--{key}"), value.clone()])
+        .chain([
+            "--test".into(),
+            id.to_string(),
+            "--count".into(),
+            count.to_string(),
+            "--complex".into(),
+            "false".into(),
+            "--strategy".into(),
+            format!("{:?}", solver.strategy).to_lowercase(),
+        ]);
+    let config = crate::config::parse(args)
+        .expect("Invalid benchmark options")
+        .expect("Missing test configuration");
+    let deadline = config.budget.map(|budget| Instant::now() + budget);
+    let stdout = io::stdout();
+    let mut out = io::BufWriter::new(stdout.lock());
+    writeln!(out, "{}", HEADER).expect("Unable to write CSV header");
+    for variant in config.variants(id) {
+        let fixture = super::generate::<I>(id, count, config.seed, variant)
+            .expect("Unable to generate test input");
+        if !run::<I>(&config, id, variant, count, &fixture, deadline, &mut out)
+            .expect("Benchmark failed")
+        {
+            eprintln!("budget reached; remaining variants omitted");
+            break;
+        }
+    }
+}
+pub fn run_benchmark(config: Config) -> Result<(), String> {
+    if cfg!(debug_assertions) {
+        return Err("use cargo run --release".into());
+    }
+    let deadline = config.budget.map(|budget| Instant::now() + budget);
+    let stdout = io::stdout();
+    let mut out = io::BufWriter::new(stdout.lock());
+    writeln!(out, "{}", HEADER).map_err(|e| e.to_string())?;
+    for &id in &config.tests {
+        for variant in config.variants(id) {
+            for &n in &config.counts {
+                if n > super::max_count(id, variant) {
+                    if config.complex {
+                        eprintln!("skip test {id} {variant} count={n}: size cap");
+                        continue;
+                    }
+                    return Err(format!(
+                        "test {id} {variant}: count exceeds {}",
+                        super::max_count(id, variant)
+                    ));
+                }
+                for engine in &config.engines {
+                    if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+                        eprintln!("budget reached; remaining combinations omitted");
+                        return Ok(());
+                    }
+                    let completed = match engine.as_str() {
+                        "i16" => {
+                            let f = super::generate::<i16>(id, n, config.seed, variant)?;
+                            run::<i16>(&config, id, variant, n, &f, deadline, &mut out)?
+                        }
+                        "i32" => {
+                            let f = super::generate::<i32>(id, n, config.seed, variant)?;
+                            run::<i32>(&config, id, variant, n, &f, deadline, &mut out)?
+                        }
+                        "i64" => {
+                            let f = super::generate::<i64>(id, n, config.seed, variant)?;
+                            run::<i64>(&config, id, variant, n, &f, deadline, &mut out)?
+                        }
+                        _ => unreachable!(),
+                    };
+                    if !completed {
+                        eprintln!("budget reached; incomplete row omitted");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+    out.flush().map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

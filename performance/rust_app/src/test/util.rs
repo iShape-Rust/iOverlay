@@ -7,7 +7,25 @@ use std::f64::consts::PI;
 
 pub(super) struct Util;
 
+pub(crate) use super::runner::Engine as OverlayInt;
+
 impl Util {
+    pub(super) fn skip_if_out_of_range<I: IntNumber>(n: usize, max_abs_coord: usize) -> bool {
+        let max = I::MAX.to_usize() / 2;
+        if max_abs_coord <= max {
+            return false;
+        }
+
+        println!(
+            "{}     - skipped (requires coordinate {}, i{} max {})",
+            n,
+            max_abs_coord,
+            I::BITS,
+            max
+        );
+        true
+    }
+
     pub(super) fn many_squares<I: IntNumber>(
         start: IntPoint<I>,
         size: I,
