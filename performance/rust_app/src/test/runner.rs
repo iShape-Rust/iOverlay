@@ -150,7 +150,7 @@ pub fn run<I: Engine>(
     variant: &str,
     size: usize,
     f: &Fixture,
-    deadline: Instant,
+    deadline: Option<Instant>,
     out: &mut impl Write,
 ) -> Result<bool, String> {
     let case = super::NAMES[id];
@@ -172,7 +172,7 @@ pub fn run<I: Engine>(
         .overlay(f.rule, FillRule::NonZero),
     );
     for strategy in &config.strategies {
-        if Instant::now() >= deadline {
+        if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
             return Ok(false);
         }
         let s = solver(strategy, config.multithreading);
@@ -222,14 +222,14 @@ pub fn run<I: Engine>(
                 }
             };
             for _ in 0..config.warmup {
-                if Instant::now() >= deadline {
+                if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
                     return Ok(false);
                 }
                 operation();
             }
             let mut samples = Vec::with_capacity(config.samples);
             for _ in 0..config.samples {
-                if Instant::now() >= deadline {
+                if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
                     return Ok(false);
                 }
                 let start = Instant::now();

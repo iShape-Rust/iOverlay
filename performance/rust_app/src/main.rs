@@ -10,7 +10,7 @@ fn execute(config: Config) -> Result<(), String> {
     if cfg!(debug_assertions) {
         return Err("use cargo run --release".into());
     }
-    let deadline = Instant::now() + config.budget;
+    let deadline = config.budget.map(|budget| Instant::now() + budget);
     let stdout = io::stdout();
     let mut out = io::BufWriter::new(stdout.lock());
     writeln!(out, "{}", test::runner::HEADER).map_err(|e| e.to_string())?;
@@ -28,7 +28,7 @@ fn execute(config: Config) -> Result<(), String> {
                     ));
                 }
                 for engine in &config.engines {
-                    if Instant::now() >= deadline {
+                    if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
                         eprintln!("budget reached; remaining combinations omitted");
                         return Ok(());
                     }

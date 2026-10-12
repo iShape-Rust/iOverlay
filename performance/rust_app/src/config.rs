@@ -13,7 +13,7 @@ pub struct Config {
     pub warmup: usize,
     pub samples: usize,
     pub iterations: usize,
-    pub budget: Duration,
+    pub budget: Option<Duration>,
     pub complex: bool,
     pub orientation: String,
     pub outlier: String,
@@ -41,7 +41,7 @@ const HELP: &str = "iOverlay numbered performance tests (release)\n\
 --complex false|true (true uses 2,4,8,16,32,64, caps quadratic tests)\n\
 --strategy auto|list|tree|frag|all (default all) --int i16|i32|i64|all (default i32)\n\
 --mode cold|reuse|all --multithreading false|true (requires feature multithreading)\n\
---seed 0 --warmup 2 --samples 7 --iterations 3 --budget-seconds 30 --label local\n\
+--seed 0 --warmup 2 --samples 7 --iterations 3 --budget-seconds 30 (0 disables budget) --label local\n\
 --orientation horizontal|vertical|all (test 9; default all)\n\
 --outlier false|true|all (test 12; default all)\n\
 --spiral float|integer|all (test 3; default float)\n\
@@ -222,7 +222,10 @@ pub fn parse(args: impl Iterator<Item = String>) -> Result<Option<Config>, Strin
         warmup: number("warmup", "2", 1, 100)?,
         samples: number("samples", "7", 3, 101)?,
         iterations: number("iterations", "3", 1, 10000)?,
-        budget: Duration::from_secs(number("budget-seconds", "30", 1, 3600)? as u64),
+        budget: match number("budget-seconds", "30", 0, 3600)? {
+            0 => None,
+            seconds => Some(Duration::from_secs(seconds as u64)),
+        },
         complex,
         orientation: single("orientation", "all", &["horizontal", "vertical"])?,
         outlier,
@@ -288,6 +291,15 @@ mod checks {
     }
     #[test]
     fn limits_and_variants() {
+        assert!(p(&["--budget-seconds", "0"])
+            .unwrap()
+            .unwrap()
+            .budget
+            .is_none());
+        assert_eq!(
+            p(&[]).unwrap().unwrap().budget,
+            Some(Duration::from_secs(30))
+        );
         assert!(p(&["--test", "14"]).is_err());
         assert!(p(&["--test"]).is_err());
         assert!(p(&["--count", "0"]).is_err());
