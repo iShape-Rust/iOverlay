@@ -65,6 +65,7 @@ impl std::fmt::Display for JoinOption {
 impl EditorApp {
     pub(crate) fn stroke_control(&mut self, ui: &mut egui::Ui) {
         controls(ui, "stroke_controls", |ui| {
+            ui.strong("Stroke");
             let mut width = self.state.stroke.width;
             if slider(
                 ui,
@@ -73,6 +74,8 @@ impl EditorApp {
             ) {
                 self.update(AppMessage::Stroke(StrokeMessage::WidthValueUpdated(width)));
             }
+            ui.separator();
+            ui.strong("Caps");
             let mut start_cap = self.state.stroke.start_cap;
             if select(ui, "Start Cap", &mut start_cap, &CapOption::ALL) {
                 self.update(AppMessage::Stroke(StrokeMessage::StartCapSelected(
@@ -107,6 +110,8 @@ impl EditorApp {
                     )));
                 }
             }
+            ui.separator();
+            ui.strong("Join");
             let mut join = self.state.stroke.join;
             if select(ui, "Line Join", &mut join, &JoinOption::ALL) {
                 self.update(AppMessage::Stroke(StrokeMessage::JoinSelected(join)));

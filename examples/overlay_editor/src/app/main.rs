@@ -1,5 +1,6 @@
 use crate::app::boolean::content::BooleanMessage;
 use crate::app::boolean::content::BooleanState;
+use crate::app::design::Design;
 use crate::app::outline::content::OutlineMessage;
 use crate::app::outline::content::OutlineState;
 use crate::app::string::content::StringMessage;
@@ -13,6 +14,7 @@ use crate::data::resource::AppResource;
 
 pub struct EditorApp {
     main_actions: Vec<MainAction>,
+    pub(super) show_inspector: bool,
     pub(super) state: MainState,
     pub(super) app_resource: AppResource,
 }
@@ -67,6 +69,7 @@ pub(crate) enum AppMessage {
 impl EditorApp {
     pub fn with_resource(mut app_resource: AppResource) -> Self {
         Self {
+            show_inspector: true,
             main_actions: vec![
                 MainAction::Boolean,
                 MainAction::String,
@@ -137,18 +140,65 @@ impl EditorApp {
                 self.update(AppMessage::PrevTest);
             }
         }
-        egui::Panel::left("navigation")
-            .exact_size(150.0)
+        egui::Panel::top("navigation")
             .resizable(false)
+            .frame(Design::panel_frame(12))
             .show_inside(ui, |ui| {
-                for action in self.main_actions.clone() {
-                    let response =
-                        ui.selectable_label(self.state.selected_action == action, action.title());
-                    if response.clicked() {
-                        response.surrender_focus();
-                        self.update(AppMessage::Main(MainMessage::ActionSelected(action)));
+                ui.horizontal_wrapped(|ui| {
+                    ui.strong("iOverlay");
+                    ui.separator();
+                    for action in self.main_actions.clone() {
+                        let response = ui
+                            .selectable_label(self.state.selected_action == action, action.title());
+                        if response.clicked() {
+                            response.surrender_focus();
+                            self.update(AppMessage::Main(MainMessage::ActionSelected(action)));
+                        }
                     }
-                }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let response = ui.selectable_label(self.show_inspector, "Parameters");
+                        if response.clicked() {
+                            response.surrender_focus();
+                            self.show_inspector = !self.show_inspector;
+                        }
+                    });
+                });
+            });
+        egui::Panel::bottom("status")
+            .resizable(false)
+            .frame(Design::panel_frame(8))
+            .show_inside(ui, |ui| {
+                ui.horizontal(|ui| {
+                    match self.state.selected_action {
+                        MainAction::Boolean => {
+                            Design::legend(ui, Design::subject_color(), "Subject");
+                            Design::legend(ui, Design::clip_color(), "Clip");
+                            Design::legend(ui, Design::solution_color(), "Result");
+                        }
+                        MainAction::String => {
+                            Design::legend(ui, Design::subject_color(), "Body");
+                            Design::legend(ui, Design::clip_color(), "String");
+                            if self.state.string.mode
+                                == crate::app::string::control::ModeOption::Slice
+                            {
+                                ui.weak("Slices: individual colors");
+                            } else {
+                                Design::legend(ui, Design::solution_color(), "Result");
+                            }
+                        }
+                        _ => {
+                            Design::legend(ui, Design::subject_color(), "Input");
+                            Design::legend(ui, Design::solution_color(), "Result");
+                        }
+                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.weak(if ui.available_width() >= 430.0 {
+                            "Drag points · Drag canvas to pan · Scroll to zoom · Up / Down: tests"
+                        } else {
+                            "Scroll to zoom"
+                        });
+                    });
+                });
             });
         match self.state.selected_action {
             MainAction::Boolean => self.boolean_content(ui),
@@ -222,6 +272,7 @@ mod tests {
     fn all_fixture_workspaces_render() {
         let mut app = editor();
         let ctx = egui::Context::default();
+        Design::apply(&ctx);
         for action in app.main_actions.clone() {
             app.update(AppMessage::Main(MainMessage::ActionSelected(
                 action.clone(),
@@ -257,6 +308,7 @@ mod tests {
         };
         let mut app = editor();
         let ctx = egui::Context::default();
+        Design::apply(&ctx);
         for mode in [
             BooleanMode::Edit,
             BooleanMode::Debug,
@@ -286,9 +338,99 @@ mod tests {
         }
     }
     #[test]
+    fn silhouette_fixtures_preserve_holes_and_intersect_spiral() {
+        use crate::app::boolean::control::ModeOption;
+        let mut app = editor();
+        let ctx = egui::Context::default();
+        Design::apply(&ctx);
+        for (boolean_index, outline_index, contour_count) in [(11, 8, 4), (12, 9, 2)] {
+            app.update(AppMessage::Main(MainMessage::ActionSelected(
+                MainAction::Outline,
+            )));
+            app.update(AppMessage::Outline(OutlineMessage::TestSelected(
+                outline_index,
+            )));
+            assert_eq!(
+                app.state.outline.workspace.outline_input.len(),
+                contour_count
+            );
+            render(&mut app, &ctx);
+            app.update(AppMessage::Main(MainMessage::ActionSelected(
+                MainAction::Boolean,
+            )));
+            app.update(AppMessage::Bool(BooleanMessage::TestSelected(
+                boolean_index,
+            )));
+            assert_eq!(app.state.boolean.workspace.subj.len(), contour_count);
+            assert_eq!(app.state.boolean.workspace.clip.len(), 1);
+            app.update(AppMessage::Bool(BooleanMessage::ModeSelected(
+                ModeOption::Intersect,
+            )));
+            assert!(
+                app.state.boolean.workspace.solution.len() > 1,
+                "spiral must cut the silhouette into several pieces"
+            );
+            render(&mut app, &ctx);
+        }
+    }
+
+    #[test]
+    fn fixture_panel_resizes_and_inspector_keeps_canvas_height_stable() {
+        use crate::app::stroke::control::CapOption;
+        let mut app = editor();
+        let ctx = egui::Context::default();
+        Design::apply(&ctx);
+        let layout = |app: &mut EditorApp, width| {
+            let _ = ctx.run_ui(
+                RawInput {
+                    screen_rect: Some(Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        Vec2::new(width, 800.0),
+                    )),
+                    ..Default::default()
+                },
+                |ui| app.view(ui),
+            );
+            let id = match app.state.selected_action {
+                MainAction::Boolean => "boolean_tests",
+                MainAction::String => "string_tests",
+                MainAction::Stroke => "stroke_tests",
+                MainAction::VariableStroke => "variable_stroke_tests",
+                MainAction::Outline => "outline_tests",
+            };
+            let panel = egui::containers::PanelState::load(&ctx, egui::Id::new(id)).unwrap();
+            assert!((panel.rect.width() - (width * 0.15).min(120.0)).abs() < 1.0);
+        };
+        for action in app.main_actions.clone() {
+            app.update(AppMessage::Main(MainMessage::ActionSelected(action)));
+            for width in [1280.0, 600.0, 1000.0] {
+                layout(&mut app, width);
+            }
+        }
+        app.update(AppMessage::Main(MainMessage::ActionSelected(
+            MainAction::Stroke,
+        )));
+        layout(&mut app, 1280.0);
+        let original_size = app.state.stroke.size;
+        app.update(AppMessage::Stroke(StrokeMessage::StartCapSelected(
+            CapOption::Round,
+        )));
+        app.update(AppMessage::Stroke(StrokeMessage::EndCapSelected(
+            CapOption::Round,
+        )));
+        layout(&mut app, 1280.0);
+        assert_eq!(app.state.stroke.size, original_size);
+        app.show_inspector = false;
+        layout(&mut app, 1280.0);
+        assert!(app.state.stroke.size.x > original_size.x);
+        assert_eq!(app.state.stroke.size.y, original_size.y);
+    }
+
+    #[test]
     fn arrow_navigation_works_after_canvas_and_sidebar_clicks() {
         let mut app = editor();
         let ctx = egui::Context::default();
+        Design::apply(&ctx);
         let mut frame = |events| {
             let _ = ctx.run_ui(
                 RawInput {
@@ -304,7 +446,7 @@ mod tests {
             app.state.boolean.test
         };
         frame(vec![]);
-        for pos in [egui::pos2(1100.0, 700.0), egui::pos2(170.0, 13.0)] {
+        for pos in [egui::pos2(500.0, 700.0), egui::pos2(50.0, 100.0)] {
             frame(vec![egui::Event::PointerMoved(pos)]);
             frame(vec![egui::Event::PointerButton {
                 pos,

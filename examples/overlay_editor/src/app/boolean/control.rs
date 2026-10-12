@@ -69,10 +69,6 @@ impl std::fmt::Display for ModeOption {
 impl EditorApp {
     pub(crate) fn boolean_control(&mut self, ui: &mut egui::Ui) {
         controls(ui, "boolean_controls", |ui| {
-            let mut solver = self.state.boolean.solver;
-            if select(ui, "Solver", &mut solver, &SolverOption::ALL) {
-                self.update(AppMessage::Bool(BooleanMessage::SolverSelected(solver)));
-            }
             let mut fill = self.state.boolean.fill;
             if select(ui, "Fill Rule", &mut fill, &FillOption::ALL) {
                 self.update(AppMessage::Bool(BooleanMessage::FillSelected(fill)));
@@ -81,6 +77,13 @@ impl EditorApp {
             if select(ui, "Mode", &mut mode, &ModeOption::ALL) {
                 self.update(AppMessage::Bool(BooleanMessage::ModeSelected(mode)));
             }
+            ui.separator();
+            ui.collapsing("Advanced", |ui| {
+                let mut solver = self.state.boolean.solver;
+                if select(ui, "Solver", &mut solver, &SolverOption::ALL) {
+                    self.update(AppMessage::Bool(BooleanMessage::SolverSelected(solver)));
+                }
+            });
         });
     }
 }

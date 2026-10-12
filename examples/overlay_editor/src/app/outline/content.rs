@@ -36,28 +36,36 @@ pub(crate) enum OutlineMessage {
 
 impl EditorApp {
     pub(crate) fn outline_content(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::left("outline_tests")
-            .exact_size(150.0)
-            .resizable(false)
-            .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for index in 0..self.app_resource.outline.count {
-                        let response = ui.selectable_label(
+        crate::app::design::tests_panel(ui, "outline_tests").show_inside(ui, |ui| {
+            ui.strong("Tests");
+            ui.separator();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for index in 0..self.app_resource.outline.count {
+                    let response = ui.add_sized(
+                        [ui.available_width(), 28.0],
+                        egui::Button::selectable(
                             self.state.outline.test == index,
                             format!("test_{index}"),
-                        );
-                        if response.clicked() {
-                            response.surrender_focus();
-                            self.update(AppMessage::Outline(OutlineMessage::TestSelected(index)));
-                        }
+                        )
+                        .truncate(),
+                    );
+                    if response.clicked() {
+                        response.surrender_focus();
+                        self.update(AppMessage::Outline(OutlineMessage::TestSelected(index)));
                     }
-                });
+                }
             });
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            self.outline_control(ui);
-            ui.separator();
-            self.outline_workspace(ui);
         });
+        if self.show_inspector {
+            crate::app::design::inspector(ui, "outline_inspector", "Outline", |ui| {
+                self.outline_control(ui);
+            });
+        }
+        egui::CentralPanel::default()
+            .frame(egui::Frame::new().fill(crate::app::design::Design::canvas_color()))
+            .show_inside(ui, |ui| {
+                self.outline_workspace(ui);
+            });
     }
 
     pub(crate) fn outline_update(&mut self, message: OutlineMessage) {

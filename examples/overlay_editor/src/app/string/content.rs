@@ -36,28 +36,36 @@ pub(crate) enum StringMessage {
 
 impl EditorApp {
     pub(crate) fn string_content(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::left("string_tests")
-            .exact_size(150.0)
-            .resizable(false)
-            .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for index in 0..self.app_resource.string.count {
-                        let response = ui.selectable_label(
+        crate::app::design::tests_panel(ui, "string_tests").show_inside(ui, |ui| {
+            ui.strong("Tests");
+            ui.separator();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for index in 0..self.app_resource.string.count {
+                    let response = ui.add_sized(
+                        [ui.available_width(), 28.0],
+                        egui::Button::selectable(
                             self.state.string.test == index,
                             format!("test_{index}"),
-                        );
-                        if response.clicked() {
-                            response.surrender_focus();
-                            self.update(AppMessage::String(StringMessage::TestSelected(index)));
-                        }
+                        )
+                        .truncate(),
+                    );
+                    if response.clicked() {
+                        response.surrender_focus();
+                        self.update(AppMessage::String(StringMessage::TestSelected(index)));
                     }
-                });
+                }
             });
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            self.string_control(ui);
-            ui.separator();
-            self.string_workspace(ui);
         });
+        if self.show_inspector {
+            crate::app::design::inspector(ui, "string_inspector", "String", |ui| {
+                self.string_control(ui);
+            });
+        }
+        egui::CentralPanel::default()
+            .frame(egui::Frame::new().fill(crate::app::design::Design::canvas_color()))
+            .show_inside(ui, |ui| {
+                self.string_workspace(ui);
+            });
     }
 
     pub(crate) fn string_update(&mut self, message: StringMessage) {

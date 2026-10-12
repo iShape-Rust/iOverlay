@@ -54,7 +54,7 @@ impl EditorApp {
                         &workspace.subj,
                         workspace.camera,
                         Some(self.state.boolean.fill.fill_rule()),
-                        Some(Design::subject_color().gamma_multiply(0.2)),
+                        Some(Design::subject_color().gamma_multiply(0.12)),
                         Some(Design::subject_color()),
                         2.0,
                     )
@@ -63,7 +63,7 @@ impl EditorApp {
                         &workspace.clip,
                         workspace.camera,
                         Some(self.state.boolean.fill.fill_rule()),
-                        Some(Design::clip_color().gamma_multiply(0.2)),
+                        Some(Design::clip_color().gamma_multiply(0.12)),
                         Some(Design::clip_color()),
                         2.0,
                     )
@@ -86,7 +86,7 @@ impl EditorApp {
                         workspace.camera,
                         Some(self.state.boolean.fill.fill_rule()),
                         None,
-                        Some(Design::subject_color()),
+                        Some(Design::subject_color().gamma_multiply(0.55)),
                         1.0,
                     )
                     .paint(&painter);
@@ -95,7 +95,7 @@ impl EditorApp {
                         workspace.camera,
                         Some(self.state.boolean.fill.fill_rule()),
                         None,
-                        Some(Design::clip_color()),
+                        Some(Design::clip_color().gamma_multiply(0.55)),
                         1.0,
                     )
                     .paint(&painter);
@@ -103,7 +103,7 @@ impl EditorApp {
                         &workspace.solution,
                         workspace.camera,
                         None,
-                        Some(Design::solution_color().gamma_multiply(0.2)),
+                        Some(Design::solution_color().gamma_multiply(0.12)),
                         Some(Design::solution_color()),
                         2.0,
                     )

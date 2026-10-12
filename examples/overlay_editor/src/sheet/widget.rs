@@ -4,7 +4,7 @@ use crate::{
     point_editor::{point::EditorPoint, state::PointsEditorState, widget::PointEditUpdate},
     sheet::state::SheetState,
 };
-use eframe::egui::{self, Color32, CursorIcon, Painter, Sense, Stroke, Vec2};
+use eframe::egui::{self, CursorIcon, Painter, Sense, Stroke, Vec2};
 
 pub(crate) struct SheetWidget;
 
@@ -20,7 +20,7 @@ impl SheetWidget {
             ui.available_size().max(Vec2::splat(1.0)),
             Sense::CLICK | Sense::DRAG,
         );
-        painter.rect_filled(response.rect, 0.0, Color32::from_rgb(18, 18, 18));
+        painter.rect_filled(response.rect, 0.0, Design::canvas_color());
         let mut update = None;
         let (cursor, pressed, down, released, scroll) = ui.input(|i| {
             (
@@ -71,7 +71,7 @@ impl SheetWidget {
         if camera.scale <= 20.0 {
             return;
         }
-        let alpha = ((camera.scale - 20.0) / 50.0).min(1.0) * 0.5;
+        let alpha = ((camera.scale - 20.0) / 50.0).min(1.0) * 0.12;
         let stroke = Stroke::new(1.0_f32, Design::negative_color().gamma_multiply(alpha));
         let rect = painter.clip_rect();
         let top_left = camera.view_to_world(Vec2::ZERO);

@@ -38,30 +38,43 @@ pub(crate) enum VariableStrokeMessage {
 
 impl EditorApp {
     pub(crate) fn variable_stroke_content(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::left("variable_stroke_tests")
-            .exact_size(150.0)
-            .resizable(false)
-            .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for index in 0..self.app_resource.variable_stroke.count {
-                        let response = ui.selectable_label(
+        crate::app::design::tests_panel(ui, "variable_stroke_tests").show_inside(ui, |ui| {
+            ui.strong("Tests");
+            ui.separator();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for index in 0..self.app_resource.variable_stroke.count {
+                    let response = ui.add_sized(
+                        [ui.available_width(), 28.0],
+                        egui::Button::selectable(
                             self.state.variable_stroke.test == index,
                             format!("test_{index}"),
-                        );
-                        if response.clicked() {
-                            response.surrender_focus();
-                            self.update(AppMessage::VariableStroke(
-                                VariableStrokeMessage::TestSelected(index),
-                            ));
-                        }
+                        )
+                        .truncate(),
+                    );
+                    if response.clicked() {
+                        response.surrender_focus();
+                        self.update(AppMessage::VariableStroke(
+                            VariableStrokeMessage::TestSelected(index),
+                        ));
                     }
-                });
+                }
             });
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            self.variable_stroke_control(ui);
-            ui.separator();
-            self.variable_stroke_workspace(ui);
         });
+        if self.show_inspector {
+            crate::app::design::inspector(
+                ui,
+                "variable_stroke_inspector",
+                "Variable Stroke",
+                |ui| {
+                    self.variable_stroke_control(ui);
+                },
+            );
+        }
+        egui::CentralPanel::default()
+            .frame(egui::Frame::new().fill(crate::app::design::Design::canvas_color()))
+            .show_inside(ui, |ui| {
+                self.variable_stroke_workspace(ui);
+            });
     }
 
     pub(crate) fn variable_stroke_update(&mut self, message: VariableStrokeMessage) {

@@ -59,7 +59,7 @@ impl WebApp {
                 canvas,
                 eframe::WebOptions::default(),
                 Box::new(move |cc| {
-                    cc.egui_ctx.set_visuals(eframe::egui::Visuals::dark());
+                    crate::app::design::Design::apply(&cc.egui_ctx);
                     Ok(Box::new(EditorApp::with_resource(resource)))
                 }),
             )

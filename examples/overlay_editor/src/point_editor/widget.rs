@@ -27,9 +27,14 @@ impl PointsEditorWidget {
             } else if selected {
                 Design::negative_color()
             } else {
-                Design::subject_color()
+                let color = if point.index.group_index == 0 {
+                    Design::subject_color()
+                } else {
+                    Design::clip_color()
+                };
+                color.gamma_multiply(0.65)
             };
-            let radius = if selected { 5.0 } else { 4.0 };
+            let radius = if selected { 5.0 } else { 3.5 };
             let p = painter.clip_rect().min + camera.int_world_to_view(point.pos);
             painter.add(Shape::convex_polygon(
                 vec![
@@ -39,7 +44,7 @@ impl PointsEditorWidget {
                     p + Vec2::new(0.0, radius),
                 ],
                 color,
-                Stroke::NONE,
+                Stroke::new(1.0_f32, Design::canvas_color()),
             ));
         }
     }

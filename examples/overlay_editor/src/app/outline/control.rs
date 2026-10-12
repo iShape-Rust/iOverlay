@@ -52,6 +52,8 @@ impl EditorApp {
                     OutlineMessage::InnerOffsetValueUpdated(inner_offset),
                 ));
             }
+            ui.separator();
+            ui.strong("Join");
             let mut join = self.state.outline.join;
             if select(ui, "Line Join", &mut join, &JoinOption::ALL) {
                 self.update(AppMessage::Outline(OutlineMessage::JoinSelected(join)));

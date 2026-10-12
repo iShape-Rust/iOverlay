@@ -61,7 +61,7 @@ impl EditorApp {
                     PathWidget::with_paths(
                         &workspace.string,
                         workspace.camera,
-                        Design::negative_color(),
+                        Design::clip_color(),
                         2.0,
                         true,
                     )
@@ -72,15 +72,15 @@ impl EditorApp {
                         &workspace.body,
                         workspace.camera,
                         Some(self.state.string.fill.fill_rule()),
-                        Some(Design::clip_color().gamma_multiply(0.3)),
-                        Some(Design::clip_color()),
+                        Some(Design::subject_color().gamma_multiply(0.10)),
+                        Some(Design::subject_color().gamma_multiply(0.55)),
                         2.0,
                     )
                     .paint(&painter);
                     PathWidget::with_paths(
                         &workspace.string,
                         workspace.camera,
-                        Design::negative_color(),
+                        Design::clip_color(),
                         2.0,
                         true,
                     )
@@ -89,7 +89,7 @@ impl EditorApp {
                         PathWidget::with_paths(
                             paths,
                             workspace.camera,
-                            Design::subject_color(),
+                            Design::solution_color(),
                             2.0,
                             true,
                         )
@@ -101,7 +101,7 @@ impl EditorApp {
                         &workspace.body,
                         workspace.camera,
                         Some(self.state.string.fill.fill_rule()),
-                        Some(Design::subject_color().gamma_multiply(0.2)),
+                        Some(Design::subject_color().gamma_multiply(0.12)),
                         Some(Design::subject_color()),
                         2.0,
                     )
@@ -109,7 +109,7 @@ impl EditorApp {
                     PathWidget::with_paths(
                         &workspace.string,
                         workspace.camera,
-                        Design::negative_color(),
+                        Design::clip_color(),
                         2.0,
                         true,
                     )

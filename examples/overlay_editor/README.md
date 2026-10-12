@@ -50,8 +50,25 @@ The local `i_mesh` dependency builds contours, open paths, and arrows with
 and the grid use native egui painting APIs. `iced` is no longer required.
 
 The original `app/*/{content,control,workspace}`, `draw`, `geom`, `sheet`,
-`point_editor`, and `data` modules are retained. Parameters occupy the area above
-the canvas; geometry and fixture calculations remain in the content modules.
+`point_editor`, and `data` modules are retained. Modes are selected in the top bar.
+The left fixture list uses 15% of the window
+width, capped at 120 px. Parameters live in a scrollable right inspector that can
+be hidden with the Parameters button; geometry and fixture calculations remain
+in the content modules. The shared dark theme uses a violet UI accent and coral,
+blue, and mint colors for geometry, with a legend in the bottom bar.
+
+## Silhouette fixtures
+
+Outline `test_8` is the eagle and `test_9` is the star. Boolean `test_11` and
+`test_12` pair the same silhouettes with a closed three-turn spiral ribbon;
+select **Intersect** to view their intersection.
+
+The contours come from the filled compound paths in
+`iTriangle/readme/eagle_triangles_extra_points.svg` and `star_polygon.svg`.
+Triangle edges are excluded; the eagle's three internal holes and the star's
+central hole are preserved. Coordinates are centered, flipped to the editor's
+upward Y axis, and uniformly scaled to a maximum dimension of 100 units.
+Both silhouettes are also appended to the corresponding web fixture datasets.
 
 ## Checks
 

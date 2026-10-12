@@ -45,28 +45,36 @@ pub(crate) enum StrokeMessage {
 
 impl EditorApp {
     pub(crate) fn stroke_content(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::left("stroke_tests")
-            .exact_size(150.0)
-            .resizable(false)
-            .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for index in 0..self.app_resource.stroke.count {
-                        let response = ui.selectable_label(
+        crate::app::design::tests_panel(ui, "stroke_tests").show_inside(ui, |ui| {
+            ui.strong("Tests");
+            ui.separator();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for index in 0..self.app_resource.stroke.count {
+                    let response = ui.add_sized(
+                        [ui.available_width(), 28.0],
+                        egui::Button::selectable(
                             self.state.stroke.test == index,
                             format!("test_{index}"),
-                        );
-                        if response.clicked() {
-                            response.surrender_focus();
-                            self.update(AppMessage::Stroke(StrokeMessage::TestSelected(index)));
-                        }
+                        )
+                        .truncate(),
+                    );
+                    if response.clicked() {
+                        response.surrender_focus();
+                        self.update(AppMessage::Stroke(StrokeMessage::TestSelected(index)));
                     }
-                });
+                }
             });
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            self.stroke_control(ui);
-            ui.separator();
-            self.stroke_workspace(ui);
         });
+        if self.show_inspector {
+            crate::app::design::inspector(ui, "stroke_inspector", "Stroke", |ui| {
+                self.stroke_control(ui);
+            });
+        }
+        egui::CentralPanel::default()
+            .frame(egui::Frame::new().fill(crate::app::design::Design::canvas_color()))
+            .show_inside(ui, |ui| {
+                self.stroke_workspace(ui);
+            });
     }
 
     pub(crate) fn stroke_update(&mut self, message: StrokeMessage) {
