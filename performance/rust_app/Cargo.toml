@@ -15,4 +15,4 @@ default = []
 multithreading = ["i_overlay/allow_multithreading"]
 
 [dependencies]
-i_overlay = { path = "../../iOverlay", version = "^9" }
+i_overlay = { path = "../../iOverlay"}

@@ -1,3 +1,32 @@
+## [9.1.0] - 2026-10-14
+### Changed
+- Improved performance for Tree Solver.
+
+### Fixed
+- Corrected buffer preallocation in fragment splitting and parallel intersection-mark merging to avoid unnecessary reallocations.
+ 
+## [9.0.0] - 2026-09-19
+### Added
+- Integer APIs for outlines, strokes, and variable-width strokes.
+- Selectable integer and floating-point construction math through `MathMode`.
+
+### Changed
+- Moved buffering APIs into `mesh::int` and `mesh::float`.
+- Upgraded to `i_float` and `i_shape` 5.x.
+
+### Fixed
+- Fragment splitting at column borders.
+- Hole binding, OGC contour traversal, and minimum-area filtering.
+- Degenerate stroke geometry and miter joins near parallel segments.
+- Simplification with positive and negative fill rules.
+
+### Removed
+- Removed the `core::divide` API.
+
+## [9.0.1] - 2026-10-08
+### Fixed
+- Corrected inner stroke joins by connecting offset edges through the join anchor.
+
 ## [8.1.0] - 2026-08-16
 ### Added
 - Variable-width strokes.

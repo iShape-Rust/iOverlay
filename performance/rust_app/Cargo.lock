@@ -44,9 +44,9 @@ dependencies = [
 
 [[package]]
 name = "i_key_sort"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c6c58d0c60705e66264ce0f788a69a2f21472aeb8188559e7c8c619dbdc10fa"
+checksum = "14269ee362009550495e20650ff3c2bca14a8147fe251e216760381ffed90b6f"
 dependencies = [
  "rayon",
 ]
@@ -73,9 +73,9 @@ dependencies = [
 
 [[package]]
 name = "i_tree"
-version = "0.19.1"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "180cbc5c4af5d8f57b8096c3cf39efdac3642ece00ca54710db44db3536baed4"
+checksum = "048af31de955890c62a8506fec511335a5089e91e1c516537add16f96c507d84"
 
 [[package]]
 name = "libm"

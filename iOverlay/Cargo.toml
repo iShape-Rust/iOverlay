@@ -1,6 +1,6 @@
 [package]
 name = "i_overlay"
-version = "9.0.1"
+version = "9.1.0"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 edition = "2024"
 rust-version = "1.88"
@@ -12,8 +12,8 @@ readme = "README.md"
 categories = ["algorithms", "graphics", "science::geo", "mathematics", "no-std"]
 
 [dependencies]
-i_tree = { version = "^0.19" }
-i_key_sort = { version = "^0.11" }
+i_tree = { version = "^0.20" }
+i_key_sort = { version = "^0.12" }
 
 i_float = { version = "^5.0.0"}
 i_shape = { version = "^5.0.0"}
