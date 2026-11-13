@@ -192,7 +192,7 @@ impl<I: IntNumber> CrossSolver<I> {
             if r0 <= r1 {
                 let p = if ra0 < rb0 { target.a } else { target.b };
                 // ignore if it's a clean point
-                if Triangle::is_not_line(other.a, p, other.b) {
+                if Triangle::is_not_line(other.a, p, other.b) && Self::is_within_rounding(other, p) {
                     return Some(CrossResult {
                         point: p,
                         cross_type: CrossType::TargetEnd,
@@ -203,7 +203,7 @@ impl<I: IntNumber> CrossSolver<I> {
                 let p = if ra1 < rb1 { other.a } else { other.b };
 
                 // ignore if it's a clean point
-                if Triangle::is_not_line(target.a, p, target.b) {
+                if Triangle::is_not_line(target.a, p, target.b) && Self::is_within_rounding(target, p) {
                     return Some(CrossResult {
                         point: p,
                         cross_type: CrossType::OtherEnd,
@@ -218,6 +218,33 @@ impl<I: IntNumber> CrossSolver<I> {
             cross_type: CrossType::Pure,
             is_round: true,
         })
+    }
+
+    /// Whether splitting `segment` at `p` moves it no further than rounding a crossing on it
+    /// can: the distance from `p` to the segment's line is at most half a pixel diagonal.
+    ///
+    /// Snapping a crossing to an endpoint of one segment splits the other segment at that
+    /// endpoint. Without this bound, the other segment can be bent by more than a unit, e.g.
+    /// out of the polygon it bounds.
+    #[inline]
+    fn is_within_rounding(segment: &XSegment<I>, p: IntPoint<I>) -> bool {
+        let v = segment.b - segment.a;
+        let cross = v.cross_product(p - segment.a).to_f64();
+        let sqr_length = segment.a.sqr_distance(segment.b).to_f64();
+        2.0 * cross * cross <= sqr_length
+    }
+
+    /// Divides, rounding to the nearest integer, with ties toward zero.
+    ///
+    /// Truncating would move a crossing on an axis-aligned segment by up to a unit. Rounding
+    /// ties toward zero, i.e. toward the segment's first endpoint, keeps the truncated result
+    /// whenever it is one of the two nearest integers.
+    #[inline]
+    fn divide_round_half_toward_zero(numerator: I::Wide, divisor: I::Wide) -> I::Wide {
+        let n = numerator.unsigned_abs();
+        let d = divisor.unsigned_abs();
+        let q = (n + ((d - <I::Wide as WideIntNumber>::UInt::ONE) >> 1)) / d;
+        numerator.signum() * divisor.signum() * I::Wide::from_uint(q)
     }
 
     fn cross_point(target: &XSegment<I>, other: &XSegment<I>) -> IntPoint<I> {
@@ -282,11 +309,11 @@ impl<I: IntNumber> CrossSolver<I> {
         if a1x == I::Wide::ZERO {
             // dxB is not zero because it will be parallel case and it's impossible
             x0 = I::Wide::ZERO;
-            y0 = xy_b / dx_b;
+            y0 = Self::divide_round_half_toward_zero(xy_b, dx_b);
         } else if a1y == I::Wide::ZERO {
             // dyB is not zero because it will be parallel case and it's impossible
             y0 = I::Wide::ZERO;
-            x0 = -xy_b / dy_b;
+            x0 = Self::divide_round_half_toward_zero(-xy_b, dy_b);
         } else {
             // divider
             let div = a1y * dx_b - a1x * dy_b;
@@ -325,16 +352,45 @@ mod tests {
 
     #[test]
     fn snapping_compares_squared_distance_directly_with_the_threshold() {
-        let target = XSegment::new(IntPoint::new(0, 0), IntPoint::new(5, 5));
-        let other = XSegment::new(IntPoint::new(0, 3), IntPoint::new(5, -2));
-        // The rounded crossing is (2, 2). Its nearest endpoint is (0, 3),
+        let target = XSegment::new(IntPoint::new(0, 0), IntPoint::new(10, 3));
+        let other = XSegment::new(IntPoint::new(1, 0), IntPoint::new(5, 2));
+        // The rounded crossing is (3, 1). Its nearest endpoint is (5, 2),
         // at squared distance 5. A threshold of 4 must not be squared again.
         let crossing = CrossSolver::cross(&target, &other, 4).unwrap();
         assert!(matches!(crossing.cross_type, CrossType::Pure));
-        assert_eq!(crossing.point, IntPoint::new(2, 2));
+        assert_eq!(crossing.point, IntPoint::new(3, 1));
         let snapped = CrossSolver::cross(&target, &other, 5).unwrap();
         assert!(matches!(snapped.cross_type, CrossType::OtherEnd));
-        assert_eq!(snapped.point, other.a);
+        assert_eq!(snapped.point, other.b);
+    }
+
+    #[test]
+    fn snapping_does_not_move_a_segment_beyond_rounding() {
+        // The crossing (1, 2 1/11) rounds to (1, 2), a unit from the endpoint (0, 2) of the
+        // target. Snapping to (0, 2) would bend the vertical segment a unit off its line.
+        let target = XSegment::new(IntPoint::new(0, 2), IntPoint::new(11, 3));
+        let other = XSegment::new(IntPoint::new(1, 1), IntPoint::new(1, 4));
+        for radius_squared in [1, 2, 4, 16] {
+            let crossing = CrossSolver::cross(&target, &other, radius_squared).unwrap();
+            assert!(matches!(crossing.cross_type, CrossType::Pure));
+            assert_eq!(crossing.point, IntPoint::new(1, 2));
+        }
+    }
+
+    #[test]
+    fn axis_aligned_crossings_are_rounded() {
+        // The crossing is (-1.25, -1); truncating relative to the first endpoint gave (-2, -1).
+        let horizontal = XSegment::new(IntPoint::new(-2, -1), IntPoint::new(-1, -1));
+        let other = XSegment::new(IntPoint::new(-2, 2), IntPoint::new(-1, -2));
+        assert_eq!(
+            CrossSolver::cross_point(&horizontal, &other),
+            IntPoint::new(-1, -1)
+        );
+
+        // The same, transposed.
+        let vertical = XSegment::new(IntPoint::new(-1, -2), IntPoint::new(-1, -1));
+        let other = XSegment::new(IntPoint::new(-2, -2), IntPoint::new(2, 1));
+        assert_eq!(CrossSolver::cross_point(&vertical, &other), IntPoint::new(-1, -1));
     }
 
     #[test]
@@ -376,9 +432,10 @@ mod tests {
                                 b: point(hi, b1),
                             };
                             let result = CrossSolver::<I>::cross_point(&a, &b);
-                            // For a horizontal target x is truncated, not rounded.
+                            // For a horizontal target x is rounded with ties toward a0.
                             let expected_x = if a0 == a1 {
-                                lo as i128 + (hi as i128 - lo as i128) * n.abs() / d.abs()
+                                let product = (hi as i128 - lo as i128) * n.abs();
+                                lo as i128 + (product + (d.abs() - 1) / 2) / d.abs()
                             } else {
                                 expected_x
                             };

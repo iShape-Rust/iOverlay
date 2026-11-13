@@ -318,10 +318,27 @@ mod tests {
             FillRule::NonZero,
         );
 
-        assert_eq!(shapes.len(), 3);
-        assert_eq!(shapes[0][0].len(), 5);
-        assert_eq!(shapes[1][0].len(), 3);
-        assert_eq!(shapes[2][0].len(), 3);
+        // The line crosses the edges at (0.5, 2) and (1.5, 2), which round to (0, 2) and (1, 2).
+        // The top-left part, a triangle half a unit wide, collapses onto the left edge. The
+        // crossing isn't snapped to the vertex (1, 1), a unit away from the line.
+        assert_eq!(
+            shapes,
+            vec![
+                vec![vec![
+                    IntPoint::new(2, 0),
+                    IntPoint::new(2, 2),
+                    IntPoint::new(1, 2),
+                    IntPoint::new(1, 1),
+                    IntPoint::new(0, 2),
+                    IntPoint::new(0, 0),
+                ]],
+                vec![vec![
+                    IntPoint::new(1, 2),
+                    IntPoint::new(2, 2),
+                    IntPoint::new(2, 3)
+                ]],
+            ]
+        );
     }
 
     #[test]

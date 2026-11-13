@@ -44,8 +44,9 @@ mod tests {
             })
             .collect();
 
+        // The exact even-odd area is 2.8 (area2 = 5.6); rounding the crossings to integers gives 6.
         for (strategy, shapes, area2) in &results {
-            assert_eq!(*area2, 7, "{strategy:?} lost part of the filled region");
+            assert_eq!(*area2, 6, "{strategy:?} lost part of the filled region");
             assert_eq!(shapes, &results[0].1, "{strategy:?} differs from List");
         }
     }
