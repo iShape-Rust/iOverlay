@@ -322,10 +322,11 @@ mod tests {
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
-        assert_eq!(result.len(), 3);
+        // The horizontal line cuts the triangle in two, at (-0.75, -1), which rounds to
+        // (-1, -1). The vertical line only touches the triangle at the vertex (-1, -2).
+        assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
         assert_eq!(result[1].len(), 1);
-        assert_eq!(result[2].len(), 1);
     }
 
     #[test]

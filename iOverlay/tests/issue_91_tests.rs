@@ -132,25 +132,55 @@ fn check_owner_case(ogc: bool, preserve_collinear: bool, vectors: bool) {
                 overlay.overlay(OverlayRule::Union, FillRule::NonZero)
             };
             assert_eq!(shapes.len(), squares + 2);
-            assert_hole_owner(
-                &shapes,
-                &[[-4, 3], [-4, 4], [-3, 2]],
-                &[
-                    [-6, 5],
-                    [-10, 5],
-                    [-4, 2],
-                    [-5, 1],
-                    [-2, 1],
-                    [-2, 3],
-                    [0, 4],
-                    [-2, 4],
-                    [-3, 3],
-                    [-3, 5],
-                    [-4, 5],
-                    [-4, 6],
-                    [-7, 6],
-                ],
-            );
+            // The hole touches the outer boundary at (-3, 4), where input edges cross exactly.
+            // OGC output keeps it as a hole of the containing shape; ordinary output merges it
+            // into the outer contour, which passes through (-3, 4) twice.
+            let outer_with_pinch = [
+                [-6, 5],
+                [-10, 5],
+                [-4, 2],
+                [-5, 1],
+                [-2, 1],
+                [-2, 3],
+                [0, 4],
+                [-3, 4],
+                [-3, 2],
+                [-4, 3],
+                [-4, 4],
+                [-3, 4],
+                [-3, 5],
+                [-4, 5],
+                [-4, 6],
+                [-7, 6],
+            ];
+            if ogc {
+                assert_hole_owner(
+                    &shapes,
+                    &[[-4, 3], [-4, 4], [-3, 4], [-3, 2]],
+                    &[
+                        [-6, 5],
+                        [-10, 5],
+                        [-4, 2],
+                        [-5, 1],
+                        [-2, 1],
+                        [-2, 3],
+                        [0, 4],
+                        [-3, 4],
+                        [-3, 5],
+                        [-4, 5],
+                        [-4, 6],
+                        [-7, 6],
+                    ],
+                );
+            } else {
+                assert_eq!(shapes.iter().map(|s| s.len() - 1).sum::<usize>(), 0);
+                let outer = canonical(&contour(&outer_with_pinch));
+                assert_eq!(
+                    shapes.iter().filter(|s| canonical(&s[0]) == outer).count(),
+                    1,
+                    "{shapes:?}"
+                );
+            }
         }
     }
 }
