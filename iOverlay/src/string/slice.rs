@@ -84,7 +84,9 @@ mod tests {
     use crate::core::fill_rule::FillRule;
     use crate::string::slice::IntSlice;
     use alloc::vec;
+    use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
+    use i_shape::int::area::Area;
 
     #[test]
     fn test_empty_input() {
@@ -318,10 +320,16 @@ mod tests {
             FillRule::NonZero,
         );
 
-        assert_eq!(shapes.len(), 3);
-        assert_eq!(shapes[0][0].len(), 5);
-        assert_eq!(shapes[1][0].len(), 3);
-        assert_eq!(shapes[2][0].len(), 3);
+        let mut pieces: Vec<(usize, i64)> = shapes
+            .iter()
+            .map(|shape| {
+                assert_eq!(shape.len(), 1);
+                let path = &shape[0];
+                (path.len(), path.area_two())
+            })
+            .collect();
+        pieces.sort_unstable();
+        assert_eq!(pieces, [(3, 1), (6, 7)]);
     }
 
     #[test]

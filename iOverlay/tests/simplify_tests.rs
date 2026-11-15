@@ -1,7 +1,10 @@
+mod util;
+
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::field_reassign_with_default, clippy::useless_vec)]
+    #![allow(clippy::useless_vec)]
 
+    use crate::util::overlay::assert_shapes_eq;
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay, ShapeType};
@@ -9,6 +12,7 @@ mod tests {
     use i_overlay::core::simplify::Simplify;
     use i_overlay::core::solver::{Precision, Solver};
     use i_shape::int::shape::IntShape;
+    use i_shape::int_shapes;
 
     #[test]
     fn test_0() {
@@ -101,36 +105,16 @@ mod tests {
         ]
         .to_vec();
 
+        let expected = int_shapes![[[[2, 1], [0, 0], [3, 0]]], [[[3, 1], [0, 3], [2, 1]]]];
         let mut buffer = Default::default();
-
-        let mut solver_0 = Solver::default();
-        solver_0.precision = Precision::ABSOLUTE;
-
-        let mut overlay_0 = Overlay::new_custom(4, Default::default(), solver_0);
-        overlay_0.add_contour(&path, ShapeType::Subject);
-
-        let mut solver_1 = Solver::default();
-        solver_1.precision = Precision::MEDIUM;
-
-        let mut overlay_1 = Overlay::new_custom(4, Default::default(), solver_1);
-        overlay_1.add_contour(&path, ShapeType::Subject);
-
-        let simple_0 = overlay_0
-            .build_graph_view(FillRule::NonZero)
-            .map_or(Default::default(), |graph| {
-                graph.extract_shapes(OverlayRule::Subject, &mut buffer)
-            });
-
-        let simple_1 = overlay_1
-            .build_graph_view(FillRule::NonZero)
-            .map_or(Default::default(), |graph| {
-                graph.extract_shapes(OverlayRule::Subject, &mut buffer)
-            });
-
-        assert_eq!(simple_0.len(), 1);
-        assert_eq!(simple_0[0].len(), 1);
-
-        assert_eq!(simple_1.len(), 1);
+        for precision in [Precision::ABSOLUTE, Precision::MEDIUM] {
+            let solver = Solver::with_precision(precision);
+            let mut overlay = Overlay::new_custom(path.len(), Default::default(), solver);
+            overlay.add_contour(&path, ShapeType::Subject);
+            let graph = overlay.build_graph_view(FillRule::NonZero).unwrap();
+            let shapes = graph.extract_shapes(OverlayRule::Subject, &mut buffer);
+            assert_shapes_eq(&shapes, &expected);
+        }
     }
 
     #[test]

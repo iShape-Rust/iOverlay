@@ -25,6 +25,41 @@ fn canonical(mut shapes: Shapes) -> Shapes {
 }
 
 #[test]
+fn boxes_minus_a_thin_sliver_match_the_grid_geometry() {
+    use i_overlay::core::overlay::IntOverlayOptions;
+    use i_shape::int_path;
+
+    let rectangle = |x, y0, y1| int_path![[x, y0], [x + 1, y0], [x + 1, y1], [x, y1]];
+    let boxes: Vec<_> = [1, 3, 5, 7, 9].into_iter().map(|x| rectangle(x, 1, 4)).collect();
+    let sliver = int_path![[0, 2], [11, 2], [11, 3]];
+    let expected = canonical(vec![
+        vec![boxes[0].clone()],
+        vec![boxes[1].clone()],
+        vec![rectangle(5, 1, 2)],
+        vec![int_path![[5, 2], [6, 3], [6, 4], [5, 4]]],
+        vec![rectangle(7, 1, 2)],
+        vec![rectangle(7, 3, 4)],
+        vec![rectangle(9, 1, 2)],
+        vec![rectangle(9, 3, 4)],
+    ]);
+
+    for solver in [Solver::LIST, Solver::TREE, Solver::FRAG, Solver::AUTO] {
+        let mut single = Overlay::from_subj_and_clip_custom(&boxes[0], &sliver, Default::default(), solver);
+        let difference = single.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+        assert_eq!(canonical(difference), vec![vec![boxes[0].clone()]]);
+        assert!(
+            single
+                .overlay(OverlayRule::Intersect, FillRule::EvenOdd)
+                .is_empty()
+        );
+
+        let mut all = Overlay::from_subj_and_clip_custom(&boxes, &sliver, IntOverlayOptions::ogc(), solver);
+        let difference = all.overlay(OverlayRule::Difference, FillRule::EvenOdd);
+        assert_eq!(canonical(difference), expected, "{:?}", solver.strategy);
+    }
+}
+
+#[test]
 fn boolean_results_ignore_contour_start_direction_and_operand_order() {
     let mut state = 0x7798_117b_13ac_7331_u64;
     let mut next = || {

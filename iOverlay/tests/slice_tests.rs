@@ -1,12 +1,16 @@
+mod util;
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::len_zero, clippy::useless_vec)]
 
+    use crate::util::overlay::assert_shapes_eq;
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::string::line::IntLine;
     use i_overlay::string::slice::IntSlice;
     use i_shape::int::path::IntPath;
+    use i_shape::int_shapes;
     use rand::RngExt;
 
     #[test]
@@ -322,10 +326,8 @@ mod tests {
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
-        assert_eq!(result.len(), 3);
-        assert_eq!(result[0].len(), 1);
-        assert_eq!(result[1].len(), 1);
-        assert_eq!(result[2].len(), 1);
+        let expected = int_shapes![[[[0, -1], [-1, -1], [-1, -2]]], [[[-1, -1], [0, -1], [0, 2]]]];
+        assert_shapes_eq(&result, &expected);
     }
 
     #[test]
@@ -340,11 +342,12 @@ mod tests {
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].len(), 1);
-        assert_eq!(result[0][0].len(), 4);
-        assert_eq!(result[1].len(), 1);
-        assert_eq!(result[1][0].len(), 3);
+        let expected = int_shapes![
+            [[[-4, 4], [-2, -4], [1, 3], [0, 3]]],
+            [[[-4, 4], [0, 3], [1, 4]]],
+            [[[0, 3], [1, 3], [1, 4]]],
+        ];
+        assert_shapes_eq(&result, &expected);
     }
 
     #[test]
@@ -382,12 +385,11 @@ mod tests {
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].len(), 2);
-        assert_eq!(result[0][0].len(), 4);
-        assert_eq!(result[0][1].len(), 4);
-        assert_eq!(result[1].len(), 1);
-        assert_eq!(result[1][0].len(), 4);
+        let expected = int_shapes![
+            [[[-1, 3], [0, -3], [4, 0], [3, 4]], [[1, 1], [0, -1], [0, 2]]],
+            [[[1, 1], [0, 2], [0, -1]]],
+        ];
+        assert_shapes_eq(&result, &expected);
     }
 
     #[test]

@@ -8,6 +8,7 @@ use crate::segm::sort::ShapeSegmentsSort;
 use crate::segm::winding::WindingCount;
 use crate::split::cross_solver::{CrossSolver, CrossType, EndMask};
 use crate::split::line_mark::{LineMark, SortMarkByIndexAndPoint};
+use crate::split::snap_radius::SnapRadius;
 use alloc::vec::Vec;
 use i_float::int::number::int::IntNumber;
 
@@ -85,9 +86,9 @@ where
         ei: &XSegment<I>,
         ej: &XSegment<I>,
         marks: &mut Vec<LineMark<I>>,
-        radius_squared: I::WideUInt,
+        snap_radius: SnapRadius<I>,
     ) -> bool {
-        let cross = if let Some(cross) = CrossSolver::<I>::cross(ei, ej, radius_squared) {
+        let cross = if let Some(cross) = CrossSolver::<I>::cross(ei, ej, snap_radius) {
             cross
         } else {
             return false;
@@ -331,7 +332,7 @@ mod non_degenerate_tests {
                         &a.x_segment,
                         &b.x_segment,
                         &mut splitter.marks,
-                        radius_squared,
+                        SnapRadius::new(radius_squared),
                     );
                     let mut segments = alloc::vec![a, b];
                     for mark in &splitter.marks {

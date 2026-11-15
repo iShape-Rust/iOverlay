@@ -2,7 +2,7 @@ mod util;
 
 #[cfg(test)]
 mod tests {
-    use crate::util::overlay::JsonPrint;
+    use crate::util::overlay::{JsonPrint, assert_shapes_eq};
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{Overlay, ShapeType};
@@ -10,6 +10,7 @@ mod tests {
     use i_overlay::core::solver::Solver;
     use i_shape::int::path::IntPath;
     use i_shape::int::shape::IntContour;
+    use i_shape::int_shapes;
 
     #[test]
     fn test_issue_87_frag_preserves_filled_region() {
@@ -44,8 +45,10 @@ mod tests {
             })
             .collect();
 
+        let expected = int_shapes![[[[4, 2], [0, 0], [1, 0], [4, 1]]], [[[4, 1], [4, 0], [5, 1]]]];
         for (strategy, shapes, area2) in &results {
-            assert_eq!(*area2, 7, "{strategy:?} lost part of the filled region");
+            assert_eq!(*area2, 6, "{strategy:?} changed the filled area");
+            assert_shapes_eq(shapes, &expected);
             assert_eq!(shapes, &results[0].1, "{strategy:?} differs from List");
         }
     }
