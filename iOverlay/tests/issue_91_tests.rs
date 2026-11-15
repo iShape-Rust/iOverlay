@@ -76,19 +76,21 @@ fn canonical(path: &[IntPoint]) -> Vec<IntPoint> {
     path
 }
 
-fn assert_hole_owner(shapes: &IntShapes<i32>, hole: &[[i32; 2]], outer: &[[i32; 2]]) {
-    let hole = canonical(&contour(hole));
+fn assert_shape_contours(shapes: &IntShapes<i32>, outer: &[[i32; 2]], hole: Option<&[[i32; 2]]>) {
+    let outer = canonical(&contour(outer));
     let owners: Vec<_> = shapes
         .iter()
-        .filter(|shape| shape.iter().skip(1).any(|p| canonical(p) == hole))
+        .filter(|shape| canonical(&shape[0]) == outer)
         .collect();
-    assert_eq!(owners.len(), 1, "expected exactly one owner: {shapes:?}");
     assert_eq!(
-        canonical(&owners[0][0]),
-        canonical(&contour(outer)),
-        "hole attached to the wrong shape: {shapes:?}"
+        owners.len(),
+        1,
+        "expected exactly one matching outer contour: {shapes:?}"
     );
-    assert_eq!(shapes.iter().map(|s| s.len() - 1).sum::<usize>(), 1);
+    let holes: Vec<_> = owners[0][1..].iter().map(|path| canonical(path)).collect();
+    let expected_hole = hole.map(|points| canonical(&contour(points)));
+    assert_eq!(holes.as_slice(), expected_hole.as_slice());
+    assert_eq!(shapes.iter().map(|s| s.len() - 1).sum::<usize>(), holes.len());
 }
 
 fn check_panic_case(ogc: bool, preserve_collinear: bool, vectors: bool) {
@@ -109,12 +111,19 @@ fn check_panic_case(ogc: bool, preserve_collinear: bool, vectors: bool) {
                 overlay.overlay(OverlayRule::Union, FillRule::NonZero)
             };
             assert_eq!(shapes.len(), squares + 2);
-            assert_hole_owner(&shapes, PANIC_INPUT[1], PANIC_INPUT[0]);
+            assert_shape_contours(&shapes, PANIC_INPUT[0], Some(PANIC_INPUT[1]));
         }
     }
 }
 
 fn check_owner_case(ogc: bool, preserve_collinear: bool, vectors: bool) {
+    let hole = [[-3, 4], [-3, 2], [-4, 3], [-4, 4]];
+    let mut outer = vec![[-6, 5], [-10, 5], [-4, 2], [-5, 1], [-2, 1], [-2, 3], [0, 4]];
+    if !ogc {
+        outer.extend(hole);
+    }
+    outer.extend([hole[0], [-3, 5], [-4, 5], [-4, 6], [-7, 6]]);
+
     for clockwise in [false, true] {
         for squares in [0, 31] {
             let mut overlay = overlay(OWNER_INPUT, squares, ogc, preserve_collinear, clockwise);
@@ -132,25 +141,7 @@ fn check_owner_case(ogc: bool, preserve_collinear: bool, vectors: bool) {
                 overlay.overlay(OverlayRule::Union, FillRule::NonZero)
             };
             assert_eq!(shapes.len(), squares + 2);
-            assert_hole_owner(
-                &shapes,
-                &[[-4, 3], [-4, 4], [-3, 2]],
-                &[
-                    [-6, 5],
-                    [-10, 5],
-                    [-4, 2],
-                    [-5, 1],
-                    [-2, 1],
-                    [-2, 3],
-                    [0, 4],
-                    [-2, 4],
-                    [-3, 3],
-                    [-3, 5],
-                    [-4, 5],
-                    [-4, 6],
-                    [-7, 6],
-                ],
-            );
+            assert_shape_contours(&shapes, &outer, ogc.then_some(hole.as_slice()));
         }
     }
 }

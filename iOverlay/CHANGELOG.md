@@ -1,3 +1,9 @@
+## [9.2.0] - 2026-11-15
+
+### Changed
+
+- Intersections near a grid node now round to that node. The threshold starts at half a grid unit and halves on each subsequent pass. This can change vertex positions or the number of components or holes in thin geometry.
+
 ## [9.1.0] - 2026-10-14
 ### Changed
 - Improved performance for Tree Solver.

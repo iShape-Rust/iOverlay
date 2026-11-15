@@ -16,7 +16,7 @@ where
 {
     pub(super) fn fragment_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        snap_radius: SnapRadius,
+        snap_radius: SnapRadius<I>,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
         store: &mut D::Store,
@@ -44,7 +44,7 @@ where
                 buffer.add_segment(i, segment.x_segment);
             }
 
-            need_to_fix = self.process(snap_radius.radius_squared::<I>(), &mut buffer, solver);
+            need_to_fix = self.process(snap_radius, &mut buffer, solver);
 
             #[cfg(debug_assertions)]
             debug_assert!(buffer.is_on_border_sorted());
@@ -74,7 +74,7 @@ where
 
             self.apply(segments, &mut reusable_buffer, solver, store);
 
-            snap_radius.increment();
+            snap_radius.increment(solver.precision.progression);
         }
 
         any_intersection
@@ -83,35 +83,35 @@ where
     #[inline]
     fn process(
         &mut self,
-        radius_squared: I::WideUInt,
+        snap_radius: SnapRadius<I>,
         buffer: &mut FragmentBuffer<I>,
         _solver: &Solver,
     ) -> bool {
         #[cfg(feature = "allow_multithreading")]
         {
             if _solver.multithreading.is_some() {
-                return self.parallel_split(radius_squared, buffer);
+                return self.parallel_split(snap_radius, buffer);
             }
         }
 
-        self.serial_split(radius_squared, buffer)
+        self.serial_split(snap_radius, buffer)
     }
 
     #[inline]
-    fn serial_split(&mut self, radius_squared: I::WideUInt, buffer: &mut FragmentBuffer<I>) -> bool {
+    fn serial_split(&mut self, snap_radius: SnapRadius<I>, buffer: &mut FragmentBuffer<I>) -> bool {
         let mut is_any_round = false;
         for group in buffer.groups.iter_mut() {
             if group.is_empty() {
                 continue;
             }
-            let any_round = Self::bin_split(radius_squared, group, &mut self.marks);
+            let any_round = Self::bin_split(snap_radius, group, &mut self.marks);
             is_any_round = is_any_round || any_round;
         }
         is_any_round
     }
 
     #[cfg(feature = "allow_multithreading")]
-    fn parallel_split(&mut self, radius_squared: I::WideUInt, buffer: &mut FragmentBuffer<I>) -> bool {
+    fn parallel_split(&mut self, snap_radius: SnapRadius<I>, buffer: &mut FragmentBuffer<I>) -> bool {
         use rayon::iter::IntoParallelRefMutIterator;
         use rayon::iter::ParallelIterator;
 
@@ -128,7 +128,7 @@ where
             .par_iter_mut()
             .map(|group| {
                 let mut marks = Vec::with_capacity(marks_capacity);
-                let any_round = Self::bin_split(radius_squared, group, &mut marks);
+                let any_round = Self::bin_split(snap_radius, group, &mut marks);
                 TaskResult { any_round, marks }
             })
             .collect();
@@ -157,7 +157,7 @@ where
     }
 
     fn bin_split(
-        radius_squared: I::WideUInt,
+        snap_radius: SnapRadius<I>,
         fragments: &mut [Fragment<I>],
         marks: &mut Vec<LineMark<I>>,
     ) -> bool {
@@ -181,9 +181,9 @@ where
                 // MARK: the intersection, ensuring the right order for deterministic results
 
                 let is_round = if fi.x_segment < fj.x_segment {
-                    Self::cross_fragments(fi, fj, radius_squared, marks)
+                    Self::cross_fragments(fi, fj, snap_radius, marks)
                 } else {
-                    Self::cross_fragments(fj, fi, radius_squared, marks)
+                    Self::cross_fragments(fj, fi, snap_radius, marks)
                 };
 
                 any_round = any_round || is_round
@@ -232,7 +232,7 @@ where
     fn cross_fragments(
         fi: &Fragment<I>,
         fj: &Fragment<I>,
-        radius_squared: I::WideUInt,
+        snap_radius: SnapRadius<I>,
         marks: &mut Vec<LineMark<I>>,
     ) -> bool {
         // Fragments select candidate pairs; marks belong to the complete segments.
@@ -243,7 +243,7 @@ where
             &fi.x_segment,
             &fj.x_segment,
             marks,
-            radius_squared,
+            snap_radius,
         )
     }
 }
@@ -255,6 +255,7 @@ mod tests {
     use crate::segm::boolean::ShapeCountBoolean;
     use crate::segm::segment::Segment;
     use crate::split::grid_layout::GridLayout;
+    use crate::split::snap_radius::SnapRadius;
     use crate::split::solver::SplitSolver;
     use alloc::vec::Vec;
     use i_float::int::point::IntPoint;
@@ -289,7 +290,7 @@ mod tests {
             for (index, edge) in edges.into_iter().enumerate() {
                 buffer.add_segment(index, edge);
             }
-            splitter.parallel_split(I::WideUInt::ONE, &mut buffer);
+            splitter.parallel_split(SnapRadius::new(I::WideUInt::ONE), &mut buffer);
             assert_eq!(splitter.marks.len(), 2 * count);
             splitter
                 .marks
@@ -390,7 +391,7 @@ mod tests {
         // The first column's enclosures overlap, but the rounded crossing at
         // (50, 1) is in a later column. Marks belong to the complete segments.
         assert!(SplitSolver::<i32>::bin_split(
-            1,
+            SnapRadius::new(1),
             &mut buffer.groups[0],
             &mut marks
         ));

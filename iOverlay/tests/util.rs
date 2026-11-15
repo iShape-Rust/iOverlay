@@ -61,6 +61,17 @@ pub mod overlay {
     }
 
     #[allow(dead_code)]
+    #[track_caller]
+    pub fn assert_shapes_eq(actual: &IntShapes<i32>, expected: &IntShapes<i32>) {
+        assert!(
+            actual.are_equal(expected),
+            "actual: {}\nexpected: {}",
+            actual.json_print(),
+            expected.json_print()
+        );
+    }
+
+    #[allow(dead_code)]
     pub fn is_group_of_shapes_one_of(group: &Vec<IntShape<i32>>, groups: &[Vec<IntShape<i32>>]) -> bool {
         for item in groups.iter() {
             if item.are_equal(group) {

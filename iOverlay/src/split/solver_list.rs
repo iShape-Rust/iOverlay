@@ -13,7 +13,7 @@ where
 {
     pub(super) fn list_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        snap_radius: SnapRadius,
+        snap_radius: SnapRadius<I>,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
         store: &mut D::Store,
@@ -28,8 +28,6 @@ where
             need_to_fix = false;
             self.marks.clear();
 
-            let radius_squared = snap_radius.radius_squared::<I>();
-
             for (i, si) in segments.iter().enumerate() {
                 let xsi = &si.x_segment;
                 let ri = xsi.y_range();
@@ -43,7 +41,7 @@ where
                         continue;
                     }
 
-                    let is_round = Self::cross(i, j, xsi, xsj, &mut self.marks, radius_squared);
+                    let is_round = Self::cross(i, j, xsi, xsj, &mut self.marks, snap_radius);
                     need_to_fix = need_to_fix || is_round
                 }
             }
@@ -54,7 +52,7 @@ where
             any_intersection = true;
             self.apply(segments, &mut reusable_buffer, solver, store);
 
-            snap_radius.increment();
+            snap_radius.increment(solver.precision.progression);
 
             if need_to_fix && !solver.is_list_split(segments) {
                 // finish with tree solver if edges is become large

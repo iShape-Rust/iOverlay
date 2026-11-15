@@ -33,7 +33,7 @@ where
 {
     pub(super) fn tree_split<C: WindingCount, D: OverlayEdgeData<C>>(
         &mut self,
-        snap_radius: SnapRadius,
+        snap_radius: SnapRadius<I>,
         segments: &mut Vec<Segment<C, I, D>>,
         solver: &Solver,
         store: &mut D::Store,
@@ -60,8 +60,6 @@ where
             need_to_fix = false;
             self.marks.clear();
 
-            let radius_squared = snap_radius.radius_squared::<I>();
-
             for (i, si) in segments.iter().enumerate() {
                 let time = si.x_segment.a.x;
                 let si_y_range = si.x_segment.y_range();
@@ -77,14 +75,8 @@ where
                         (sj.id, i, &sj.x_segment, &si.x_segment)
                     };
 
-                    let is_round = Self::cross(
-                        this_index,
-                        scan_index,
-                        this,
-                        scan,
-                        &mut self.marks,
-                        radius_squared,
-                    );
+                    let is_round =
+                        Self::cross(this_index, scan_index, this, scan, &mut self.marks, snap_radius);
 
                     need_to_fix = is_round || need_to_fix;
                 }
@@ -101,7 +93,7 @@ where
 
             self.apply(segments, &mut reusable_buffer, solver, store);
 
-            snap_radius.increment();
+            snap_radius.increment(solver.precision.progression);
         }
 
         any_intersection
