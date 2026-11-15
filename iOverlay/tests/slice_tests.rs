@@ -322,10 +322,10 @@ mod tests {
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
-        assert_eq!(result.len(), 3);
+        // The vertical line lies outside the triangle, so only the horizontal one splits it.
+        assert_eq!(result.len(), 2);
         assert_eq!(result[0].len(), 1);
         assert_eq!(result[1].len(), 1);
-        assert_eq!(result[2].len(), 1);
     }
 
     #[test]
@@ -340,11 +340,14 @@ mod tests {
 
         let result = path.slice_by_lines(&lines, FillRule::NonZero);
 
-        assert_eq!(result.len(), 2);
+        // The first two lines cut a small triangle off the top right corner.
+        assert_eq!(result.len(), 3);
         assert_eq!(result[0].len(), 1);
         assert_eq!(result[0][0].len(), 4);
         assert_eq!(result[1].len(), 1);
         assert_eq!(result[1][0].len(), 3);
+        assert_eq!(result[2].len(), 1);
+        assert_eq!(result[2][0].len(), 3);
     }
 
     #[test]

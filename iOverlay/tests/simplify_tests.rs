@@ -127,10 +127,13 @@ mod tests {
                 graph.extract_shapes(OverlayRule::Subject, &mut buffer)
             });
 
-        assert_eq!(simple_0.len(), 1);
+        // The edges cross at (2.25, 0.75), which rounds to (2, 1), so both lobes of the bow
+        // tie remain. Snapping the crossing to the vertex (3, 1) would drop the upper lobe.
+        assert_eq!(simple_0.len(), 2);
         assert_eq!(simple_0[0].len(), 1);
+        assert_eq!(simple_0[1].len(), 1);
 
-        assert_eq!(simple_1.len(), 1);
+        assert_eq!(simple_1.len(), 2);
     }
 
     #[test]

@@ -45,7 +45,8 @@ mod tests {
             .collect();
 
         for (strategy, shapes, area2) in &results {
-            assert_eq!(*area2, 7, "{strategy:?} lost part of the filled region");
+            // The exact doubled area is 5.6.
+            assert_eq!(*area2, 6, "{strategy:?} lost part of the filled region");
             assert_eq!(shapes, &results[0].1, "{strategy:?} differs from List");
         }
     }
