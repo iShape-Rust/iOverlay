@@ -11,12 +11,26 @@ iOverlay has a complex geometry core, so even small-looking changes can affect c
 * Add tests for existing behavior.
 * Submit focused code changes via pull requests.
 
+## Reporting a geometry bug
+
+Please share a geometry case that reproduces the problem. If possible, reduce it to the fewest contours and vertices that still show the issue. Paste the input coordinates in vertex order and at their original precision. Include the operation and relevant settings, such as the fill rule.
+
+Describe the expected and actual results. If possible, attach a sketch, SVG, or screenshot and mark the point, edge, or region where they differ.
+
+A reproducible geometry case is a valuable contribution on its own.
+
 ## Development setup
 
 * Use the Rust stable toolchain.
 * Run tests: `cargo test`.
 * Run formatter: `cargo fmt`.
 * Run lints when possible: `cargo clippy`.
+
+## AI-assisted contributions
+
+The geometry core takes time to learn. Before changing an algorithm, trace a small example through the existing implementation.
+
+If you use an LLM, submit only changes you have personally reviewed, understood, and verified. Be ready to explain in your own words why the change works and how it handles related cases, such as edges that touch at a point or overlap along a segment.
 
 ## Before opening a pull request
 
@@ -54,6 +68,8 @@ A pull request should include:
 * tests for new behavior or bug fixes;
 * updated documentation or examples if behavior changes.
 
+For a geometry fix, explain why the reported case should produce the expected result. For example, the union of two adjacent rectangles fills both sides of their shared edge, so that edge disappears from the boundary.
+
 Pull requests that introduce non-trivial changes without prior discussion may be closed and redirected to an issue first.
 
 This is not meant to discourage contributions. It helps keep the project maintainable and avoids spending review time on solutions before the problem and design are clear.
@@ -68,6 +84,8 @@ A prior issue is usually not required for:
 * small test additions;
 * simple refactoring with no behavior change;
 * clearly isolated fixes.
+
+Discuss fixes that change geometric behavior in an issue first, even if the fix only changes a single comparison.
 
 ## Communication
 
