@@ -249,7 +249,15 @@ impl<I: IntNumber + Expiration + SortKey> JoinHoles<I> for Vec<IntShape<I>> {
         let capacity = self.iter().fold(0, |s, it| s + it[0].len()) / 2;
         let mut segments = Vec::with_capacity(capacity);
         for (i, shape) in self.iter().enumerate() {
-            shape[0].append_id_segments(&mut segments, ContourIndex::new_shape(i), x_min, x_max, clockwise);
+            for contour in shape {
+                contour.append_id_segments(
+                    &mut segments,
+                    ContourIndex::new_shape(i),
+                    x_min,
+                    x_max,
+                    clockwise,
+                );
+            }
         }
 
         for (i, hole) in holes.iter().enumerate() {
