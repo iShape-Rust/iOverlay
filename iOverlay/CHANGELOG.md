@@ -1,3 +1,9 @@
+## [9.2.1] - 2026-11-27
+
+### Fixed
+
+- OGC extraction now assigns holes to the correct polygon when a sibling hole touches the outer shell. [#104](https://github.com/iShape-Rust/iOverlay/issues/104)
+
 ## [9.2.0] - 2026-11-15
 
 ### Changed
