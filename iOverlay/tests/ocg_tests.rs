@@ -1,11 +1,15 @@
+mod util;
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::explicit_counter_loop)]
 
+    use crate::util::overlay::{CircleCompare, JsonPrint};
     use i_float::int::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::{ContourDirection, IntOverlayOptions, Overlay};
     use i_overlay::core::overlay_rule::OverlayRule;
+    use i_overlay::core::simplify::Simplify;
     use i_shape::int::area::Area;
     use i_shape::{int_path, int_shape};
     use std::f64::consts::PI;
@@ -501,6 +505,46 @@ mod tests {
             assert_eq!(shape.len(), 2);
             assert_eq!(shape[0].len(), 3);
             assert_eq!(shape[1].len(), 3);
+        }
+    }
+
+    #[test]
+    fn test_issue_104_simplify_hole_binding() {
+        let shell = int_path![[42, 45], [2, 40], [46, 1], [87, 1]];
+        let large_hole = int_path![[29, 23], [42, 45], [41, 33], [56, 9]];
+        let small_hole = int_path![[42, 32], [42, 33], [43, 33], [43, 32]];
+        let island = int_path![
+            [40, 20],
+            [40, 19],
+            [41, 19],
+            [41, 18],
+            [42, 18],
+            [42, 17],
+            [45, 17],
+            [45, 18],
+            [43, 18],
+            [43, 20],
+        ];
+        let subj = vec![vec![shell, large_hole, small_hole], vec![island]];
+
+        let result = subj.simplify(FillRule::NonZero, IntOverlayOptions::ogc());
+
+        assert_eq!(result.len(), subj.len());
+        for expected in &subj {
+            let shape = result
+                .iter()
+                .find(|shape| shape[0].are_equal(&expected[0]))
+                .expect("missing shell");
+            for hole in &expected[1..] {
+                assert!(
+                    shape[1..].iter().any(|contour| contour.are_equal(hole)),
+                    "expected hole {} in shell {}, got {}",
+                    hole.json_print(),
+                    expected[0].json_print(),
+                    result.json_print()
+                );
+            }
+            assert_eq!(shape.len(), expected.len());
         }
     }
 
